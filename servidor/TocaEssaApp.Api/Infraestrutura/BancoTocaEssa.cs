@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using TocaEssaApp.Api.Dominio;
 
 namespace TocaEssaApp.Api.Infraestrutura;
@@ -7,6 +8,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
 {
     private readonly bool _usaPostgres = destinoBanco.Contains("Host=", StringComparison.OrdinalIgnoreCase)
         || destinoBanco.StartsWith("postgres", StringComparison.OrdinalIgnoreCase);
+    private readonly string _destinoBanco = NormalizarDestino(destinoBanco);
     internal DbSet<PerfilArtisticoRegistro> Perfis => Set<PerfilArtisticoRegistro>();
     internal DbSet<ApresentacaoRegistro> Apresentacoes => Set<ApresentacaoRegistro>();
     internal DbSet<PedidoMusicalRegistro> Pedidos => Set<PedidoMusicalRegistro>();
@@ -17,8 +19,29 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder opcoes)
     {
-        if (_usaPostgres) opcoes.UseNpgsql(destinoBanco);
-        else opcoes.UseSqlite($"Data Source={destinoBanco};Pooling=False");
+        if (_usaPostgres) opcoes.UseNpgsql(_destinoBanco);
+        else opcoes.UseSqlite($"Data Source={_destinoBanco};Pooling=False");
+    }
+
+    private static string NormalizarDestino(string destino)
+    {
+        if (!destino.StartsWith("postgres", StringComparison.OrdinalIgnoreCase))
+            return destino;
+
+        var endereco = new Uri(destino);
+        var separadorCredencial = endereco.UserInfo.IndexOf(':');
+        if (separadorCredencial < 1)
+            throw new InvalidOperationException("A conexão PostgreSQL não possui usuário e senha válidos.");
+
+        return new NpgsqlConnectionStringBuilder
+        {
+            Host = endereco.Host,
+            Port = endereco.IsDefaultPort ? 5432 : endereco.Port,
+            Database = Uri.UnescapeDataString(endereco.AbsolutePath.TrimStart('/')),
+            Username = Uri.UnescapeDataString(endereco.UserInfo[..separadorCredencial]),
+            Password = Uri.UnescapeDataString(endereco.UserInfo[(separadorCredencial + 1)..]),
+            SslMode = SslMode.Require,
+        }.ConnectionString;
     }
 
     protected override void OnModelCreating(ModelBuilder modelo)
