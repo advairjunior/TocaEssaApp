@@ -1,0 +1,16 @@
+**/bin/
+**/obj/
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+.vscode/
+*.user
+*.suo
+**/dados/tocaessa.json
+**/dados/tocaessa.json.tmp
+**/dados/tocaessa.db
+**/dados/tocaessa.db-shm
+**/dados/tocaessa.db-wal
+**/dados/fotos/

@@ -1,0 +1,11 @@
+.git
+.dart_cli_home
+.idea
+.vscode
+**/.dart_tool
+**/build
+**/bin
+**/obj
+**/dados
+**/*.user
+**/*.suo
