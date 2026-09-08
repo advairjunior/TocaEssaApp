@@ -16,6 +16,9 @@ COPY --from=cliente /src/cliente/build/web /app/publicar/wwwroot
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=compilacao /app/publicar ./
 ENV ASPNETCORE_HTTP_PORTS=10000
 EXPOSE 10000
