@@ -113,7 +113,16 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
     internal void GarantirEstrutura()
     {
         Database.EnsureCreated();
-        if (_usaPostgres) return;
+        if (_usaPostgres)
+        {
+            using var consulta = Database.GetDbConnection().CreateCommand();
+            consulta.CommandText = "SELECT to_regclass('public.\"PerfisArtisticos\"') IS NOT NULL";
+            Database.OpenConnection();
+            var estruturaCriada = consulta.ExecuteScalar() as bool? == true;
+            if (!estruturaCriada)
+                Database.ExecuteSqlRaw(Database.GenerateCreateScript());
+            return;
+        }
         Database.ExecuteSqlRaw("""
             CREATE TABLE IF NOT EXISTS "PerfisPublicos" (
                 "Id" TEXT NOT NULL CONSTRAINT "PK_PerfisPublicos" PRIMARY KEY,
