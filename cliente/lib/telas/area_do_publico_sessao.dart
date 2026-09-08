@@ -5,6 +5,21 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
     try {
       final preferencias = await SharedPreferences.getInstance();
       final nomeSalvo = preferencias.getString('nome_do_publico') ?? '';
+      _identificadorAvaliador =
+          preferencias.getString('identificador_avaliador') ??
+              _identificadorAvaliador;
+      await preferencias.setString(
+          'identificador_avaliador', _identificadorAvaliador);
+      if (_montado) {
+        _mudarEstado(() {
+          _fila = _consulta.then((item) => item == null
+              ? <PedidoMusical>[]
+              : _api.listarFilaPublica(
+                  _codigoInicial,
+                  identificadorAvaliador: _identificadorAvaliador,
+                ));
+        });
+      }
       if (_nome.text.isEmpty) _nome.text = nomeSalvo;
       final apresentacao = await _consulta;
       if (apresentacao == null) return;
@@ -12,24 +27,46 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
       final pedidosIdentificados = <PedidoMusical>[];
       final token = preferencias.getString('token_do_publico');
       if (token != null) {
+        PerfilPublico? perfil;
         try {
-          final perfil = await _api.obterPerfilPublico(token);
-          final pedidos = await _api.listarMeusPedidos(_codigoInicial, token);
-          final estatisticas = await _obterEstatisticasPublico(token);
-          final participantes =
-              apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
-                  ? await _obterParticipantesDaResenha(token)
-                  : <ParticipanteDaResenha>[];
-          pedidosIdentificados.addAll(pedidos);
-          if (!_montado) return;
-          _mudarEstado(() {
-            _tokenPublico = token;
-            _perfilPublico = perfil;
-            _estatisticasPublico = estatisticas;
-            _participantesDaResenha = participantes;
-          });
+          perfil = await _api.obterPerfilPublico(token);
         } catch (_) {
           await preferencias.remove('token_do_publico');
+        }
+        if (perfil != null) {
+          if (_montado) {
+            _mudarEstado(() {
+              _tokenPublico = token;
+              _perfilPublico = perfil;
+            });
+          }
+          try {
+            if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) {
+              await _api.registrarParticipacaoNaResenha(
+                _codigoInicial,
+                token,
+              );
+            }
+            final pedidos = await _api.listarMeusPedidos(_codigoInicial, token);
+            final estatisticas = await _obterEstatisticasPublico(token);
+            final participantes =
+                apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
+                    ? await _obterParticipantesDaResenha(token)
+                    : <ParticipanteDaResenha>[];
+            pedidosIdentificados.addAll(pedidos);
+            if (!_montado) return;
+            _mudarEstado(() {
+              _estatisticasPublico = estatisticas;
+              _participantesDaResenha = participantes;
+              _fila = _api.listarFilaPublica(
+                _codigoInicial,
+                token: token,
+                identificadorAvaliador: _identificadorAvaliador,
+              );
+            });
+          } catch (_) {
+            // A sessão permanece ativa e os dados tentam atualizar novamente.
+          }
         }
       }
 
@@ -117,7 +154,11 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
         }
         return;
       }
-      final fila = await _api.listarFilaPublica(_codigoInicial);
+      final fila = await _api.listarFilaPublica(
+        _codigoInicial,
+        token: _tokenPublico,
+        identificadorAvaliador: _identificadorAvaliador,
+      );
       final meusPedidos = _tokenPublico != null
           ? await _api.listarMeusPedidos(_codigoInicial, _tokenPublico!)
           : await Future.wait(_meusPedidos.map(

@@ -23,8 +23,12 @@ public sealed partial class RepositorioTocaEssa
 
     private void CarregarEstado()
     {
-        if (_caminhoBanco is null) return;
-        var pasta = Path.GetDirectoryName(_caminhoBanco);
+        if (_caminhoBanco is null)
+        {
+            _notificador?.Publicar(_apresentacoes.Keys);
+            return;
+        }
+        var pasta = _usaPostgres ? null : Path.GetDirectoryName(_caminhoBanco);
         if (!string.IsNullOrWhiteSpace(pasta)) Directory.CreateDirectory(pasta);
 
         using var banco = new BancoTocaEssa(_caminhoBanco);
@@ -61,10 +65,38 @@ public sealed partial class RepositorioTocaEssa
                     pedido.Posicao,
                     pedido.CriadoEm,
                     pedido.PublicoId,
-                    pedido.Avaliacao);
+                    pedido.Avaliacao,
+                    Enum.IsDefined(pedido.FormaParticipacao)
+                        ? pedido.FormaParticipacao
+                        : FormaParticipacaoPedido.PedidoNormal,
+                    pedido.TomPreferido,
+                    pedido.Recado,
+                    Enum.IsDefined(pedido.Tipo) ? pedido.Tipo : TipoPedido.Musica,
+                    pedido.DestinatarioAlo);
+
+        foreach (var avaliacao in banco.Avaliacoes.AsNoTracking())
+            _avaliacoes[(avaliacao.PedidoId, avaliacao.IdentificadorAvaliador)] = avaliacao;
+
+        foreach (var pedido in _pedidos.Values.Where(item => item.Avaliacao.HasValue))
+        {
+            var identificador = pedido.PublicoId is { } publicoId
+                ? $"perfil:{publicoId:N}"
+                : $"legado:{pedido.Id:N}";
+            _avaliacoes.TryAdd((pedido.Id, identificador), new AvaliacaoPedidoRegistro
+            {
+                PedidoId = pedido.Id,
+                IdentificadorAvaliador = identificador,
+                PublicoId = pedido.PublicoId,
+                Estrelas = pedido.Avaliacao!.Value,
+                AvaliadoEm = pedido.CriadoEm
+            });
+        }
 
         foreach (var publico in banco.PerfisPublicos.AsNoTracking())
             _perfisPublicos[publico.Id] = publico;
+        foreach (var participacao in banco.ParticipacoesResenha.AsNoTracking())
+            _participacoesResenha[(participacao.ApresentacaoId,
+                participacao.PublicoId)] = participacao;
         foreach (var sessao in banco.SessoesPublicas.AsNoTracking().AsEnumerable()
                      .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow))
             _sessoesPublicas[sessao.TokenHash] = sessao;
@@ -93,7 +125,7 @@ public sealed partial class RepositorioTocaEssa
     private void SalvarEstado()
     {
         if (_caminhoBanco is null) return;
-        var pasta = Path.GetDirectoryName(_caminhoBanco);
+        var pasta = _usaPostgres ? null : Path.GetDirectoryName(_caminhoBanco);
         if (!string.IsNullOrWhiteSpace(pasta)) Directory.CreateDirectory(pasta);
 
         using var banco = new BancoTocaEssa(_caminhoBanco);
@@ -102,6 +134,8 @@ public sealed partial class RepositorioTocaEssa
 
         banco.SessoesPublicas.RemoveRange(banco.SessoesPublicas);
         banco.SessoesArtistas.RemoveRange(banco.SessoesArtistas);
+        banco.ParticipacoesResenha.RemoveRange(banco.ParticipacoesResenha);
+        banco.Avaliacoes.RemoveRange(banco.Avaliacoes);
         banco.Pedidos.RemoveRange(banco.Pedidos);
         banco.Apresentacoes.RemoveRange(banco.Apresentacoes);
         banco.Perfis.RemoveRange(banco.Perfis);
@@ -144,10 +178,17 @@ public sealed partial class RepositorioTocaEssa
                 Posicao = item.Posicao,
                 CriadoEm = item.CriadoEm,
                 PublicoId = item.PublicoId,
-                Avaliacao = item.Avaliacao
+                Avaliacao = item.Avaliacao,
+                FormaParticipacao = item.FormaParticipacao,
+                TomPreferido = item.TomPreferido,
+                Recado = item.Recado,
+                Tipo = item.Tipo,
+                DestinatarioAlo = item.DestinatarioAlo
             }));
 
+        banco.Avaliacoes.AddRange(_avaliacoes.Values);
         banco.PerfisPublicos.AddRange(_perfisPublicos.Values);
+        banco.ParticipacoesResenha.AddRange(_participacoesResenha.Values);
         banco.SessoesPublicas.AddRange(_sessoesPublicas.Values
             .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
         banco.ContasArtistas.AddRange(_contasArtistas.Values);
@@ -156,6 +197,7 @@ public sealed partial class RepositorioTocaEssa
 
         banco.SaveChanges();
         transacao.Commit();
+        _notificador?.Publicar(_apresentacoes.Keys);
     }
 
     private SessaoDoPublico CriarSessao(PerfilPublicoRegistro registro)

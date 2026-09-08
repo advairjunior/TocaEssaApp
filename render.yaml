@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: tocaessa
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/saude
+    autoDeployTrigger: commit
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: Armazenamento__R2__Endpoint
+        sync: false
+      - key: Armazenamento__R2__IdentificadorDaChave
+        sync: false
+      - key: Armazenamento__R2__SegredoDaChave
+        sync: false
+      - key: Armazenamento__R2__NomeDoBucket
+        sync: false

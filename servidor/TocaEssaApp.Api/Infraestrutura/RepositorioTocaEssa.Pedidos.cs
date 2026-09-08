@@ -14,7 +14,12 @@ public sealed partial class RepositorioTocaEssa
         string musica,
         string? artista,
         string? nomeSolicitante,
-        string? tokenPublico = null)
+        string? tokenPublico = null,
+        FormaParticipacaoPedido formaParticipacao = FormaParticipacaoPedido.PedidoNormal,
+        string? tomPreferido = null,
+        string? recado = null,
+        TipoPedido tipo = TipoPedido.Musica,
+        string? destinatarioAlo = null)
     {
         lock (_sincronizacao)
         {
@@ -25,15 +30,40 @@ public sealed partial class RepositorioTocaEssa
             var perfilPublico = ObterRegistroPublico(tokenPublico);
             if (apresentacao.Tipo == TipoApresentacao.ResenhaEntreAmigos && perfilPublico is null)
                 throw new IdentificacaoPublicaObrigatoriaException();
+            if (apresentacao.Tipo == TipoApresentacao.Publica)
+            {
+                formaParticipacao = FormaParticipacaoPedido.PedidoNormal;
+                tomPreferido = null;
+                if (tipo == TipoPedido.Musica) recado = null;
+            }
+            if (tipo == TipoPedido.Alo)
+            {
+                destinatarioAlo = Limitar(destinatarioAlo, 120);
+                if (destinatarioAlo is null) throw new DestinatarioAloObrigatorioException();
+                musica = $"Alô para {destinatarioAlo}";
+                artista = null;
+                formaParticipacao = FormaParticipacaoPedido.PedidoNormal;
+                tomPreferido = null;
+            }
             var pedido = new PedidoMusical(
                 Guid.NewGuid(), apresentacao.Id, musica, artista,
                 perfilPublico?.Nome ?? nomeSolicitante,
                 StatusPedidoMusical.Aguardando, null, DateTimeOffset.UtcNow,
-                perfilPublico?.Id);
+                perfilPublico?.Id, null, formaParticipacao,
+                Limitar(tomPreferido, 30), Limitar(recado, 240), tipo,
+                destinatarioAlo);
             _pedidos[pedido.Id] = pedido;
             SalvarEstado();
             return pedido;
         }
+    }
+
+    private static string? Limitar(string? valor, int tamanhoMaximo)
+    {
+        var normalizado = string.IsNullOrWhiteSpace(valor) ? null : valor.Trim();
+        return normalizado is { Length: > 0 } && normalizado.Length > tamanhoMaximo
+            ? normalizado[..tamanhoMaximo]
+            : normalizado;
     }
 
     public IReadOnlyCollection<PedidoMusical> ListarPedidosDoArtista(Guid apresentacaoId) =>
@@ -41,6 +71,7 @@ public sealed partial class RepositorioTocaEssa
             .Where(item => item.ApresentacaoId == apresentacaoId)
             .OrderBy(item => item.Posicao ?? int.MaxValue)
             .ThenBy(item => item.CriadoEm)
+            .Select(item => ComAvaliacoes(item, null))
             .ToArray();
 
     public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(
@@ -50,11 +81,13 @@ public sealed partial class RepositorioTocaEssa
             throw new ApresentacaoNaoEncontradaException();
         var pedidos = _pedidos.Values
             .Where(item => item.ApresentacaoId == apresentacaoId &&
+                           item.Tipo == TipoPedido.Musica &&
                            item.Status != StatusPedidoMusical.CanceladoPeloPublico)
             .ToArray();
-        var avaliacoes = pedidos
-            .Where(item => item.Avaliacao.HasValue)
-            .Select(item => item.Avaliacao!.Value)
+        var idsPedidos = pedidos.Select(item => item.Id).ToHashSet();
+        var avaliacoes = _avaliacoes.Values
+            .Where(item => idsPedidos.Contains(item.PedidoId))
+            .Select(item => item.Estrelas)
             .ToArray();
         return new EstatisticasDaApresentacao(
             pedidos.Length,
@@ -79,15 +112,21 @@ public sealed partial class RepositorioTocaEssa
             .ToHashSet();
         var pedidos = _pedidos.Values
             .Where(item => item.PublicoId == publico.Id &&
+                           item.Tipo == TipoPedido.Musica &&
                            idsResenhas.Contains(item.ApresentacaoId) &&
                            item.Status != StatusPedidoMusical.CanceladoPeloPublico)
             .ToArray();
-        var avaliacoes = pedidos
-            .Where(item => item.Avaliacao.HasValue)
-            .Select(item => item.Avaliacao!.Value)
+        var avaliacoes = _avaliacoes.Values
+            .Where(item => item.PublicoId == publico.Id)
+            .Select(item => item.Estrelas)
             .ToArray();
         return new EstatisticasDoPublico(
-            pedidos.Select(item => item.ApresentacaoId).Distinct().Count(),
+            _participacoesResenha.Values
+                .Where(item => item.PublicoId == publico.Id)
+                .Select(item => item.ApresentacaoId)
+                .Concat(pedidos.Select(item => item.ApresentacaoId))
+                .Distinct()
+                .Count(),
             pedidos.Length,
             pedidos.Count(item => item.Status == StatusPedidoMusical.Finalizado),
             avaliacoes.Length,
@@ -95,54 +134,8 @@ public sealed partial class RepositorioTocaEssa
             AgruparMusicas(pedidos));
     }
 
-    public IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(
-        Guid apresentacaoId)
-    {
-        var apresentacao = _apresentacoes.Values.SingleOrDefault(
-            item => item.Id == apresentacaoId)
-            ?? throw new ApresentacaoNaoEncontradaException();
-        if (apresentacao.Tipo != TipoApresentacao.ResenhaEntreAmigos)
-            throw new RecursoDisponivelSomenteNaResenhaException();
-
-        return _pedidos.Values
-            .Where(item => item.ApresentacaoId == apresentacaoId &&
-                           item.PublicoId.HasValue &&
-                           item.Status is not StatusPedidoMusical.NaoConhecemos and
-                               not StatusPedidoMusical.AindaNaoSabemosTocar and
-                               not StatusPedidoMusical.CanceladoPeloPublico)
-            .GroupBy(item => item.PublicoId!.Value)
-            .Select(grupo =>
-            {
-                var perfil = _perfisPublicos.GetValueOrDefault(grupo.Key);
-                var avaliacoes = grupo.Where(item => item.Avaliacao.HasValue)
-                    .Select(item => item.Avaliacao!.Value)
-                    .ToArray();
-                return new ParticipanteDaResenha(
-                    grupo.Key,
-                    perfil?.Nome ?? grupo.First().NomeSolicitante ?? "Participante",
-                    perfil?.FotoUrl,
-                    grupo.Count(),
-                    grupo.Count(item => item.Status == StatusPedidoMusical.Finalizado),
-                    avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(), 1),
-                    AgruparMusicas(grupo));
-            })
-            .OrderByDescending(item => item.PedidosTocados)
-            .ThenByDescending(item => item.Pedidos)
-            .ThenBy(item => item.Nome)
-            .ToArray();
-    }
-
-    public IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(
-        string codigo, string token)
-    {
-        var apresentacao = ObterApresentacaoPublica(codigo)
-            ?? throw new ApresentacaoNaoEncontradaException();
-        _ = ObterRegistroPublico(token)
-            ?? throw new IdentificacaoPublicaObrigatoriaException();
-        return ListarParticipantesDaResenha(apresentacao.Id);
-    }
-
-    public IReadOnlyCollection<PedidoMusical> ListarFilaPublica(string codigo)
+    public IReadOnlyCollection<PedidoMusical> ListarFilaPublica(
+        string codigo, string? identificadorAvaliador = null, string? tokenPublico = null)
     {
         var apresentacao = ObterApresentacaoPublica(codigo)
             ?? throw new ApresentacaoNaoEncontradaException();
@@ -151,9 +144,9 @@ public sealed partial class RepositorioTocaEssa
             StatusPedidoMusical.Aceito, StatusPedidoMusical.TocandoAgora,
             StatusPedidoMusical.Finalizado
         };
-        return ListarPedidosDoArtista(apresentacao.Id)
-            .Where(item => visiveis.Contains(item.Status))
-            .ToArray();
+        var avaliador = IdentificarAvaliador(apresentacao, identificadorAvaliador,
+            tokenPublico, exigir: false);
+        return PrepararFilaPublica(apresentacao.Id, visiveis, avaliador);
     }
 
     public IReadOnlyCollection<PedidoMusical> ListarPedidosDoPublico(
@@ -208,30 +201,6 @@ public sealed partial class RepositorioTocaEssa
             _pedidos[pedidoId] = cancelado;
             SalvarEstado();
             return cancelado;
-        }
-    }
-
-    public PedidoMusical AvaliarPedidoPeloPublico(
-        string codigo, Guid pedidoId, int estrelas, string? tokenPublico = null)
-    {
-        lock (_sincronizacao)
-        {
-            if (estrelas is < 1 or > 5) throw new AvaliacaoInvalidaException();
-            var apresentacao = ObterApresentacaoPublica(codigo)
-                ?? throw new ApresentacaoNaoEncontradaException();
-            if (!_pedidos.TryGetValue(pedidoId, out var pedido) ||
-                pedido.ApresentacaoId != apresentacao.Id)
-                throw new PedidoMusicalNaoEncontradoException();
-            if (apresentacao.Tipo == TipoApresentacao.ResenhaEntreAmigos &&
-                pedido.PublicoId != ObterRegistroPublico(tokenPublico)?.Id)
-                throw new SessaoPublicaInvalidaException();
-            if (pedido.Status != StatusPedidoMusical.Finalizado)
-                throw new PedidoAindaNaoTocadoException();
-
-            var avaliado = pedido with { Avaliacao = estrelas };
-            _pedidos[pedidoId] = avaliado;
-            SalvarEstado();
-            return avaliado;
         }
     }
 
@@ -316,4 +285,3 @@ public sealed partial class RepositorioTocaEssa
     }
 
 }
-

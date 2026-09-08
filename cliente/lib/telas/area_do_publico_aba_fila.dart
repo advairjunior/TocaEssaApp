@@ -49,6 +49,7 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                       pedido: pedido,
                       icone: Icons.play_arrow_rounded,
                       destaque: true,
+                      avaliando: false,
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -61,6 +62,7 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                     _CartaoFilaPublica(
                       pedido: pedido,
                       posicao: pedido.posicao,
+                      avaliando: false,
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -73,6 +75,8 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                     _CartaoFilaPublica(
                       pedido: pedido,
                       icone: Icons.check_rounded,
+                      avaliando: _pedidoSendoAvaliado == pedido.id,
+                      avaliar: (estrelas) => _avaliarPedido(pedido, estrelas),
                     ),
                     const SizedBox(height: 8),
                   ],
@@ -100,7 +104,7 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
-                'A galera aparecerá depois dos primeiros pedidos.',
+                'A galera aparecerá assim que entrar na resenha.',
                 textAlign: TextAlign.center,
               ),
             ),

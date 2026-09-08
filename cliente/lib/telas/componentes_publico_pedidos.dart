@@ -44,7 +44,10 @@ class _CartaoMeuPedido extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(pedido.musica,
+                        Text(
+                            pedido.tipo == TipoPedido.alo
+                                ? 'Alô para ${pedido.destinatarioAlo}'
+                                : pedido.musica,
                             style: Theme.of(context).textTheme.titleMedium),
                         if (pedido.artista?.isNotEmpty == true)
                           Text(
@@ -76,6 +79,46 @@ class _CartaoMeuPedido extends StatelessWidget {
                   ),
                 ],
               ),
+              if (pedido.formaParticipacao !=
+                      FormaParticipacaoPedido.pedidoNormal ||
+                  pedido.tomPreferido?.isNotEmpty == true ||
+                  pedido.recado?.isNotEmpty == true) ...[
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      if (pedido.formaParticipacao !=
+                          FormaParticipacaoPedido.pedidoNormal)
+                        _EtiquetaDoPedido(
+                          icone: Icons.mic_rounded,
+                          texto: pedido.formaParticipacao.rotulo,
+                        ),
+                      if (pedido.tomPreferido?.isNotEmpty == true)
+                        _EtiquetaDoPedido(
+                          icone: Icons.tune_rounded,
+                          texto: 'Tom ${pedido.tomPreferido}',
+                        ),
+                    ],
+                  ),
+                ),
+                if (pedido.recado?.isNotEmpty == true) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      '“${pedido.recado}”',
+                      style: const TextStyle(
+                        color: CoresTocaEssa.textoSecundario,
+                        fontStyle: FontStyle.italic,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
               if (cancelar != null || cancelando) ...[
                 const SizedBox(height: 6),
                 Align(
@@ -131,6 +174,30 @@ class _CartaoMeuPedido extends StatelessWidget {
       );
 }
 
+class _EtiquetaDoPedido extends StatelessWidget {
+  const _EtiquetaDoPedido({required this.icone, required this.texto});
+
+  final IconData icone;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.roxo.withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icone, size: 14, color: CoresTocaEssa.roxoClaro),
+            const SizedBox(width: 5),
+            Text(texto, style: const TextStyle(fontSize: 11)),
+          ],
+        ),
+      );
+}
+
 class _AvisoPedidosEncerrados extends StatelessWidget {
   const _AvisoPedidosEncerrados();
 
@@ -166,55 +233,6 @@ class _AvisoPedidosEncerrados extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      );
-}
-
-class _TituloFilaPublica extends StatelessWidget {
-  const _TituloFilaPublica(this.texto);
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        texto,
-        style: Theme.of(context).textTheme.titleMedium,
-      );
-}
-
-class _CartaoFilaPublica extends StatelessWidget {
-  const _CartaoFilaPublica({
-    required this.pedido,
-    this.posicao,
-    this.icone,
-    this.destaque = false,
-  });
-
-  final PedidoMusical pedido;
-  final int? posicao;
-  final IconData? icone;
-  final bool destaque;
-
-  @override
-  Widget build(BuildContext context) => Card(
-        color: destaque
-            ? Theme.of(context).colorScheme.primaryContainer
-            : CoresTocaEssa.superficie,
-        child: ListTile(
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          leading: CircleAvatar(
-            backgroundColor: destaque
-                ? CoresTocaEssa.roxo
-                : CoresTocaEssa.roxo.withValues(alpha: 0.24),
-            foregroundColor: Colors.white,
-            child: icone != null ? Icon(icone) : Text('${posicao ?? '-'}'),
-          ),
-          title: Text(
-            pedido.musica,
-            style: const TextStyle(fontWeight: FontWeight.w600),
-          ),
-          subtitle:
-              pedido.artista?.isNotEmpty == true ? Text(pedido.artista!) : null,
         ),
       );
 }

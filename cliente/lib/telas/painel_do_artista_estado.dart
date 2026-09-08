@@ -7,12 +7,16 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   final _local = TextEditingController();
   PerfilArtistico? _perfil;
   List<Apresentacao> _apresentacoes = [];
+  List<ParticipanteDaResenha> _galera = [];
   DateTime _data = DateTime.now();
   TipoApresentacao _tipo = TipoApresentacao.publica;
   bool _carregando = true;
   bool _salvando = false;
   bool _enviandoFoto = false;
+  bool _carregandoGalera = false;
   int _abaSelecionada = 0;
+  String? _resenhaGaleraId;
+  String? _apresentacaoGestaoId;
   _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.aoVivo;
 
   List<Apresentacao> get _apresentacoesFiltradas => _apresentacoes
@@ -24,6 +28,10 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
             _FiltroApresentacoes.historico =>
               apresentacao.status == StatusApresentacao.encerrada,
           })
+      .toList();
+
+  List<Apresentacao> get _resenhas => _apresentacoes
+      .where((item) => item.tipo == TipoApresentacao.resenhaEntreAmigos)
       .toList();
 
   _FiltroApresentacoes _filtroInicial(List<Apresentacao> apresentacoes) {
@@ -56,6 +64,9 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       setState(() {
         _perfil = perfil;
         _apresentacoes = apresentacoes;
+        _resenhaGaleraId = _escolherResenhaDaGalera(apresentacoes)?.id;
+        _apresentacaoGestaoId =
+            _escolherApresentacaoDaGestao(apresentacoes)?.id;
         _filtroApresentacoes = _filtroInicial(apresentacoes);
         _carregando = false;
         _nomeArtistico.text = perfil?.nomeArtistico ?? '';
@@ -65,6 +76,65 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       if (!mounted) return;
       setState(() => _carregando = false);
       mostrarErro(context, erro);
+    }
+  }
+
+  Apresentacao? _escolherResenhaDaGalera(List<Apresentacao> apresentacoes) {
+    final resenhas = apresentacoes
+        .where((item) => item.tipo == TipoApresentacao.resenhaEntreAmigos)
+        .toList();
+    if (resenhas.isEmpty) return null;
+    return resenhas.firstWhere(
+      (item) => item.status == StatusApresentacao.emAndamento,
+      orElse: () => resenhas.first,
+    );
+  }
+
+  Apresentacao? _escolherApresentacaoDaGestao(
+    List<Apresentacao> apresentacoes,
+  ) {
+    if (apresentacoes.isEmpty) return null;
+    for (final status in [
+      StatusApresentacao.emAndamento,
+      StatusApresentacao.agendada,
+      StatusApresentacao.encerrada,
+    ]) {
+      for (final apresentacao in apresentacoes) {
+        if (apresentacao.status == status) return apresentacao;
+      }
+    }
+    return apresentacoes.first;
+  }
+
+  Apresentacao? get _apresentacaoDaGestao {
+    if (_apresentacoes.isEmpty) return null;
+    for (final apresentacao in _apresentacoes) {
+      if (apresentacao.id == _apresentacaoGestaoId) return apresentacao;
+    }
+    return _escolherApresentacaoDaGestao(_apresentacoes);
+  }
+
+  Future<void> _selecionarAba(int indice) async {
+    setState(() => _abaSelecionada = indice);
+    if (indice == 4) await _carregarGalera();
+  }
+
+  Future<void> _carregarGalera([String? apresentacaoId]) async {
+    final id = apresentacaoId ?? _resenhaGaleraId;
+    if (id == null || _carregandoGalera) return;
+    setState(() {
+      _resenhaGaleraId = id;
+      _carregandoGalera = true;
+    });
+    try {
+      final participantes =
+          await widget.api.listarParticipantesDaResenhaDoArtista(id);
+      if (!mounted || _resenhaGaleraId != id) return;
+      setState(() => _galera = participantes);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _carregandoGalera = false);
     }
   }
 
@@ -147,6 +217,7 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       if (!mounted) return;
       setState(() {
         _apresentacoes = [criada.apresentacao, ..._apresentacoes];
+        _apresentacaoGestaoId = criada.apresentacao.id;
         _abaSelecionada = 0;
         _filtroApresentacoes = _FiltroApresentacoes.agendadas;
       });
@@ -160,147 +231,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     }
   }
 
-  Future<void> _alterarPedidos(Apresentacao apresentacao) async {
-    try {
-      final atualizada = await widget.api.alterarPedidosDaApresentacao(
-        apresentacao.id,
-        !apresentacao.pedidosAbertos,
-      );
-      if (!mounted) return;
-      setState(() => _apresentacoes = _apresentacoes
-          .map((item) => item.id == atualizada.id ? atualizada : item)
-          .toList());
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _alterarStatusApresentacao(
-    Apresentacao apresentacao,
-    StatusApresentacao status,
-  ) async {
-    if (status == StatusApresentacao.encerrada) {
-      final confirmou = await showDialog<bool>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Encerrar Apresentação?'),
-              content: const Text(
-                'Novos Pedidos Musicais serão encerrados. A fila e o histórico continuarão disponíveis.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Encerrar'),
-                ),
-              ],
-            ),
-          ) ??
-          false;
-      if (!confirmou || !mounted) return;
-    }
-
-    setState(() => _salvando = true);
-    try {
-      final atualizada =
-          await widget.api.alterarStatusApresentacao(apresentacao.id, status);
-      if (!mounted) return;
-      setState(() {
-        _apresentacoes = _apresentacoes
-            .map((item) => item.id == atualizada.id ? atualizada : item)
-            .toList();
-        _filtroApresentacoes = switch (status) {
-          StatusApresentacao.agendada => _FiltroApresentacoes.agendadas,
-          StatusApresentacao.emAndamento => _FiltroApresentacoes.aoVivo,
-          StatusApresentacao.encerrada => _FiltroApresentacoes.historico,
-        };
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Apresentação ${status.rotulo.toLowerCase()}.')),
-      );
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    } finally {
-      if (mounted) setState(() => _salvando = false);
-    }
-  }
-
-  Future<void> _editarApresentacao(Apresentacao apresentacao) async {
-    final atualizada = await Navigator.push<Apresentacao>(
-      context,
-      MaterialPageRoute<Apresentacao>(
-        builder: (_) => _EditarApresentacao(
-          api: widget.api,
-          apresentacao: apresentacao,
-        ),
-      ),
-    );
-    if (!mounted || atualizada == null) return;
-    setState(() => _apresentacoes = _apresentacoes
-        .map((item) => item.id == atualizada.id ? atualizada : item)
-        .toList());
-  }
-
-  Future<void> _excluirApresentacao(Apresentacao apresentacao) async {
-    final confirmou = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Excluir Apresentação?'),
-            content: Text(
-              '“${apresentacao.nome}” e todos os seus Pedidos Musicais serão excluídos.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Excluir'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmou || !mounted) return;
-    setState(() => _salvando = true);
-    try {
-      await widget.api.excluirApresentacao(apresentacao.id);
-      if (!mounted) return;
-      setState(() =>
-          _apresentacoes.removeWhere((item) => item.id == apresentacao.id));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Apresentação excluída.')),
-      );
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    } finally {
-      if (mounted) setState(() => _salvando = false);
-    }
-  }
-
-  String _linkPublico(String codigo) {
-    final base = Uri.base;
-    final origem = base.scheme == 'http' || base.scheme == 'https'
-        ? base.origin
-        : 'http://localhost:5173';
-    return '$origem/#/publico/$codigo';
-  }
-
-  Future<void> _mostrarCodigo(Apresentacao apresentacao) =>
-      Navigator.push<void>(
-        context,
-        MaterialPageRoute<void>(
-          builder: (_) => _CodigoDaApresentacao(
-            apresentacao: apresentacao,
-            linkPublico: _linkPublico(apresentacao.codigo),
-          ),
-        ),
-      );
-
   @override
   void dispose() {
     _nomeArtistico.dispose();
@@ -313,7 +243,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   ApiTocaEssa get _api => widget.api;
   ContaArtista get _conta => widget.conta;
   VoidCallback get _sair => widget.sair;
-  bool get _montado => mounted;
   void _mudarEstado(VoidCallback acao) => setState(acao);
 
   @override

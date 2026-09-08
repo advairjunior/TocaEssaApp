@@ -134,7 +134,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                     ? () => _mudarEstado(() => _abaSelecionada = 0)
                     : null,
           )
-        else
+        else ...[
           _PerfilPublicoAtivo(
             perfil: _perfilPublico!,
             estatisticas: _estatisticasPublico,
@@ -143,5 +143,14 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
             trocarFoto: _selecionarFotoPublico,
             sair: _sairDoPerfilPublico,
           ),
+          if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos &&
+              _minhaParticipacaoNaResenha != null) ...[
+            const SizedBox(height: 24),
+            ..._construirRetrospectivaDoPublico(
+              apresentacao,
+              _minhaParticipacaoNaResenha!,
+            ),
+          ],
+        ],
       ];
 }

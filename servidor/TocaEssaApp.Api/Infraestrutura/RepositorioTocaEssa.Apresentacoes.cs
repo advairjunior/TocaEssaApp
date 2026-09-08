@@ -91,8 +91,18 @@ public sealed partial class RepositorioTocaEssa
             foreach (var pedido in _pedidos.Values
                          .Where(pedido => pedido.ApresentacaoId == apresentacaoId)
                          .ToArray())
+            {
+                foreach (var chaveAvaliacao in _avaliacoes.Keys
+                             .Where(chave => chave.PedidoId == pedido.Id).ToArray())
+                    _avaliacoes.TryRemove(chaveAvaliacao, out _);
                 _pedidos.TryRemove(pedido.Id, out _);
+            }
+            foreach (var participacao in _participacoesResenha.Keys
+                         .Where(chave => chave.ApresentacaoId == apresentacaoId)
+                         .ToArray())
+                _participacoesResenha.TryRemove(participacao, out _);
             SalvarEstado();
+            _notificador?.Publicar(item.Key);
         }
     }
 
@@ -116,4 +126,3 @@ public sealed partial class RepositorioTocaEssa
     }
 
 }
-

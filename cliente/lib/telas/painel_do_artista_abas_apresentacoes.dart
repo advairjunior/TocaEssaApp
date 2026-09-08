@@ -120,27 +120,6 @@ extension _ConstrucaoApresentacoesDoArtista on _PainelDoArtistaState {
                 apresentacao: apresentacao,
                 salvando: _salvando,
                 mostrarCodigo: () => _mostrarCodigo(apresentacao),
-                abrirFila: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => FilaMusicalArtista(
-                      api: _api,
-                      apresentacao: apresentacao,
-                    ),
-                  ),
-                ),
-                abrirEstatisticas: () async {
-                  await Navigator.push<void>(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (_) => EstatisticasDaApresentacaoTela(
-                        api: _api,
-                        apresentacao: apresentacao,
-                      ),
-                    ),
-                  );
-                  if (_montado) await _carregar();
-                },
                 alterarStatus: (status) =>
                     _alterarStatusApresentacao(apresentacao, status),
                 alterarPedidos: () => _alterarPedidos(apresentacao),

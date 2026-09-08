@@ -53,8 +53,6 @@ class _CartaoApresentacaoArtista extends StatelessWidget {
     required this.apresentacao,
     required this.salvando,
     required this.mostrarCodigo,
-    required this.abrirFila,
-    required this.abrirEstatisticas,
     required this.alterarStatus,
     required this.alterarPedidos,
     required this.selecionarOpcao,
@@ -63,8 +61,6 @@ class _CartaoApresentacaoArtista extends StatelessWidget {
   final Apresentacao apresentacao;
   final bool salvando;
   final VoidCallback mostrarCodigo;
-  final VoidCallback abrirFila;
-  final VoidCallback abrirEstatisticas;
   final ValueChanged<StatusApresentacao> alterarStatus;
   final VoidCallback alterarPedidos;
   final ValueChanged<String> selecionarOpcao;
@@ -77,10 +73,6 @@ class _CartaoApresentacaoArtista extends StatelessWidget {
       switch (acao) {
         case 'codigo':
           mostrarCodigo();
-        case 'fila':
-          abrirFila();
-        case 'estatisticas':
-          abrirEstatisticas();
         case 'pedidos':
           alterarPedidos();
         case 'iniciar':
@@ -138,20 +130,6 @@ class _CartaoApresentacaoArtista extends StatelessWidget {
                     child: ListTile(
                       leading: Icon(Icons.qr_code_2_rounded),
                       title: Text('Código e link'),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'fila',
-                    child: ListTile(
-                      leading: Icon(Icons.queue_music_rounded),
-                      title: Text('Fila Musical'),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'estatisticas',
-                    child: ListTile(
-                      leading: Icon(Icons.insights_rounded),
-                      title: Text('Estatísticas'),
                     ),
                   ),
                   if (!encerrada)
@@ -252,25 +230,16 @@ class _CartaoApresentacaoArtista extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: salvando
-                ? null
-                : encerrada
-                    ? abrirEstatisticas
-                    : emAndamento
-                        ? abrirFila
-                        : () => alterarStatus(StatusApresentacao.emAndamento),
-            icon: Icon(encerrada
-                ? Icons.insights_rounded
-                : emAndamento
-                    ? Icons.queue_music_rounded
-                    : Icons.play_arrow_rounded),
-            label: Text(encerrada
-                ? 'Ver estatísticas'
-                : emAndamento
-                    ? 'Abrir Fila Musical'
-                    : 'Iniciar Apresentação'),
-          ),
+          if (!emAndamento && !encerrada) ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: salvando
+                  ? null
+                  : () => alterarStatus(StatusApresentacao.emAndamento),
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Iniciar Apresentação'),
+            ),
+          ],
         ],
       ),
     );

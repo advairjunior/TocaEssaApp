@@ -30,23 +30,46 @@ extension _PerfilAreaDoPublico on _AreaDoPublicoState {
           : await _api.entrarContaPublica(_email.text.trim(), _senha.text);
       final preferencias = await SharedPreferences.getInstance();
       await preferencias.setString('token_do_publico', sessao.token);
-      final pedidos =
-          await _api.listarMeusPedidos(_codigoInicial, sessao.token);
-      final estatisticas = await _obterEstatisticasPublico(sessao.token);
-      final participantes =
-          _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos
-              ? await _obterParticipantesDaResenha(sessao.token)
-              : <ParticipanteDaResenha>[];
       if (!_montado) return;
       _mudarEstado(() {
         _tokenPublico = sessao.token;
         _perfilPublico = sessao.perfil;
-        _meusPedidos = pedidos;
-        _estatisticasPublico = estatisticas;
-        _participantesDaResenha = participantes;
         _abaSelecionada = 0;
         _senha.clear();
       });
+      try {
+        if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos) {
+          await _api.registrarParticipacaoNaResenha(
+            _codigoInicial,
+            sessao.token,
+          );
+        }
+        final pedidos =
+            await _api.listarMeusPedidos(_codigoInicial, sessao.token);
+        final estatisticas = await _obterEstatisticasPublico(sessao.token);
+        final participantes =
+            _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos
+                ? await _obterParticipantesDaResenha(sessao.token)
+                : <ParticipanteDaResenha>[];
+        if (!_montado) return;
+        _mudarEstado(() {
+          _meusPedidos = pedidos;
+          _estatisticasPublico = estatisticas;
+          _participantesDaResenha = participantes;
+          _fila = _api.listarFilaPublica(
+            _codigoInicial,
+            token: sessao.token,
+            identificadorAvaliador: _identificadorAvaliador,
+          );
+        });
+      } catch (_) {
+        if (_montado) {
+          ScaffoldMessenger.of(_contexto).showSnackBar(const SnackBar(
+            content: Text(
+                'Perfil acessado. Os dados da apresentação serão atualizados em instantes.'),
+          ));
+        }
+      }
     } catch (erro) {
       if (_montado) mostrarErro(_contexto, erro);
     } finally {

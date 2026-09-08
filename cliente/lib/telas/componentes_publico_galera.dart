@@ -49,11 +49,17 @@ class _CartaoPessoaDaResenha extends StatelessWidget {
                               const SizedBox(width: 7),
                               const _Etiqueta(texto: 'Você'),
                             ],
+                            if (participante.ehArtista) ...[
+                              const SizedBox(width: 7),
+                              const _Etiqueta(texto: 'Artista'),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
+                          participante.ehArtista
+                              ? 'Anfitrião da resenha'
+                              : '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
                           style: const TextStyle(
                             color: CoresTocaEssa.textoSecundario,
                             fontSize: 12,
