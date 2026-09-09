@@ -19,79 +19,85 @@ class _CartaoPessoaDaResenha extends StatelessWidget {
             color: souEu ? CoresTocaEssa.roxoClaro : CoresTocaEssa.borda,
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  FotoPerfilArtistico(
-                    enderecoFoto: enderecoFoto,
-                    tamanho: 54,
-                    iconeFallback: Icons.person_rounded,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              child: Text(
-                                participante.nome,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                            if (souEu) ...[
-                              const SizedBox(width: 7),
-                              const _Etiqueta(texto: 'Você'),
-                            ],
-                            if (participante.ehArtista) ...[
-                              const SizedBox(width: 7),
-                              const _Etiqueta(texto: 'Artista'),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          participante.ehArtista
-                              ? 'Anfitrião da resenha'
-                              : '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
-                          style: const TextStyle(
-                            color: CoresTocaEssa.textoSecundario,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () =>
+              abrirPerfilParticipante(context, participante, enderecoFoto),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    FotoPerfilArtistico(
+                      enderecoFoto: enderecoFoto,
+                      tamanho: 54,
+                      iconeFallback: Icons.person_rounded,
                     ),
-                  ),
-                  if (participante.mediaAvaliacoes != null)
-                    Text(
-                      '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
-                      style: const TextStyle(
-                        color: Color(0xFFFFC857),
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  participante.nome,
+                                  overflow: TextOverflow.ellipsis,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                ),
+                              ),
+                              if (souEu) ...[
+                                const SizedBox(width: 7),
+                                const _Etiqueta(texto: 'Você'),
+                              ],
+                              if (participante.ehArtista) ...[
+                                const SizedBox(width: 7),
+                                const _Etiqueta(texto: 'Artista'),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            participante.ehArtista
+                                ? 'Anfitrião da resenha'
+                                : '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
+                            style: const TextStyle(
+                              color: CoresTocaEssa.textoSecundario,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                ],
-              ),
-              if (participante.musicasMaisPedidas.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Mais pedida: ${participante.musicasMaisPedidas.first.musica}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: CoresTocaEssa.roxoClaro,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                    if (participante.mediaAvaliacoes != null)
+                      Text(
+                        '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
+                        style: const TextStyle(
+                          color: Color(0xFFFFC857),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
                 ),
+                if (participante.musicasMaisPedidas.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Mais pedida: ${participante.musicasMaisPedidas.first.musica}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: CoresTocaEssa.roxoClaro,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       );

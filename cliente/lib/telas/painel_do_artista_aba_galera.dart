@@ -79,6 +79,8 @@ class _CartaoGaleraDoArtista extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: ListTile(
+          onTap: () =>
+              abrirPerfilParticipante(context, participante, enderecoFoto),
           contentPadding: const EdgeInsets.all(14),
           leading: SizedBox.square(
             dimension: 52,

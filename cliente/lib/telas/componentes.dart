@@ -78,30 +78,85 @@ class FotoPerfilArtistico extends StatelessWidget {
       alignment: Alignment.center,
       child: SizedBox.square(
         dimension: tamanho,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary,
-              width: 2,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: ClipOval(
-              child: enderecoFoto == null
-                  ? fallback
-                  : Image.network(
-                      enderecoFoto!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => fallback,
-                    ),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: enderecoFoto == null || enderecoFoto!.isEmpty
+              ? null
+              : () => Navigator.of(context).push<void>(MaterialPageRoute(
+                    builder: (_) =>
+                        _FotoPerfilAmpliada(endereco: enderecoFoto!),
+                    fullscreenDialog: true,
+                  )),
+          child: Tooltip(
+            message: enderecoFoto == null ? '' : 'Ver foto de perfil',
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(3),
+                child: ClipOval(
+                  child: enderecoFoto == null
+                      ? fallback
+                      : Image.network(
+                          enderecoFoto!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => fallback,
+                        ),
+                ),
+              ),
             ),
           ),
         ),
       ),
     );
   }
+}
+
+class _FotoPerfilAmpliada extends StatelessWidget {
+  const _FotoPerfilAmpliada({required this.endereco});
+  final String endereco;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          title: const Text('Foto de perfil'),
+          leading: IconButton(
+            tooltip: 'Fechar foto',
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: SafeArea(
+          child: SizedBox.expand(
+            child: InteractiveViewer(
+              minScale: 1,
+              maxScale: 5,
+              child: Center(
+                child: Image.network(
+                  endereco,
+                  fit: BoxFit.contain,
+                  semanticLabel: 'Foto de perfil ampliada',
+                  loadingBuilder: (_, imagem, progresso) => progresso == null
+                      ? imagem
+                      : const Center(child: CircularProgressIndicator()),
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Text('Não foi possível carregar a foto.',
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
 }
 
 String formatarData(DateTime data) =>

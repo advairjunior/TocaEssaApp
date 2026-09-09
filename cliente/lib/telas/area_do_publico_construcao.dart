@@ -75,7 +75,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                         apresentacao.perfilArtistico.fotoUrl,
                       ),
                     )
-                  else
+                  else if (_abaSelecionada != _indicePerfil)
                     _CartaoApresentacaoPublica(
                       apresentacao: apresentacao,
                       enderecoFoto: _api.enderecoArquivo(
@@ -135,21 +135,60 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                     : null,
           )
         else ...[
-          _PerfilPublicoAtivo(
-            perfil: _perfilPublico!,
-            estatisticas: _estatisticasPublico,
-            enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),
-            enviandoFoto: _enviandoFotoPublico,
-            trocarFoto: _selecionarFotoPublico,
-            sair: _sairDoPerfilPublico,
-          ),
-          if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos &&
-              _minhaParticipacaoNaResenha != null) ...[
-            const SizedBox(height: 24),
-            ..._construirRetrospectivaDoPublico(
-              apresentacao,
-              _minhaParticipacaoNaResenha!,
+          if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(
+                    value: false,
+                    label: Text('Perfil geral'),
+                    icon: Icon(Icons.person_outline)),
+                ButtonSegment(
+                    value: true,
+                    label: Text('Nesta resenha'),
+                    icon: Icon(Icons.celebration_outlined)),
+              ],
+              selected: {_perfilDaResenha},
+              onSelectionChanged: (valores) =>
+                  _mudarEstado(() => _perfilDaResenha = valores.single),
             ),
+            const SizedBox(height: 16),
+          ],
+          if (!_perfilDaResenha ||
+              apresentacao.tipo == TipoApresentacao.publica) ...[
+            const Text('Sua conta e sua trajetória em todas as apresentações.'),
+            const SizedBox(height: 12),
+            _PerfilPublicoAtivo(
+              perfil: _perfilPublico!,
+              estatisticas: _estatisticasPublico,
+              enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),
+              enviandoFoto: _enviandoFotoPublico,
+              trocarFoto: _selecionarFotoPublico,
+              sair: _sairDoPerfilPublico,
+            ),
+          ] else ...[
+            _CabecalhoCompactoPedido(
+              apresentacao: apresentacao,
+              enderecoFoto:
+                  _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
+            ),
+            const SizedBox(height: 16),
+            const Text('Sua participação apenas neste encontro.'),
+            const SizedBox(height: 12),
+            if (_minhaParticipacaoNaResenha == null)
+              const Text(
+                  'Sua participação está sendo atualizada. Aguarde um instante.')
+            else ...[
+              _CartaoPessoaDaResenha(
+                participante: _minhaParticipacaoNaResenha!,
+                souEu: true,
+                enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),
+              ),
+              const SizedBox(height: 24),
+              ..._construirRetrospectivaDoPublico(
+                apresentacao,
+                _minhaParticipacaoNaResenha!,
+              ),
+            ],
           ],
         ],
       ];

@@ -92,7 +92,9 @@ public sealed partial class RepositorioTocaEssa
             .Where(item => item.PublicoId == publicoId &&
                            _pedidos.GetValueOrDefault(item.PedidoId)?.ApresentacaoId ==
                            apresentacaoId)
-            .Select(item => item.Estrelas)
+            .OrderByDescending(item => item.AvaliadoEm)
+            .Select(item => new AvaliacaoNaResenha(
+                _pedidos[item.PedidoId].Musica, item.Estrelas, item.AvaliadoEm))
             .ToArray();
         return new ParticipanteDaResenha(
             publicoId,
@@ -100,7 +102,9 @@ public sealed partial class RepositorioTocaEssa
             perfil?.FotoUrl,
             pedidos.Length,
             pedidos.Count(item => item.Status == StatusPedidoMusical.Finalizado),
-            avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(), 1),
-            AgruparMusicas(pedidos));
+            avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(item => item.Estrelas), 1),
+            AgruparMusicas(pedidos),
+            Avaliacoes: avaliacoes,
+            EstatisticasGerais: CalcularEstatisticasGerais(publicoId));
     }
 }

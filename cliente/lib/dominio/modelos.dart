@@ -417,6 +417,8 @@ class ParticipanteDaResenha {
     this.fotoUrl,
     this.mediaAvaliacoes,
     this.ehArtista = false,
+    this.estatisticasGerais,
+    this.avaliacoes = const [],
   });
 
   final String publicoId;
@@ -427,6 +429,8 @@ class ParticipanteDaResenha {
   final double? mediaAvaliacoes;
   final List<MusicaMaisPedida> musicasMaisPedidas;
   final bool ehArtista;
+  final EstatisticasDoPublico? estatisticasGerais;
+  final List<AvaliacaoNaResenha> avaliacoes;
 
   factory ParticipanteDaResenha.deJson(Map<String, dynamic> json) =>
       ParticipanteDaResenha(
@@ -441,5 +445,24 @@ class ParticipanteDaResenha {
                 (item) => MusicaMaisPedida.deJson(item as Map<String, dynamic>))
             .toList(),
         ehArtista: json['ehArtista'] as bool? ?? false,
+        estatisticasGerais: json['estatisticasGerais'] == null ? null :
+            EstatisticasDoPublico.deJson(json['estatisticasGerais'] as Map<String, dynamic>),
+        avaliacoes: (json['avaliacoes'] as List<dynamic>? ?? [])
+            .map((item) =>
+                AvaliacaoNaResenha.deJson(item as Map<String, dynamic>))
+            .toList(),
       );
+}
+
+class AvaliacaoNaResenha {
+  const AvaliacaoNaResenha(
+      {required this.musica, required this.estrelas, required this.avaliadoEm});
+  final String musica;
+  final int estrelas;
+  final DateTime avaliadoEm;
+  factory AvaliacaoNaResenha.deJson(Map<String, dynamic> json) =>
+      AvaliacaoNaResenha(
+          musica: json['musica'] as String,
+          estrelas: json['estrelas'] as int,
+          avaliadoEm: DateTime.parse(json['avaliadoEm'] as String));
 }

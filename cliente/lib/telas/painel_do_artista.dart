@@ -7,6 +7,7 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'perfil_participante.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'fila_musical_artista.dart';
 

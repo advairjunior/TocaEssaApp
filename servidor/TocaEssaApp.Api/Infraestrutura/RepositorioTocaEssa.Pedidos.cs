@@ -106,23 +106,23 @@ public sealed partial class RepositorioTocaEssa
     {
         var publico = ObterRegistroPublico(token)
             ?? throw new SessaoPublicaInvalidaException();
-        var idsResenhas = _apresentacoes.Values
-            .Where(item => item.Tipo == TipoApresentacao.ResenhaEntreAmigos)
-            .Select(item => item.Id)
-            .ToHashSet();
+        return CalcularEstatisticasGerais(publico.Id);
+    }
+
+    private EstatisticasDoPublico CalcularEstatisticasGerais(Guid publicoId)
+    {
         var pedidos = _pedidos.Values
-            .Where(item => item.PublicoId == publico.Id &&
+            .Where(item => item.PublicoId == publicoId &&
                            item.Tipo == TipoPedido.Musica &&
-                           idsResenhas.Contains(item.ApresentacaoId) &&
                            item.Status != StatusPedidoMusical.CanceladoPeloPublico)
             .ToArray();
         var avaliacoes = _avaliacoes.Values
-            .Where(item => item.PublicoId == publico.Id)
+            .Where(item => item.PublicoId == publicoId)
             .Select(item => item.Estrelas)
             .ToArray();
         return new EstatisticasDoPublico(
             _participacoesResenha.Values
-                .Where(item => item.PublicoId == publico.Id)
+                .Where(item => item.PublicoId == publicoId)
                 .Select(item => item.ApresentacaoId)
                 .Concat(pedidos.Select(item => item.ApresentacaoId))
                 .Distinct()

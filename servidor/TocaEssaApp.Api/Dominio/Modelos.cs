@@ -148,4 +148,9 @@ public sealed record ParticipanteDaResenha(
     int PedidosTocados,
     double? MediaAvaliacoes,
     IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas,
-    bool EhArtista = false);
+    bool EhArtista = false,
+    IReadOnlyCollection<AvaliacaoNaResenha>? Avaliacoes = null,
+    EstatisticasDoPublico? EstatisticasGerais = null);
+
+public sealed record AvaliacaoNaResenha(
+    string Musica, int Estrelas, DateTimeOffset AvaliadoEm);
