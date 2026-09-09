@@ -113,6 +113,10 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
       if (!mounted) return;
       _mudarEstado(() {
         _apresentacoes.removeWhere((item) => item.id == apresentacao.id);
+        if (_dentroDaApresentacao && _apresentacaoGestaoId == apresentacao.id) {
+          _dentroDaApresentacao = false;
+          _abaSelecionada = 0;
+        }
         if (_apresentacaoGestaoId == apresentacao.id) {
           _apresentacaoGestaoId =
               _escolherApresentacaoDaGestao(_apresentacoes)?.id;

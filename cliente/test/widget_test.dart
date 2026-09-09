@@ -217,17 +217,13 @@ void main() {
 
     expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Nome artístico'), findsNothing);
-    await tester.tap(find.text('Fila').last);
-    await tester.pumpAndSettle();
-    expect(
-      find.text('Crie uma Apresentação para usar esta área.'),
-      findsOneWidget,
-    );
+    expect(find.text('Fila'), findsNothing);
+    expect(find.text('Galera'), findsNothing);
     await tester.tap(find.text('Criar').last);
     await tester.pumpAndSettle();
     expect(find.text('Nova Apresentação'), findsOneWidget);
     expect(find.text('Nenhuma Apresentação ainda'), findsNothing);
-    await tester.tap(find.text('Perfil').last);
+    await tester.tap(find.text('Perfil geral').last);
     await tester.pumpAndSettle();
 
     expect(find.text('Perfil Artístico'), findsOneWidget);
@@ -267,6 +263,8 @@ void main() {
     final acessarPainel = find.text('Acessar Painel do Artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Resenha de sexta'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Galera').last);
     await tester.pumpAndSettle();
@@ -314,7 +312,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Show anterior'), findsOneWidget);
     expect(find.text('Ver estatísticas'), findsNothing);
-    expect(find.text('Estatísticas'), findsOneWidget);
+    expect(find.text('Estatísticas'), findsNothing);
   });
 
   testWidgets('mostra QR Code depois de criar apresentação', (tester) async {
@@ -399,6 +397,10 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
     final opcoes = find.byTooltip('Opções da Apresentação');
+    await tester.tap(find.text('Noite Acústica'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Apresentação').last);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(opcoes);
     await tester.tap(opcoes);
     await tester.pumpAndSettle();
@@ -416,7 +418,7 @@ void main() {
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Especial de Sábado'), findsOneWidget);
+    expect(find.text('Especial de Sábado'), findsWidgets);
     expect(find.textContaining('Praça Central'), findsOneWidget);
   });
 
@@ -452,6 +454,8 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
     final iniciar = find.text('Iniciar Apresentação');
+    await tester.tap(find.text('Noite Acústica'));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(iniciar);
     await tester.tap(iniciar);
     await tester.pumpAndSettle();

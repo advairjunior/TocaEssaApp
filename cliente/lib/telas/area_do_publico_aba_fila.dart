@@ -36,7 +36,7 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                 .where((item) => item.status == StatusPedidoMusical.finalizado)
                 .toList()
                 .reversed
-                .take(10)
+                .take(widget.revisitar ? pedidos.length : 10)
                 .toList();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

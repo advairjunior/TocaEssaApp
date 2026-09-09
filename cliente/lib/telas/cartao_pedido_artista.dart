@@ -11,12 +11,14 @@ class CartaoPedidoArtista extends StatelessWidget {
     required this.alterar,
     this.inicio,
     this.fim,
+    this.somenteLeitura = false,
   });
 
   final PedidoMusical pedido;
   final ValueChanged<StatusPedidoMusical> alterar;
   final Widget? inicio;
   final Widget? fim;
+  final bool somenteLeitura;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -51,7 +53,7 @@ class CartaoPedidoArtista extends StatelessWidget {
                 const SizedBox(height: 8),
                 _avaliacao(),
               ],
-              if (_acoes().isNotEmpty) ...[
+              if (!somenteLeitura && _acoes().isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Wrap(spacing: 8, runSpacing: 8, children: _acoes()),
               ],

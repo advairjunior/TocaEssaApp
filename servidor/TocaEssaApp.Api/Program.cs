@@ -185,6 +185,10 @@ app.MapGet("/api/publico/estatisticas", (
     Results.Ok(repositorio.ObterEstatisticasDoPublico(
         ObterToken(http) ?? string.Empty)));
 
+app.MapGet("/api/publico/apresentacoes", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarApresentacoesDoPublico(ObterToken(http) ?? string.Empty)));
+
 app.MapDelete("/api/publico/sessoes/atual", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

@@ -27,13 +27,14 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
   bool _nestaResenha = false;
 
   Widget _seletorPerfil() => SegmentedButton<bool>(
-    segments: const [
-      ButtonSegment(value: false, label: Text('Geral')),
-      ButtonSegment(value: true, label: Text('Nesta resenha')),
-    ],
-    selected: {_nestaResenha},
-    onSelectionChanged: (valor) => setState(() => _nestaResenha = valor.single),
-  );
+        segments: const [
+          ButtonSegment(value: false, label: Text('Geral')),
+          ButtonSegment(value: true, label: Text('Nesta resenha')),
+        ],
+        selected: {_nestaResenha},
+        onSelectionChanged: (valor) =>
+            setState(() => _nestaResenha = valor.single),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +79,7 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
       ),
     ];
     return Scaffold(
-        appBar: AppBar(title: const Text('Perfil do participante')),
+      appBar: AppBar(title: const Text('Perfil do participante')),
       body: SafeArea(
           child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -119,8 +120,10 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
               if (pessoa.estatisticasGerais != null)
                 ProgressoDoPublico(dados: pessoa.estatisticasGerais!)
               else
-                const Padding(padding: EdgeInsets.all(20),
-                    child: Text('O perfil geral está indisponível no momento. Você pode consultar os dados desta resenha.')),
+                const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                        'O perfil geral está indisponível no momento. Você pode consultar os dados desta resenha.')),
             ] else ...[
               _seletorPerfil(),
               const SizedBox(height: 16),

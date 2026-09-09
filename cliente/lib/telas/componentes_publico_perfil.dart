@@ -1,8 +1,9 @@
 part of 'area_do_publico.dart';
 
-class _PerfilPublicoAtivo extends StatelessWidget {
-  const _PerfilPublicoAtivo(
-      {required this.perfil,
+class PerfilPublicoAtivo extends StatelessWidget {
+  const PerfilPublicoAtivo(
+      {super.key,
+      required this.perfil,
       required this.estatisticas,
       required this.enderecoFoto,
       required this.enviandoFoto,

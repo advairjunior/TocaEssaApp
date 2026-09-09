@@ -26,22 +26,23 @@ extension _AbaGaleraPainelDoArtista on _PainelDoArtistaState {
         style: TextStyle(color: CoresTocaEssa.textoSecundario),
       ),
       const SizedBox(height: 16),
-      DropdownButtonFormField<String>(
-        value: selecionada.id,
-        decoration: const InputDecoration(
-          labelText: 'Resenha',
-          prefixIcon: Icon(Icons.celebration_rounded),
+      if (!_dentroDaApresentacao)
+        DropdownButtonFormField<String>(
+          value: selecionada.id,
+          decoration: const InputDecoration(
+            labelText: 'Resenha',
+            prefixIcon: Icon(Icons.celebration_rounded),
+          ),
+          items: _resenhas
+              .map((item) => DropdownMenuItem(
+                    value: item.id,
+                    child: Text(item.nome, overflow: TextOverflow.ellipsis),
+                  ))
+              .toList(),
+          onChanged: (id) {
+            if (id != null) _carregarGalera(id);
+          },
         ),
-        items: _resenhas
-            .map((item) => DropdownMenuItem(
-                  value: item.id,
-                  child: Text(item.nome, overflow: TextOverflow.ellipsis),
-                ))
-            .toList(),
-        onChanged: (id) {
-          if (id != null) _carregarGalera(id);
-        },
-      ),
       const SizedBox(height: 18),
       if (_carregandoGalera)
         const Center(child: CircularProgressIndicator())

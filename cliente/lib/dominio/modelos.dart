@@ -445,8 +445,10 @@ class ParticipanteDaResenha {
                 (item) => MusicaMaisPedida.deJson(item as Map<String, dynamic>))
             .toList(),
         ehArtista: json['ehArtista'] as bool? ?? false,
-        estatisticasGerais: json['estatisticasGerais'] == null ? null :
-            EstatisticasDoPublico.deJson(json['estatisticasGerais'] as Map<String, dynamic>),
+        estatisticasGerais: json['estatisticasGerais'] == null
+            ? null
+            : EstatisticasDoPublico.deJson(
+                json['estatisticasGerais'] as Map<String, dynamic>),
         avaliacoes: (json['avaliacoes'] as List<dynamic>? ?? [])
             .map((item) =>
                 AvaliacaoNaResenha.deJson(item as Map<String, dynamic>))

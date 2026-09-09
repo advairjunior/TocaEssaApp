@@ -15,6 +15,7 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   bool _enviandoFoto = false;
   bool _carregandoGalera = false;
   int _abaSelecionada = 0;
+  bool _dentroDaApresentacao = false;
   String? _resenhaGaleraId;
   String? _apresentacaoGestaoId;
   _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.aoVivo;
@@ -118,6 +119,25 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     setState(() => _abaSelecionada = indice);
     if (indice == 4) await _carregarGalera();
   }
+
+  void _abrirApresentacao(Apresentacao apresentacao) {
+    setState(() {
+      _apresentacaoGestaoId = apresentacao.id;
+      _resenhaGaleraId = apresentacao.id;
+      _galera = [];
+      _dentroDaApresentacao = true;
+      _abaSelecionada = switch (apresentacao.status) {
+        StatusApresentacao.encerrada => 3,
+        StatusApresentacao.agendada => 6,
+        StatusApresentacao.emAndamento => 1,
+      };
+    });
+  }
+
+  void _voltarParaApresentacoes() => setState(() {
+        _dentroDaApresentacao = false;
+        _abaSelecionada = 0;
+      });
 
   Future<void> _carregarGalera([String? apresentacaoId]) async {
     final id = apresentacaoId ?? _resenhaGaleraId;

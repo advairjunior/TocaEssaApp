@@ -2,7 +2,12 @@ part of 'area_do_publico.dart';
 
 extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
   Widget _construirArea(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Área do Público')),
+        appBar: AppBar(title: const Text('Área do Público'), actions: [
+          IconButton(
+              tooltip: 'Minha conta e histórico',
+              icon: const Icon(Icons.account_circle_outlined),
+              onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
+        ]),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _abaSelecionada,
           onDestinationSelected: (indice) {
@@ -157,7 +162,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               apresentacao.tipo == TipoApresentacao.publica) ...[
             const Text('Sua conta e sua trajetória em todas as apresentações.'),
             const SizedBox(height: 12),
-            _PerfilPublicoAtivo(
+            PerfilPublicoAtivo(
               perfil: _perfilPublico!,
               estatisticas: _estatisticasPublico,
               enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),

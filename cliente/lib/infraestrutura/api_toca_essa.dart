@@ -540,6 +540,17 @@ class ApiTocaEssa {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
+  Future<List<Apresentacao>> listarApresentacoesDoPublico(String token) async {
+    final resposta = await _cliente.get(
+      Uri.parse('$_enderecoBase/api/publico/apresentacoes'),
+      headers: _cabecalhos(token: token),
+    );
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((item) => Apresentacao.deJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Map<String, String> _cabecalhos({String? token, bool json = false}) => {
         if (json) 'Content-Type': 'application/json',
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',

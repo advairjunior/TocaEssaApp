@@ -5,6 +5,7 @@ import 'tema/tema_toca_essa.dart';
 import 'telas/area_do_publico.dart';
 import 'telas/acesso_do_artista.dart';
 import 'telas/inicio.dart';
+import 'telas/conta_do_publico.dart';
 
 void main() => runApp(const TocaEssaApp());
 
@@ -33,6 +34,10 @@ class TocaEssaApp extends StatelessWidget {
         if (uri.path == '/artista') {
           return MaterialPageRoute<void>(
               builder: (_) => AcessoDoArtista(api: servico));
+        }
+        if (uri.path == '/minha-conta') {
+          return MaterialPageRoute<void>(
+              builder: (_) => ContaDoPublico(api: servico));
         }
         return MaterialPageRoute<void>(builder: (_) => Inicio(api: servico));
       },

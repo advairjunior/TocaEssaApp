@@ -61,6 +61,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   @override
   void initState() {
     super.initState();
+    if (widget.revisitar) _abaSelecionada = 1;
     _consulta = widget.api
         .obterApresentacaoPublica(widget.codigoInicial)
         .then((apresentacao) {

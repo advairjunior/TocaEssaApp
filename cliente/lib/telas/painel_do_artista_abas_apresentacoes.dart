@@ -116,21 +116,16 @@ extension _ConstrucaoApresentacoesDoArtista on _PainelDoArtistaState {
             _EstadoVazioApresentacoes(filtro: _filtroApresentacoes)
           else
             for (final apresentacao in _apresentacoesFiltradas) ...[
-              _CartaoApresentacaoArtista(
-                apresentacao: apresentacao,
-                salvando: _salvando,
-                mostrarCodigo: () => _mostrarCodigo(apresentacao),
-                alterarStatus: (status) =>
-                    _alterarStatusApresentacao(apresentacao, status),
-                alterarPedidos: () => _alterarPedidos(apresentacao),
-                selecionarOpcao: (opcao) {
-                  if (opcao == 'editar') {
-                    _editarApresentacao(apresentacao);
-                  } else if (opcao == 'excluir') {
-                    _excluirApresentacao(apresentacao);
-                  }
-                },
-              ),
+              Card(
+                  child: ListTile(
+                contentPadding: const EdgeInsets.all(18),
+                onTap: () => _abrirApresentacao(apresentacao),
+                title: Text(apresentacao.nome),
+                subtitle: Text(
+                    '${formatarData(apresentacao.data)} · ${apresentacao.local}\n${apresentacao.tipo.rotulo}'),
+                isThreeLine: true,
+                trailing: const Icon(Icons.chevron_right),
+              )),
               const SizedBox(height: 12),
             ],
         ] else ...[

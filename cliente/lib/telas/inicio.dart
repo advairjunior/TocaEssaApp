@@ -141,6 +141,12 @@ class _InicioState extends State<Inicio> {
                   ),
                 ),
                 const SizedBox(height: 22),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/minha-conta'),
+                  icon: const Icon(Icons.history),
+                  label: const Text('Minha conta e minhas resenhas'),
+                ),
+                const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(

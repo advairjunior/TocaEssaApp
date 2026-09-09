@@ -156,112 +156,131 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   Widget build(BuildContext context) {
     final conteudoFila = _carregando
         ? const Center(child: CircularProgressIndicator())
-        : ConteudoMobile(
-            filho: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(widget.apresentacao.nome,
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                Text(
-                    '${formatarData(widget.apresentacao.data)} · ${widget.apresentacao.local}'),
-                const SizedBox(height: 4),
-                Text(
-                  '${widget.apresentacao.tipo.rotulo} · ${widget.apresentacao.status.rotulo}',
-                  style: const TextStyle(
-                    color: CoresTocaEssa.roxoClaro,
-                    fontWeight: FontWeight.w600,
-                  ),
+        : widget.apresentacao.status == StatusApresentacao.encerrada
+            ? ConteudoMobile(
+                filho: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const _TituloSecao('Memórias musicais'),
+                    const Text('Pedidos e alôs desta apresentação encerrada.'),
+                    const SizedBox(height: 16),
+                    if (_pedidos.isEmpty)
+                      const _MensagemVazia('Nenhum pedido registrado.'),
+                    for (final pedido in _pedidos)
+                      CartaoPedidoArtista(
+                        pedido: pedido,
+                        somenteLeitura: true,
+                        alterar: (_) {},
+                      ),
+                  ],
                 ),
-                if (_tocando.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const _TituloSecao('Tocando agora'),
-                  const SizedBox(height: 10),
-                  for (final pedido in _tocando)
-                    CartaoPedidoArtista(
-                        pedido: pedido,
-                        alterar: (status) => _alterar(pedido, status)),
-                ],
-                if (_alosPendentes.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  _TituloSecao('Pedidos de Alô',
-                      quantidade: _alosPendentes.length),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Aceite e mande o recado no microfone quando for oportuno.',
-                    style: TextStyle(color: CoresTocaEssa.textoSecundario),
-                  ),
-                  const SizedBox(height: 10),
-                  for (final pedido in _alosPendentes) ...[
-                    CartaoPedidoArtista(
-                        pedido: pedido,
-                        alterar: (status) => _alterar(pedido, status)),
+              )
+            : ConteudoMobile(
+                filho: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(widget.apresentacao.nome,
+                        style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 4),
+                    Text(
+                        '${formatarData(widget.apresentacao.data)} · ${widget.apresentacao.local}'),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${widget.apresentacao.tipo.rotulo} · ${widget.apresentacao.status.rotulo}',
+                      style: const TextStyle(
+                        color: CoresTocaEssa.roxoClaro,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (_tocando.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      const _TituloSecao('Tocando agora'),
+                      const SizedBox(height: 10),
+                      for (final pedido in _tocando)
+                        CartaoPedidoArtista(
+                            pedido: pedido,
+                            alterar: (status) => _alterar(pedido, status)),
+                    ],
+                    if (_alosPendentes.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      _TituloSecao('Pedidos de Alô',
+                          quantidade: _alosPendentes.length),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'Aceite e mande o recado no microfone quando for oportuno.',
+                        style: TextStyle(color: CoresTocaEssa.textoSecundario),
+                      ),
+                      const SizedBox(height: 10),
+                      for (final pedido in _alosPendentes) ...[
+                        CartaoPedidoArtista(
+                            pedido: pedido,
+                            alterar: (status) => _alterar(pedido, status)),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
+                    const SizedBox(height: 24),
+                    _TituloSecao('Pedidos aguardando',
+                        quantidade: _aguardando.length),
                     const SizedBox(height: 10),
-                  ],
-                ],
-                const SizedBox(height: 24),
-                _TituloSecao('Pedidos aguardando',
-                    quantidade: _aguardando.length),
-                const SizedBox(height: 10),
-                if (_aguardando.isEmpty)
-                  const _MensagemVazia('Nenhum pedido aguardando análise.')
-                else
-                  for (final pedido in _aguardando) ...[
-                    CartaoPedidoArtista(
-                        pedido: pedido,
-                        alterar: (status) => _alterar(pedido, status)),
+                    if (_aguardando.isEmpty)
+                      const _MensagemVazia('Nenhum pedido aguardando análise.')
+                    else
+                      for (final pedido in _aguardando) ...[
+                        CartaoPedidoArtista(
+                            pedido: pedido,
+                            alterar: (status) => _alterar(pedido, status)),
+                        const SizedBox(height: 10),
+                      ],
+                    const SizedBox(height: 24),
+                    _TituloSecao('Fila Musical', quantidade: _fila.length),
+                    const SizedBox(height: 4),
+                    const Text('Pressione e arraste para mudar a ordem.',
+                        style: TextStyle(color: CoresTocaEssa.textoSecundario)),
                     const SizedBox(height: 10),
-                  ],
-                const SizedBox(height: 24),
-                _TituloSecao('Fila Musical', quantidade: _fila.length),
-                const SizedBox(height: 4),
-                const Text('Pressione e arraste para mudar a ordem.',
-                    style: TextStyle(color: CoresTocaEssa.textoSecundario)),
-                const SizedBox(height: 10),
-                if (_fila.isEmpty)
-                  const _MensagemVazia(
-                      'Aceite um pedido para adicioná-lo à fila.')
-                else
-                  ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    buildDefaultDragHandles: false,
-                    itemCount: _fila.length,
-                    onReorder: _reordenar,
-                    itemBuilder: (context, indice) {
-                      final pedido = _fila[indice];
-                      return Padding(
-                        key: ValueKey(pedido.id),
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: CartaoPedidoArtista(
-                          pedido: pedido,
-                          alterar: (status) => _alterar(pedido, status),
-                          inicio: CircleAvatar(
-                              radius: 17, child: Text('${indice + 1}')),
-                          fim: ReorderableDragStartListener(
-                            index: indice,
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(Icons.drag_handle_rounded,
-                                  color: CoresTocaEssa.roxoClaro),
+                    if (_fila.isEmpty)
+                      const _MensagemVazia(
+                          'Aceite um pedido para adicioná-lo à fila.')
+                    else
+                      ReorderableListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        buildDefaultDragHandles: false,
+                        itemCount: _fila.length,
+                        onReorder: _reordenar,
+                        itemBuilder: (context, indice) {
+                          final pedido = _fila[indice];
+                          return Padding(
+                            key: ValueKey(pedido.id),
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: CartaoPedidoArtista(
+                              pedido: pedido,
+                              alterar: (status) => _alterar(pedido, status),
+                              inicio: CircleAvatar(
+                                  radius: 17, child: Text('${indice + 1}')),
+                              fim: ReorderableDragStartListener(
+                                index: indice,
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(Icons.drag_handle_rounded,
+                                      color: CoresTocaEssa.roxoClaro),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                if (_historico.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const _TituloSecao('Histórico'),
-                  const SizedBox(height: 10),
-                  for (final pedido in _historico) ...[
-                    CartaoPedidoArtista(pedido: pedido, alterar: (_) {}),
-                    const SizedBox(height: 10),
+                          );
+                        },
+                      ),
+                    if (_historico.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      const _TituloSecao('Histórico'),
+                      const SizedBox(height: 10),
+                      for (final pedido in _historico) ...[
+                        CartaoPedidoArtista(pedido: pedido, alterar: (_) {}),
+                        const SizedBox(height: 10),
+                      ],
+                    ],
                   ],
-                ],
-              ],
-            ),
-          );
+                ),
+              );
     if (widget.incorporada) return conteudoFila;
     return Scaffold(
       appBar: AppBar(

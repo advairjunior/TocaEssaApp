@@ -32,10 +32,14 @@ part 'componentes_publico_fila.dart';
 
 class AreaDoPublico extends StatefulWidget {
   const AreaDoPublico(
-      {super.key, required this.api, required this.codigoInicial});
+      {super.key,
+      required this.api,
+      required this.codigoInicial,
+      this.revisitar = false});
 
   final ApiTocaEssa api;
   final String codigoInicial;
+  final bool revisitar;
 
   @override
   State<AreaDoPublico> createState() => _AreaDoPublicoState();
