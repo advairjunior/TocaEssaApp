@@ -58,14 +58,36 @@ public class CifrasDoArtistaTestes
     [InlineData("javascript:alert(1)")]
     [InlineData("https://usuario:senha@exemplo.com/cifra")]
     [InlineData("http://localhost/cifra")]
+    [InlineData("http://localhost./cifra")]
     [InlineData("http://127.0.0.1/cifra")]
+    [InlineData("http://0.0.0.0/cifra")]
     [InlineData("http://192.168.1.10/cifra")]
+    [InlineData("http://[::]/cifra")]
+    [InlineData("http://[::ffff:192.168.1.10]/cifra")]
+    [InlineData("http://224.0.0.1/cifra")]
     public void RecusaEnderecoPerigoso(string url)
     {
         var repo = CriarRepositorioComConta("ana@teste.com", out var token);
 
         Assert.Throws<UrlDeCifraInvalidaException>(() =>
             repo.SalvarCifraDoArtista(token, "Música", null, url));
+    }
+
+    [Fact]
+    public void RecusaCamposAusentesOuMaioresQueOPersistido()
+    {
+        var repo = CriarRepositorioComConta("ana@teste.com", out var token);
+
+        Assert.Throws<UrlDeCifraInvalidaException>(() =>
+            repo.SalvarCifraDoArtista(token, "Música", null, null!));
+        Assert.Throws<DadosDeCifraInvalidosException>(() =>
+            repo.SalvarCifraDoArtista(token, new string('M', 201), null,
+                "https://exemplo.com/cifra"));
+        Assert.Throws<DadosDeCifraInvalidosException>(() =>
+            repo.SalvarCifraDoArtista(token, "Música", new string('A', 201),
+                "https://exemplo.com/cifra"));
+
+        Assert.Empty(repo.ListarCifrasDoArtista(token));
     }
 
     [Fact]

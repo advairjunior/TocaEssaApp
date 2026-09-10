@@ -88,6 +88,8 @@ public sealed class SessaoArtistaInvalidaException : Exception { }
 
 public sealed class UrlDeCifraInvalidaException : Exception { }
 
+public sealed class DadosDeCifraInvalidosException : Exception { }
+
 public sealed class CifraDoArtistaNaoEncontradaException : Exception { }
 
 public sealed class RecursoDisponivelSomenteNaResenhaException : Exception { }

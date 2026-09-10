@@ -12,6 +12,7 @@ public sealed partial class RepositorioTocaEssa
     {
         var conta = ObterRegistroArtista(token)
             ?? throw new SessaoArtistaInvalidaException();
+        ValidarIdentificacao(musica, artista);
         var chave = CriarChave(conta.Id, musica, artista);
         _cifrasDoArtista.TryGetValue(chave, out var registro);
         return new ResultadoCifraDoArtista(
@@ -38,6 +39,7 @@ public sealed partial class RepositorioTocaEssa
         {
             var conta = ObterRegistroArtista(token)
                 ?? throw new SessaoArtistaInvalidaException();
+            ValidarIdentificacao(musica, artista);
             var endereco = ValidarUrl(url);
             var chave = CriarChave(conta.Id, musica, artista);
             var agora = DateTimeOffset.UtcNow;
@@ -115,9 +117,17 @@ public sealed partial class RepositorioTocaEssa
         return $"https://www.google.com/search?q={Uri.EscapeDataString(termos)}";
     }
 
-    private static Uri ValidarUrl(string url)
+    private static void ValidarIdentificacao(string? musica, string? artista)
     {
-        if (url.Length > 2048 || !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri) ||
+        if (string.IsNullOrWhiteSpace(musica) || musica.Trim().Length > 200 ||
+            artista?.Trim().Length > 200)
+            throw new DadosDeCifraInvalidosException();
+    }
+
+    private static Uri ValidarUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || url.Length > 2048 ||
+            !Uri.TryCreate(url.Trim(), UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp) ||
             !string.IsNullOrEmpty(uri.UserInfo) || string.IsNullOrWhiteSpace(uri.IdnHost) ||
             HostLocalOuPrivado(uri.IdnHost))
@@ -127,15 +137,22 @@ public sealed partial class RepositorioTocaEssa
 
     private static bool HostLocalOuPrivado(string host)
     {
+        host = host.TrimEnd('.');
         if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
             host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)) return true;
         if (!IPAddress.TryParse(host, out var ip)) return !host.Contains('.');
-        if (IPAddress.IsLoopback(ip) || ip.IsIPv6LinkLocal || ip.IsIPv6SiteLocal) return true;
+        if (ip.IsIPv4MappedToIPv6) ip = ip.MapToIPv4();
+        if (IPAddress.IsLoopback(ip) || ip.Equals(IPAddress.Any) ||
+            ip.Equals(IPAddress.IPv6Any) || ip.IsIPv6LinkLocal ||
+            ip.IsIPv6SiteLocal || ip.IsIPv6Multicast) return true;
         var bytes = ip.GetAddressBytes();
-        return bytes.Length == 4 && (bytes[0] == 10 || bytes[0] == 127 ||
+        if (bytes.Length == 16) return (bytes[0] & 0xE0) != 0x20;
+        return bytes[0] == 0 || bytes[0] == 10 || bytes[0] == 127 ||
+            (bytes[0] == 100 && bytes[1] is >= 64 and <= 127) ||
             (bytes[0] == 169 && bytes[1] == 254) ||
             (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) ||
-            (bytes[0] == 192 && bytes[1] == 168));
+            (bytes[0] == 192 && (bytes[1] == 0 || bytes[1] == 168)) ||
+            (bytes[0] == 198 && bytes[1] is 18 or 19) || bytes[0] >= 224;
     }
 
     private static CifraDoArtista ParaDominio(CifraDoArtistaRegistro item) =>

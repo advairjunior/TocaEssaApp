@@ -22,13 +22,15 @@ class FilaMusicalArtista extends StatefulWidget {
       required this.apresentacao,
       this.abaInicial = 0,
       this.incorporada = false,
-      this.abrirUrl = abrirUrlExterna});
+      this.abrirUrl = abrirUrlExterna,
+      this.prepararAbertura = prepararAberturaExterna});
 
   final ApiTocaEssa api;
   final Apresentacao apresentacao;
   final int abaInicial;
   final bool incorporada;
   final Future<void> Function(Uri url) abrirUrl;
+  final FinalizarAberturaExterna Function() prepararAbertura;
 
   @override
   State<FilaMusicalArtista> createState() => _FilaMusicalArtistaState();

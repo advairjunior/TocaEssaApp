@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
 
-enum TipoDecisaoCifra { salvar, pesquisar, remover }
+enum TipoDecisaoCifra { salvar, remover }
 
 class DecisaoCifra {
   const DecisaoCifra(this.tipo, [this.url]);
@@ -17,6 +17,7 @@ Future<DecisaoCifra?> mostrarEscolhaDeCifra(
   required String musica,
   required String? artista,
   required ResultadoCifraDoArtista resultado,
+  required Future<void> Function(Uri url) abrirUrl,
 }) =>
     showDialog<DecisaoCifra>(
       context: context,
@@ -24,6 +25,7 @@ Future<DecisaoCifra?> mostrarEscolhaDeCifra(
         musica: musica,
         artista: artista,
         resultado: resultado,
+        abrirUrl: abrirUrl,
       ),
     );
 
@@ -32,11 +34,13 @@ class _EscolherCifra extends StatefulWidget {
     required this.musica,
     required this.artista,
     required this.resultado,
+    required this.abrirUrl,
   });
 
   final String musica;
   final String? artista;
   final ResultadoCifraDoArtista resultado;
+  final Future<void> Function(Uri url) abrirUrl;
 
   @override
   State<_EscolherCifra> createState() => _EscolherCifraState();
@@ -66,6 +70,24 @@ class _EscolherCifraState extends State<_EscolherCifra> {
     );
   }
 
+  Future<void> _abrir(String url) async {
+    final endereco = Uri.tryParse(url.trim());
+    if (endereco == null || !endereco.hasScheme) return;
+    try {
+      await widget.abrirUrl(endereco);
+    } catch (erro) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(erro.toString())),
+      );
+    }
+  }
+
+  Future<void> _abrirSugestao(String sugestao) async {
+    _url.text = sugestao;
+    await _abrir(sugestao);
+  }
+
   @override
   Widget build(BuildContext context) => AlertDialog(
         title: const Text('Escolher cifra'),
@@ -87,17 +109,14 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                   const Text('Sugestão do Cifra Club'),
                   const SizedBox(height: 8),
                   FilledButton.icon(
-                    onPressed: () => _salvar(sugestao),
+                    onPressed: () => _abrirSugestao(sugestao),
                     icon: const Icon(Icons.auto_awesome_rounded),
-                    label: const Text('Usar sugestão'),
+                    label: const Text('Abrir sugestão'),
                   ),
                 ],
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(
-                    context,
-                    const DecisaoCifra(TipoDecisaoCifra.pesquisar),
-                  ),
+                  onPressed: () => _abrir(widget.resultado.urlPesquisa),
                   icon: const Icon(Icons.search_rounded),
                   label: const Text('Pesquisar na web'),
                 ),
@@ -111,6 +130,12 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                     prefixIcon: Icon(Icons.link_rounded),
                   ),
                   onSubmitted: _salvar,
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: () => _abrir(_url.text),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Abrir link para conferir'),
                 ),
               ],
             ),
@@ -131,8 +156,7 @@ class _EscolherCifraState extends State<_EscolherCifra> {
           ),
           FilledButton(
             onPressed: () => _salvar(_url.text),
-            child: Text(
-                widget.resultado.cifra == null ? 'Salvar link' : 'Trocar link'),
+            child: const Text('Confirmar cifra'),
           ),
         ],
       );

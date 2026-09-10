@@ -108,6 +108,14 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "Informe um link público HTTP ou HTTPS válido."
             });
         }
+        catch (DadosDeCifraInvalidosException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Informe música e artista com até 200 caracteres."
+            });
+        }
         catch (CifraDoArtistaNaoEncontradaException)
         {
             contexto.Response.StatusCode = StatusCodes.Status404NotFound;

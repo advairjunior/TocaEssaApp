@@ -136,7 +136,7 @@ void main() {
       home: FilaMusicalArtista(
         api: api,
         apresentacao: _apresentacao(),
-        abrirUrl: (url) async => aberta = url,
+        prepararAbertura: () => (url) async => aberta = url,
       ),
     ));
     await tester.pumpAndSettle();
@@ -176,17 +176,24 @@ void main() {
         api: api,
         apresentacao: _apresentacao(),
         abrirUrl: (url) async => aberta = url,
+        prepararAbertura: () => (url) async {},
       ),
     ));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Abrir cifra'));
     await tester.pumpAndSettle();
     expect(find.text('Escolher cifra'), findsOneWidget);
-    await tester.tap(find.text('Usar sugestão'));
+    await tester.tap(find.text('Abrir sugestão'));
+    await tester.pumpAndSettle();
+
+    expect(salvamentos, 0);
+    expect(aberta, isNotNull);
+    expect(find.text('Escolher cifra'), findsOneWidget);
+
+    await tester.tap(find.text('Confirmar cifra'));
     await tester.pumpAndSettle();
 
     expect(salvamentos, 1);
-    expect(aberta, isNotNull);
     expect(find.text('Escolher cifra'), findsNothing);
   });
 }

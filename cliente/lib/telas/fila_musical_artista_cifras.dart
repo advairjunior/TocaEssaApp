@@ -2,17 +2,24 @@ part of 'fila_musical_artista.dart';
 
 extension _CifrasDaFila on _FilaMusicalArtistaState {
   Future<void> _abrirCifra(PedidoMusical pedido) async {
+    FinalizarAberturaExterna? finalizarAbertura;
     try {
+      finalizarAbertura = widget.prepararAbertura();
       final resultado =
           await widget.api.consultarCifra(pedido.musica, pedido.artista);
-      if (!mounted) return;
-      final salva = resultado.cifra;
-      if (salva != null) {
-        await widget.abrirUrl(Uri.parse(salva.url));
+      if (!mounted) {
+        await finalizarAbertura(null);
         return;
       }
+      final salva = resultado.cifra;
+      if (salva != null) {
+        await finalizarAbertura(Uri.parse(salva.url));
+        return;
+      }
+      await finalizarAbertura(null);
       await _mostrarEscolhaDaCifra(pedido, resultado);
     } catch (erro) {
+      await finalizarAbertura?.call(null);
       if (mounted) mostrarErro(context, erro);
     }
   }
@@ -34,12 +41,11 @@ extension _CifrasDaFila on _FilaMusicalArtistaState {
       musica: pedido.musica,
       artista: pedido.artista,
       resultado: resultado,
+      abrirUrl: widget.abrirUrl,
     );
     if (decisao == null || !mounted) return;
     try {
       switch (decisao.tipo) {
-        case TipoDecisaoCifra.pesquisar:
-          await widget.abrirUrl(Uri.parse(resultado.urlPesquisa));
         case TipoDecisaoCifra.remover:
           final cifra = resultado.cifra;
           if (cifra == null) return;
@@ -50,12 +56,18 @@ extension _CifrasDaFila on _FilaMusicalArtistaState {
             );
           }
         case TipoDecisaoCifra.salvar:
-          final cifra = await widget.api.salvarCifra(
+          await widget.api.salvarCifra(
             pedido.musica,
             pedido.artista,
             decisao.url!,
           );
-          await widget.abrirUrl(Uri.parse(cifra.url));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Cifra salva para os próximos pedidos.'),
+              ),
+            );
+          }
       }
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
