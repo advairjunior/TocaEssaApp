@@ -5,11 +5,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
+import 'package:toca_essa_app/infraestrutura/abrir_url_externa.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/cartao_pedido_artista.dart';
 import 'package:toca_essa_app/telas/fila_musical_artista.dart';
 
 void main() {
+  test('abertura externa aceita apenas endereco web publico', () {
+    expect(urlExternaPermitida(Uri.parse('https://www.cifraclub.com.br/a')),
+        isTrue);
+    for (final endereco in [
+      'javascript:alert(1)',
+      'data:text/html,teste',
+      'file:///etc/passwd',
+      'http://printer.local/cifra',
+      'http://192.168.1.10/cifra',
+    ]) {
+      expect(urlExternaPermitida(Uri.parse(endereco)), isFalse,
+          reason: endereco);
+    }
+  });
+
   test('consulta cifra codifica a busca e autentica a conta artistica',
       () async {
     late http.Request recebida;

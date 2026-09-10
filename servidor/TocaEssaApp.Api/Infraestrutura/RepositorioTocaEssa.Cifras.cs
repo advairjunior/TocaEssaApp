@@ -138,6 +138,9 @@ public sealed partial class RepositorioTocaEssa
     private static bool HostLocalOuPrivado(string host)
     {
         host = host.TrimEnd('.');
+        if (host.Length > 253 ||
+            host.EndsWith(".local", StringComparison.OrdinalIgnoreCase) ||
+            !HostDnsValido(host)) return true;
         if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
             host.EndsWith(".localhost", StringComparison.OrdinalIgnoreCase)) return true;
         if (!IPAddress.TryParse(host, out var ip)) return !host.Contains('.');
@@ -153,6 +156,21 @@ public sealed partial class RepositorioTocaEssa
             (bytes[0] == 172 && bytes[1] is >= 16 and <= 31) ||
             (bytes[0] == 192 && (bytes[1] == 0 || bytes[1] == 168)) ||
             (bytes[0] == 198 && bytes[1] is 18 or 19) || bytes[0] >= 224;
+    }
+
+    private static bool HostDnsValido(string host)
+    {
+        if (IPAddress.TryParse(host, out _)) return true;
+        foreach (var rotulo in host.Split('.'))
+        {
+            if (rotulo.Length is < 1 or > 63 || rotulo[0] == '-' ||
+                rotulo[^1] == '-') return false;
+            if (rotulo.Any(caractere =>
+                    !(caractere is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or
+                        >= '0' and <= '9' or '-')))
+                return false;
+        }
+        return host.Contains('.');
     }
 
     private static CifraDoArtista ParaDominio(CifraDoArtistaRegistro item) =>

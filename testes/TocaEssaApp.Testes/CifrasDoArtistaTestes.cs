@@ -65,6 +65,9 @@ public class CifrasDoArtistaTestes
     [InlineData("http://[::]/cifra")]
     [InlineData("http://[::ffff:192.168.1.10]/cifra")]
     [InlineData("http://224.0.0.1/cifra")]
+    [InlineData("http://printer.local/cifra")]
+    [InlineData("https://-invalido.exemplo/cifra")]
+    [InlineData("https://inva_lido.exemplo/cifra")]
     public void RecusaEnderecoPerigoso(string url)
     {
         var repo = CriarRepositorioComConta("ana@teste.com", out var token);
@@ -87,6 +90,19 @@ public class CifrasDoArtistaTestes
             repo.SalvarCifraDoArtista(token, "Música", new string('A', 201),
                 "https://exemplo.com/cifra"));
 
+        Assert.Empty(repo.ListarCifrasDoArtista(token));
+    }
+
+    [Fact]
+    public void RecusaHostMaiorQueOFontePersistida()
+    {
+        var repo = CriarRepositorioComConta("ana@teste.com", out var token);
+        var rotulo = new string('a', 63);
+        var host = string.Join('.', rotulo, rotulo, rotulo, rotulo, "com");
+
+        Assert.Throws<UrlDeCifraInvalidaException>(() =>
+            repo.SalvarCifraDoArtista(token, "Música", null,
+                $"https://{host}/cifra"));
         Assert.Empty(repo.ListarCifrasDoArtista(token));
     }
 

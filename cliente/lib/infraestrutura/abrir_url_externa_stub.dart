@@ -1,5 +1,8 @@
-Future<void> abrirUrlExterna(Uri url) =>
-    throw UnsupportedError('Abertura de links disponível somente na Web.');
+import 'url_externa_validacao.dart';
+
+Future<void> abrirUrlExterna(Uri url) => urlExternaPermitida(url)
+    ? throw UnsupportedError('Abertura de links disponível somente na Web.')
+    : throw ArgumentError('Informe um link público HTTP ou HTTPS válido.');
 
 typedef FinalizarAberturaExterna = Future<void> Function(Uri? url);
 
