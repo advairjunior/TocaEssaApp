@@ -38,7 +38,8 @@ app.UseStaticFiles();
 app.Use(async (contexto, proximo) =>
 {
     if (contexto.Request.Path.StartsWithSegments("/api/perfil-artistico") ||
-        contexto.Request.Path.StartsWithSegments("/api/apresentacoes"))
+        contexto.Request.Path.StartsWithSegments("/api/apresentacoes") ||
+        contexto.Request.Path.StartsWithSegments("/api/artista/cifras"))
     {
         var repositorio = contexto.RequestServices.GetRequiredService<RepositorioTocaEssa>();
         repositorio.ValidarSessaoArtista(ObterToken(contexto.Request) ?? string.Empty);
@@ -108,6 +109,44 @@ app.MapDelete("/api/artista/sessoes/atual", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
 {
     repositorio.EncerrarSessaoArtista(ObterToken(http) ?? string.Empty);
+    return Results.NoContent();
+});
+
+app.MapGet("/api/artista/cifras/consulta", (
+    string musica, string? artista, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    string.IsNullOrWhiteSpace(musica)
+        ? Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["musica"] = ["Informe a música."]
+        })
+        : Results.Ok(repositorio.ObterCifraDoArtista(
+            ObterToken(http) ?? string.Empty, musica, artista)));
+
+app.MapGet("/api/artista/cifras", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarCifrasDoArtista(
+        ObterToken(http) ?? string.Empty)));
+
+app.MapPut("/api/artista/cifras", (
+    SalvarCifraDoArtista requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+{
+    if (string.IsNullOrWhiteSpace(requisicao.Musica))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["musica"] = ["Informe a música."]
+        });
+    return Results.Ok(repositorio.SalvarCifraDoArtista(
+        ObterToken(http) ?? string.Empty, requisicao.Musica,
+        requisicao.Artista, requisicao.Url));
+});
+
+app.MapDelete("/api/artista/cifras/{id:guid}", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.RemoverCifraDoArtista(
+        ObterToken(http) ?? string.Empty, id);
     return Results.NoContent();
 });
 

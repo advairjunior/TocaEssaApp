@@ -100,6 +100,22 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "Entre na conta do artista para continuar."
             });
         }
+        catch (UrlDeCifraInvalidaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Informe um link público HTTP ou HTTPS válido."
+            });
+        }
+        catch (CifraDoArtistaNaoEncontradaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Cifra não encontrada."
+            });
+        }
         catch (RecursoDisponivelSomenteNaResenhaException)
         {
             contexto.Response.StatusCode = StatusCodes.Status409Conflict;
