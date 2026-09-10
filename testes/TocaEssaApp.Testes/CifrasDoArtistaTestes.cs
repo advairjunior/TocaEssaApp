@@ -23,18 +23,17 @@ public class CifrasDoArtistaTestes
     }
 
     [Fact]
-    public void SugereCifraEPesquisaSemConsultarSiteExterno()
+    public void NaoInventaUrlEOferecePesquisaQuandoCifraAindaNaoFoiSalva()
     {
         var repo = CriarRepositorioComConta("ana@teste.com", out var token);
 
         var resultado = repo.ObterCifraDoArtista(
-            token, "Evidências", "Chitãozinho & Xororó");
+            token, "Devolva-me", "Hugo & Guilherme");
 
-        Assert.Equal(
-            "https://www.cifraclub.com.br/chitaozinho-e-xororo/evidencias/",
-            resultado.UrlSugerida);
+        Assert.Null(resultado.UrlSugerida);
         Assert.Contains("site%3Acifraclub.com.br", resultado.UrlPesquisa);
-        Assert.Contains("Evid%25C3%25AAncias", Uri.EscapeDataString(resultado.UrlPesquisa));
+        Assert.Contains("Devolva-me", Uri.UnescapeDataString(resultado.UrlPesquisa));
+        Assert.Contains("Hugo", Uri.UnescapeDataString(resultado.UrlPesquisa));
     }
 
     [Fact]

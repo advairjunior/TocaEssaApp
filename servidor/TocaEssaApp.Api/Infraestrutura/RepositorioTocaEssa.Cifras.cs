@@ -17,7 +17,7 @@ public sealed partial class RepositorioTocaEssa
         _cifrasDoArtista.TryGetValue(chave, out var registro);
         return new ResultadoCifraDoArtista(
             registro is null ? null : ParaDominio(registro),
-            CriarSugestao(musica, artista),
+            null,
             CriarPesquisa(musica, artista));
     }
 
@@ -100,15 +100,6 @@ public sealed partial class RepositorioTocaEssa
             else espaco = true;
         }
         return resultado.ToString();
-    }
-
-    private static string? CriarSugestao(string musica, string? artista)
-    {
-        var artistaSlug = Normalizar(artista).Replace(' ', '-');
-        var musicaSlug = Normalizar(musica).Replace(' ', '-');
-        return string.IsNullOrEmpty(artistaSlug) || string.IsNullOrEmpty(musicaSlug)
-            ? null
-            : $"https://www.cifraclub.com.br/{artistaSlug}/{musicaSlug}/";
     }
 
     private static string CriarPesquisa(string musica, string? artista)

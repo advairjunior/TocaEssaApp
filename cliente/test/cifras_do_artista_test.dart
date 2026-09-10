@@ -156,6 +156,9 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Pendentes 1'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Abrir cifra'));
     await tester.tap(find.text('Abrir cifra'));
     await tester.pumpAndSettle();
 
@@ -196,6 +199,9 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Pendentes 1'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Abrir cifra'));
     await tester.tap(find.text('Abrir cifra'));
     await tester.pumpAndSettle();
     expect(find.text('Escolher cifra'), findsOneWidget);

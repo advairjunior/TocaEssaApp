@@ -22,6 +22,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   bool _gerandoRetrospectiva = false;
   bool _criandoConta = false;
   bool _mostrarTodosPedidos = false;
+  bool _mostrarDetalhesPedido = false;
   FormaParticipacaoPedido _formaParticipacao =
       FormaParticipacaoPedido.pedidoNormal;
   TipoPedido _tipoPedido = TipoPedido.musica;
@@ -47,7 +48,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
       'pedidos_publico_${widget.codigoInicial.trim().toUpperCase()}';
 
   Iterable<PedidoMusical> get _pedidosExibidos =>
-      _mostrarTodosPedidos ? _meusPedidos : _meusPedidos.take(3);
+      _mostrarTodosPedidos ? _meusPedidos : _meusPedidos.take(2);
 
   ParticipanteDaResenha? get _minhaParticipacaoNaResenha {
     final id = _perfilPublico?.id;

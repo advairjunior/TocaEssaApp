@@ -195,6 +195,8 @@ class _InicioState extends State<Inicio> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 28),
+                const _AssinaturaInicio(),
                 const SizedBox(height: 32),
               ],
             ),
@@ -217,5 +219,51 @@ class _IconeInicio extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
         ),
         child: Icon(icone, color: CoresTocaEssa.roxoClaro),
+      );
+}
+
+class _AssinaturaInicio extends StatelessWidget {
+  const _AssinaturaInicio();
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          const Expanded(child: Divider()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 15,
+                  color: CoresTocaEssa.roxoClaro,
+                ),
+                const SizedBox(width: 7),
+                Text.rich(
+                  const TextSpan(
+                    text: 'Feito por ',
+                    style: TextStyle(
+                      color: CoresTocaEssa.textoSecundario,
+                      fontSize: 12,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: 'Advair',
+                        style: TextStyle(
+                          color: CoresTocaEssa.roxoClaro,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: .4,
+                        ),
+                      ),
+                    ],
+                  ),
+                  semanticsLabel: 'Feito por Advair',
+                ),
+              ],
+            ),
+          ),
+          const Expanded(child: Divider()),
+        ],
       );
 }

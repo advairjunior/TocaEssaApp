@@ -23,6 +23,7 @@ part 'area_do_publico_perfil.dart';
 part 'area_do_publico_retrospectiva.dart';
 part 'area_do_publico_construcao.dart';
 part 'area_do_publico_aba_pedir.dart';
+part 'area_do_publico_formulario.dart';
 part 'area_do_publico_aba_fila.dart';
 part 'componentes_publico_galera.dart';
 part 'componentes_publico_perfil.dart';

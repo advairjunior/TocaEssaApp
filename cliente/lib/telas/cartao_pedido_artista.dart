@@ -26,15 +26,38 @@ class CartaoPedidoArtista extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Card(
+        margin: EdgeInsets.zero,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: CoresTocaEssa.roxoClaro.withValues(alpha: .16),
+          ),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _cabecalho(context),
               if (pedido.nomeSolicitante?.isNotEmpty == true) ...[
                 const SizedBox(height: 6),
-                Text('Pedido por ${pedido.nomeSolicitante}'),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline_rounded,
+                        size: 15, color: CoresTocaEssa.textoSecundario),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        'Pedido por ${pedido.nomeSolicitante}',
+                        style: const TextStyle(
+                          color: CoresTocaEssa.textoSecundario,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
               if (pedido.formaParticipacao !=
                   FormaParticipacaoPedido.pedidoNormal) ...[
@@ -45,49 +68,90 @@ class CartaoPedidoArtista extends StatelessWidget {
                 const SizedBox(height: 10),
                 _recado(),
               ],
-              const SizedBox(height: 6),
-              Text(
-                pedido.status.rotulo,
-                style: const TextStyle(
-                  color: CoresTocaEssa.roxoClaro,
-                  fontSize: 12,
-                ),
-              ),
+              const SizedBox(height: 8),
+              _status(),
               if (pedido.quantidadeAvaliacoes > 0) ...[
                 const SizedBox(height: 8),
                 _avaliacao(),
               ],
-              if (pedido.tipo == TipoPedido.musica && abrirCifra != null) ...[
+              if (_temRodape) ...[
                 const SizedBox(height: 12),
-                _acaoDaCifra(),
-              ],
-              if (!somenteLeitura && _acoes().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(spacing: 8, runSpacing: 8, children: _acoes()),
+                _rodape(),
               ],
             ],
           ),
         ),
       );
 
-  Widget _acaoDaCifra() => Row(
+  bool get _temCifra => pedido.tipo == TipoPedido.musica && abrirCifra != null;
+
+  bool get _temRodape => _temCifra || (!somenteLeitura && _acoes().isNotEmpty);
+
+  Widget _rodape() {
+    final acoes = somenteLeitura ? <Widget>[] : _acoes();
+    if (acoes.length == 1) {
+      return Row(
         children: [
-          Expanded(
-            child: FilledButton.tonalIcon(
-              onPressed: abrirCifra,
-              icon: const Icon(Icons.menu_book_rounded),
-              label: const Text('Abrir cifra'),
-            ),
-          ),
-          if (escolherCifra != null) ...[
+          Expanded(child: acoes.single),
+          if (_temCifra) ...[
             const SizedBox(width: 8),
-            IconButton.outlined(
-              tooltip: 'Escolher ou trocar cifra',
-              onPressed: escolherCifra,
-              icon: const Icon(Icons.link_rounded),
-            ),
+            ..._atalhosDaCifra(),
           ],
         ],
+      );
+    }
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        ...acoes,
+        if (_temCifra)
+          OutlinedButton.icon(
+            onPressed: abrirCifra,
+            icon: const Icon(Icons.menu_book_rounded, size: 19),
+            label: const Text('Abrir cifra'),
+          ),
+        if (_temCifra && escolherCifra != null)
+          IconButton.outlined(
+            tooltip: 'Escolher ou trocar cifra',
+            onPressed: escolherCifra,
+            icon: const Icon(Icons.link_rounded),
+          ),
+      ],
+    );
+  }
+
+  List<Widget> _atalhosDaCifra() => [
+        IconButton.filledTonal(
+          tooltip: 'Abrir cifra',
+          onPressed: abrirCifra,
+          icon: const Icon(Icons.menu_book_rounded),
+        ),
+        if (escolherCifra != null) ...[
+          const SizedBox(width: 6),
+          IconButton.outlined(
+            tooltip: 'Escolher ou trocar cifra',
+            onPressed: escolherCifra,
+            icon: const Icon(Icons.link_rounded),
+          ),
+        ],
+      ];
+
+  Widget _status() => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.roxo.withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          pedido.status.rotulo,
+          style: const TextStyle(
+            color: CoresTocaEssa.roxoClaro,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       );
 
   Widget _cabecalho(BuildContext context) => Row(

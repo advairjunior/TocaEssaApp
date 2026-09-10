@@ -60,7 +60,8 @@ public class CifrasApiTestes
             var consulta = await cliente.GetFromJsonAsync<ConsultaResposta>(
                 "/api/artista/cifras/consulta?musica=Evidencias&artista=Chitaozinho");
             Assert.Null(consulta!.Cifra);
-            Assert.Contains("cifraclub.com.br", consulta.UrlSugerida);
+            Assert.Null(consulta.UrlSugerida);
+            Assert.Contains("cifraclub.com.br", consulta.UrlPesquisa);
 
             var salvar = await cliente.PutAsJsonAsync("/api/artista/cifras", new
             {

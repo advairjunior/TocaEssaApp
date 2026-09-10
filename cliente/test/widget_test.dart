@@ -146,6 +146,7 @@ void main() {
     expect(find.text('Área do Público'), findsOneWidget);
     expect(find.text('Acessar Painel do Artista'), findsOneWidget);
     expect(find.text('Código da Apresentação'), findsOneWidget);
+    expect(find.text('Feito por Advair'), findsOneWidget);
   });
 
   testWidgets('artista cria conta e acessa painel protegido', (tester) async {
@@ -554,9 +555,10 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Pedir uma música'), findsWidgets);
+    expect(find.text('Novo pedido'), findsOneWidget);
     expect(find.text('Música 1'), findsOneWidget);
-    expect(find.text('Música 3'), findsOneWidget);
+    expect(find.text('Música 2'), findsOneWidget);
+    expect(find.text('Música 3'), findsNothing);
     expect(find.text('Música 4'), findsNothing);
     final verTodos = find.text('Ver todos os 5 pedidos');
     await tester.ensureVisible(verTodos);
@@ -565,7 +567,7 @@ void main() {
 
     expect(find.text('Música 4'), findsOneWidget);
     expect(find.text('Música 5'), findsOneWidget);
-    expect(find.text('Mostrar menos'), findsOneWidget);
+    expect(find.text('Mostrar somente os recentes'), findsOneWidget);
   });
 
   testWidgets('fila pública separa tocando próximas e já tocadas',
@@ -710,7 +712,7 @@ void main() {
     await tester.tap(criar);
     await tester.pumpAndSettle();
 
-    expect(find.text('Pedido de Ana Souza'), findsOneWidget);
+    expect(find.text('Enviando como Ana Souza'), findsOneWidget);
     await tester.tap(find.text('Galera').last);
     await tester.pumpAndSettle();
     expect(find.text('Galera da resenha'), findsOneWidget);
