@@ -6,6 +6,7 @@ build/
 .flutter-plugins-dependencies
 .idea/
 .vscode/
+.worktrees/
 *.user
 *.suo
 **/dados/tocaessa.json
