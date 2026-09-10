@@ -105,6 +105,9 @@ public sealed partial class RepositorioTocaEssa
         foreach (var sessao in banco.SessoesArtistas.AsNoTracking().AsEnumerable()
                      .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow))
             _sessoesArtistas[sessao.TokenHash] = sessao;
+        foreach (var cifra in banco.CifrasDoArtista.AsNoTracking())
+            _cifrasDoArtista[(cifra.ArtistaId, cifra.MusicaNormalizada,
+                cifra.ArtistaNormalizado)] = cifra;
 
         if (_perfil is not null || _apresentacoes.Count > 0 || _pedidos.Count > 0 ||
             _caminhoJsonLegado is null || !File.Exists(_caminhoJsonLegado))
@@ -141,6 +144,7 @@ public sealed partial class RepositorioTocaEssa
         banco.Perfis.RemoveRange(banco.Perfis);
         banco.PerfisPublicos.RemoveRange(banco.PerfisPublicos);
         banco.ContasArtistas.RemoveRange(banco.ContasArtistas);
+        banco.CifrasDoArtista.RemoveRange(banco.CifrasDoArtista);
         banco.SaveChanges();
 
         if (_perfil is not null)
@@ -192,6 +196,7 @@ public sealed partial class RepositorioTocaEssa
         banco.SessoesPublicas.AddRange(_sessoesPublicas.Values
             .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
         banco.ContasArtistas.AddRange(_contasArtistas.Values);
+        banco.CifrasDoArtista.AddRange(_cifrasDoArtista.Values);
         banco.SessoesArtistas.AddRange(_sessoesArtistas.Values
             .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
 

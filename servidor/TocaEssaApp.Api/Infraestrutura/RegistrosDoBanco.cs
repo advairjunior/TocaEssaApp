@@ -100,3 +100,17 @@ internal sealed class SessaoArtistaRegistro
     public Guid ArtistaId { get; set; }
     public DateTimeOffset ExpiraEm { get; set; }
 }
+
+internal sealed class CifraDoArtistaRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Musica { get; set; } = string.Empty;
+    public string? Artista { get; set; }
+    public string MusicaNormalizada { get; set; } = string.Empty;
+    public string ArtistaNormalizado { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+    public string Fonte { get; set; } = string.Empty;
+    public DateTimeOffset CriadaEm { get; set; }
+    public DateTimeOffset AtualizadaEm { get; set; }
+}

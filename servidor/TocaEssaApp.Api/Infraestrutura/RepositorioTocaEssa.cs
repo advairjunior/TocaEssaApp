@@ -20,6 +20,8 @@ public sealed partial class RepositorioTocaEssa
     private readonly ConcurrentDictionary<string, SessaoPublicoRegistro> _sessoesPublicas = new();
     private readonly ConcurrentDictionary<Guid, ContaArtistaRegistro> _contasArtistas = new();
     private readonly ConcurrentDictionary<string, SessaoArtistaRegistro> _sessoesArtistas = new();
+    private readonly ConcurrentDictionary<(Guid ArtistaId, string Musica, string Artista),
+        CifraDoArtistaRegistro> _cifrasDoArtista = new();
     private readonly object _sincronizacao = new();
     private readonly string? _caminhoBanco;
     private readonly string? _caminhoJsonLegado;
@@ -83,6 +85,10 @@ public sealed class ContaArtistaJaConfiguradaException : Exception { }
 public sealed class CredenciaisArtistaInvalidasException : Exception { }
 
 public sealed class SessaoArtistaInvalidaException : Exception { }
+
+public sealed class UrlDeCifraInvalidaException : Exception { }
+
+public sealed class CifraDoArtistaNaoEncontradaException : Exception { }
 
 public sealed class RecursoDisponivelSomenteNaResenhaException : Exception { }
 

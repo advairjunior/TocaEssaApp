@@ -39,6 +39,22 @@ public sealed record EntrarContaArtista(string Email, string Senha);
 
 public sealed record SessaoDoArtista(ContaArtista Conta, string Token);
 
+public sealed record CifraDoArtista(
+    Guid Id,
+    Guid ArtistaId,
+    string Musica,
+    string? Artista,
+    string Url,
+    string Fonte,
+    DateTimeOffset CriadaEm,
+    DateTimeOffset AtualizadaEm);
+
+public sealed record ResultadoCifraDoArtista(
+    CifraDoArtista? Cifra, string? UrlSugerida, string UrlPesquisa);
+
+public sealed record SalvarCifraDoArtista(
+    string Musica, string? Artista, string Url);
+
 public sealed record CriarApresentacao(
     string Nome, DateOnly Data, string Local, TipoApresentacao Tipo = TipoApresentacao.Publica);
 

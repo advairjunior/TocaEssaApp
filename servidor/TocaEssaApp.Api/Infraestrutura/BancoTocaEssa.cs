@@ -20,6 +20,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<SessaoPublicoRegistro> SessoesPublicas => Set<SessaoPublicoRegistro>();
     internal DbSet<ContaArtistaRegistro> ContasArtistas => Set<ContaArtistaRegistro>();
     internal DbSet<SessaoArtistaRegistro> SessoesArtistas => Set<SessaoArtistaRegistro>();
+    internal DbSet<CifraDoArtistaRegistro> CifrasDoArtista => Set<CifraDoArtistaRegistro>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder opcoes)
     {
@@ -137,6 +138,24 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.Property(item => item.TokenHash).HasMaxLength(64);
             entidade.HasIndex(item => item.ArtistaId);
         });
+
+        modelo.Entity<CifraDoArtistaRegistro>(entidade =>
+        {
+            entidade.ToTable("CifrasDoArtista");
+            entidade.HasKey(item => item.Id);
+            entidade.HasIndex(item => new
+            {
+                item.ArtistaId,
+                item.MusicaNormalizada,
+                item.ArtistaNormalizado
+            }).IsUnique();
+            entidade.Property(item => item.Musica).HasMaxLength(200);
+            entidade.Property(item => item.Artista).HasMaxLength(200);
+            entidade.Property(item => item.MusicaNormalizada).HasMaxLength(200);
+            entidade.Property(item => item.ArtistaNormalizado).HasMaxLength(200);
+            entidade.Property(item => item.Url).HasMaxLength(2048);
+            entidade.Property(item => item.Fonte).HasMaxLength(255);
+        });
     }
 
     internal void GarantirEstrutura()
@@ -188,6 +207,21 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     "AtualizadaEm" timestamp with time zone NOT NULL,
                     CONSTRAINT "PK_Imagens" PRIMARY KEY ("Chave")
                 );
+                CREATE TABLE IF NOT EXISTS "CifrasDoArtista" (
+                    "Id" uuid NOT NULL,
+                    "ArtistaId" uuid NOT NULL,
+                    "Musica" character varying(200) NOT NULL,
+                    "Artista" character varying(200) NULL,
+                    "MusicaNormalizada" character varying(200) NOT NULL,
+                    "ArtistaNormalizado" character varying(200) NOT NULL,
+                    "Url" character varying(2048) NOT NULL,
+                    "Fonte" character varying(255) NOT NULL,
+                    "CriadaEm" timestamp with time zone NOT NULL,
+                    "AtualizadaEm" timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_CifrasDoArtista" PRIMARY KEY ("Id")
+                );
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasDoArtista_Chave"
+                    ON "CifrasDoArtista" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
                 """);
             return;
         }
@@ -253,6 +287,20 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 "Conteudo" BLOB NOT NULL,
                 "AtualizadaEm" TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS "CifrasDoArtista" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_CifrasDoArtista" PRIMARY KEY,
+                "ArtistaId" TEXT NOT NULL,
+                "Musica" TEXT NOT NULL,
+                "Artista" TEXT NULL,
+                "MusicaNormalizada" TEXT NOT NULL,
+                "ArtistaNormalizado" TEXT NOT NULL,
+                "Url" TEXT NOT NULL,
+                "Fonte" TEXT NOT NULL,
+                "CriadaEm" TEXT NOT NULL,
+                "AtualizadaEm" TEXT NOT NULL
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasDoArtista_Chave"
+                ON "CifrasDoArtista" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
             """);
 
         using var comando = Database.GetDbConnection().CreateCommand();
