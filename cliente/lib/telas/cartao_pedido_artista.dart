@@ -12,6 +12,8 @@ class CartaoPedidoArtista extends StatelessWidget {
     this.inicio,
     this.fim,
     this.somenteLeitura = false,
+    this.abrirCifra,
+    this.escolherCifra,
   });
 
   final PedidoMusical pedido;
@@ -19,6 +21,8 @@ class CartaoPedidoArtista extends StatelessWidget {
   final Widget? inicio;
   final Widget? fim;
   final bool somenteLeitura;
+  final VoidCallback? abrirCifra;
+  final VoidCallback? escolherCifra;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -53,6 +57,10 @@ class CartaoPedidoArtista extends StatelessWidget {
                 const SizedBox(height: 8),
                 _avaliacao(),
               ],
+              if (pedido.tipo == TipoPedido.musica && abrirCifra != null) ...[
+                const SizedBox(height: 12),
+                _acaoDaCifra(),
+              ],
               if (!somenteLeitura && _acoes().isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Wrap(spacing: 8, runSpacing: 8, children: _acoes()),
@@ -60,6 +68,26 @@ class CartaoPedidoArtista extends StatelessWidget {
             ],
           ),
         ),
+      );
+
+  Widget _acaoDaCifra() => Row(
+        children: [
+          Expanded(
+            child: FilledButton.tonalIcon(
+              onPressed: abrirCifra,
+              icon: const Icon(Icons.menu_book_rounded),
+              label: const Text('Abrir cifra'),
+            ),
+          ),
+          if (escolherCifra != null) ...[
+            const SizedBox(width: 8),
+            IconButton.outlined(
+              tooltip: 'Escolher ou trocar cifra',
+              onPressed: escolherCifra,
+              icon: const Icon(Icons.link_rounded),
+            ),
+          ],
+        ],
       );
 
   Widget _cabecalho(BuildContext context) => Row(

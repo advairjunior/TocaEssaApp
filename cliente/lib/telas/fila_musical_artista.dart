@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
 import 'estatisticas_da_apresentacao.dart';
+import 'escolher_cifra.dart';
+
+part 'fila_musical_artista_cifras.dart';
+part 'fila_musical_artista_componentes.dart';
 
 class FilaMusicalArtista extends StatefulWidget {
   const FilaMusicalArtista(
@@ -16,12 +21,14 @@ class FilaMusicalArtista extends StatefulWidget {
       required this.api,
       required this.apresentacao,
       this.abaInicial = 0,
-      this.incorporada = false});
+      this.incorporada = false,
+      this.abrirUrl = abrirUrlExterna});
 
   final ApiTocaEssa api;
   final Apresentacao apresentacao;
   final int abaInicial;
   final bool incorporada;
+  final Future<void> Function(Uri url) abrirUrl;
 
   @override
   State<FilaMusicalArtista> createState() => _FilaMusicalArtistaState();
@@ -171,6 +178,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                         pedido: pedido,
                         somenteLeitura: true,
                         alterar: (_) {},
+                        abrirCifra: () => _abrirCifra(pedido),
+                        escolherCifra: () => _escolherCifra(pedido),
                       ),
                   ],
                 ),
@@ -199,6 +208,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                       for (final pedido in _tocando)
                         CartaoPedidoArtista(
                             pedido: pedido,
+                            abrirCifra: () => _abrirCifra(pedido),
+                            escolherCifra: () => _escolherCifra(pedido),
                             alterar: (status) => _alterar(pedido, status)),
                     ],
                     if (_alosPendentes.isNotEmpty) ...[
@@ -214,6 +225,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                       for (final pedido in _alosPendentes) ...[
                         CartaoPedidoArtista(
                             pedido: pedido,
+                            abrirCifra: () => _abrirCifra(pedido),
+                            escolherCifra: () => _escolherCifra(pedido),
                             alterar: (status) => _alterar(pedido, status)),
                         const SizedBox(height: 10),
                       ],
@@ -228,6 +241,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                       for (final pedido in _aguardando) ...[
                         CartaoPedidoArtista(
                             pedido: pedido,
+                            abrirCifra: () => _abrirCifra(pedido),
+                            escolherCifra: () => _escolherCifra(pedido),
                             alterar: (status) => _alterar(pedido, status)),
                         const SizedBox(height: 10),
                       ],
@@ -254,6 +269,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: CartaoPedidoArtista(
                               pedido: pedido,
+                              abrirCifra: () => _abrirCifra(pedido),
+                              escolherCifra: () => _escolherCifra(pedido),
                               alterar: (status) => _alterar(pedido, status),
                               inicio: CircleAvatar(
                                   radius: 17, child: Text('${indice + 1}')),
@@ -274,7 +291,12 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
                       const _TituloSecao('Histórico'),
                       const SizedBox(height: 10),
                       for (final pedido in _historico) ...[
-                        CartaoPedidoArtista(pedido: pedido, alterar: (_) {}),
+                        CartaoPedidoArtista(
+                          pedido: pedido,
+                          alterar: (_) {},
+                          abrirCifra: () => _abrirCifra(pedido),
+                          escolherCifra: () => _escolherCifra(pedido),
+                        ),
                         const SizedBox(height: 10),
                       ],
                     ],
@@ -316,29 +338,4 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
           : conteudoFila,
     );
   }
-}
-
-class _TituloSecao extends StatelessWidget {
-  const _TituloSecao(this.texto, {this.quantidade});
-  final String texto;
-  final int? quantidade;
-  @override
-  Widget build(BuildContext context) => Row(children: [
-        Expanded(
-            child: Text(texto, style: Theme.of(context).textTheme.titleLarge)),
-        if (quantidade != null)
-          Text('$quantidade',
-              style: const TextStyle(color: CoresTocaEssa.roxoClaro)),
-      ]);
-}
-
-class _MensagemVazia extends StatelessWidget {
-  const _MensagemVazia(this.texto);
-  final String texto;
-  @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Text(texto, textAlign: TextAlign.center)),
-      );
 }
