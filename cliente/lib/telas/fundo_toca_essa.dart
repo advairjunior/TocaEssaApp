@@ -40,9 +40,9 @@ class FundoTocaEssa extends StatelessWidget {
                   ),
                 ),
               ),
-              _camadaVisual(
+              _composicaoVisual(
                 cabecalho: cabecalho,
-                child: Image.asset(
+                imagem: Image.asset(
                   _caminhoDaImagem(variante),
                   fit: BoxFit.cover,
                   alignment: alinhamento,
@@ -50,10 +50,7 @@ class FundoTocaEssa extends StatelessWidget {
                   errorBuilder: (context, error, stackTrace) =>
                       const SizedBox.expand(),
                 ),
-              ),
-              _camadaVisual(
-                cabecalho: cabecalho,
-                child: DecoratedBox(
+                contraste: DecoratedBox(
                   decoration: BoxDecoration(gradient: _gradienteContraste),
                 ),
               ),
@@ -63,14 +60,36 @@ class FundoTocaEssa extends StatelessWidget {
         },
       );
 
-  Widget _camadaVisual({required bool cabecalho, required Widget child}) =>
-      cabecalho
-          ? Align(
-              alignment: Alignment.topCenter,
-              child:
-                  SizedBox(width: double.infinity, height: 280, child: child),
-            )
-          : Positioned.fill(child: child);
+  Widget _composicaoVisual({
+    required bool cabecalho,
+    required Widget imagem,
+    required Widget contraste,
+  }) {
+    final composicao = Stack(
+      fit: StackFit.expand,
+      children: [imagem, contraste],
+    );
+
+    return cabecalho
+        ? Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: double.infinity,
+              height: 280,
+              child: ShaderMask(
+                blendMode: BlendMode.dstIn,
+                shaderCallback: (limites) => const LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.white, Colors.transparent],
+                  stops: [0, .65, 1],
+                ).createShader(limites),
+                child: composicao,
+              ),
+            ),
+          )
+        : Positioned.fill(child: composicao);
+  }
 
   String _caminhoDaImagem(VarianteFundoTocaEssa variante) => switch (variante) {
         VarianteFundoTocaEssa.palco => 'assets/fundos/inicio_palco.png',

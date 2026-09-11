@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 
@@ -64,4 +65,72 @@ void main() {
       expect(imagem.alignment, caso.$2);
     }
   });
+
+  testWidgets('desvanece a composição do cabeçalho sobre o fallback', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: FundoTocaEssa(
+          variante: VarianteFundoTocaEssa.bastidores,
+          intensidade: IntensidadeFundoTocaEssa.cabecalho,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final mascara = tester.widget<ShaderMask>(find.byType(ShaderMask));
+    final composicao = mascara.child! as Stack;
+    final restricao = tester
+        .widgetList<SizedBox>(find.byType(SizedBox))
+        .singleWhere((caixa) => caixa.height == 280);
+
+    expect(mascara.blendMode, BlendMode.dstIn);
+    expect(composicao.children.first, isA<Image>());
+    expect(composicao.children[1], isA<DecoratedBox>());
+    expect(restricao.width, double.infinity);
+  });
+
+  testWidgets('mantém fallback e conteúdo acionável quando a imagem falha', (
+    tester,
+  ) async {
+    var acionado = false;
+
+    await tester.pumpWidget(
+      DefaultAssetBundle(
+        bundle: _BundleQueFalha(),
+        child: MaterialApp(
+          home: FundoTocaEssa(
+            variante: VarianteFundoTocaEssa.palco,
+            child: FilledButton(
+              onPressed: () => acionado = true,
+              child: const Text('Continuar'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is DecoratedBox &&
+            (widget.decoration as BoxDecoration?)?.gradient is RadialGradient,
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Continuar'));
+    await tester.pump();
+
+    expect(acionado, isTrue);
+  });
+}
+
+class _BundleQueFalha extends CachingAssetBundle {
+  @override
+  Future<ByteData> load(String key) =>
+      Future<ByteData>.error(FlutterError('Asset indisponível: $key'));
 }
