@@ -176,6 +176,10 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
 
+    expect(
+      find.image(const AssetImage('assets/fundos/bastidores.png')),
+      findsOneWidget,
+    );
     expect(find.text('Entre no seu painel'), findsOneWidget);
     await tester.tap(find.text('Primeiro acesso? Criar conta'));
     await tester.pumpAndSettle();
@@ -190,6 +194,38 @@ void main() {
     expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getString('token_do_artista'), 'TOKEN-ARTISTA');
+  });
+
+  testWidgets('painel autenticado preserva bastidores e navegação',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+    final cliente = MockClient((requisicao) async {
+      if (requisicao.url.path == '/api/artista/conta') {
+        return http.Response(_contaArtistaJson, 200);
+      }
+      if (requisicao.url.path.endsWith('/perfil-artistico')) {
+        return http.Response(
+          '{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null}',
+          200,
+        );
+      }
+      return http.Response('[]', 200);
+    });
+    await tester.pumpWidget(TocaEssaApp(
+      api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+    ));
+    final acessarPainel = find.text('Acessar Painel do Artista');
+    await tester.ensureVisible(acessarPainel);
+    await tester.tap(acessarPainel);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.image(const AssetImage('assets/fundos/bastidores.png')),
+      findsOneWidget,
+    );
+    expect(find.text('Apresentações'), findsOneWidget);
+    expect(find.text('Criar'), findsOneWidget);
+    expect(find.text('Perfil geral'), findsOneWidget);
   });
 
   testWidgets('Painel separa Apresentações, Fila, Estatísticas e Perfil',

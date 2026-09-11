@@ -5,6 +5,7 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'fundo_toca_essa.dart';
 import 'painel_do_artista.dart';
 
 class AcessoDoArtista extends StatefulWidget {
@@ -130,14 +131,9 @@ class _AcessoDoArtistaState extends State<AcessoDoArtista> {
     }
     return Scaffold(
       appBar: AppBar(title: const Text('Acesso do Artista')),
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(0, -0.8),
-            radius: 1.2,
-            colors: [Color(0xFF24143C), CoresTocaEssa.fundo],
-          ),
-        ),
+      body: FundoTocaEssa(
+        variante: VarianteFundoTocaEssa.bastidores,
+        intensidade: IntensidadeFundoTocaEssa.imersiva,
         child: ConteudoMobile(
           filho: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

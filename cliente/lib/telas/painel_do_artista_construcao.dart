@@ -24,6 +24,10 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
       Icons.person_outline,
       Icons.celebration_outlined
     ];
+    final intensidadeDoFundo = switch (_abaSelecionada) {
+      0 || 1 || 3 => IntensidadeFundoTocaEssa.cabecalho,
+      _ => IntensidadeFundoTocaEssa.suave,
+    };
     return PopScope(
       canPop: !_dentroDaApresentacao,
       onPopInvokedWithResult: (saiu, _) {
@@ -55,15 +59,19 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
                       : nomes[indice])
           ],
         ),
-        body: _carregando
-            ? const Center(child: CircularProgressIndicator())
-            : _dentroDaApresentacao &&
-                    (_abaSelecionada == 1 || _abaSelecionada == 3)
-                ? _construirAbaGestao(context)
-                : ConteudoMobile(
-                    filho: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: _construirAbaPainel(context))),
+        body: FundoTocaEssa(
+          variante: VarianteFundoTocaEssa.bastidores,
+          intensidade: intensidadeDoFundo,
+          child: _carregando
+              ? const Center(child: CircularProgressIndicator())
+              : _dentroDaApresentacao &&
+                      (_abaSelecionada == 1 || _abaSelecionada == 3)
+                  ? _construirAbaGestao(context)
+                  : ConteudoMobile(
+                      filho: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: _construirAbaPainel(context))),
+        ),
       ),
     );
   }
