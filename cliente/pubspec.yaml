@@ -63,6 +63,7 @@ flutter:
     - assets/marca/toca_essa_icone.png
     - assets/fundos/inicio_palco.png
     - assets/fundos/bastidores.png
+    - assets/fundos/atmosfera.png
   fonts:
     - family: Poppins
       fonts:

@@ -5,6 +5,7 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import 'area_do_publico.dart';
 import 'componentes.dart';
+import 'fundo_toca_essa.dart';
 
 part 'conta_do_publico_construcao.dart';
 

@@ -53,6 +53,11 @@ void main() {
         }));
     await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
     await tester.pumpAndSettle();
+    expect(
+      find.image(const AssetImage('assets/fundos/atmosfera.png')),
+      findsOneWidget,
+    );
+    expect(find.text('Minha conta'), findsOneWidget);
     expect(find.text('Encontro de setembro'), findsOneWidget);
     expect(find.text('Histórico'), findsOneWidget);
     await tester.tap(find.text('Ao vivo'));

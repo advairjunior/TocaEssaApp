@@ -539,6 +539,11 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    expect(
+      find.image(const AssetImage('assets/fundos/atmosfera.png')),
+      findsOneWidget,
+    );
+    expect(find.text('Área do Público'), findsOneWidget);
     final campoNome = tester.widget<TextField>(
       find.widgetWithText(TextField, 'Seu nome (opcional)'),
     );

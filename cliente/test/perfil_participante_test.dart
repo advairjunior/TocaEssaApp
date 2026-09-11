@@ -34,6 +34,12 @@ void main() {
       enderecoFoto: 'https://example.com/foto.png',
     )));
     await tester.pumpAndSettle();
+    expect(
+      find.image(const AssetImage('assets/fundos/atmosfera.png')),
+      findsOneWidget,
+    );
+    expect(find.text('Perfil do participante'), findsOneWidget);
+    expect(find.text('Ana'), findsOneWidget);
     expect(tester.takeException(), isNull);
     expect(find.text('Fã de carteirinha'), findsOneWidget);
     expect(find.text('Conquistas'), findsOneWidget);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';
 
 void abrirPerfilParticipante(BuildContext context,
@@ -12,7 +13,6 @@ void abrirPerfilParticipante(BuildContext context,
           builder: (_) => PerfilParticipante(
               participante: participante, enderecoFoto: enderecoFoto)));
 }
-
 class PerfilParticipante extends StatefulWidget {
   const PerfilParticipante(
       {super.key, required this.participante, required this.enderecoFoto});
@@ -21,11 +21,9 @@ class PerfilParticipante extends StatefulWidget {
   @override
   State<PerfilParticipante> createState() => _PerfilParticipanteState();
 }
-
 class _PerfilParticipanteState extends State<PerfilParticipante> {
   int _pagina = 0;
   bool _nestaResenha = false;
-
   Widget _seletorPerfil() => SegmentedButton<bool>(
         segments: const [
           ButtonSegment(value: false, label: Text('Geral')),
@@ -35,7 +33,6 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
         onSelectionChanged: (valor) =>
             setState(() => _nestaResenha = valor.single),
       );
-
   @override
   Widget build(BuildContext context) {
     final pessoa = widget.participante;
@@ -80,7 +77,10 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil do participante')),
-      body: SafeArea(
+      body: FundoTocaEssa(
+        variante: VarianteFundoTocaEssa.atmosfera,
+        intensidade: IntensidadeFundoTocaEssa.suave,
+        child: SafeArea(
           child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Center(
@@ -285,11 +285,11 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
             ],
           ]),
         )),
-      )),
+        )),
+      ),
     );
   }
 }
-
 class _SecaoPerfil extends StatelessWidget {
   const _SecaoPerfil({required this.child});
   final Widget child;
@@ -304,7 +304,6 @@ class _SecaoPerfil extends StatelessWidget {
         child: child,
       );
 }
-
 class _MedalhaResenha extends StatelessWidget {
   const _MedalhaResenha(
       {required this.titulo,

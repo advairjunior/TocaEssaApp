@@ -22,12 +22,17 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
                       icon: Icon(Icons.person_outline), label: 'Perfil geral'),
                 ],
               ),
-        body: _ocupado
-            ? const Center(child: CircularProgressIndicator())
-            : ConteudoMobile(
-                filho: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+        body: FundoTocaEssa(
+          variante: VarianteFundoTocaEssa.atmosfera,
+          intensidade: _perfil == null
+              ? IntensidadeFundoTocaEssa.imersiva
+              : IntensidadeFundoTocaEssa.suave,
+          child: (_ocupado
+              ? const Center(child: CircularProgressIndicator())
+              : ConteudoMobile(
+                  filho: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
                     if (_erro != null) ...[
                       Text(_erro!),
                       TextButton(
@@ -134,7 +139,8 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
                           },
                           icon: const Icon(Icons.tag),
                           label: const Text('Entrar em outra apresentação')),
-                    ],
-                  ])),
+                      ],
+                    ]))),
+        ),
       );
 }
