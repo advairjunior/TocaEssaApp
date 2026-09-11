@@ -147,6 +147,10 @@ void main() {
     expect(find.text('Acessar Painel do Artista'), findsOneWidget);
     expect(find.text('Código da Apresentação'), findsOneWidget);
     expect(find.text('Feito por Advair'), findsOneWidget);
+    expect(
+      find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('artista cria conta e acessa painel protegido', (tester) async {
