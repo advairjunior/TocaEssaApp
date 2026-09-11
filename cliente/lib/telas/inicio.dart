@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'fundo_toca_essa.dart';
 
 class Inicio extends StatefulWidget {
   const Inicio({super.key, required this.api});
@@ -29,15 +30,9 @@ class _InicioState extends State<Inicio> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0, -0.85),
-              radius: 1.15,
-              colors: [Color(0xFF24143C), CoresTocaEssa.fundo],
-              stops: [0, 0.72],
-            ),
-          ),
+        body: FundoTocaEssa(
+          variante: VarianteFundoTocaEssa.palco,
+          intensidade: IntensidadeFundoTocaEssa.imersiva,
           child: ConteudoMobile(
             filho: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

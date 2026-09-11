@@ -61,6 +61,7 @@ flutter:
   assets:
     - assets/marca/toca_essa_horizontal.png
     - assets/marca/toca_essa_icone.png
+    - assets/fundos/
   fonts:
     - family: Poppins
       fonts:
