@@ -36,8 +36,20 @@ public sealed partial class RepositorioTocaEssa
 
         var perfil = banco.Perfis.AsNoTracking().SingleOrDefault();
         if (perfil is not null)
-            _perfil = new PerfilArtistico(
-                perfil.Id, perfil.NomeArtistico, perfil.Bio, perfil.FotoUrl);
+        {
+            _perfil = ParaPerfilPublico(perfil);
+            _configuracaoPerfil = new ConfiguracaoPerfilArtistico(
+                _perfil,
+                perfil.Instagram,
+                perfil.ExibirInstagram,
+                perfil.Whatsapp,
+                perfil.ExibirWhatsapp,
+                perfil.PixAtivo,
+                perfil.PixChave,
+                perfil.PixNomeBeneficiario,
+                perfil.PixCidadeBeneficiario,
+                perfil.PixMensagem);
+        }
 
         if (_perfil is not null)
             foreach (var apresentacao in banco.Apresentacoes.AsNoTracking())
@@ -148,13 +160,25 @@ public sealed partial class RepositorioTocaEssa
         banco.SaveChanges();
 
         if (_perfil is not null)
+        {
+            var configuracao = _configuracaoPerfil;
             banco.Perfis.Add(new PerfilArtisticoRegistro
             {
                 Id = _perfil.Id,
                 NomeArtistico = _perfil.NomeArtistico,
                 Bio = _perfil.Bio,
-                FotoUrl = _perfil.FotoUrl
+                FotoUrl = _perfil.FotoUrl,
+                Instagram = configuracao?.Instagram,
+                ExibirInstagram = configuracao?.ExibirInstagram ?? false,
+                Whatsapp = configuracao?.Whatsapp,
+                ExibirWhatsapp = configuracao?.ExibirWhatsapp ?? false,
+                PixAtivo = configuracao?.PixAtivo ?? false,
+                PixChave = configuracao?.PixChave,
+                PixNomeBeneficiario = configuracao?.PixNomeBeneficiario,
+                PixCidadeBeneficiario = configuracao?.PixCidadeBeneficiario,
+                PixMensagem = configuracao?.PixMensagem
             });
+        }
 
         banco.Apresentacoes.AddRange(_apresentacoes.Values.Select(item =>
             new ApresentacaoRegistro
@@ -256,6 +280,23 @@ public sealed partial class RepositorioTocaEssa
 
     private static ContaArtista ParaDominio(ContaArtistaRegistro registro) =>
         new(registro.Id, registro.Nome, registro.Email, registro.CriadoEm);
+
+    private static PerfilArtistico ParaPerfilPublico(
+        PerfilArtisticoRegistro registro)
+    {
+        var apoioDisponivel = registro.PixAtivo &&
+                              !string.IsNullOrWhiteSpace(registro.PixChave) &&
+                              !string.IsNullOrWhiteSpace(registro.PixNomeBeneficiario) &&
+                              !string.IsNullOrWhiteSpace(registro.PixCidadeBeneficiario);
+        return new PerfilArtistico(
+            registro.Id,
+            registro.NomeArtistico,
+            registro.Bio,
+            registro.FotoUrl,
+            registro.ExibirInstagram ? registro.Instagram : null,
+            registro.ExibirWhatsapp ? registro.Whatsapp : null,
+            apoioDisponivel);
+    }
 
     private static string NormalizarEmail(string email) =>
         email.Trim().ToUpperInvariant();

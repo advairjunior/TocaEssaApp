@@ -1,3 +1,4 @@
+using TocaEssaApp.Api.Dominio;
 using TocaEssaApp.Api.Infraestrutura;
 
 namespace TocaEssaApp.Api;
@@ -146,6 +147,30 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
             await contexto.Response.WriteAsJsonAsync(new
             {
                 mensagem = "Não foi possível identificar esta avaliação. Atualize a página."
+            });
+        }
+        catch (ValorApoioPixInvalidoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Informe um valor entre R$ 1,00 e R$ 1.000,00."
+            });
+        }
+        catch (ConfiguracaoPixInvalidaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Revise os dados Pix no perfil do artista."
+            });
+        }
+        catch (ApoioPixIndisponivelException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "O apoio por Pix não está disponível nesta apresentação."
             });
         }
     }

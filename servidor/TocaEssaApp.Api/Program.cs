@@ -151,7 +151,9 @@ app.MapDelete("/api/artista/cifras/{id:guid}", (
 });
 
 app.MapGet("/api/perfil-artistico", (RepositorioTocaEssa repositorio) =>
-    repositorio.ObterPerfil() is { } perfil ? Results.Ok(perfil) : Results.NotFound());
+    repositorio.ObterConfiguracaoPerfil() is { } perfil
+        ? Results.Ok(perfil)
+        : Results.NotFound());
 
 app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, RepositorioTocaEssa repositorio) =>
 {
@@ -163,7 +165,8 @@ app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, Repositor
         });
     }
 
-    return Results.Ok(repositorio.SalvarPerfil(requisicao.NomeArtistico.Trim(), requisicao.Bio?.Trim()));
+    repositorio.SalvarPerfil(requisicao);
+    return Results.Ok(repositorio.ObterConfiguracaoPerfil());
 });
 
 app.MapPost("/api/perfil-artistico/foto", async Task<IResult> (
@@ -227,6 +230,10 @@ app.MapGet("/api/publico/estatisticas", (
 app.MapGet("/api/publico/apresentacoes", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarApresentacoesDoPublico(ObterToken(http) ?? string.Empty)));
+
+app.MapGet("/api/publico/apresentacoes/{codigo}/apoio-pix", (
+    string codigo, decimal valor, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.GerarApoioPix(codigo, valor)));
 
 app.MapDelete("/api/publico/sessoes/atual", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
@@ -377,6 +384,10 @@ app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/pedidos", (
     Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarPedidosDoArtista(apresentacaoId)));
 
+app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos", (
+    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarGruposDePedidosDoArtista(apresentacaoId)));
+
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/estatisticas", (
     Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ObterEstatisticasDaApresentacao(apresentacaoId)));
@@ -419,9 +430,21 @@ app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/pedidos/{pedidoId:guid}/s
     Guid apresentacaoId, Guid pedidoId, AlterarStatusPedidoMusical requisicao, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.AlterarStatus(apresentacaoId, pedidoId, requisicao.Status)));
 
+app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos/{representanteId:guid}/status", (
+    Guid apresentacaoId, Guid representanteId,
+    AlterarStatusPedidoMusical requisicao, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.AlterarStatusDoGrupo(
+        apresentacaoId, representanteId, requisicao.Status)));
+
 app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/fila", (
     Guid apresentacaoId, ReordenarFilaMusical requisicao, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ReordenarFila(apresentacaoId, requisicao.Pedidos)));
+
+app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/fila-agrupada", (
+    Guid apresentacaoId, ReordenarFilaMusical requisicao,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ReordenarGruposDaFila(
+        apresentacaoId, requisicao.Pedidos)));
 
 app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/pedidos", (
     Guid apresentacaoId, AlterarPedidosDaApresentacao requisicao, RepositorioTocaEssa repositorio) =>

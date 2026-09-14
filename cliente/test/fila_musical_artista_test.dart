@@ -62,32 +62,38 @@ Apresentacao _apresentacao() => Apresentacao(
 const _pedidosJson = '''
 [
   {
-    "id":"10000000-0000-0000-0000-000000000001",
+    "pedidoRepresentativoId":"10000000-0000-0000-0000-000000000001",
+    "pedidoIds":["10000000-0000-0000-0000-000000000001"],
     "apresentacaoId":"33333333-3333-3333-3333-333333333333",
     "musica":"Pedido pendente",
     "artista":"Artista A",
-    "nomeSolicitante":"Ana",
+    "solicitantes":["Ana"],
+    "quantidadePedidos":1,
     "status":"Aguardando",
     "criadoEm":"2026-09-10T12:00:00Z",
     "tipo":"Musica"
   },
   {
-    "id":"10000000-0000-0000-0000-000000000002",
+    "pedidoRepresentativoId":"10000000-0000-0000-0000-000000000002",
+    "pedidoIds":["10000000-0000-0000-0000-000000000002"],
     "apresentacaoId":"33333333-3333-3333-3333-333333333333",
     "musica":"Música na fila",
     "artista":"Artista B",
-    "nomeSolicitante":"Bia",
+    "solicitantes":["Bia"],
+    "quantidadePedidos":1,
     "status":"Aceito",
     "posicao":1,
     "criadoEm":"2026-09-10T12:01:00Z",
     "tipo":"Musica"
   },
   {
-    "id":"10000000-0000-0000-0000-000000000003",
+    "pedidoRepresentativoId":"10000000-0000-0000-0000-000000000003",
+    "pedidoIds":["10000000-0000-0000-0000-000000000003"],
     "apresentacaoId":"33333333-3333-3333-3333-333333333333",
     "musica":"Música finalizada",
     "artista":"Artista C",
-    "nomeSolicitante":"Caio",
+    "solicitantes":["Caio"],
+    "quantidadePedidos":1,
     "status":"Finalizado",
     "criadoEm":"2026-09-10T12:02:00Z",
     "tipo":"Musica"

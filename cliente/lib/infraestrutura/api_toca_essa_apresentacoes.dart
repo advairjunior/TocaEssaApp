@@ -89,4 +89,13 @@ mixin _ApiApresentacoes on _ApiTocaEssaBase {
     return Apresentacao.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
+
+  Future<ApoioPix> obterApoioPix(String codigo, double valor) async {
+    final uri = Uri.parse(
+            '$_enderecoBase/api/publico/apresentacoes/${codigo.trim().toUpperCase()}/apoio-pix')
+        .replace(queryParameters: {'valor': valor.toStringAsFixed(2)});
+    final resposta = await _cliente.get(uri);
+    _validar(resposta);
+    return ApoioPix.deJson(jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
 }

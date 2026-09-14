@@ -16,6 +16,7 @@ part 'painel_do_artista_estado.dart';
 part 'painel_do_artista_acoes_apresentacao.dart';
 part 'painel_do_artista_construcao.dart';
 part 'painel_do_artista_aba_perfil.dart';
+part 'painel_do_artista_perfil_publico.dart';
 part 'painel_do_artista_aba_galera.dart';
 part 'painel_do_artista_abas_apresentacoes.dart';
 part 'painel_do_artista_abas_gestao.dart';

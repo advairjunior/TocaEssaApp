@@ -8,6 +8,15 @@ internal sealed class PerfilArtisticoRegistro
     public string NomeArtistico { get; set; } = string.Empty;
     public string? Bio { get; set; }
     public string? FotoUrl { get; set; }
+    public string? Instagram { get; set; }
+    public bool ExibirInstagram { get; set; }
+    public string? Whatsapp { get; set; }
+    public bool ExibirWhatsapp { get; set; }
+    public bool PixAtivo { get; set; }
+    public string? PixChave { get; set; }
+    public string? PixNomeBeneficiario { get; set; }
+    public string? PixCidadeBeneficiario { get; set; }
+    public string? PixMensagem { get; set; }
 }
 
 internal sealed class ApresentacaoRegistro

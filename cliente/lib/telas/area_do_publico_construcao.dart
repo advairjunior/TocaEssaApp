@@ -8,109 +8,124 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
         ? IntensidadeFundoTocaEssa.cabecalho
         : IntensidadeFundoTocaEssa.suave;
     return Scaffold(
-        appBar: AppBar(title: const Text('Área do Público'), actions: [
-          IconButton(
-              tooltip: 'Minha conta e histórico',
-              icon: const Icon(Icons.account_circle_outlined),
-              onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
-        ]),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: _abaSelecionada,
-          onDestinationSelected: (indice) {
-            if (indice != _indicePerfil &&
-                _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
-                _perfilPublico == null) {
-              mostrarErro(
-                  context, 'Entre no seu perfil para participar da resenha.');
-              _mudarEstado(() => _abaSelecionada = _indicePerfil);
-              return;
-            }
-            _mudarEstado(() => _abaSelecionada = indice);
-          },
-          destinations: [
+      appBar: AppBar(title: const Text('Área do Público'), actions: [
+        IconButton(
+            tooltip: 'Minha conta e histórico',
+            icon: const Icon(Icons.account_circle_outlined),
+            onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
+      ]),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _abaSelecionada,
+        onDestinationSelected: (indice) {
+          if (indice != _indicePerfil &&
+              indice != _indiceArtista &&
+              _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
+              _perfilPublico == null) {
+            mostrarErro(
+                context, 'Entre no seu perfil para participar da resenha.');
+            _mudarEstado(() => _abaSelecionada = _indicePerfil);
+            return;
+          }
+          _mudarEstado(() => _abaSelecionada = indice);
+        },
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.music_note_outlined),
+            selectedIcon: Icon(Icons.music_note_rounded),
+            label: 'Pedir',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.queue_music_outlined),
+            selectedIcon: Icon(Icons.queue_music_rounded),
+            label: 'Fila',
+          ),
+          if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
             const NavigationDestination(
-              icon: Icon(Icons.music_note_outlined),
-              selectedIcon: Icon(Icons.music_note_rounded),
-              label: 'Pedir',
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups_rounded),
+              label: 'Galera',
             ),
-            const NavigationDestination(
-              icon: Icon(Icons.queue_music_outlined),
-              selectedIcon: Icon(Icons.queue_music_rounded),
-              label: 'Fila',
-            ),
-            if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
-              const NavigationDestination(
-                icon: Icon(Icons.groups_outlined),
-                selectedIcon: Icon(Icons.groups_rounded),
-                label: 'Galera',
-              ),
-            const NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Perfil',
-            ),
-          ],
-        ),
-        body: FundoTocaEssa(
-          variante: VarianteFundoTocaEssa.atmosfera,
-          intensidade: intensidadeDoFundo,
-          child: ConteudoMobile(
-            filho: FutureBuilder<Apresentacao?>(
-              future: _consulta,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done &&
-                    !snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return _MensagemPublica(
-                    icone: Icons.wifi_off_rounded,
-                    titulo: 'Não foi possível conectar',
-                    descricao: snapshot.error.toString(),
-                  );
-                }
-                final apresentacao = snapshot.data;
-                if (apresentacao == null) {
-                  return const _MensagemPublica(
-                    icone: Icons.search_off_rounded,
-                    titulo: 'Código não encontrado',
-                    descricao:
-                        'Confira o código com o artista e tente novamente.',
-                  );
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 4),
-                    if (_abaSelecionada == 0)
-                      _CabecalhoCompactoPedido(
-                        apresentacao: apresentacao,
-                        enderecoFoto: _api.enderecoArquivo(
-                          apresentacao.perfilArtistico.fotoUrl,
-                        ),
-                      )
-                    else if (_abaSelecionada != _indicePerfil)
-                      _CartaoApresentacaoPublica(
-                        apresentacao: apresentacao,
-                        enderecoFoto: _api.enderecoArquivo(
-                          apresentacao.perfilArtistico.fotoUrl,
-                        ),
-                        copiarCodigo: () => _copiarCodigo(apresentacao.codigo),
-                      ),
-                    ..._construirConteudoDaAba(apresentacao, context),
-                  ],
+          const NavigationDestination(
+            icon: Icon(Icons.mic_external_on_outlined),
+            selectedIcon: Icon(Icons.mic_external_on_rounded),
+            label: 'Artista',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
+            label: 'Perfil',
+          ),
+        ],
+      ),
+      body: FundoTocaEssa(
+        variante: VarianteFundoTocaEssa.atmosfera,
+        intensidade: intensidadeDoFundo,
+        child: ConteudoMobile(
+          filho: FutureBuilder<Apresentacao?>(
+            future: _consulta,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done &&
+                  !snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return _MensagemPublica(
+                  icone: Icons.wifi_off_rounded,
+                  titulo: 'Não foi possível conectar',
+                  descricao: snapshot.error.toString(),
                 );
-              },
-            ),
+              }
+              final apresentacao = snapshot.data;
+              if (apresentacao == null) {
+                return const _MensagemPublica(
+                  icone: Icons.search_off_rounded,
+                  titulo: 'Código não encontrado',
+                  descricao:
+                      'Confira o código com o artista e tente novamente.',
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 4),
+                  if (_abaSelecionada != 0 &&
+                      _abaSelecionada != _indiceArtista &&
+                      _abaSelecionada != _indicePerfil)
+                    _CartaoApresentacaoPublica(
+                      apresentacao: apresentacao,
+                      enderecoFoto: _api.enderecoArquivo(
+                        apresentacao.perfilArtistico.fotoUrl,
+                      ),
+                      copiarCodigo: () => _copiarCodigo(apresentacao.codigo),
+                    ),
+                  ..._construirConteudoDaAba(apresentacao, context),
+                ],
+              );
+            },
           ),
         ),
-      );
+      ),
+    );
   }
 
   List<Widget> _construirConteudoDaAba(
       Apresentacao apresentacao, BuildContext context) {
     if (_abaSelecionada == _indicePerfil) {
       return _construirAbaPerfil(apresentacao, context);
+    }
+    if (_abaSelecionada == _indiceArtista) {
+      return [
+        const SizedBox(height: 8),
+        Text('Conheça o artista',
+            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        const Text(
+          'Acompanhe, entre em contato ou apoie quem está no palco.',
+          style: TextStyle(color: CoresTocaEssa.textoSecundario),
+        ),
+        const SizedBox(height: 14),
+        _construirPerfilPublicoArtista(apresentacao),
+      ];
     }
     if (_abaSelecionada == 0) return _construirAbaPedir(apresentacao, context);
     if (_abaSelecionada == 1) return _construirAbaFila(context);
@@ -186,6 +201,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               apresentacao: apresentacao,
               enderecoFoto:
                   _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
+              abrirPerfil: () => _abrirPerfilDoArtista(apresentacao),
             ),
             const SizedBox(height: 16),
             const Text('Sua participação apenas neste encontro.'),

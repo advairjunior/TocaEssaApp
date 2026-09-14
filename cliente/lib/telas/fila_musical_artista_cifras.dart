@@ -1,7 +1,7 @@
 part of 'fila_musical_artista.dart';
 
 extension _CifrasDaFila on _FilaMusicalArtistaState {
-  Future<void> _abrirCifra(PedidoMusical pedido) async {
+  Future<void> _abrirCifra(GrupoPedidoMusical pedido) async {
     FinalizarAberturaExterna? finalizarAbertura;
     try {
       finalizarAbertura = widget.prepararAbertura();
@@ -24,7 +24,7 @@ extension _CifrasDaFila on _FilaMusicalArtistaState {
     }
   }
 
-  Future<void> _escolherCifra(PedidoMusical pedido) async {
+  Future<void> _escolherCifra(GrupoPedidoMusical pedido) async {
     try {
       final resultado =
           await widget.api.consultarCifra(pedido.musica, pedido.artista);
@@ -35,7 +35,7 @@ extension _CifrasDaFila on _FilaMusicalArtistaState {
   }
 
   Future<void> _mostrarEscolhaDaCifra(
-      PedidoMusical pedido, ResultadoCifraDoArtista resultado) async {
+      GrupoPedidoMusical pedido, ResultadoCifraDoArtista resultado) async {
     final decisao = await mostrarEscolhaDeCifra(
       context,
       musica: pedido.musica,

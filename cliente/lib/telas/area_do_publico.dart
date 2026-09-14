@@ -6,11 +6,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../infraestrutura/baixar_arquivo.dart';
+import '../infraestrutura/abrir_url_externa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'fundo_toca_essa.dart';
@@ -31,6 +33,8 @@ part 'componentes_publico_perfil.dart';
 part 'componentes_publico_cabecalho.dart';
 part 'componentes_publico_pedidos.dart';
 part 'componentes_publico_fila.dart';
+part 'perfil_publico_artista.dart';
+part 'apoio_pix_artista.dart';
 
 class AreaDoPublico extends StatefulWidget {
   const AreaDoPublico(

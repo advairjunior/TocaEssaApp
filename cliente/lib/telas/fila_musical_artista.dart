@@ -38,7 +38,7 @@ class FilaMusicalArtista extends StatefulWidget {
 }
 
 class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
-  List<PedidoMusical> _pedidos = [];
+  List<GrupoPedidoMusical> _pedidos = [];
   bool _carregando = true;
   bool _atualizando = false;
   late int _abaSelecionada;
@@ -46,28 +46,28 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   Timer? _atualizacaoAutomatica;
   AssinaturaTempoReal? _tempoReal;
 
-  List<PedidoMusical> get _aguardando => _pedidos
+  List<GrupoPedidoMusical> get _aguardando => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
           item.status == StatusPedidoMusical.aguardando)
       .toList();
-  List<PedidoMusical> get _fila => _pedidos
+  List<GrupoPedidoMusical> get _fila => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
           item.status == StatusPedidoMusical.aceito)
       .toList();
-  List<PedidoMusical> get _tocando => _pedidos
+  List<GrupoPedidoMusical> get _tocando => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
           item.status == StatusPedidoMusical.tocandoAgora)
       .toList();
-  List<PedidoMusical> get _alosPendentes => _pedidos
+  List<GrupoPedidoMusical> get _alosPendentes => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.alo &&
           (item.status == StatusPedidoMusical.aguardando ||
               item.status == StatusPedidoMusical.aceito))
       .toList();
-  List<PedidoMusical> get _historico => _pedidos
+  List<GrupoPedidoMusical> get _historico => _pedidos
       .where((item) =>
           !_alosPendentes.contains(item) &&
           item.status != StatusPedidoMusical.aguardando &&
@@ -101,8 +101,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     if (_atualizando || !mounted) return;
     _atualizando = true;
     try {
-      final pedidos =
-          await widget.api.listarPedidosDoArtista(widget.apresentacao.id);
+      final pedidos = await widget.api
+          .listarGruposDePedidosDoArtista(widget.apresentacao.id);
       if (mounted) setState(() => _pedidos = pedidos);
     } catch (_) {
       // A próxima atualização tenta novamente sem interromper o artista.
@@ -113,8 +113,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
 
   Future<void> _carregar() async {
     try {
-      final pedidos =
-          await widget.api.listarPedidosDoArtista(widget.apresentacao.id);
+      final pedidos = await widget.api
+          .listarGruposDePedidosDoArtista(widget.apresentacao.id);
       if (mounted) {
         setState(() {
           _pedidos = pedidos;
@@ -130,10 +130,10 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   }
 
   Future<void> _alterar(
-      PedidoMusical pedido, StatusPedidoMusical status) async {
+      GrupoPedidoMusical pedido, StatusPedidoMusical status) async {
     try {
-      await widget.api
-          .alterarStatusPedido(widget.apresentacao.id, pedido.id, status);
+      await widget.api.alterarStatusDoGrupo(
+          widget.apresentacao.id, pedido.pedidoRepresentativoId, status);
       await _carregar();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
@@ -152,9 +152,9 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
         .toList();
     setState(() => _pedidos = [...foraDaFila, ...fila]);
     try {
-      final atualizados = await widget.api.reordenarFila(
+      final atualizados = await widget.api.reordenarFilaAgrupada(
         widget.apresentacao.id,
-        fila.map((item) => item.id).toList(),
+        fila.map((item) => item.pedidoRepresentativoId).toList(),
       );
       if (mounted) setState(() => _pedidos = atualizados);
     } catch (erro) {

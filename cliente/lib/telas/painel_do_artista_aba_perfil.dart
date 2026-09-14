@@ -116,6 +116,8 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
             ],
           ),
         ),
+        const SizedBox(height: 18),
+        _construirPerfilPublicoEApoio(),
         const SizedBox(height: 28),
         _ProgressoDoArtista(apresentacoes: _apresentacoes),
         const SizedBox(height: 28),

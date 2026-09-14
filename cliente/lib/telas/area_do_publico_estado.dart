@@ -41,8 +41,10 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   Timer? _atualizacaoAutomatica;
   AssinaturaTempoReal? _tempoReal;
 
-  int get _indicePerfil =>
+  int get _indiceArtista =>
       _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos ? 3 : 2;
+
+  int get _indicePerfil => _indiceArtista + 1;
 
   String get _chavePedidos =>
       'pedidos_publico_${widget.codigoInicial.trim().toUpperCase()}';

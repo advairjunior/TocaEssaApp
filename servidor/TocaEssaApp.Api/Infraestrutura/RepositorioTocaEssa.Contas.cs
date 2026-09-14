@@ -67,10 +67,52 @@ public sealed partial class RepositorioTocaEssa
 
     public PerfilArtistico SalvarPerfil(string nomeArtistico, string? bio)
     {
+        var configuracao = _configuracaoPerfil;
+        return SalvarPerfil(new SalvarPerfilArtistico(
+            nomeArtistico,
+            bio,
+            configuracao?.Instagram,
+            configuracao?.ExibirInstagram ?? false,
+            configuracao?.Whatsapp,
+            configuracao?.ExibirWhatsapp ?? false,
+            configuracao?.PixAtivo ?? false,
+            configuracao?.PixChave,
+            configuracao?.PixNomeBeneficiario,
+            configuracao?.PixCidadeBeneficiario,
+            configuracao?.PixMensagem));
+    }
+
+    public PerfilArtistico SalvarPerfil(SalvarPerfilArtistico dados)
+    {
         lock (_sincronizacao)
         {
+            var instagram = Limitar(dados.Instagram, 120);
+            var whatsapp = Limitar(dados.Whatsapp, 20);
+            var pixChave = Limitar(dados.PixChave, 140);
+            var pixNome = Limitar(dados.PixNomeBeneficiario, 25);
+            var pixCidade = Limitar(dados.PixCidadeBeneficiario, 15);
+            var pixMensagem = Limitar(dados.PixMensagem, 72);
+            var apoioDisponivel = dados.PixAtivo && pixChave is not null &&
+                                  pixNome is not null && pixCidade is not null;
             _perfil = new PerfilArtistico(
-                _perfil?.Id ?? Guid.NewGuid(), nomeArtistico, bio, _perfil?.FotoUrl);
+                _perfil?.Id ?? Guid.NewGuid(),
+                dados.NomeArtistico.Trim(),
+                Limitar(dados.Bio, 500),
+                _perfil?.FotoUrl,
+                dados.ExibirInstagram ? instagram : null,
+                dados.ExibirWhatsapp ? whatsapp : null,
+                apoioDisponivel);
+            _configuracaoPerfil = new ConfiguracaoPerfilArtistico(
+                _perfil,
+                instagram,
+                dados.ExibirInstagram,
+                whatsapp,
+                dados.ExibirWhatsapp,
+                dados.PixAtivo,
+                pixChave,
+                pixNome,
+                pixCidade,
+                pixMensagem);
             foreach (var item in _apresentacoes.ToArray())
                 _apresentacoes[item.Key] = item.Value with { PerfilArtistico = _perfil };
             SalvarEstado();
@@ -84,6 +126,8 @@ public sealed partial class RepositorioTocaEssa
         {
             var perfil = _perfil ?? throw new PerfilArtisticoNaoCadastradoException();
             _perfil = perfil with { FotoUrl = fotoUrl };
+            if (_configuracaoPerfil is not null)
+                _configuracaoPerfil = _configuracaoPerfil with { Perfil = _perfil };
             foreach (var item in _apresentacoes.ToArray())
                 _apresentacoes[item.Key] = item.Value with { PerfilArtistico = _perfil };
             SalvarEstado();

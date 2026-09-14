@@ -114,6 +114,19 @@ mixin _ApiPedidos on _ApiTocaEssaBase {
         .toList();
   }
 
+  Future<List<GrupoPedidoMusical>> listarGruposDePedidosDoArtista(
+      String apresentacaoId) async {
+    final resposta = await _cliente.get(
+      Uri.parse(
+          '$_enderecoBase/api/apresentacoes/$apresentacaoId/grupos-pedidos'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((item) => GrupoPedidoMusical.deJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<EstatisticasDaApresentacao> obterEstatisticasDaApresentacao(
       String apresentacaoId) async {
     final resposta = await _cliente.get(
@@ -179,6 +192,22 @@ mixin _ApiPedidos on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
+  Future<GrupoPedidoMusical> alterarStatusDoGrupo(
+    String apresentacaoId,
+    String representanteId,
+    StatusPedidoMusical status,
+  ) async {
+    final resposta = await _cliente.patch(
+      Uri.parse(
+          '$_enderecoBase/api/apresentacoes/$apresentacaoId/grupos-pedidos/$representanteId/status'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'status': status.paraJson}),
+    );
+    _validar(resposta);
+    return GrupoPedidoMusical.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
   Future<List<PedidoMusical>> reordenarFila(
     String apresentacaoId,
     List<String> pedidos,
@@ -191,6 +220,22 @@ mixin _ApiPedidos on _ApiTocaEssaBase {
     _validar(resposta);
     return (jsonDecode(resposta.body) as List<dynamic>)
         .map((item) => PedidoMusical.deJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<List<GrupoPedidoMusical>> reordenarFilaAgrupada(
+    String apresentacaoId,
+    List<String> representantes,
+  ) async {
+    final resposta = await _cliente.put(
+      Uri.parse(
+          '$_enderecoBase/api/apresentacoes/$apresentacaoId/fila-agrupada'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'pedidos': representantes}),
+    );
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((item) => GrupoPedidoMusical.deJson(item as Map<String, dynamic>))
         .toList();
   }
 
