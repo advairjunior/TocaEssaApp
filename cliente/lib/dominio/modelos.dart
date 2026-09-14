@@ -4,18 +4,110 @@ part 'modelos_cifras.dart';
 
 class PerfilArtistico {
   const PerfilArtistico(
-      {required this.id, required this.nomeArtistico, this.bio, this.fotoUrl});
+      {required this.id,
+      required this.nomeArtistico,
+      this.bio,
+      this.fotoUrl,
+      this.instagram,
+      this.whatsapp,
+      this.apoioPixDisponivel = false});
 
   final String id;
   final String nomeArtistico;
   final String? bio;
   final String? fotoUrl;
+  final String? instagram;
+  final String? whatsapp;
+  final bool apoioPixDisponivel;
 
   factory PerfilArtistico.deJson(Map<String, dynamic> json) => PerfilArtistico(
         id: json['id'] as String,
         nomeArtistico: json['nomeArtistico'] as String,
         bio: json['bio'] as String?,
         fotoUrl: json['fotoUrl'] as String?,
+        instagram: json['instagram'] as String?,
+        whatsapp: json['whatsapp'] as String?,
+        apoioPixDisponivel: json['apoioPixDisponivel'] as bool? ?? false,
+      );
+}
+
+class ConfiguracaoPerfilArtistico {
+  const ConfiguracaoPerfilArtistico({
+    required this.perfil,
+    this.instagram,
+    this.exibirInstagram = false,
+    this.whatsapp,
+    this.exibirWhatsapp = false,
+    this.pixAtivo = false,
+    this.pixChave,
+    this.pixNomeBeneficiario,
+    this.pixCidadeBeneficiario,
+    this.pixMensagem,
+  });
+
+  final PerfilArtistico perfil;
+  final String? instagram;
+  final bool exibirInstagram;
+  final String? whatsapp;
+  final bool exibirWhatsapp;
+  final bool pixAtivo;
+  final String? pixChave;
+  final String? pixNomeBeneficiario;
+  final String? pixCidadeBeneficiario;
+  final String? pixMensagem;
+
+  factory ConfiguracaoPerfilArtistico.deJson(Map<String, dynamic> json) {
+    final perfilJson = json['perfil'] as Map<String, dynamic>? ?? json;
+    return ConfiguracaoPerfilArtistico(
+      perfil: PerfilArtistico.deJson(perfilJson),
+      instagram:
+          json['instagram'] as String? ?? perfilJson['instagram'] as String?,
+      exibirInstagram:
+          json['exibirInstagram'] as bool? ?? perfilJson['instagram'] != null,
+      whatsapp:
+          json['whatsapp'] as String? ?? perfilJson['whatsapp'] as String?,
+      exibirWhatsapp:
+          json['exibirWhatsapp'] as bool? ?? perfilJson['whatsapp'] != null,
+      pixAtivo: json['pixAtivo'] as bool? ??
+          perfilJson['apoioPixDisponivel'] as bool? ??
+          false,
+      pixChave: json['pixChave'] as String?,
+      pixNomeBeneficiario: json['pixNomeBeneficiario'] as String?,
+      pixCidadeBeneficiario: json['pixCidadeBeneficiario'] as String?,
+      pixMensagem: json['pixMensagem'] as String?,
+    );
+  }
+
+  ConfiguracaoPerfilArtistico comPerfil(PerfilArtistico novoPerfil) =>
+      ConfiguracaoPerfilArtistico(
+        perfil: novoPerfil,
+        instagram: instagram,
+        exibirInstagram: exibirInstagram,
+        whatsapp: whatsapp,
+        exibirWhatsapp: exibirWhatsapp,
+        pixAtivo: pixAtivo,
+        pixChave: pixChave,
+        pixNomeBeneficiario: pixNomeBeneficiario,
+        pixCidadeBeneficiario: pixCidadeBeneficiario,
+        pixMensagem: pixMensagem,
+      );
+}
+
+class ApoioPix {
+  const ApoioPix({
+    required this.valor,
+    required this.pixCopiaECola,
+    required this.mensagem,
+  });
+
+  final double valor;
+  final String pixCopiaECola;
+  final String mensagem;
+
+  factory ApoioPix.deJson(Map<String, dynamic> json) => ApoioPix(
+        valor: (json['valor'] as num).toDouble(),
+        pixCopiaECola: json['pixCopiaECola'] as String,
+        mensagem: json['mensagem'] as String,
       );
 }
 

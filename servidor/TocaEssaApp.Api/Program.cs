@@ -165,7 +165,8 @@ app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, Repositor
         });
     }
 
-    return Results.Ok(repositorio.SalvarPerfil(requisicao));
+    repositorio.SalvarPerfil(requisicao);
+    return Results.Ok(repositorio.ObterConfiguracaoPerfil());
 });
 
 app.MapPost("/api/perfil-artistico/foto", async Task<IResult> (

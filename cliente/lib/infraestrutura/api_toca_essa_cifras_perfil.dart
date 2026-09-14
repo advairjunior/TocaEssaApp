@@ -52,25 +52,50 @@ mixin _ApiCifrasPerfil on _ApiTocaEssaBase {
     );
     _validar(resposta);
   }
-  Future<PerfilArtistico?> obterPerfil() async {
+
+  Future<ConfiguracaoPerfilArtistico?> obterPerfil() async {
     final resposta = await _cliente.get(
       Uri.parse('$_enderecoBase/api/perfil-artistico'),
       headers: _cabecalhos(token: _tokenArtista),
     );
     if (resposta.statusCode == 404) return null;
     _validar(resposta);
-    return PerfilArtistico.deJson(
+    return ConfiguracaoPerfilArtistico.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
-  Future<PerfilArtistico> salvarPerfil(String nomeArtistico, String bio) async {
+  Future<ConfiguracaoPerfilArtistico> salvarPerfil({
+    required String nomeArtistico,
+    required String bio,
+    required String instagram,
+    required bool exibirInstagram,
+    required String whatsapp,
+    required bool exibirWhatsapp,
+    required bool pixAtivo,
+    required String pixChave,
+    required String pixNomeBeneficiario,
+    required String pixCidadeBeneficiario,
+    required String pixMensagem,
+  }) async {
     final resposta = await _cliente.put(
       Uri.parse('$_enderecoBase/api/perfil-artistico'),
       headers: _cabecalhos(token: _tokenArtista, json: true),
-      body: jsonEncode({'nomeArtistico': nomeArtistico, 'bio': bio}),
+      body: jsonEncode({
+        'nomeArtistico': nomeArtistico,
+        'bio': bio,
+        'instagram': instagram,
+        'exibirInstagram': exibirInstagram,
+        'whatsapp': whatsapp,
+        'exibirWhatsapp': exibirWhatsapp,
+        'pixAtivo': pixAtivo,
+        'pixChave': pixChave,
+        'pixNomeBeneficiario': pixNomeBeneficiario,
+        'pixCidadeBeneficiario': pixCidadeBeneficiario,
+        'pixMensagem': pixMensagem,
+      }),
     );
     _validar(resposta);
-    return PerfilArtistico.deJson(
+    return ConfiguracaoPerfilArtistico.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 

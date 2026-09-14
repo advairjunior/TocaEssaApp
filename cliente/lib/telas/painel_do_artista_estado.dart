@@ -3,9 +3,19 @@ part of 'painel_do_artista.dart';
 class _PainelDoArtistaState extends State<PainelDoArtista> {
   final _nomeArtistico = TextEditingController();
   final _bio = TextEditingController();
+  final _instagram = TextEditingController();
+  final _whatsapp = TextEditingController();
+  final _pixChave = TextEditingController();
+  final _pixNomeBeneficiario = TextEditingController();
+  final _pixCidadeBeneficiario = TextEditingController();
+  final _pixMensagem = TextEditingController();
   final _nomeApresentacao = TextEditingController();
   final _local = TextEditingController();
   PerfilArtistico? _perfil;
+  ConfiguracaoPerfilArtistico? _configuracaoPerfil;
+  bool _exibirInstagram = false;
+  bool _exibirWhatsapp = false;
+  bool _pixAtivo = false;
   List<Apresentacao> _apresentacoes = [];
   List<ParticipanteDaResenha> _galera = [];
   DateTime _data = DateTime.now();
@@ -60,10 +70,12 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         widget.api.listarApresentacoes(),
       ]);
       if (!mounted) return;
-      final perfil = resultados[0] as PerfilArtistico?;
+      final configuracao = resultados[0] as ConfiguracaoPerfilArtistico?;
+      final perfil = configuracao?.perfil;
       final apresentacoes = resultados[1] as List<Apresentacao>;
       setState(() {
         _perfil = perfil;
+        _configuracaoPerfil = configuracao;
         _apresentacoes = apresentacoes;
         _resenhaGaleraId = _escolherResenhaDaGalera(apresentacoes)?.id;
         _apresentacaoGestaoId =
@@ -72,6 +84,15 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         _carregando = false;
         _nomeArtistico.text = perfil?.nomeArtistico ?? '';
         _bio.text = perfil?.bio ?? '';
+        _instagram.text = configuracao?.instagram ?? '';
+        _whatsapp.text = configuracao?.whatsapp ?? '';
+        _pixChave.text = configuracao?.pixChave ?? '';
+        _pixNomeBeneficiario.text = configuracao?.pixNomeBeneficiario ?? '';
+        _pixCidadeBeneficiario.text = configuracao?.pixCidadeBeneficiario ?? '';
+        _pixMensagem.text = configuracao?.pixMensagem ?? '';
+        _exibirInstagram = configuracao?.exibirInstagram ?? false;
+        _exibirWhatsapp = configuracao?.exibirWhatsapp ?? false;
+        _pixAtivo = configuracao?.pixAtivo ?? false;
       });
     } catch (erro) {
       if (!mounted) return;
@@ -165,10 +186,24 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     }
     setState(() => _salvando = true);
     try {
-      final perfil = await widget.api
-          .salvarPerfil(_nomeArtistico.text.trim(), _bio.text.trim());
+      final configuracao = await widget.api.salvarPerfil(
+        nomeArtistico: _nomeArtistico.text.trim(),
+        bio: _bio.text.trim(),
+        instagram: _instagram.text.trim(),
+        exibirInstagram: _exibirInstagram,
+        whatsapp: _whatsapp.text.trim(),
+        exibirWhatsapp: _exibirWhatsapp,
+        pixAtivo: _pixAtivo,
+        pixChave: _pixChave.text.trim(),
+        pixNomeBeneficiario: _pixNomeBeneficiario.text.trim(),
+        pixCidadeBeneficiario: _pixCidadeBeneficiario.text.trim(),
+        pixMensagem: _pixMensagem.text.trim(),
+      );
       if (!mounted) return;
-      setState(() => _perfil = perfil);
+      setState(() {
+        _configuracaoPerfil = configuracao;
+        _perfil = configuracao.perfil;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Perfil Artístico salvo.')));
     } catch (erro) {
@@ -200,7 +235,10 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     try {
       final perfil = await widget.api.enviarFotoPerfil(bytes, arquivo.name);
       if (!mounted) return;
-      setState(() => _perfil = perfil);
+      setState(() {
+        _perfil = perfil;
+        _configuracaoPerfil = _configuracaoPerfil?.comPerfil(perfil);
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Foto do Perfil Artístico atualizada.')),
       );
@@ -255,6 +293,12 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   void dispose() {
     _nomeArtistico.dispose();
     _bio.dispose();
+    _instagram.dispose();
+    _whatsapp.dispose();
+    _pixChave.dispose();
+    _pixNomeBeneficiario.dispose();
+    _pixCidadeBeneficiario.dispose();
+    _pixMensagem.dispose();
     _nomeApresentacao.dispose();
     _local.dispose();
     super.dispose();
