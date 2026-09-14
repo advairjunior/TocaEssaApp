@@ -59,6 +59,9 @@ public sealed record SalvarPerfilArtistico(
     string? PixCidadeBeneficiario = null,
     string? PixMensagem = null);
 
+public sealed record ApoioPix(
+    decimal Valor, string PixCopiaECola, string Mensagem);
+
 public sealed record ContaArtista(
     Guid Id, string Nome, string Email, DateTimeOffset CriadoEm);
 
