@@ -44,12 +44,15 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Ver perfil do artista'));
+    expect(find.byTooltip('Ver perfil do artista'), findsNothing);
+    expect(find.text('Artista'), findsOneWidget);
+    await tester.tap(find.text('Artista'));
     await tester.pumpAndSettle();
     expect(find.text('Sobre o artista'), findsOneWidget);
     expect(find.text('Instagram'), findsOneWidget);
     expect(find.text('WhatsApp'), findsOneWidget);
 
+    await tester.ensureVisible(find.text('Apoiar o artista'));
     await tester.tap(find.text('Apoiar o artista'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('R\$ 10'));

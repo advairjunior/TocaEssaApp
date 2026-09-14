@@ -18,6 +18,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
         selectedIndex: _abaSelecionada,
         onDestinationSelected: (indice) {
           if (indice != _indicePerfil &&
+              indice != _indiceArtista &&
               _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
               _perfilPublico == null) {
             mostrarErro(
@@ -44,6 +45,11 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               selectedIcon: Icon(Icons.groups_rounded),
               label: 'Galera',
             ),
+          const NavigationDestination(
+            icon: Icon(Icons.mic_external_on_outlined),
+            selectedIcon: Icon(Icons.mic_external_on_rounded),
+            label: 'Artista',
+          ),
           const NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
             selectedIcon: Icon(Icons.person_rounded),
@@ -82,15 +88,9 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 4),
-                  if (_abaSelecionada == 0)
-                    _CabecalhoCompactoPedido(
-                      apresentacao: apresentacao,
-                      enderecoFoto: _api.enderecoArquivo(
-                        apresentacao.perfilArtistico.fotoUrl,
-                      ),
-                      abrirPerfil: () => _abrirPerfilDoArtista(apresentacao),
-                    )
-                  else if (_abaSelecionada != _indicePerfil)
+                  if (_abaSelecionada != 0 &&
+                      _abaSelecionada != _indiceArtista &&
+                      _abaSelecionada != _indicePerfil)
                     _CartaoApresentacaoPublica(
                       apresentacao: apresentacao,
                       enderecoFoto: _api.enderecoArquivo(
@@ -112,6 +112,20 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
       Apresentacao apresentacao, BuildContext context) {
     if (_abaSelecionada == _indicePerfil) {
       return _construirAbaPerfil(apresentacao, context);
+    }
+    if (_abaSelecionada == _indiceArtista) {
+      return [
+        const SizedBox(height: 8),
+        Text('Conheça o artista',
+            style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 4),
+        const Text(
+          'Acompanhe, entre em contato ou apoie quem está no palco.',
+          style: TextStyle(color: CoresTocaEssa.textoSecundario),
+        ),
+        const SizedBox(height: 14),
+        _construirPerfilPublicoArtista(apresentacao),
+      ];
     }
     if (_abaSelecionada == 0) return _construirAbaPedir(apresentacao, context);
     if (_abaSelecionada == 1) return _construirAbaFila(context);
