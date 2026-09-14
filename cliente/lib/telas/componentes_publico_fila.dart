@@ -125,6 +125,24 @@ class _DetalhesMusicaFila extends StatelessWidget {
           Text(pedido.musica,
               style: const TextStyle(fontWeight: FontWeight.w600)),
           if (pedido.artista?.isNotEmpty == true) Text(pedido.artista!),
+          if (pedido.quantidadePedidos > 1) ...[
+            const SizedBox(height: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: CoresTocaEssa.roxoClaro.withValues(alpha: .18),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${pedido.quantidadePedidos} pedidos',
+                style: const TextStyle(
+                  color: CoresTocaEssa.roxoClaro,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
           if (pedido.formaParticipacao != FormaParticipacaoPedido.pedidoNormal)
             Text(
               pedido.formaParticipacao.rotulo,

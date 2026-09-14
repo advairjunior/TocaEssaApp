@@ -4,6 +4,38 @@ import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 
+class CartaoGrupoPedidoArtista extends StatelessWidget {
+  const CartaoGrupoPedidoArtista({
+    super.key,
+    required this.grupo,
+    required this.alterar,
+    this.inicio,
+    this.fim,
+    this.somenteLeitura = false,
+    this.abrirCifra,
+    this.escolherCifra,
+  });
+
+  final GrupoPedidoMusical grupo;
+  final ValueChanged<StatusPedidoMusical> alterar;
+  final Widget? inicio;
+  final Widget? fim;
+  final bool somenteLeitura;
+  final VoidCallback? abrirCifra;
+  final VoidCallback? escolherCifra;
+
+  @override
+  Widget build(BuildContext context) => CartaoPedidoArtista(
+        pedido: grupo.comoPedidoMusical(),
+        alterar: alterar,
+        inicio: inicio,
+        fim: fim,
+        somenteLeitura: somenteLeitura,
+        abrirCifra: abrirCifra,
+        escolherCifra: escolherCifra,
+      );
+}
+
 class CartaoPedidoArtista extends StatelessWidget {
   const CartaoPedidoArtista({
     super.key,
@@ -28,10 +60,14 @@ class CartaoPedidoArtista extends StatelessWidget {
   Widget build(BuildContext context) => Card(
         margin: EdgeInsets.zero,
         elevation: 0,
+        color: pedido.quantidadePedidos > 1
+            ? CoresTocaEssa.roxo.withValues(alpha: .09)
+            : null,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
           side: BorderSide(
-            color: CoresTocaEssa.roxoClaro.withValues(alpha: .16),
+            color: CoresTocaEssa.roxoClaro
+                .withValues(alpha: pedido.quantidadePedidos > 1 ? .52 : .16),
           ),
         ),
         child: Padding(
@@ -40,7 +76,7 @@ class CartaoPedidoArtista extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _cabecalho(context),
-              if (pedido.nomeSolicitante?.isNotEmpty == true) ...[
+              if (_textoDosSolicitantes != null) ...[
                 const SizedBox(height: 6),
                 Row(
                   children: [
@@ -49,7 +85,7 @@ class CartaoPedidoArtista extends StatelessWidget {
                     const SizedBox(width: 5),
                     Expanded(
                       child: Text(
-                        'Pedido por ${pedido.nomeSolicitante}',
+                        _textoDosSolicitantes!,
                         style: const TextStyle(
                           color: CoresTocaEssa.textoSecundario,
                           fontSize: 13,
@@ -84,6 +120,18 @@ class CartaoPedidoArtista extends StatelessWidget {
       );
 
   bool get _temCifra => pedido.tipo == TipoPedido.musica && abrirCifra != null;
+
+  String? get _textoDosSolicitantes {
+    final nomes = pedido.solicitantes;
+    if (nomes.isEmpty) {
+      return pedido.nomeSolicitante?.isNotEmpty == true
+          ? 'Pedido por ${pedido.nomeSolicitante}'
+          : null;
+    }
+    if (nomes.length == 1) return 'Pedido por ${nomes.first}';
+    if (nomes.length == 2) return 'Pedido por ${nomes[0]} e ${nomes[1]}';
+    return 'Pedido por ${nomes[0]}, ${nomes[1]} e mais ${nomes.length - 2}';
+  }
 
   bool get _temRodape => _temCifra || (!somenteLeitura && _acoes().isNotEmpty);
 
@@ -176,6 +224,24 @@ class CartaoPedidoArtista extends StatelessWidget {
               ],
             ),
           ),
+          if (pedido.quantidadePedidos > 1) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              decoration: BoxDecoration(
+                color: CoresTocaEssa.roxoClaro.withValues(alpha: .18),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${pedido.quantidadePedidos} pedidos',
+                style: const TextStyle(
+                  color: CoresTocaEssa.roxoClaro,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
           if (fim != null) fim!,
         ],
       );

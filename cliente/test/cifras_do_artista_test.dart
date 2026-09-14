@@ -136,7 +136,7 @@ void main() {
     final api = ApiTocaEssa(
       enderecoBase: 'https://tocaessa.test',
       cliente: MockClient((requisicao) async {
-        if (requisicao.url.path.endsWith('/pedidos')) {
+        if (requisicao.url.path.endsWith('/grupos-pedidos')) {
           consultasDaFila++;
           return http.Response('[$_pedidoJson]', 200);
         }
@@ -174,7 +174,7 @@ void main() {
     final api = ApiTocaEssa(
       enderecoBase: 'https://tocaessa.test',
       cliente: MockClient((requisicao) async {
-        if (requisicao.url.path.endsWith('/pedidos')) {
+        if (requisicao.url.path.endsWith('/grupos-pedidos')) {
           return http.Response('[$_pedidoJson]', 200);
         }
         if (requisicao.method == 'PUT') {
@@ -262,11 +262,13 @@ const _cifraJson = '''
 
 const _pedidoJson = '''
 {
-  "id":"44444444-4444-4444-4444-444444444444",
+  "pedidoRepresentativoId":"44444444-4444-4444-4444-444444444444",
+  "pedidoIds":["44444444-4444-4444-4444-444444444444"],
   "apresentacaoId":"33333333-3333-3333-3333-333333333333",
   "musica":"Evidências",
   "artista":"Chitãozinho & Xororó",
-  "nomeSolicitante":"Ana",
+  "solicitantes":["Ana"],
+  "quantidadePedidos":1,
   "status":"Aguardando",
   "posicao":null,
   "criadoEm":"2026-09-10T12:00:00Z",

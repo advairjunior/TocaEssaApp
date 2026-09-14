@@ -18,8 +18,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
             const _TituloSecao('Tocando agora'),
             const SizedBox(height: 10),
             for (final pedido in _tocando)
-              CartaoPedidoArtista(
-                pedido: pedido,
+              CartaoGrupoPedidoArtista(
+                grupo: pedido,
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),
@@ -61,8 +61,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
                 icone: Icons.history_rounded,
               ),
             for (final pedido in _pedidos) ...[
-              CartaoPedidoArtista(
-                pedido: pedido,
+              CartaoGrupoPedidoArtista(
+                grupo: pedido,
                 somenteLeitura: true,
                 alterar: (_) {},
                 abrirCifra: () => _abrirCifra(pedido),
@@ -125,8 +125,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
         ),
         const SizedBox(height: 10),
         for (final pedido in pendentes) ...[
-          CartaoPedidoArtista(
-            pedido: pedido,
+          CartaoGrupoPedidoArtista(
+            grupo: pedido,
             abrirCifra: () => _abrirCifra(pedido),
             escolherCifra: () => _escolherCifra(pedido),
             alterar: (status) => _alterar(pedido, status),
@@ -161,10 +161,10 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
           itemBuilder: (context, indice) {
             final pedido = _fila[indice];
             return Padding(
-              key: ValueKey(pedido.id),
+              key: ValueKey(pedido.pedidoRepresentativoId),
               padding: const EdgeInsets.only(bottom: 10),
-              child: CartaoPedidoArtista(
-                pedido: pedido,
+              child: CartaoGrupoPedidoArtista(
+                grupo: pedido,
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),
@@ -195,8 +195,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
     return Column(
       children: [
         for (final pedido in _historico) ...[
-          CartaoPedidoArtista(
-            pedido: pedido,
+          CartaoGrupoPedidoArtista(
+            grupo: pedido,
             somenteLeitura: true,
             alterar: (_) {},
             abrirCifra: () => _abrirCifra(pedido),

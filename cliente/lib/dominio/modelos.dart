@@ -340,6 +340,7 @@ class PedidoMusical {
     this.mediaAvaliacoes,
     this.minhaAvaliacao,
     this.solicitantes = const [],
+    this.quantidadePedidos = 1,
   });
 
   final String id;
@@ -359,6 +360,7 @@ class PedidoMusical {
   final double? mediaAvaliacoes;
   final int? minhaAvaliacao;
   final List<String> solicitantes;
+  final int quantidadePedidos;
   final DateTime criadoEm;
 
   factory PedidoMusical.deJson(Map<String, dynamic> json) => PedidoMusical(
@@ -382,6 +384,93 @@ class PedidoMusical {
         solicitantes: (json['solicitantes'] as List<dynamic>? ?? const [])
             .map((item) => item.toString())
             .toList(),
+        quantidadePedidos: json['quantidadePedidos'] as int? ?? 1,
         criadoEm: DateTime.parse(json['criadoEm'] as String),
+      );
+}
+
+class GrupoPedidoMusical {
+  const GrupoPedidoMusical({
+    required this.pedidoRepresentativoId,
+    required this.pedidoIds,
+    required this.apresentacaoId,
+    required this.musica,
+    required this.status,
+    required this.criadoEm,
+    required this.quantidadePedidos,
+    required this.solicitantes,
+    this.artista,
+    this.posicao,
+    this.formaParticipacao = FormaParticipacaoPedido.pedidoNormal,
+    this.tomPreferido,
+    this.recado,
+    this.tipo = TipoPedido.musica,
+    this.destinatarioAlo,
+    this.quantidadeAvaliacoes = 0,
+    this.mediaAvaliacoes,
+  });
+
+  final String pedidoRepresentativoId;
+  final List<String> pedidoIds;
+  final String apresentacaoId;
+  final String musica;
+  final String? artista;
+  final StatusPedidoMusical status;
+  final int? posicao;
+  final DateTime criadoEm;
+  final FormaParticipacaoPedido formaParticipacao;
+  final String? tomPreferido;
+  final String? recado;
+  final TipoPedido tipo;
+  final String? destinatarioAlo;
+  final int quantidadePedidos;
+  final List<String> solicitantes;
+  final int quantidadeAvaliacoes;
+  final double? mediaAvaliacoes;
+
+  factory GrupoPedidoMusical.deJson(Map<String, dynamic> json) =>
+      GrupoPedidoMusical(
+        pedidoRepresentativoId: json['pedidoRepresentativoId'] as String,
+        pedidoIds: (json['pedidoIds'] as List<dynamic>)
+            .map((item) => item.toString())
+            .toList(),
+        apresentacaoId: json['apresentacaoId'] as String,
+        musica: json['musica'] as String,
+        artista: json['artista'] as String?,
+        status: StatusPedidoMusical.deJson(json['status'] as String),
+        posicao: json['posicao'] as int?,
+        criadoEm: DateTime.parse(json['criadoEm'] as String),
+        formaParticipacao: FormaParticipacaoPedido.deJson(
+            json['formaParticipacao'] as String?),
+        tomPreferido: json['tomPreferido'] as String?,
+        recado: json['recado'] as String?,
+        tipo: TipoPedido.deJson(json['tipo'] as String?),
+        destinatarioAlo: json['destinatarioAlo'] as String?,
+        quantidadePedidos: json['quantidadePedidos'] as int? ?? 1,
+        solicitantes: (json['solicitantes'] as List<dynamic>? ?? const [])
+            .map((item) => item.toString())
+            .toList(),
+        quantidadeAvaliacoes: json['quantidadeAvaliacoes'] as int? ?? 0,
+        mediaAvaliacoes: (json['mediaAvaliacoes'] as num?)?.toDouble(),
+      );
+
+  PedidoMusical comoPedidoMusical() => PedidoMusical(
+        id: pedidoRepresentativoId,
+        apresentacaoId: apresentacaoId,
+        musica: musica,
+        artista: artista,
+        status: status,
+        posicao: posicao,
+        criadoEm: criadoEm,
+        formaParticipacao: formaParticipacao,
+        tomPreferido: tomPreferido,
+        recado: recado,
+        tipo: tipo,
+        destinatarioAlo: destinatarioAlo,
+        quantidadeAvaliacoes: quantidadeAvaliacoes,
+        mediaAvaliacoes: mediaAvaliacoes,
+        solicitantes: solicitantes,
+        nomeSolicitante: solicitantes.length == 1 ? solicitantes.first : null,
+        quantidadePedidos: quantidadePedidos,
       );
 }
