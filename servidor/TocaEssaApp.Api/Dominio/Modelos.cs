@@ -139,7 +139,27 @@ public sealed record PedidoMusical(
     int QuantidadeAvaliacoes = 0,
     double? MediaAvaliacoes = null,
     int? MinhaAvaliacao = null,
-    IReadOnlyCollection<string>? Solicitantes = null);
+    IReadOnlyCollection<string>? Solicitantes = null,
+    int QuantidadePedidos = 1);
+
+public sealed record GrupoPedidoMusical(
+    Guid PedidoRepresentativoId,
+    IReadOnlyList<Guid> PedidoIds,
+    Guid ApresentacaoId,
+    string Musica,
+    string? Artista,
+    StatusPedidoMusical Status,
+    int? Posicao,
+    DateTimeOffset CriadoEm,
+    FormaParticipacaoPedido FormaParticipacao,
+    string? TomPreferido,
+    string? Recado,
+    TipoPedido Tipo,
+    string? DestinatarioAlo,
+    int QuantidadePedidos,
+    IReadOnlyList<string> Solicitantes,
+    int QuantidadeAvaliacoes = 0,
+    double? MediaAvaliacoes = null);
 
 public sealed record CriarPedidoMusical(
     string Musica,

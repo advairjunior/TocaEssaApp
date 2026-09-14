@@ -45,16 +45,37 @@ public sealed partial class RepositorioTocaEssa
                 formaParticipacao = FormaParticipacaoPedido.PedidoNormal;
                 tomPreferido = null;
             }
+            var equivalentesAtivos = tipo == TipoPedido.Musica
+                ? _pedidos.Values.Where(item =>
+                    item.ApresentacaoId == apresentacao.Id &&
+                    item.Tipo == TipoPedido.Musica &&
+                    StatusAtivos.Contains(item.Status) &&
+                    NormalizarParaAgrupamento(item.Musica) ==
+                        NormalizarParaAgrupamento(musica) &&
+                    NormalizarParaAgrupamento(item.Artista) ==
+                        NormalizarParaAgrupamento(artista)).ToArray()
+                : [];
+            var statusInicial = equivalentesAtivos.Any(item =>
+                    item.Status == StatusPedidoMusical.TocandoAgora)
+                ? StatusPedidoMusical.TocandoAgora
+                : equivalentesAtivos.Any(item =>
+                    item.Status == StatusPedidoMusical.Aceito)
+                    ? StatusPedidoMusical.Aceito
+                    : StatusPedidoMusical.Aguardando;
             var pedido = new PedidoMusical(
                 Guid.NewGuid(), apresentacao.Id, musica, artista,
                 perfilPublico?.Nome ?? nomeSolicitante,
-                StatusPedidoMusical.Aguardando, null, DateTimeOffset.UtcNow,
+                statusInicial, null, DateTimeOffset.UtcNow,
                 perfilPublico?.Id, null, formaParticipacao,
                 Limitar(tomPreferido, 30), Limitar(recado, 240), tipo,
                 destinatarioAlo);
             _pedidos[pedido.Id] = pedido;
+            if (statusInicial == StatusPedidoMusical.Aceito)
+                ReposicionarGrupoAceito(apresentacao.Id,
+                    equivalentesAtivos.Select(item => item.Id)
+                        .Append(pedido.Id).ToHashSet());
             SalvarEstado();
-            return pedido;
+            return _pedidos[pedido.Id];
         }
     }
 

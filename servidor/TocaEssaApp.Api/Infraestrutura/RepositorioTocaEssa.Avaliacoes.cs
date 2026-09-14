@@ -91,8 +91,8 @@ public sealed partial class RepositorioTocaEssa
             .ThenBy(item => item.CriadoEm)
             .GroupBy(item => new
             {
-                Musica = item.Musica.Trim().ToUpperInvariant(),
-                Artista = item.Artista?.Trim().ToUpperInvariant() ?? "",
+                Musica = NormalizarParaAgrupamento(item.Musica),
+                Artista = NormalizarParaAgrupamento(item.Artista),
                 item.Status
             })
             .Select(grupo =>
@@ -104,7 +104,11 @@ public sealed partial class RepositorioTocaEssa
                     .Cast<string>()
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToArray();
-                return primeiro with { Solicitantes = solicitantes };
+                return primeiro with
+                {
+                    Solicitantes = solicitantes,
+                    QuantidadePedidos = grupo.Count()
+                };
             })
             .ToArray();
     }
