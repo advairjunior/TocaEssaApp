@@ -28,6 +28,7 @@ public sealed partial class RepositorioTocaEssa
     private readonly bool _usaPostgres;
     private readonly NotificadorTempoReal? _notificador;
     private PerfilArtistico? _perfil;
+    private ConfiguracaoPerfilArtistico? _configuracaoPerfil;
     private static readonly PasswordHasher<PerfilPublicoRegistro> Senhas = new();
     private static readonly PasswordHasher<ContaArtistaRegistro> SenhasArtista = new();
 
@@ -45,6 +46,9 @@ public sealed partial class RepositorioTocaEssa
     }
 
     public PerfilArtistico? ObterPerfil() => _perfil;
+
+    public ConfiguracaoPerfilArtistico? ObterConfiguracaoPerfil() =>
+        _configuracaoPerfil;
 }
 
 public sealed record EstadoPersistido(

@@ -56,6 +56,13 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.ToTable("PerfisArtisticos");
             entidade.HasKey(item => item.Id);
             entidade.Property(item => item.NomeArtistico).HasMaxLength(160);
+            entidade.Property(item => item.Bio).HasMaxLength(500);
+            entidade.Property(item => item.Instagram).HasMaxLength(120);
+            entidade.Property(item => item.Whatsapp).HasMaxLength(20);
+            entidade.Property(item => item.PixChave).HasMaxLength(140);
+            entidade.Property(item => item.PixNomeBeneficiario).HasMaxLength(25);
+            entidade.Property(item => item.PixCidadeBeneficiario).HasMaxLength(15);
+            entidade.Property(item => item.PixMensagem).HasMaxLength(72);
         });
 
         modelo.Entity<ApresentacaoRegistro>(entidade =>
@@ -222,6 +229,24 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasDoArtista_Chave"
                     ON "CifrasDoArtista" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "Instagram" character varying(120) NULL;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "ExibirInstagram" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "Whatsapp" character varying(20) NULL;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "ExibirWhatsapp" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "PixAtivo" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "PixChave" character varying(140) NULL;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "PixNomeBeneficiario" character varying(25) NULL;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "PixCidadeBeneficiario" character varying(15) NULL;
+                ALTER TABLE "PerfisArtisticos"
+                    ADD COLUMN IF NOT EXISTS "PixMensagem" character varying(72) NULL;
                 """);
             return;
         }
@@ -338,6 +363,24 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             comando, "PedidosMusicais", "Tipo", "INTEGER NOT NULL DEFAULT 0");
         AdicionarColunaSqliteSeNecessario(
             comando, "PedidosMusicais", "DestinatarioAlo", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "Instagram", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "ExibirInstagram", "INTEGER NOT NULL DEFAULT 0");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "Whatsapp", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "ExibirWhatsapp", "INTEGER NOT NULL DEFAULT 0");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "PixAtivo", "INTEGER NOT NULL DEFAULT 0");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "PixChave", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "PixNomeBeneficiario", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "PixCidadeBeneficiario", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "PerfisArtisticos", "PixMensagem", "TEXT NULL");
 
         comando.CommandText = "PRAGMA table_info('Apresentacoes')";
         using var leitorFotoRetrospectiva = comando.ExecuteReader();

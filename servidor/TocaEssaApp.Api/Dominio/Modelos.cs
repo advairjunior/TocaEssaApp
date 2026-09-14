@@ -1,7 +1,25 @@
 namespace TocaEssaApp.Api.Dominio;
 
 public sealed record PerfilArtistico(
-    Guid Id, string NomeArtistico, string? Bio, string? FotoUrl = null);
+    Guid Id,
+    string NomeArtistico,
+    string? Bio,
+    string? FotoUrl = null,
+    string? Instagram = null,
+    string? Whatsapp = null,
+    bool ApoioPixDisponivel = false);
+
+public sealed record ConfiguracaoPerfilArtistico(
+    PerfilArtistico Perfil,
+    string? Instagram,
+    bool ExibirInstagram,
+    string? Whatsapp,
+    bool ExibirWhatsapp,
+    bool PixAtivo,
+    string? PixChave,
+    string? PixNomeBeneficiario,
+    string? PixCidadeBeneficiario,
+    string? PixMensagem);
 
 public enum StatusApresentacao
 {
@@ -28,7 +46,18 @@ public sealed record Apresentacao(
     TipoApresentacao Tipo = TipoApresentacao.Publica,
     string? FotoRetrospectivaUrl = null);
 
-public sealed record SalvarPerfilArtistico(string NomeArtistico, string? Bio);
+public sealed record SalvarPerfilArtistico(
+    string NomeArtistico,
+    string? Bio,
+    string? Instagram = null,
+    bool ExibirInstagram = false,
+    string? Whatsapp = null,
+    bool ExibirWhatsapp = false,
+    bool PixAtivo = false,
+    string? PixChave = null,
+    string? PixNomeBeneficiario = null,
+    string? PixCidadeBeneficiario = null,
+    string? PixMensagem = null);
 
 public sealed record ContaArtista(
     Guid Id, string Nome, string Email, DateTimeOffset CriadoEm);

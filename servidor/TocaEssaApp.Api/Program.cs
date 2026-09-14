@@ -151,7 +151,9 @@ app.MapDelete("/api/artista/cifras/{id:guid}", (
 });
 
 app.MapGet("/api/perfil-artistico", (RepositorioTocaEssa repositorio) =>
-    repositorio.ObterPerfil() is { } perfil ? Results.Ok(perfil) : Results.NotFound());
+    repositorio.ObterConfiguracaoPerfil() is { } perfil
+        ? Results.Ok(perfil)
+        : Results.NotFound());
 
 app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, RepositorioTocaEssa repositorio) =>
 {
@@ -163,7 +165,7 @@ app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, Repositor
         });
     }
 
-    return Results.Ok(repositorio.SalvarPerfil(requisicao.NomeArtistico.Trim(), requisicao.Bio?.Trim()));
+    return Results.Ok(repositorio.SalvarPerfil(requisicao));
 });
 
 app.MapPost("/api/perfil-artistico/foto", async Task<IResult> (
