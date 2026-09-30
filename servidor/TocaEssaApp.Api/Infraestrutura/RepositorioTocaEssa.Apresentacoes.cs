@@ -30,7 +30,10 @@ public sealed partial class RepositorioTocaEssa
             } while (_apresentacoes.ContainsKey(codigo));
 
             var apresentacao = new Apresentacao(
-                Guid.NewGuid(), nome, data, local, codigo, perfil, Tipo: tipo);
+                Guid.NewGuid(), nome, data, local, codigo, perfil, Tipo: tipo,
+                ArtistaId: _contasArtistas.Count == 1
+                    ? _contasArtistas.Keys.Single()
+                    : Guid.Empty);
             _apresentacoes[codigo] = apresentacao;
             SalvarEstado();
             return apresentacao;

@@ -44,7 +44,8 @@ public sealed record Apresentacao(
     bool PedidosAbertos = true,
     StatusApresentacao Status = StatusApresentacao.Agendada,
     TipoApresentacao Tipo = TipoApresentacao.Publica,
-    string? FotoRetrospectivaUrl = null);
+    string? FotoRetrospectivaUrl = null,
+    Guid ArtistaId = default);
 
 public sealed record SalvarPerfilArtistico(
     string NomeArtistico,

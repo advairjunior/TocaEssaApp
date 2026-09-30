@@ -22,6 +22,8 @@ public sealed partial class RepositorioTocaEssa
     private readonly ConcurrentDictionary<string, SessaoArtistaRegistro> _sessoesArtistas = new();
     private readonly ConcurrentDictionary<(Guid ArtistaId, string Musica, string Artista),
         CifraDoArtistaRegistro> _cifrasDoArtista = new();
+    private readonly ConcurrentDictionary<Guid, ConfiguracaoPerfilArtistico>
+        _configuracoesPerfis = new();
     private readonly object _sincronizacao = new();
     private readonly string? _caminhoBanco;
     private readonly string? _caminhoJsonLegado;

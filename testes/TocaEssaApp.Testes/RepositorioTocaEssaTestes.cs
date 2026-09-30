@@ -14,12 +14,11 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            var criada = repositorio.CriarContaArtista(
+                "Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", "Voz e violão");
             var apresentacao = repositorio.CriarApresentacao(
                 "Noite acústica", new DateOnly(2026, 9, 12), "Café Central");
-
-            var criada = repositorio.CriarContaArtista(
-                "Ana", "ana@artista.com", "senha123");
 
             Assert.Equal("Ana", repositorio.ObterContaArtista(criada.Token).Nome);
             Assert.Throws<ContaArtistaJaConfiguradaException>(() =>
@@ -127,6 +126,7 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", "Voz e violão");
             var apresentacao = repositorio.CriarApresentacao(
                 "Noite acústica", new DateOnly(2026, 9, 12), "Café Central");
@@ -268,6 +268,7 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", null);
             var apresentacao = repositorio.CriarApresentacao(
                 "Noite acústica", new DateOnly(2026, 9, 12), "Café Central");
@@ -293,6 +294,7 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", null);
             var resenha = repositorio.CriarApresentacao(
                 "Resenha de sexta", new DateOnly(2026, 9, 18), "Casa da Ana",
@@ -330,6 +332,8 @@ public class RepositorioTocaEssaTestes
             File.WriteAllText(arquivoJson, JsonSerializer.Serialize(
                 new EstadoPersistido(perfil, [apresentacao], [pedido])));
 
+            var preparacao = new RepositorioTocaEssa(arquivoBanco);
+            preparacao.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             var repositorio = new RepositorioTocaEssa(arquivoBanco, arquivoJson);
             var reiniciado = new RepositorioTocaEssa(arquivoBanco, arquivoJson);
 
@@ -426,6 +430,7 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", null);
             var apresentacao = repositorio.CriarApresentacao(
                 "Noite acústica", new DateOnly(2026, 9, 12), "Café Central");
@@ -549,6 +554,7 @@ public class RepositorioTocaEssaTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil("Duo Aurora", null);
             var resenha = repositorio.CriarApresentacao(
                 "Resenha de sexta", new DateOnly(2026, 9, 18), "Casa da Ana",

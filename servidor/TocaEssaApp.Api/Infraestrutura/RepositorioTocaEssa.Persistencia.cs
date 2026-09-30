@@ -34,12 +34,14 @@ public sealed partial class RepositorioTocaEssa
         using var banco = new BancoTocaEssa(_caminhoBanco);
         banco.GarantirEstrutura();
 
-        var perfil = banco.Perfis.AsNoTracking().SingleOrDefault();
-        if (perfil is not null)
+        foreach (var conta in banco.ContasArtistas.AsNoTracking())
+            _contasArtistas[conta.Id] = conta;
+
+        foreach (var perfil in banco.Perfis.AsNoTracking())
         {
-            _perfil = ParaPerfilPublico(perfil);
-            _configuracaoPerfil = new ConfiguracaoPerfilArtistico(
-                _perfil,
+            var perfilPublico = ParaPerfilPublico(perfil);
+            var configuracao = new ConfiguracaoPerfilArtistico(
+                perfilPublico,
                 perfil.Instagram,
                 perfil.ExibirInstagram,
                 perfil.Whatsapp,
@@ -49,21 +51,33 @@ public sealed partial class RepositorioTocaEssa
                 perfil.PixNomeBeneficiario,
                 perfil.PixCidadeBeneficiario,
                 perfil.PixMensagem);
+            _configuracoesPerfis[perfil.ArtistaId] = configuracao;
         }
 
-        if (_perfil is not null)
-            foreach (var apresentacao in banco.Apresentacoes.AsNoTracking())
-                _apresentacoes[apresentacao.Codigo] = new Apresentacao(
-                    apresentacao.Id,
-                    apresentacao.Nome,
-                    apresentacao.Data,
-                    apresentacao.Local,
-                    apresentacao.Codigo,
-                    _perfil,
-                    apresentacao.PedidosAbertos,
-                    apresentacao.Status,
-                    apresentacao.Tipo,
-                    apresentacao.FotoRetrospectivaUrl);
+        if (_configuracoesPerfis.Count == 1)
+        {
+            _configuracaoPerfil = _configuracoesPerfis.Values.Single();
+            _perfil = _configuracaoPerfil.Perfil;
+        }
+
+        foreach (var apresentacao in banco.Apresentacoes.AsNoTracking())
+        {
+            if (!_configuracoesPerfis.TryGetValue(apresentacao.ArtistaId, out var configuracao))
+                throw new InvalidOperationException(
+                    $"A apresentação {apresentacao.Id} não possui perfil artístico válido.");
+            _apresentacoes[apresentacao.Codigo] = new Apresentacao(
+                apresentacao.Id,
+                apresentacao.Nome,
+                apresentacao.Data,
+                apresentacao.Local,
+                apresentacao.Codigo,
+                configuracao.Perfil,
+                apresentacao.PedidosAbertos,
+                apresentacao.Status,
+                apresentacao.Tipo,
+                apresentacao.FotoRetrospectivaUrl,
+                apresentacao.ArtistaId);
+        }
 
         foreach (var pedido in banco.Pedidos.AsNoTracking())
             if (Enum.IsDefined(pedido.Status))
@@ -112,8 +126,6 @@ public sealed partial class RepositorioTocaEssa
         foreach (var sessao in banco.SessoesPublicas.AsNoTracking().AsEnumerable()
                      .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow))
             _sessoesPublicas[sessao.TokenHash] = sessao;
-        foreach (var conta in banco.ContasArtistas.AsNoTracking())
-            _contasArtistas[conta.Id] = conta;
         foreach (var sessao in banco.SessoesArtistas.AsNoTracking().AsEnumerable()
                      .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow))
             _sessoesArtistas[sessao.TokenHash] = sessao;
@@ -121,16 +133,31 @@ public sealed partial class RepositorioTocaEssa
             _cifrasDoArtista[(cifra.ArtistaId, cifra.MusicaNormalizada,
                 cifra.ArtistaNormalizado)] = cifra;
 
-        if (_perfil is not null || _apresentacoes.Count > 0 || _pedidos.Count > 0 ||
+        if (_configuracoesPerfis.Count > 0 || _apresentacoes.Count > 0 || _pedidos.Count > 0 ||
             _caminhoJsonLegado is null || !File.Exists(_caminhoJsonLegado))
             return;
 
         var estado = JsonSerializer.Deserialize<EstadoPersistido>(
             File.ReadAllText(_caminhoJsonLegado));
         if (estado is null) return;
-        _perfil = estado.Perfil;
+        if (estado.Perfil is not null)
+        {
+            var conta = _contasArtistas.Values.SingleOrDefault()
+                ?? throw new InvalidOperationException(
+                    "Dados artísticos legados exigem exatamente uma conta proprietária.");
+            _perfil = estado.Perfil;
+            _configuracaoPerfil = new ConfiguracaoPerfilArtistico(
+                estado.Perfil, null, false, null, false, false,
+                null, null, null, null);
+            _configuracoesPerfis[conta.Id] = _configuracaoPerfil;
+        }
         foreach (var apresentacao in estado.Apresentacoes)
-            _apresentacoes[apresentacao.Codigo] = apresentacao;
+        {
+            var conta = _contasArtistas.Values.SingleOrDefault()
+                ?? throw new InvalidOperationException(
+                    "Dados artísticos legados exigem exatamente uma conta proprietária.");
+            _apresentacoes[apresentacao.Codigo] = apresentacao with { ArtistaId = conta.Id };
+        }
         foreach (var pedido in estado.Pedidos)
             if (Enum.IsDefined(pedido.Status))
                 _pedidos[pedido.Id] = pedido;
@@ -159,24 +186,37 @@ public sealed partial class RepositorioTocaEssa
         banco.CifrasDoArtista.RemoveRange(banco.CifrasDoArtista);
         banco.SaveChanges();
 
-        if (_perfil is not null)
+        var configuracoes = _configuracoesPerfis.Count > 0
+            ? _configuracoesPerfis
+            : _configuracaoPerfil is null
+                ? new ConcurrentDictionary<Guid, ConfiguracaoPerfilArtistico>()
+                : new ConcurrentDictionary<Guid, ConfiguracaoPerfilArtistico>(
+                    _contasArtistas.Count == 1
+                        ? new[]
+                        {
+                            new KeyValuePair<Guid, ConfiguracaoPerfilArtistico>(
+                                _contasArtistas.Keys.Single(), _configuracaoPerfil)
+                        }
+                        : []);
+        foreach (var (artistaId, configuracao) in configuracoes)
         {
-            var configuracao = _configuracaoPerfil;
+            var perfil = configuracao.Perfil;
             banco.Perfis.Add(new PerfilArtisticoRegistro
             {
-                Id = _perfil.Id,
-                NomeArtistico = _perfil.NomeArtistico,
-                Bio = _perfil.Bio,
-                FotoUrl = _perfil.FotoUrl,
-                Instagram = configuracao?.Instagram,
-                ExibirInstagram = configuracao?.ExibirInstagram ?? false,
-                Whatsapp = configuracao?.Whatsapp,
-                ExibirWhatsapp = configuracao?.ExibirWhatsapp ?? false,
-                PixAtivo = configuracao?.PixAtivo ?? false,
-                PixChave = configuracao?.PixChave,
-                PixNomeBeneficiario = configuracao?.PixNomeBeneficiario,
-                PixCidadeBeneficiario = configuracao?.PixCidadeBeneficiario,
-                PixMensagem = configuracao?.PixMensagem
+                Id = perfil.Id,
+                ArtistaId = artistaId,
+                NomeArtistico = perfil.NomeArtistico,
+                Bio = perfil.Bio,
+                FotoUrl = perfil.FotoUrl,
+                Instagram = configuracao.Instagram,
+                ExibirInstagram = configuracao.ExibirInstagram,
+                Whatsapp = configuracao.Whatsapp,
+                ExibirWhatsapp = configuracao.ExibirWhatsapp,
+                PixAtivo = configuracao.PixAtivo,
+                PixChave = configuracao.PixChave,
+                PixNomeBeneficiario = configuracao.PixNomeBeneficiario,
+                PixCidadeBeneficiario = configuracao.PixCidadeBeneficiario,
+                PixMensagem = configuracao.PixMensagem
             });
         }
 
@@ -184,6 +224,7 @@ public sealed partial class RepositorioTocaEssa
             new ApresentacaoRegistro
             {
                 Id = item.Id,
+                ArtistaId = item.ArtistaId,
                 Nome = item.Nome,
                 Data = item.Data,
                 Local = item.Local,

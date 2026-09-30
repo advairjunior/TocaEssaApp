@@ -113,6 +113,8 @@ public sealed partial class RepositorioTocaEssa
                 pixNome,
                 pixCidade,
                 pixMensagem);
+            if (_contasArtistas.Count == 1)
+                _configuracoesPerfis[_contasArtistas.Keys.Single()] = _configuracaoPerfil;
             foreach (var item in _apresentacoes.ToArray())
                 _apresentacoes[item.Key] = item.Value with { PerfilArtistico = _perfil };
             SalvarEstado();
@@ -127,7 +129,11 @@ public sealed partial class RepositorioTocaEssa
             var perfil = _perfil ?? throw new PerfilArtisticoNaoCadastradoException();
             _perfil = perfil with { FotoUrl = fotoUrl };
             if (_configuracaoPerfil is not null)
+            {
                 _configuracaoPerfil = _configuracaoPerfil with { Perfil = _perfil };
+                if (_contasArtistas.Count == 1)
+                    _configuracoesPerfis[_contasArtistas.Keys.Single()] = _configuracaoPerfil;
+            }
             foreach (var item in _apresentacoes.ToArray())
                 _apresentacoes[item.Key] = item.Value with { PerfilArtistico = _perfil };
             SalvarEstado();

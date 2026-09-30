@@ -5,6 +5,7 @@ namespace TocaEssaApp.Api.Infraestrutura;
 internal sealed class PerfilArtisticoRegistro
 {
     public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
     public string NomeArtistico { get; set; } = string.Empty;
     public string? Bio { get; set; }
     public string? FotoUrl { get; set; }
@@ -22,6 +23,7 @@ internal sealed class PerfilArtisticoRegistro
 internal sealed class ApresentacaoRegistro
 {
     public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
     public string Nome { get; set; } = string.Empty;
     public DateOnly Data { get; set; }
     public string Local { get; set; } = string.Empty;
