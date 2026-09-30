@@ -12,13 +12,44 @@ public sealed partial class RepositorioTocaEssa
     public IReadOnlyCollection<Apresentacao> ListarApresentacoes() =>
         _apresentacoes.Values.OrderByDescending(item => item.Data).ToArray();
 
+    public IReadOnlyCollection<Apresentacao> ListarApresentacoes(string token)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return _apresentacoes.Values
+            .Where(item => item.ArtistaId == conta.Id)
+            .OrderByDescending(item => item.Data)
+            .ToArray();
+    }
+
+    public Apresentacao CriarApresentacao(
+        string token, string nome, DateOnly data, string local,
+        TipoApresentacao tipo = TipoApresentacao.Publica)
+    {
+        var conta = ExigirRegistroArtista(token);
+        var perfil = _configuracoesPerfis.GetValueOrDefault(conta.Id)?.Perfil
+            ?? throw new PerfilArtisticoNaoCadastradoException();
+        return CriarApresentacaoDoArtista(
+            conta.Id, perfil, nome, data, local, tipo);
+    }
+
     public Apresentacao CriarApresentacao(
         string nome, DateOnly data, string local,
         TipoApresentacao tipo = TipoApresentacao.Publica)
     {
+        var artistaId = _contasArtistas.Count == 1
+            ? _contasArtistas.Keys.Single()
+            : Guid.Empty;
+        return CriarApresentacaoDoArtista(
+            artistaId, _perfil ?? throw new PerfilArtisticoNaoCadastradoException(),
+            nome, data, local, tipo);
+    }
+
+    private Apresentacao CriarApresentacaoDoArtista(
+        Guid artistaId, PerfilArtistico perfil, string nome, DateOnly data,
+        string local, TipoApresentacao tipo)
+    {
         lock (_sincronizacao)
         {
-            var perfil = _perfil ?? throw new PerfilArtisticoNaoCadastradoException();
             string codigo;
             do
             {
@@ -31,9 +62,7 @@ public sealed partial class RepositorioTocaEssa
 
             var apresentacao = new Apresentacao(
                 Guid.NewGuid(), nome, data, local, codigo, perfil, Tipo: tipo,
-                ArtistaId: _contasArtistas.Count == 1
-                    ? _contasArtistas.Keys.Single()
-                    : Guid.Empty);
+                ArtistaId: artistaId);
             _apresentacoes[codigo] = apresentacao;
             SalvarEstado();
             return apresentacao;
@@ -46,14 +75,30 @@ public sealed partial class RepositorioTocaEssa
     public Apresentacao? ObterApresentacao(Guid apresentacaoId) =>
         _apresentacoes.Values.SingleOrDefault(item => item.Id == apresentacaoId);
 
+    public Apresentacao ObterApresentacaoDoArtista(
+        string token, Guid apresentacaoId)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return ObterItemApresentacao(apresentacaoId, conta.Id).Value;
+    }
+
+    public Apresentacao AtualizarFotoRetrospectiva(
+        string token, Guid apresentacaoId, string fotoUrl)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return AtualizarFotoRetrospectiva(apresentacaoId, fotoUrl, conta.Id);
+    }
+
     public Apresentacao AtualizarFotoRetrospectiva(
         Guid apresentacaoId, string fotoUrl)
+        => AtualizarFotoRetrospectiva(apresentacaoId, fotoUrl, null);
+
+    private Apresentacao AtualizarFotoRetrospectiva(
+        Guid apresentacaoId, string fotoUrl, Guid? artistaId)
     {
         lock (_sincronizacao)
         {
-            var item = _apresentacoes.FirstOrDefault(
-                par => par.Value.Id == apresentacaoId);
-            if (item.Value is null) throw new ApresentacaoNaoEncontradaException();
+            var item = ObterItemApresentacao(apresentacaoId, artistaId);
             if (item.Value.Tipo != TipoApresentacao.ResenhaEntreAmigos)
                 throw new RecursoDisponivelSomenteNaResenhaException();
             var atualizada = item.Value with { FotoRetrospectivaUrl = fotoUrl };
@@ -64,13 +109,26 @@ public sealed partial class RepositorioTocaEssa
     }
 
     public Apresentacao EditarApresentacao(
+        string token, Guid apresentacaoId, string nome, DateOnly data, string local,
+        TipoApresentacao tipo = TipoApresentacao.Publica)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return EditarApresentacao(
+            apresentacaoId, nome, data, local, tipo, conta.Id);
+    }
+
+    public Apresentacao EditarApresentacao(
         Guid apresentacaoId, string nome, DateOnly data, string local,
         TipoApresentacao tipo = TipoApresentacao.Publica)
+        => EditarApresentacao(apresentacaoId, nome, data, local, tipo, null);
+
+    private Apresentacao EditarApresentacao(
+        Guid apresentacaoId, string nome, DateOnly data, string local,
+        TipoApresentacao tipo, Guid? artistaId)
     {
         lock (_sincronizacao)
         {
-            var item = _apresentacoes.FirstOrDefault(par => par.Value.Id == apresentacaoId);
-            if (item.Value is null) throw new ApresentacaoNaoEncontradaException();
+            var item = ObterItemApresentacao(apresentacaoId, artistaId);
             var atualizada = item.Value with
             {
                 Nome = nome,
@@ -85,11 +143,19 @@ public sealed partial class RepositorioTocaEssa
     }
 
     public void ExcluirApresentacao(Guid apresentacaoId)
+        => ExcluirApresentacao(apresentacaoId, null);
+
+    public void ExcluirApresentacao(string token, Guid apresentacaoId)
+    {
+        var conta = ExigirRegistroArtista(token);
+        ExcluirApresentacao(apresentacaoId, conta.Id);
+    }
+
+    private void ExcluirApresentacao(Guid apresentacaoId, Guid? artistaId)
     {
         lock (_sincronizacao)
         {
-            var item = _apresentacoes.FirstOrDefault(par => par.Value.Id == apresentacaoId);
-            if (item.Value is null) throw new ApresentacaoNaoEncontradaException();
+            var item = ObterItemApresentacao(apresentacaoId, artistaId);
             _apresentacoes.TryRemove(item.Key, out _);
             foreach (var pedido in _pedidos.Values
                          .Where(pedido => pedido.ApresentacaoId == apresentacaoId)
@@ -110,11 +176,21 @@ public sealed partial class RepositorioTocaEssa
     }
 
     public Apresentacao AlterarStatusApresentacao(Guid apresentacaoId, StatusApresentacao status)
+        => AlterarStatusApresentacao(apresentacaoId, status, null);
+
+    public Apresentacao AlterarStatusApresentacao(
+        string token, Guid apresentacaoId, StatusApresentacao status)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return AlterarStatusApresentacao(apresentacaoId, status, conta.Id);
+    }
+
+    private Apresentacao AlterarStatusApresentacao(
+        Guid apresentacaoId, StatusApresentacao status, Guid? artistaId)
     {
         lock (_sincronizacao)
         {
-            var item = _apresentacoes.FirstOrDefault(par => par.Value.Id == apresentacaoId);
-            if (item.Value is null) throw new ApresentacaoNaoEncontradaException();
+            var item = ObterItemApresentacao(apresentacaoId, artistaId);
             var pedidosAbertos = status switch
             {
                 StatusApresentacao.EmAndamento => true,
@@ -126,6 +202,17 @@ public sealed partial class RepositorioTocaEssa
             SalvarEstado();
             return atualizada;
         }
+    }
+
+    private KeyValuePair<string, Apresentacao> ObterItemApresentacao(
+        Guid apresentacaoId, Guid? artistaId)
+    {
+        var item = _apresentacoes.FirstOrDefault(par =>
+            par.Value.Id == apresentacaoId &&
+            (artistaId is null || par.Value.ArtistaId == artistaId));
+        return item.Value is null
+            ? throw new ApresentacaoNaoEncontradaException()
+            : item;
     }
 
 }
