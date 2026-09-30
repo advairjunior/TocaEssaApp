@@ -67,6 +67,10 @@ void main() {
 
     expect(find.text('Painel do Artista'), findsOneWidget);
     expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
+    expect(
+      find.text('A conta do artista já foi configurada.'),
+      findsNothing,
+    );
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getString('token_do_artista'), 'TOKEN-ARTISTA');
   });

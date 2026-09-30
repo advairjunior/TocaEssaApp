@@ -11,6 +11,58 @@ const _contaArtistaJson =
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('nova conta inicia vazia e cria o próprio perfil',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN-NOVO'});
+    final cliente = MockClient((requisicao) async {
+      expect(requisicao.headers['authorization'], 'Bearer TOKEN-NOVO');
+      if (requisicao.url.path == '/api/artista/conta') {
+        return http.Response(_contaArtistaJson, 200);
+      }
+      if (requisicao.url.path == '/api/perfil-artistico' &&
+          requisicao.method == 'GET') {
+        return http.Response('{"mensagem":"Perfil não encontrado."}', 404);
+      }
+      if (requisicao.url.path == '/api/apresentacoes') {
+        return http.Response('[]', 200);
+      }
+      if (requisicao.url.path == '/api/perfil-artistico' &&
+          requisicao.method == 'PUT') {
+        expect(requisicao.body, contains('"nomeArtistico":"Novo Artista"'));
+        return http.Response(
+          '{"perfil":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Novo Artista","bio":null,"fotoUrl":null},"exibirInstagram":false,"exibirWhatsapp":false,"pixAtivo":false}',
+          200,
+        );
+      }
+      return http.Response('Não encontrado', 404);
+    });
+
+    await tester.pumpWidget(TocaEssaApp(
+      api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+    ));
+    final acessarPainel = find.text('Acessar Painel do Artista');
+    await tester.ensureVisible(acessarPainel);
+    await tester.tap(acessarPainel);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
+    await tester.tap(find.text('Perfil geral').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Criar Perfil Artístico'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nome artístico'),
+      'Novo Artista',
+    );
+    final criarPerfil = find.text('Criar Perfil Artístico');
+    await tester.ensureVisible(criarPerfil);
+    await tester.tap(criarPerfil);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Perfil Artístico salvo.'), findsOneWidget);
+    expect(find.text('Salvar alterações'), findsOneWidget);
+  });
+
   testWidgets('Painel do Artista separa eventos por momento', (tester) async {
     SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
     final cliente = MockClient((requisicao) async {
