@@ -11,7 +11,7 @@ public sealed partial class RepositorioTocaEssa
         StatusPedidoMusical.TocandoAgora
     ];
 
-    public IReadOnlyCollection<GrupoPedidoMusical> ListarGruposDePedidosDoArtista(
+    internal IReadOnlyCollection<GrupoPedidoMusical> ListarGruposDePedidosDoArtista(
         Guid apresentacaoId)
     {
         if (!_apresentacoes.Values.Any(item => item.Id == apresentacaoId))
@@ -33,7 +33,7 @@ public sealed partial class RepositorioTocaEssa
         return ListarGruposDePedidosDoArtista(apresentacaoId);
     }
 
-    public GrupoPedidoMusical AlterarStatusDoGrupo(
+    internal GrupoPedidoMusical AlterarStatusDoGrupo(
         Guid apresentacaoId,
         Guid representanteId,
         StatusPedidoMusical status)
@@ -86,7 +86,7 @@ public sealed partial class RepositorioTocaEssa
         return AlterarStatusDoGrupo(apresentacaoId, representanteId, status);
     }
 
-    public IReadOnlyCollection<GrupoPedidoMusical> ReordenarGruposDaFila(
+    internal IReadOnlyCollection<GrupoPedidoMusical> ReordenarGruposDaFila(
         Guid apresentacaoId,
         IReadOnlyList<Guid> representantes)
     {

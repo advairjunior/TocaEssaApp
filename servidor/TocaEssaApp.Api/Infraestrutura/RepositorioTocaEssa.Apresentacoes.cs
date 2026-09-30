@@ -9,7 +9,7 @@ namespace TocaEssaApp.Api.Infraestrutura;
 
 public sealed partial class RepositorioTocaEssa
 {
-    public IReadOnlyCollection<Apresentacao> ListarApresentacoes() =>
+    internal IReadOnlyCollection<Apresentacao> ListarApresentacoes() =>
         _apresentacoes.Values.OrderByDescending(item => item.Data).ToArray();
 
     public IReadOnlyCollection<Apresentacao> ListarApresentacoes(string token)
@@ -32,7 +32,7 @@ public sealed partial class RepositorioTocaEssa
             conta.Id, perfil, nome, data, local, tipo);
     }
 
-    public Apresentacao CriarApresentacao(
+    internal Apresentacao CriarApresentacao(
         string nome, DateOnly data, string local,
         TipoApresentacao tipo = TipoApresentacao.Publica)
     {
@@ -72,7 +72,7 @@ public sealed partial class RepositorioTocaEssa
     public Apresentacao? ObterApresentacaoPublica(string codigo) =>
         _apresentacoes.GetValueOrDefault(codigo.Trim().ToUpperInvariant());
 
-    public Apresentacao? ObterApresentacao(Guid apresentacaoId) =>
+    internal Apresentacao? ObterApresentacao(Guid apresentacaoId) =>
         _apresentacoes.Values.SingleOrDefault(item => item.Id == apresentacaoId);
 
     public Apresentacao ObterApresentacaoDoArtista(
@@ -89,7 +89,7 @@ public sealed partial class RepositorioTocaEssa
         return AtualizarFotoRetrospectiva(apresentacaoId, fotoUrl, conta.Id);
     }
 
-    public Apresentacao AtualizarFotoRetrospectiva(
+    internal Apresentacao AtualizarFotoRetrospectiva(
         Guid apresentacaoId, string fotoUrl)
         => AtualizarFotoRetrospectiva(apresentacaoId, fotoUrl, null);
 
@@ -117,7 +117,7 @@ public sealed partial class RepositorioTocaEssa
             apresentacaoId, nome, data, local, tipo, conta.Id);
     }
 
-    public Apresentacao EditarApresentacao(
+    internal Apresentacao EditarApresentacao(
         Guid apresentacaoId, string nome, DateOnly data, string local,
         TipoApresentacao tipo = TipoApresentacao.Publica)
         => EditarApresentacao(apresentacaoId, nome, data, local, tipo, null);
@@ -142,7 +142,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public void ExcluirApresentacao(Guid apresentacaoId)
+    internal void ExcluirApresentacao(Guid apresentacaoId)
         => ExcluirApresentacao(apresentacaoId, null);
 
     public void ExcluirApresentacao(string token, Guid apresentacaoId)
@@ -175,7 +175,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public Apresentacao AlterarStatusApresentacao(Guid apresentacaoId, StatusApresentacao status)
+    internal Apresentacao AlterarStatusApresentacao(Guid apresentacaoId, StatusApresentacao status)
         => AlterarStatusApresentacao(apresentacaoId, status, null);
 
     public Apresentacao AlterarStatusApresentacao(

@@ -87,7 +87,7 @@ public sealed partial class RepositorioTocaEssa
             : normalizado;
     }
 
-    public IReadOnlyCollection<PedidoMusical> ListarPedidosDoArtista(Guid apresentacaoId) =>
+    internal IReadOnlyCollection<PedidoMusical> ListarPedidosDoArtista(Guid apresentacaoId) =>
         _pedidos.Values
             .Where(item => item.ApresentacaoId == apresentacaoId)
             .OrderBy(item => item.Posicao ?? int.MaxValue)
@@ -102,7 +102,7 @@ public sealed partial class RepositorioTocaEssa
         return ListarPedidosDoArtista(apresentacaoId);
     }
 
-    public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(
+    internal EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(
         Guid apresentacaoId)
     {
         if (!_apresentacoes.Values.Any(item => item.Id == apresentacaoId))
@@ -239,7 +239,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public PedidoMusical AlterarStatus(Guid apresentacaoId, Guid pedidoId, StatusPedidoMusical status)
+    internal PedidoMusical AlterarStatus(Guid apresentacaoId, Guid pedidoId, StatusPedidoMusical status)
     {
         lock (_sincronizacao)
         {
@@ -292,7 +292,7 @@ public sealed partial class RepositorioTocaEssa
         return AlterarStatus(apresentacaoId, pedidoId, status);
     }
 
-    public Apresentacao AlterarPedidos(Guid apresentacaoId, bool abertos)
+    internal Apresentacao AlterarPedidos(Guid apresentacaoId, bool abertos)
     {
         lock (_sincronizacao)
         {
@@ -314,7 +314,7 @@ public sealed partial class RepositorioTocaEssa
         return AlterarPedidos(apresentacaoId, abertos);
     }
 
-    public IReadOnlyCollection<PedidoMusical> ReordenarFila(
+    internal IReadOnlyCollection<PedidoMusical> ReordenarFila(
         Guid apresentacaoId, IReadOnlyList<Guid> pedidos)
     {
         lock (_sincronizacao)

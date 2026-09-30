@@ -102,7 +102,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public PerfilArtistico SalvarPerfil(string nomeArtistico, string? bio)
+    internal PerfilArtistico SalvarPerfil(string nomeArtistico, string? bio)
     {
         var configuracao = _configuracaoPerfil;
         return SalvarPerfil(new SalvarPerfilArtistico(
@@ -119,7 +119,7 @@ public sealed partial class RepositorioTocaEssa
             configuracao?.PixMensagem));
     }
 
-    public PerfilArtistico SalvarPerfil(SalvarPerfilArtistico dados)
+    internal PerfilArtistico SalvarPerfil(SalvarPerfilArtistico dados)
     {
         var artistaId = _contasArtistas.Count == 1
             ? _contasArtistas.Keys.Single()
@@ -181,7 +181,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public PerfilArtistico AtualizarFotoPerfil(string fotoUrl)
+    internal PerfilArtistico AtualizarFotoPerfil(string fotoUrl)
     {
         lock (_sincronizacao)
         {

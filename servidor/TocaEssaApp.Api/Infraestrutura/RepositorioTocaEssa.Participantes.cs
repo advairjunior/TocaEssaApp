@@ -26,7 +26,7 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
-    public IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(
+    internal IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(
         Guid apresentacaoId)
     {
         var apresentacao = _apresentacoes.Values.SingleOrDefault(

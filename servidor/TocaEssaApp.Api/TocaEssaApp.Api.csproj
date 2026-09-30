@@ -9,4 +9,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="TocaEssaApp.Testes" />
+  </ItemGroup>
 </Project>

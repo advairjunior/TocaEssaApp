@@ -47,9 +47,9 @@ public sealed partial class RepositorioTocaEssa
         CarregarEstado();
     }
 
-    public PerfilArtistico? ObterPerfil() => _perfil;
+    internal PerfilArtistico? ObterPerfil() => _perfil;
 
-    public ConfiguracaoPerfilArtistico? ObterConfiguracaoPerfil() =>
+    internal ConfiguracaoPerfilArtistico? ObterConfiguracaoPerfil() =>
         _configuracaoPerfil;
 }
 
