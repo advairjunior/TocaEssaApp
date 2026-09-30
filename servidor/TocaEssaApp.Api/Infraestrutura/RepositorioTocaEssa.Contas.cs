@@ -13,14 +13,16 @@ public sealed partial class RepositorioTocaEssa
     {
         lock (_sincronizacao)
         {
-            if (!_contasArtistas.IsEmpty)
-                throw new ContaArtistaJaConfiguradaException();
+            var emailNormalizado = NormalizarEmail(email);
+            if (_contasArtistas.Values.Any(
+                    item => item.EmailNormalizado == emailNormalizado))
+                throw new EmailArtistaJaCadastradoException();
             var registro = new ContaArtistaRegistro
             {
                 Id = Guid.NewGuid(),
                 Nome = nome.Trim(),
                 Email = email.Trim(),
-                EmailNormalizado = NormalizarEmail(email),
+                EmailNormalizado = emailNormalizado,
                 CriadoEm = DateTimeOffset.UtcNow
             };
             registro.SenhaHash = SenhasArtista.HashPassword(registro, senha);
@@ -65,6 +67,41 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    public PerfilArtistico? ObterPerfil(string token)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return _configuracoesPerfis.GetValueOrDefault(conta.Id)?.Perfil;
+    }
+
+    public ConfiguracaoPerfilArtistico? ObterConfiguracaoPerfil(string token)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return _configuracoesPerfis.GetValueOrDefault(conta.Id);
+    }
+
+    public PerfilArtistico SalvarPerfilDaConta(string token, SalvarPerfilArtistico dados)
+    {
+        var conta = ExigirRegistroArtista(token);
+        return SalvarPerfilDoArtista(conta.Id, dados);
+    }
+
+    public PerfilArtistico AtualizarFotoPerfil(string token, string fotoUrl)
+    {
+        var conta = ExigirRegistroArtista(token);
+        lock (_sincronizacao)
+        {
+            var configuracao = _configuracoesPerfis.GetValueOrDefault(conta.Id)
+                ?? throw new PerfilArtisticoNaoCadastradoException();
+            var perfil = configuracao.Perfil with { FotoUrl = fotoUrl };
+            _configuracoesPerfis[conta.Id] = configuracao with { Perfil = perfil };
+            foreach (var item in _apresentacoes.ToArray()
+                         .Where(item => item.Value.ArtistaId == conta.Id))
+                _apresentacoes[item.Key] = item.Value with { PerfilArtistico = perfil };
+            SalvarEstado();
+            return perfil;
+        }
+    }
+
     public PerfilArtistico SalvarPerfil(string nomeArtistico, string? bio)
     {
         var configuracao = _configuracaoPerfil;
@@ -84,6 +121,15 @@ public sealed partial class RepositorioTocaEssa
 
     public PerfilArtistico SalvarPerfil(SalvarPerfilArtistico dados)
     {
+        var artistaId = _contasArtistas.Count == 1
+            ? _contasArtistas.Keys.Single()
+            : (Guid?)null;
+        return SalvarPerfilDoArtista(artistaId, dados);
+    }
+
+    private PerfilArtistico SalvarPerfilDoArtista(
+        Guid? artistaId, SalvarPerfilArtistico dados)
+    {
         lock (_sincronizacao)
         {
             var instagram = Limitar(dados.Instagram, 120);
@@ -94,16 +140,20 @@ public sealed partial class RepositorioTocaEssa
             var pixMensagem = Limitar(dados.PixMensagem, 72);
             var apoioDisponivel = dados.PixAtivo && pixChave is not null &&
                                   pixNome is not null && pixCidade is not null;
-            _perfil = new PerfilArtistico(
-                _perfil?.Id ?? Guid.NewGuid(),
+            var configuracaoAtual = artistaId is { } id
+                ? _configuracoesPerfis.GetValueOrDefault(id)
+                : _configuracaoPerfil;
+            var perfilAtual = configuracaoAtual?.Perfil;
+            var perfil = new PerfilArtistico(
+                perfilAtual?.Id ?? Guid.NewGuid(),
                 dados.NomeArtistico.Trim(),
                 Limitar(dados.Bio, 500),
-                _perfil?.FotoUrl,
+                perfilAtual?.FotoUrl,
                 dados.ExibirInstagram ? instagram : null,
                 dados.ExibirWhatsapp ? whatsapp : null,
                 apoioDisponivel);
-            _configuracaoPerfil = new ConfiguracaoPerfilArtistico(
-                _perfil,
+            var configuracao = new ConfiguracaoPerfilArtistico(
+                perfil,
                 instagram,
                 dados.ExibirInstagram,
                 whatsapp,
@@ -113,12 +163,21 @@ public sealed partial class RepositorioTocaEssa
                 pixNome,
                 pixCidade,
                 pixMensagem);
-            if (_contasArtistas.Count == 1)
-                _configuracoesPerfis[_contasArtistas.Keys.Single()] = _configuracaoPerfil;
-            foreach (var item in _apresentacoes.ToArray())
-                _apresentacoes[item.Key] = item.Value with { PerfilArtistico = _perfil };
+            if (artistaId is { } proprietarioId)
+                _configuracoesPerfis[proprietarioId] = configuracao;
+            _perfil = perfil;
+            _configuracaoPerfil = configuracao;
+            foreach (var item in _apresentacoes.ToArray()
+                         .Where(item => artistaId is null ||
+                                        item.Value.ArtistaId == artistaId ||
+                                        item.Value.ArtistaId == Guid.Empty))
+                _apresentacoes[item.Key] = item.Value with
+                {
+                    PerfilArtistico = perfil,
+                    ArtistaId = artistaId ?? item.Value.ArtistaId
+                };
             SalvarEstado();
-            return _perfil;
+            return perfil;
         }
     }
 
@@ -140,6 +199,9 @@ public sealed partial class RepositorioTocaEssa
             return _perfil;
         }
     }
+
+    private ContaArtistaRegistro ExigirRegistroArtista(string token) =>
+        ObterRegistroArtista(token) ?? throw new SessaoArtistaInvalidaException();
 
     public SessaoDoPublico CriarPerfilPublico(string nome, string email, string senha)
     {

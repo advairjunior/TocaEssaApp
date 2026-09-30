@@ -80,12 +80,12 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "A avaliação fica disponível depois que a música for tocada."
             });
         }
-        catch (ContaArtistaJaConfiguradaException)
+        catch (EmailArtistaJaCadastradoException)
         {
             contexto.Response.StatusCode = StatusCodes.Status409Conflict;
             await contexto.Response.WriteAsJsonAsync(new
             {
-                mensagem = "A conta do artista já foi configurada. Entre com seu e-mail e senha."
+                mensagem = "Este e-mail já possui uma conta de artista."
             });
         }
         catch (CredenciaisArtistaInvalidasException)

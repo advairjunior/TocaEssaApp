@@ -8,7 +8,7 @@ namespace TocaEssaApp.Testes;
 public class RepositorioTocaEssaTestes
 {
     [Fact]
-    public void ContaDoArtistaProtegeEAdotaOsDadosExistentes()
+    public void ContaDoArtistaPersisteSessaoEDadosExistentes()
     {
         var arquivo = Path.Combine(Path.GetTempPath(), $"tocaessa-artista-{Guid.NewGuid()}.db");
         try
@@ -21,9 +21,6 @@ public class RepositorioTocaEssaTestes
                 "Noite acústica", new DateOnly(2026, 9, 12), "Café Central");
 
             Assert.Equal("Ana", repositorio.ObterContaArtista(criada.Token).Nome);
-            Assert.Throws<ContaArtistaJaConfiguradaException>(() =>
-                repositorio.CriarContaArtista("Outro", "outro@artista.com", "senha123"));
-
             var reiniciado = new RepositorioTocaEssa(arquivo);
             var sessao = reiniciado.EntrarContaArtista(
                 "ANA@artista.com", "senha123");

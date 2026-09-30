@@ -31,6 +31,7 @@ public class PerfilArtisticoPublicoTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(arquivo);
+            repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha123");
             repositorio.SalvarPerfil(new SalvarPerfilArtistico(
                 "Duo Aurora", null, null, false, null, false, false));
 

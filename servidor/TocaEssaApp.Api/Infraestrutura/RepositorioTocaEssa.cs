@@ -87,7 +87,7 @@ public sealed class AvaliacaoInvalidaException : Exception { }
 public sealed class PedidoAindaNaoTocadoException : Exception { }
 public sealed class ApoioPixIndisponivelException : Exception { }
 
-public sealed class ContaArtistaJaConfiguradaException : Exception { }
+public sealed class EmailArtistaJaCadastradoException : Exception { }
 
 public sealed class CredenciaisArtistaInvalidasException : Exception { }
 
