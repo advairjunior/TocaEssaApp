@@ -95,6 +95,13 @@ public sealed partial class RepositorioTocaEssa
             .Select(item => ComAvaliacoes(item, null))
             .ToArray();
 
+    public IReadOnlyCollection<PedidoMusical> ListarPedidosDoArtista(
+        string token, Guid apresentacaoId)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ListarPedidosDoArtista(apresentacaoId);
+    }
+
     public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(
         Guid apresentacaoId)
     {
@@ -121,6 +128,13 @@ public sealed partial class RepositorioTocaEssa
             avaliacoes.Length,
             avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(), 1),
             AgruparMusicas(pedidos));
+    }
+
+    public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(
+        string token, Guid apresentacaoId)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ObterEstatisticasDaApresentacao(apresentacaoId);
     }
 
     public EstatisticasDoPublico ObterEstatisticasDoPublico(string token)
@@ -268,6 +282,16 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    public PedidoMusical AlterarStatus(
+        string token,
+        Guid apresentacaoId,
+        Guid pedidoId,
+        StatusPedidoMusical status)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return AlterarStatus(apresentacaoId, pedidoId, status);
+    }
+
     public Apresentacao AlterarPedidos(Guid apresentacaoId, bool abertos)
     {
         lock (_sincronizacao)
@@ -281,6 +305,13 @@ public sealed partial class RepositorioTocaEssa
             SalvarEstado();
             return atualizada;
         }
+    }
+
+    public Apresentacao AlterarPedidos(
+        string token, Guid apresentacaoId, bool abertos)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return AlterarPedidos(apresentacaoId, abertos);
     }
 
     public IReadOnlyCollection<PedidoMusical> ReordenarFila(
@@ -303,6 +334,15 @@ public sealed partial class RepositorioTocaEssa
             SalvarEstado();
             return ListarPedidosDoArtista(apresentacaoId);
         }
+    }
+
+    public IReadOnlyCollection<PedidoMusical> ReordenarFila(
+        string token,
+        Guid apresentacaoId,
+        IReadOnlyList<Guid> pedidos)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ReordenarFila(apresentacaoId, pedidos);
     }
 
 }

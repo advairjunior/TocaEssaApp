@@ -55,11 +55,14 @@ public sealed partial class RepositorioTocaEssa
                 apresentacaoId, publicoId,
                 pedidos.GetValueOrDefault(publicoId) ?? []))
             .ToList();
-        if (_perfil is not null)
+        var perfilArtista = _configuracoesPerfis
+            .GetValueOrDefault(apresentacao.ArtistaId)?.Perfil
+            ?? apresentacao.PerfilArtistico;
+        if (perfilArtista is not null)
             resumos.Add(new ParticipanteDaResenha(
-                _perfil.Id,
-                _perfil.NomeArtistico,
-                _perfil.FotoUrl,
+                perfilArtista.Id,
+                perfilArtista.NomeArtistico,
+                perfilArtista.FotoUrl,
                 0,
                 0,
                 null,
@@ -72,6 +75,13 @@ public sealed partial class RepositorioTocaEssa
             .ThenByDescending(item => item.EhArtista)
             .ThenBy(item => item.Nome)
             .ToArray();
+    }
+
+    public IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(
+        string token, Guid apresentacaoId)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ListarParticipantesDaResenha(apresentacaoId);
     }
 
     public IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(

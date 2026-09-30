@@ -26,6 +26,13 @@ public sealed partial class RepositorioTocaEssa
             .ToArray();
     }
 
+    public IReadOnlyCollection<GrupoPedidoMusical> ListarGruposDePedidosDoArtista(
+        string token, Guid apresentacaoId)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ListarGruposDePedidosDoArtista(apresentacaoId);
+    }
+
     public GrupoPedidoMusical AlterarStatusDoGrupo(
         Guid apresentacaoId,
         Guid representanteId,
@@ -69,6 +76,16 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    public GrupoPedidoMusical AlterarStatusDoGrupo(
+        string token,
+        Guid apresentacaoId,
+        Guid representanteId,
+        StatusPedidoMusical status)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return AlterarStatusDoGrupo(apresentacaoId, representanteId, status);
+    }
+
     public IReadOnlyCollection<GrupoPedidoMusical> ReordenarGruposDaFila(
         Guid apresentacaoId,
         IReadOnlyList<Guid> representantes)
@@ -98,6 +115,15 @@ public sealed partial class RepositorioTocaEssa
             SalvarEstado();
             return ListarGruposDePedidosDoArtista(apresentacaoId);
         }
+    }
+
+    public IReadOnlyCollection<GrupoPedidoMusical> ReordenarGruposDaFila(
+        string token,
+        Guid apresentacaoId,
+        IReadOnlyList<Guid> representantes)
+    {
+        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        return ReordenarGruposDaFila(apresentacaoId, representantes);
     }
 
     private PedidoMusical[] ObterMembrosDoGrupo(
