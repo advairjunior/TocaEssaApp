@@ -150,12 +150,16 @@ app.MapDelete("/api/artista/cifras/{id:guid}", (
     return Results.NoContent();
 });
 
-app.MapGet("/api/perfil-artistico", (RepositorioTocaEssa repositorio) =>
-    repositorio.ObterConfiguracaoPerfil() is { } perfil
+app.MapGet("/api/perfil-artistico", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    repositorio.ObterConfiguracaoPerfil(
+        ObterToken(http) ?? string.Empty) is { } perfil
         ? Results.Ok(perfil)
         : Results.NotFound());
 
-app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, RepositorioTocaEssa repositorio) =>
+app.MapPut("/api/perfil-artistico", (
+    SalvarPerfilArtistico requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
 {
     if (string.IsNullOrWhiteSpace(requisicao.NomeArtistico))
     {
@@ -165,12 +169,13 @@ app.MapPut("/api/perfil-artistico", (SalvarPerfilArtistico requisicao, Repositor
         });
     }
 
-    repositorio.SalvarPerfil(requisicao);
-    return Results.Ok(repositorio.ObterConfiguracaoPerfil());
+    var token = ObterToken(http) ?? string.Empty;
+    repositorio.SalvarPerfilDaConta(token, requisicao);
+    return Results.Ok(repositorio.ObterConfiguracaoPerfil(token));
 });
 
 app.MapPost("/api/perfil-artistico/foto", async Task<IResult> (
-    IFormFile foto, RepositorioTocaEssa repositorio,
+    HttpRequest http, IFormFile foto, RepositorioTocaEssa repositorio,
     ArmazenamentoDeImagens armazenamento, CancellationToken cancelamento) =>
 {
     const long limite = 5 * 1024 * 1024;
@@ -189,12 +194,13 @@ app.MapPost("/api/perfil-artistico/foto", async Task<IResult> (
             ["foto"] = ["Use uma imagem JPG, PNG ou WebP válida."]
         });
 
-    var perfil = repositorio.ObterPerfil()
+    var token = ObterToken(http) ?? string.Empty;
+    var perfil = repositorio.ObterPerfil(token)
         ?? throw new PerfilArtisticoNaoCadastradoException();
     var nomeArquivo = $"perfil-{perfil.Id}{imagem.Value.Extensao}";
     var url = await armazenamento.Salvar(
         nomeArquivo, imagem.Value.Tipo, memoria.ToArray(), cancelamento);
-    return Results.Ok(repositorio.AtualizarFotoPerfil(url));
+    return Results.Ok(repositorio.AtualizarFotoPerfil(token, url));
 }).DisableAntiforgery();
 
 app.MapPost("/api/publico/contas", (
@@ -270,8 +276,10 @@ app.MapPost("/api/publico/perfil/foto", async Task<IResult> (
     return Results.Ok(repositorio.AtualizarFotoPerfilPublico(token, url));
 }).DisableAntiforgery();
 
-app.MapGet("/api/apresentacoes", (RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ListarApresentacoes()));
+app.MapGet("/api/apresentacoes", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarApresentacoes(
+        ObterToken(http) ?? string.Empty)));
 
 app.MapPost("/api/apresentacoes", (CriarApresentacao requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {
@@ -282,7 +290,8 @@ app.MapPost("/api/apresentacoes", (CriarApresentacao requisicao, HttpRequest htt
     if (erros.Count > 0) return Results.ValidationProblem(erros);
 
     var apresentacao = repositorio.CriarApresentacao(
-        requisicao.Nome.Trim(), requisicao.Data, requisicao.Local.Trim(), requisicao.Tipo);
+        ObterToken(http) ?? string.Empty, requisicao.Nome.Trim(),
+        requisicao.Data, requisicao.Local.Trim(), requisicao.Tipo);
     var enderecoConfigurado = builder.Configuration["Aplicacao:EnderecoPublico"]?.TrimEnd('/');
     var enderecoPublico = string.IsNullOrWhiteSpace(enderecoConfigurado)
         ? $"{http.Scheme}://{http.Host}"
@@ -294,7 +303,8 @@ app.MapPost("/api/apresentacoes", (CriarApresentacao requisicao, HttpRequest htt
 });
 
 app.MapPut("/api/apresentacoes/{apresentacaoId:guid}", (
-    Guid apresentacaoId, EditarApresentacao requisicao, RepositorioTocaEssa repositorio) =>
+    Guid apresentacaoId, EditarApresentacao requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
 {
     var erros = new Dictionary<string, string[]>();
     if (string.IsNullOrWhiteSpace(requisicao.Nome)) erros["nome"] = ["Informe o nome da apresentação."];
@@ -303,19 +313,24 @@ app.MapPut("/api/apresentacoes/{apresentacaoId:guid}", (
     if (erros.Count > 0) return Results.ValidationProblem(erros);
 
     return Results.Ok(repositorio.EditarApresentacao(
-        apresentacaoId, requisicao.Nome.Trim(), requisicao.Data, requisicao.Local.Trim(), requisicao.Tipo));
+        ObterToken(http) ?? string.Empty, apresentacaoId,
+        requisicao.Nome.Trim(), requisicao.Data,
+        requisicao.Local.Trim(), requisicao.Tipo));
 });
 
 app.MapDelete("/api/apresentacoes/{apresentacaoId:guid}", (
-    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {
-    repositorio.ExcluirApresentacao(apresentacaoId);
+    repositorio.ExcluirApresentacao(
+        ObterToken(http) ?? string.Empty, apresentacaoId);
     return Results.NoContent();
 });
 
 app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/status", (
-    Guid apresentacaoId, AlterarStatusApresentacao requisicao, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.AlterarStatusApresentacao(apresentacaoId, requisicao.Status)));
+    Guid apresentacaoId, AlterarStatusApresentacao requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.AlterarStatusApresentacao(
+        ObterToken(http) ?? string.Empty, apresentacaoId, requisicao.Status)));
 
 app.MapGet("/api/publico/apresentacoes/{codigo}", (string codigo, RepositorioTocaEssa repositorio) =>
     repositorio.ObterApresentacaoPublica(codigo) is { } apresentacao
@@ -381,28 +396,34 @@ app.MapPut("/api/publico/apresentacoes/{codigo}/pedidos/{pedidoId:guid}/avaliaca
         requisicao.IdentificadorAvaliador, ObterToken(http))));
 
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/pedidos", (
-    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ListarPedidosDoArtista(apresentacaoId)));
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarPedidosDoArtista(
+        ObterToken(http) ?? string.Empty, apresentacaoId)));
 
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos", (
-    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ListarGruposDePedidosDoArtista(apresentacaoId)));
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarGruposDePedidosDoArtista(
+        ObterToken(http) ?? string.Empty, apresentacaoId)));
 
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/estatisticas", (
-    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ObterEstatisticasDaApresentacao(apresentacaoId)));
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ObterEstatisticasDaApresentacao(
+        ObterToken(http) ?? string.Empty, apresentacaoId)));
 
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/participantes", (
-    Guid apresentacaoId, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ListarParticipantesDaResenha(apresentacaoId)));
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarParticipantesDaResenha(
+        ObterToken(http) ?? string.Empty, apresentacaoId)));
 
 app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/foto-retrospectiva", async Task<IResult> (
-    Guid apresentacaoId, IFormFile foto, RepositorioTocaEssa repositorio,
+    Guid apresentacaoId, HttpRequest http, IFormFile foto,
+    RepositorioTocaEssa repositorio,
     ArmazenamentoDeImagens armazenamento, CancellationToken cancelamento) =>
 {
     const long limite = 8 * 1024 * 1024;
-    var apresentacao = repositorio.ObterApresentacao(apresentacaoId)
-        ?? throw new ApresentacaoNaoEncontradaException();
+    var token = ObterToken(http) ?? string.Empty;
+    var apresentacao = repositorio.ObterApresentacaoDoArtista(
+        token, apresentacaoId);
     if (apresentacao.Tipo != TipoApresentacao.ResenhaEntreAmigos)
         throw new RecursoDisponivelSomenteNaResenhaException();
     if (foto.Length == 0 || foto.Length > limite)
@@ -423,32 +444,42 @@ app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/foto-retrospectiva", async
     var nomeArquivo = $"resenha-{apresentacaoId}{imagem.Value.Extensao}";
     var url = await armazenamento.Salvar(
         nomeArquivo, imagem.Value.Tipo, memoria.ToArray(), cancelamento);
-    return Results.Ok(repositorio.AtualizarFotoRetrospectiva(apresentacaoId, url));
+    return Results.Ok(repositorio.AtualizarFotoRetrospectiva(
+        token, apresentacaoId, url));
 }).DisableAntiforgery();
 
 app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/pedidos/{pedidoId:guid}/status", (
-    Guid apresentacaoId, Guid pedidoId, AlterarStatusPedidoMusical requisicao, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.AlterarStatus(apresentacaoId, pedidoId, requisicao.Status)));
+    Guid apresentacaoId, Guid pedidoId, AlterarStatusPedidoMusical requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.AlterarStatus(
+        ObterToken(http) ?? string.Empty, apresentacaoId,
+        pedidoId, requisicao.Status)));
 
 app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos/{representanteId:guid}/status", (
     Guid apresentacaoId, Guid representanteId,
-    AlterarStatusPedidoMusical requisicao, RepositorioTocaEssa repositorio) =>
+    AlterarStatusPedidoMusical requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.AlterarStatusDoGrupo(
-        apresentacaoId, representanteId, requisicao.Status)));
+        ObterToken(http) ?? string.Empty, apresentacaoId,
+        representanteId, requisicao.Status)));
 
 app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/fila", (
-    Guid apresentacaoId, ReordenarFilaMusical requisicao, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.ReordenarFila(apresentacaoId, requisicao.Pedidos)));
+    Guid apresentacaoId, ReordenarFilaMusical requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ReordenarFila(
+        ObterToken(http) ?? string.Empty, apresentacaoId, requisicao.Pedidos)));
 
 app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/fila-agrupada", (
     Guid apresentacaoId, ReordenarFilaMusical requisicao,
-    RepositorioTocaEssa repositorio) =>
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ReordenarGruposDaFila(
-        apresentacaoId, requisicao.Pedidos)));
+        ObterToken(http) ?? string.Empty, apresentacaoId, requisicao.Pedidos)));
 
 app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/pedidos", (
-    Guid apresentacaoId, AlterarPedidosDaApresentacao requisicao, RepositorioTocaEssa repositorio) =>
-    Results.Ok(repositorio.AlterarPedidos(apresentacaoId, requisicao.Abertos)));
+    Guid apresentacaoId, AlterarPedidosDaApresentacao requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.AlterarPedidos(
+        ObterToken(http) ?? string.Empty, apresentacaoId, requisicao.Abertos)));
 
 static (string Extensao, string Tipo)? DetectarImagem(byte[] dados)
 {
