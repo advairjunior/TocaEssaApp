@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'infraestrutura/api_toca_essa.dart';
+import 'infraestrutura/teclado_virtual.dart';
 import 'tema/tema_toca_essa.dart';
 import 'telas/area_do_publico.dart';
 import 'telas/acesso_do_artista.dart';
 import 'telas/inicio.dart';
 import 'telas/conta_do_publico.dart';
 
-void main() => runApp(const TocaEssaApp());
+void main() {
+  instalarCorrecaoTecladoVirtual();
+  runApp(const TocaEssaApp());
+}
 
 class TocaEssaApp extends StatelessWidget {
   const TocaEssaApp({super.key, this.api});
