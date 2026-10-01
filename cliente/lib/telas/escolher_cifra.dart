@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
@@ -88,16 +89,28 @@ class _EscolherCifraState extends State<_EscolherCifra> {
     await _abrir(sugestao);
   }
 
+  Future<void> _colarLink() async {
+    final dados = await Clipboard.getData(Clipboard.kTextPlain);
+    final texto = dados?.text?.trim();
+    if (texto == null || texto.isEmpty || !mounted) return;
+    _url.text = texto;
+  }
+
+  // Título, conteúdo e botões rolam juntos: com o teclado aberto sobra pouca
+  // altura, e botões fixos no rodapé da janela cobriam o campo do link.
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Escolher cifra'),
-        content: SizedBox(
-          width: 440,
+  Widget build(BuildContext context) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 488),
           child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
+                Text('Escolher cifra',
+                    style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
                 Text(widget.musica,
                     style: Theme.of(context).textTheme.titleMedium),
                 if (widget.artista?.isNotEmpty == true)
@@ -124,10 +137,15 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                 TextField(
                   controller: _url,
                   keyboardType: TextInputType.url,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Link da cifra',
                     hintText: 'https://...',
-                    prefixIcon: Icon(Icons.link_rounded),
+                    prefixIcon: const Icon(Icons.link_rounded),
+                    suffixIcon: IconButton(
+                      tooltip: 'Colar link',
+                      icon: const Icon(Icons.content_paste_rounded),
+                      onPressed: _colarLink,
+                    ),
                   ),
                   onSubmitted: _salvar,
                 ),
@@ -137,27 +155,33 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                   icon: const Icon(Icons.open_in_new_rounded),
                   label: const Text('Abrir link para conferir'),
                 ),
+                const SizedBox(height: 16),
+                OverflowBar(
+                  alignment: MainAxisAlignment.end,
+                  spacing: 8,
+                  overflowAlignment: OverflowBarAlignment.end,
+                  children: [
+                    if (widget.resultado.cifra != null)
+                      TextButton(
+                        onPressed: () => Navigator.pop(
+                          context,
+                          const DecisaoCifra(TipoDecisaoCifra.remover),
+                        ),
+                        child: const Text('Remover link'),
+                      ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancelar'),
+                    ),
+                    FilledButton(
+                      onPressed: () => _salvar(_url.text),
+                      child: const Text('Confirmar cifra'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
-        actions: [
-          if (widget.resultado.cifra != null)
-            TextButton(
-              onPressed: () => Navigator.pop(
-                context,
-                const DecisaoCifra(TipoDecisaoCifra.remover),
-              ),
-              child: const Text('Remover link'),
-            ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => _salvar(_url.text),
-            child: const Text('Confirmar cifra'),
-          ),
-        ],
       );
 }

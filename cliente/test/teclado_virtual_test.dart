@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -143,13 +144,12 @@ void main() {
     expect(find.byType(ManterCampoFocadoVisivel), findsOneWidget);
   });
 
-  testWidgets('campo do link da cifra continua visível quando o teclado abre',
-      (tester) async {
-    addTearDown(tester.view.reset);
-    // iPhone de 390x844 pontos; teclado do Safari com a barra de atalhos
-    // ocupa cerca de 380 pontos.
+  Future<Finder> abrirEscolhaDeCifra(
+    WidgetTester tester, {
+    required Size tela,
+  }) async {
     tester.view.devicePixelRatio = 3;
-    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.physicalSize = tela * 3;
     await tester.pumpWidget(MaterialApp(
       theme: TemaTocaEssa.escuro,
       builder: (context, filho) => ManterCampoFocadoVisivel(child: filho!),
@@ -171,25 +171,74 @@ void main() {
     ));
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
+    return find.widgetWithText(TextField, 'Link da cifra');
+  }
 
-    final campo = find.widgetWithText(TextField, 'Link da cifra');
+  Future<void> abrirTecladoNoCampo(
+    WidgetTester tester,
+    Finder campo, {
+    required double alturaDoTeclado,
+  }) async {
     await tester.tap(campo);
     await tester.pump();
     // O teclado chega enquanto a janela ainda anima o próprio encolhimento.
-    tester.view.viewInsets = const FakeViewPadding(bottom: 1140);
+    tester.view.viewInsets = FakeViewPadding(bottom: alturaDoTeclado * 3);
     await tester.pump();
     await tester.pumpAndSettle();
     await tester.pump(ManterCampoFocadoVisivel.espera);
     await tester.pumpAndSettle();
+  }
 
-    final areaVisivel = tester.getRect(find
-        .descendant(
-          of: find.byType(AlertDialog),
-          matching: find.byType(SingleChildScrollView),
-        )
-        .first);
-    final retanguloDoCampo = tester.getRect(campo);
-    expect(retanguloDoCampo.top, greaterThanOrEqualTo(areaVisivel.top));
-    expect(retanguloDoCampo.bottom, lessThanOrEqualTo(areaVisivel.bottom));
+  void esperarCampoAcessivel(
+    WidgetTester tester,
+    Finder campo, {
+    required double limiteVisivel,
+  }) {
+    final retangulo = tester.getRect(campo);
+    expect(retangulo.top, greaterThanOrEqualTo(0));
+    expect(retangulo.bottom, lessThanOrEqualTo(limiteVisivel));
+    // Nada (como os botões da janela) pode estar por cima do campo.
+    expect(campo.hitTestable(), findsOneWidget);
+  }
+
+  for (final (descricao, tela) in [
+    ('iPhone em tela cheia', const Size(390, 844)),
+    ('iPhone no Safari com barras', const Size(390, 664)),
+  ]) {
+    testWidgets('campo do link da cifra fica acessível com teclado: $descricao',
+        (tester) async {
+      addTearDown(tester.view.reset);
+      // Teclado do Safari com a barra de atalhos ocupa cerca de 380 pontos.
+      const alturaDoTeclado = 380.0;
+      final campo = await abrirEscolhaDeCifra(tester, tela: tela);
+
+      await abrirTecladoNoCampo(tester, campo,
+          alturaDoTeclado: alturaDoTeclado);
+
+      esperarCampoAcessivel(tester, campo,
+          limiteVisivel: tela.height - alturaDoTeclado);
+    });
+  }
+
+  testWidgets('botão Colar link preenche o campo sem usar o teclado',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (chamada) async => chamada.method == 'Clipboard.getData'
+          ? {'text': '  https://www.cifraclub.com.br/evidencias/  '}
+          : null,
+    );
+    addTearDown(() => tester.binding.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null));
+    final campo = await abrirEscolhaDeCifra(tester, tela: const Size(390, 664));
+
+    await tester.tap(find.byTooltip('Colar link'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.widget<TextField>(campo).controller!.text,
+      'https://www.cifraclub.com.br/evidencias/',
+    );
   });
 }
