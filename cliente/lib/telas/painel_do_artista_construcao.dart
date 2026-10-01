@@ -68,7 +68,8 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
           child: _carregando
               ? const Center(child: CircularProgressIndicator())
               : _dentroDaApresentacao &&
-                      (_abaSelecionada == 1 || _abaSelecionada == 3)
+                      (_abaSelecionada == 1 || _abaSelecionada == 3 ||
+                          _abaSelecionada == 7)
                   ? _construirAbaGestao(context)
                   : (_abaSelecionada == 5)
                   ? _construirTelaPerfil(context)
