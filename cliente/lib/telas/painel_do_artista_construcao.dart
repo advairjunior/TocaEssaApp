@@ -67,6 +67,8 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
               : _dentroDaApresentacao &&
                       (_abaSelecionada == 1 || _abaSelecionada == 3)
                   ? _construirAbaGestao(context)
+                  : _abaSelecionada == 5
+                  ? _construirTelaPerfil(context)
                   : ConteudoMobile(
                       filho: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,7 +79,6 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
   }
 
   List<Widget> _construirAbaPainel(BuildContext context) {
-    if (_abaSelecionada == 5) return _construirAbaPerfil(context);
     if (_abaSelecionada == 4) return _construirAbaGalera(context);
     if (_abaSelecionada == 2) return _construirAbaCriar(context);
     if (_abaSelecionada == 6) {

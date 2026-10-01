@@ -142,7 +142,7 @@ void main() {
     await tester.tap(find.text('Perfil geral').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Perfil Artístico'), findsOneWidget);
+    expect(find.text('Identidade artística'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Nome artístico'), findsOneWidget);
     expect(find.text('Estatísticas'), findsWidgets);
     expect(find.text('Conquistas'), findsOneWidget);

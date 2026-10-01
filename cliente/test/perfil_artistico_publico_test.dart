@@ -50,9 +50,9 @@ void main() {
     await tester.tap(find.text('Perfil geral').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Perfil público e apoio'), findsOneWidget);
+    expect(find.text('Contatos públicos'), findsOneWidget);
     expect(find.text('Exibir Instagram ao público'), findsOneWidget);
-    expect(find.text('Aceitar apoio por Pix'), findsOneWidget);
+    expect(find.text('Aceitar contribuições'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Chave Pix'), findsOneWidget);
     expect(find.text('Prefira uma chave aleatória'), findsOneWidget);
   });
