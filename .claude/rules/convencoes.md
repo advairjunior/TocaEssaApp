@@ -16,7 +16,7 @@
 
 - Estado do painel em `painel_do_artista_estado.dart`.
 - Comunicação com a API em `ApiTocaEssa`.
-- Não redesenhar telas sem alteração de comportamento exigida por testes.
+- Redesenho de telas é permitido dentro do plano de UX aprovado pelo proprietário (tema escuro mantido); comportamentos existentes continuam protegidos por testes e comportamentos novos nascem de teste que falha.
 
 ## Testes
 
