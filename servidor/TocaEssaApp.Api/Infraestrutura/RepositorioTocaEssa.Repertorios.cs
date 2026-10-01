@@ -94,15 +94,22 @@ public sealed partial class RepositorioTocaEssa
             if (!_musicasDoRepertorio.TryGetValue(musicaId, out var musica) ||
                 musica.RepertorioId != repertorioId)
                 throw new MusicaDoRepertorioNaoEncontradaException();
+            var tituloAntigo = musica.Titulo;
             musica.Titulo = titulo.Trim();
             musica.Artista = string.IsNullOrWhiteSpace(artista) ? null : artista.Trim();
             musica.Tom = string.IsNullOrWhiteSpace(tom) ? null : tom.Trim();
             _musicasDoRepertorio[musicaId] = musica;
 
-            // Propagar edição para todos os setlists que usam esta música
+            // Propagar edição para setlists vinculados por ID ou por título (fallback
+            // para itens importados antes de existir o campo MusicaDoRepertorioId).
             foreach (var item in _itensDoSetlist.Values
-                         .Where(i => i.MusicaDoRepertorioId == musicaId))
+                         .Where(i => i.ArtistaId == conta.Id && (
+                             i.MusicaDoRepertorioId == musicaId ||
+                             (i.MusicaDoRepertorioId == null &&
+                              string.Equals(i.Titulo, tituloAntigo,
+                                  StringComparison.OrdinalIgnoreCase)))))
             {
+                item.MusicaDoRepertorioId ??= musicaId; // vincula para atualizações futuras
                 item.Titulo = musica.Titulo;
                 item.Artista = musica.Artista;
                 item.Tom = musica.Tom;
