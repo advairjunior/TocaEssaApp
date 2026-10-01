@@ -42,8 +42,7 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
     try {
       final criado = await widget.api.criarRepertorio(nome);
       if (!mounted) return;
-      setState(() => _repertorios = [..._repertorios, criado]);
-      _abrirDetalhe(criado);
+      _abrirDetalhe(criado); // a lista é recarregada ao voltar via _carregar()
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -87,7 +86,7 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
       MaterialPageRoute<void>(
         builder: (_) => _DetalheRepertorio(api: widget.api, repertorio: rep),
       ),
-    ).then((_) => _carregar());
+    ).then((_) { if (mounted) _carregar(); });
   }
 
   @override
