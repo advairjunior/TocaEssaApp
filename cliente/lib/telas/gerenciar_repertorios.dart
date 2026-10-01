@@ -370,106 +370,174 @@ Future<String?> _pedirNome(
   required String titulo,
   required String rotulo,
 }) async {
-  final controller = TextEditingController();
-  try {
-    return await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(titulo),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(labelText: rotulo),
-          textCapitalization: TextCapitalization.words,
-          onSubmitted: (v) =>
-              Navigator.pop(context, v.trim().isEmpty ? null : v.trim()),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () {
-              final v = controller.text.trim();
-              Navigator.pop(context, v.isEmpty ? null : v);
-            },
-            child: const Text('Criar'),
-          ),
-        ],
+  final valores = await _abrirFormulario(
+    context,
+    titulo: titulo,
+    rotuloConfirmar: 'Criar',
+    campos: [
+      _CampoDoFormulario(
+        rotulo: rotulo,
+        obrigatorio: true,
+        capitalizacao: TextCapitalization.words,
       ),
-    );
-  } finally {
-    controller.dispose();
-  }
+    ],
+  );
+  return valores?.first;
 }
 
 Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
-    BuildContext context, {
+  BuildContext context, {
   String? tituloInicial,
   String? artistaInicial,
   String? tomInicial,
 }) async {
-  final tituloCtrl = TextEditingController(text: tituloInicial);
-  final artistaCtrl = TextEditingController(text: artistaInicial ?? '');
-  final tomCtrl = TextEditingController(text: tomInicial ?? '');
-  try {
-    final editando = tituloInicial != null;
-    return await showDialog<(String, String?, String?)>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text(editando ? 'Editar música' : 'Adicionar música'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  final editando = tituloInicial != null;
+  final valores = await _abrirFormulario(
+    context,
+    titulo: editando ? 'Editar música' : 'Adicionar música',
+    rotuloConfirmar: editando ? 'Salvar' : 'Adicionar',
+    campos: [
+      _CampoDoFormulario(
+        rotulo: 'Título da música',
+        inicial: tituloInicial,
+        obrigatorio: true,
+        capitalizacao: TextCapitalization.words,
+      ),
+      _CampoDoFormulario(
+        rotulo: 'Artista (opcional)',
+        inicial: artistaInicial,
+        capitalizacao: TextCapitalization.words,
+      ),
+      _CampoDoFormulario(
+        rotulo: 'Tom preferido (opcional)',
+        inicial: tomInicial,
+        dica: 'Ex: Lá, Mi, Ré menor…',
+        icone: Icons.music_note_rounded,
+        capitalizacao: TextCapitalization.sentences,
+      ),
+    ],
+  );
+  if (valores == null) return null;
+  final [titulo, artista, tom] = valores;
+  return (titulo, artista.isEmpty ? null : artista, tom.isEmpty ? null : tom);
+}
+
+class _CampoDoFormulario {
+  const _CampoDoFormulario({
+    required this.rotulo,
+    this.inicial,
+    this.dica,
+    this.icone,
+    this.obrigatorio = false,
+    this.capitalizacao = TextCapitalization.none,
+  });
+
+  final String rotulo;
+  final String? inicial;
+  final String? dica;
+  final IconData? icone;
+  final bool obrigatorio;
+  final TextCapitalization capitalizacao;
+}
+
+/// Formulário em tela cheia: campos no topo e confirmação na barra superior,
+/// onde o teclado virtual nunca cobre os botões. Devolve os textos aparados.
+Future<List<String>?> _abrirFormulario(
+  BuildContext context, {
+  required String titulo,
+  required String rotuloConfirmar,
+  required List<_CampoDoFormulario> campos,
+}) =>
+    Navigator.of(context).push<List<String>>(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => _FormularioEmTelaCheia(
+        titulo: titulo,
+        rotuloConfirmar: rotuloConfirmar,
+        campos: campos,
+      ),
+    ));
+
+class _FormularioEmTelaCheia extends StatefulWidget {
+  const _FormularioEmTelaCheia({
+    required this.titulo,
+    required this.rotuloConfirmar,
+    required this.campos,
+  });
+
+  final String titulo;
+  final String rotuloConfirmar;
+  final List<_CampoDoFormulario> campos;
+
+  @override
+  State<_FormularioEmTelaCheia> createState() => _FormularioEmTelaCheiaState();
+}
+
+class _FormularioEmTelaCheiaState extends State<_FormularioEmTelaCheia> {
+  late final List<TextEditingController> _controles = [
+    for (final campo in widget.campos)
+      TextEditingController(text: campo.inicial ?? ''),
+  ];
+
+  @override
+  void dispose() {
+    for (final controle in _controles) {
+      controle.dispose();
+    }
+    super.dispose();
+  }
+
+  void _confirmar() {
+    final valores = [for (final c in _controles) c.text.trim()];
+    for (var i = 0; i < widget.campos.length; i++) {
+      if (widget.campos[i].obrigatorio && valores[i].isEmpty) return;
+    }
+    Navigator.pop(context, valores);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Fechar',
+            icon: const Icon(Icons.close_rounded),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(widget.titulo),
+          actions: [
+            TextButton(
+              onPressed: _confirmar,
+              child: Text(widget.rotuloConfirmar),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: ConteudoMobile(
+          filho: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                controller: tituloCtrl,
-                autofocus: true,
-                decoration:
-                    const InputDecoration(labelText: 'Título da música'),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: artistaCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Artista (opcional)'),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: tomCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Tom preferido (opcional)',
-                  hintText: 'Ex: Lá, Mi, Ré menor…',
-                  prefixIcon: Icon(Icons.music_note_rounded),
+              for (var i = 0; i < widget.campos.length; i++) ...[
+                if (i > 0) const SizedBox(height: 12),
+                TextField(
+                  controller: _controles[i],
+                  autofocus: i == 0,
+                  textCapitalization: widget.campos[i].capitalizacao,
+                  textInputAction: i == widget.campos.length - 1
+                      ? TextInputAction.done
+                      : TextInputAction.next,
+                  onSubmitted: i == widget.campos.length - 1
+                      ? (_) => _confirmar()
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: widget.campos[i].rotulo,
+                    hintText: widget.campos[i].dica,
+                    prefixIcon: widget.campos[i].icone == null
+                        ? null
+                        : Icon(widget.campos[i].icone),
+                  ),
                 ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              ],
             ],
           ),
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () {
-              final t = tituloCtrl.text.trim();
-              if (t.isEmpty) return;
-              final a = artistaCtrl.text.trim();
-              final tom = tomCtrl.text.trim();
-              Navigator.pop(
-                  context, (t, a.isEmpty ? null : a, tom.isEmpty ? null : tom));
-            },
-            child: Text(editando ? 'Salvar' : 'Adicionar'),
-          ),
-        ],
-      ),
-    );
-  } finally {
-    tituloCtrl.dispose();
-    artistaCtrl.dispose();
-    tomCtrl.dispose();
-  }
+      );
 }

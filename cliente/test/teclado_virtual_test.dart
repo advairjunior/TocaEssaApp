@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
+import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/componentes.dart';
 import 'package:toca_essa_app/telas/escolher_cifra.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
@@ -86,51 +87,6 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Criar Perfil Artístico'),
         findsOneWidget);
-  });
-
-  testWidgets(
-      'janela de adicionar música rola sem transbordar com teclado no celular',
-      (tester) async {
-    addTearDown(tester.view.reset);
-    // iPhone SE de 375x667 pontos; teclado do Safari com a barra de atalhos
-    // ocupa cerca de 304 pontos.
-    tester.view.devicePixelRatio = 3;
-    tester.view.physicalSize = const Size(1125, 2001);
-    final cliente = MockClient((requisicao) async {
-      if (requisicao.url.path == '/api/artista/repertorios') {
-        return http.Response(
-          '[{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":[]}]',
-          200,
-        );
-      }
-      return http.Response('[]', 200);
-    });
-
-    await tester.pumpWidget(MaterialApp(
-      theme: TemaTocaEssa.escuro,
-      home: GerenciarRepertorios(
-        api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
-      ),
-    ));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Barzinho'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Adicionar música'));
-    tester.view.viewInsets = const FakeViewPadding(bottom: 912);
-    await tester.pumpAndSettle();
-
-    expect(tester.takeException(), isNull);
-    final rolagem = find.descendant(
-      of: find.byType(AlertDialog),
-      matching: find.byType(SingleChildScrollView),
-    );
-    expect(rolagem, findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.widgetWithText(TextField, 'Tom preferido (opcional)'),
-      50,
-      scrollable:
-          find.descendant(of: rolagem, matching: find.byType(Scrollable)).first,
-    );
   });
 
   testWidgets('o app inteiro mantém o campo focado visível', (tester) async {
@@ -255,5 +211,105 @@ void main() {
       tester.widget<TextField>(campo).controller!.text,
       'https://www.cifraclub.com.br/evidencias/',
     );
+  });
+
+  group('repertório com teclado aberto no Safari do iPhone', () {
+    const tela = Size(390, 664);
+    const alturaDoTeclado = 380.0;
+    const limiteVisivel = 664 - 380.0;
+
+    Future<void> abrirRepertorios(WidgetTester tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = tela * 3;
+      final cliente = MockClient((requisicao) async => http.Response(
+            '[{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":[]}]',
+            200,
+          ));
+      await tester.pumpWidget(MaterialApp(
+        theme: TemaTocaEssa.escuro,
+        builder: (context, filho) => ManterCampoFocadoVisivel(child: filho!),
+        home: GerenciarRepertorios(
+          api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+        ),
+      ));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Novo repertório: campo e Criar ficam acessíveis',
+        (tester) async {
+      addTearDown(tester.view.reset);
+      await abrirRepertorios(tester);
+      await tester.tap(find.byTooltip('Novo repertório'));
+      await tester.pumpAndSettle();
+      final campo = find.widgetWithText(TextField, 'Nome do repertório');
+
+      await abrirTecladoNoCampo(tester, campo,
+          alturaDoTeclado: alturaDoTeclado);
+
+      expect(tester.takeException(), isNull);
+      esperarCampoAcessivel(tester, campo, limiteVisivel: limiteVisivel);
+      esperarCampoAcessivel(tester, find.text('Criar'),
+          limiteVisivel: limiteVisivel);
+    });
+
+    for (final rotulo in [
+      'Título da música',
+      'Artista (opcional)',
+      'Tom preferido (opcional)',
+    ]) {
+      testWidgets('Adicionar música: "$rotulo" e Adicionar ficam acessíveis',
+          (tester) async {
+        addTearDown(tester.view.reset);
+        await abrirRepertorios(tester);
+        await tester.tap(find.text('Barzinho'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byTooltip('Adicionar música'));
+        await tester.pumpAndSettle();
+        final campo = find.widgetWithText(TextField, rotulo);
+
+        await abrirTecladoNoCampo(tester, campo,
+            alturaDoTeclado: alturaDoTeclado);
+
+        expect(tester.takeException(), isNull);
+        esperarCampoAcessivel(tester, campo, limiteVisivel: limiteVisivel);
+        esperarCampoAcessivel(tester, find.text('Adicionar'),
+            limiteVisivel: limiteVisivel);
+      });
+    }
+
+    testWidgets(
+        'Apoiar o artista: Outro valor e gerar Pix ficam acima do teclado',
+        (tester) async {
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = tela * 3;
+      await tester.pumpWidget(MaterialApp(
+        theme: TemaTocaEssa.escuro,
+        builder: (context, filho) => ManterCampoFocadoVisivel(child: filho!),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              useSafeArea: true,
+              builder: (_) => ApoioPixArtista(
+                carregar: (_) async => throw Exception('sem rede'),
+              ),
+            ),
+            child: const Text('Apoiar'),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Apoiar'));
+      await tester.pumpAndSettle();
+      final campo = find.widgetWithText(TextField, 'Outro valor');
+
+      await abrirTecladoNoCampo(tester, campo,
+          alturaDoTeclado: alturaDoTeclado);
+
+      esperarCampoAcessivel(tester, campo, limiteVisivel: limiteVisivel);
+      esperarCampoAcessivel(tester, find.byTooltip('Gerar Pix com outro valor'),
+          limiteVisivel: limiteVisivel);
+    });
   });
 }
