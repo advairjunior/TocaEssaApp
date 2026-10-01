@@ -15,9 +15,8 @@ void main() {
   testWidgets('exibe as entradas pública e do artista', (tester) async {
     await tester.pumpWidget(const TocaEssaApp());
 
-    expect(find.text('Área do Público'), findsOneWidget);
-    expect(find.text('Acessar Painel do Artista'), findsOneWidget);
-    expect(find.text('Código da Apresentação'), findsOneWidget);
+    expect(find.text('Sou artista'), findsOneWidget);
+    expect(find.text('Código da apresentação'), findsOneWidget);
     expect(find.text('Feito por Advair'), findsOneWidget);
     expect(
       find.image(const AssetImage('assets/fundos/inicio_palco.png')),
@@ -47,7 +46,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -94,7 +93,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -127,7 +126,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -175,7 +174,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();

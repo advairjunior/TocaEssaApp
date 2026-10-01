@@ -43,7 +43,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessar = find.text('Acessar Painel do Artista');
+    final acessar = find.text('Sou artista');
     await tester.ensureVisible(acessar);
     await tester.tap(acessar);
     await tester.pumpAndSettle();

@@ -47,7 +47,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -94,7 +94,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -138,7 +138,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -173,7 +173,7 @@ void main() {
     final api = ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste');
 
     await tester.pumpWidget(TocaEssaApp(api: api));
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -221,7 +221,7 @@ void main() {
       TocaEssaApp(
           api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')),
     );
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -268,7 +268,7 @@ void main() {
       TocaEssaApp(
           api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')),
     );
-    final acessarPainel = find.text('Acessar Painel do Artista');
+    final acessarPainel = find.text('Sou artista');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();

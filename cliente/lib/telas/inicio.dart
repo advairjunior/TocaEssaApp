@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
 import 'fundo_toca_essa.dart';
 
 class Inicio extends StatefulWidget {
@@ -14,7 +15,15 @@ class Inicio extends StatefulWidget {
 }
 
 class _InicioState extends State<Inicio> {
+  static const _tamanhoCodigo = 6;
   final _codigo = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Habilita "Entrar" assim que o código fica completo.
+    _codigo.addListener(() => setState(() {}));
+  }
 
   @override
   void dispose() {
@@ -22,199 +31,82 @@ class _InicioState extends State<Inicio> {
     super.dispose();
   }
 
+  bool get _codigoCompleto => _codigo.text.length == _tamanhoCodigo;
+
   void _entrar() {
-    final codigo = _codigo.text.trim().toUpperCase();
-    if (codigo.isEmpty) return;
-    Navigator.pushNamed(context, '/publico/$codigo');
+    if (!_codigoCompleto) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.pushNamed(context, '/publico/${_codigo.text}');
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        body: FundoTocaEssa(
-          variante: VarianteFundoTocaEssa.palco,
-          intensidade: IntensidadeFundoTocaEssa.imersiva,
-          child: ConteudoMobile(
-            filho: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 42),
-                Image.asset(
-                  'assets/marca/toca_essa_horizontal.png',
-                  height: 104,
-                  fit: BoxFit.contain,
-                  semanticLabel: 'TocaEssa',
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'A música que você quer ouvir,\nmais perto do palco.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Entre na Apresentação e envie seu Pedido Musical.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: CoresTocaEssa.textoSecundario),
-                ),
-                const SizedBox(height: 36),
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Color(0xFF25183A), CoresTocaEssa.superficie],
-                    ),
-                    border: Border.all(color: const Color(0xFF503778)),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x33784DFF),
-                        blurRadius: 30,
-                        offset: Offset(0, 14),
-                      ),
-                    ],
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Scaffold(
+      body: FundoTocaEssa(
+        variante: VarianteFundoTocaEssa.palco,
+        intensidade: IntensidadeFundoTocaEssa.imersiva,
+        child: ConteudoMobile(
+          filho: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.pushNamed(context, '/artista'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: CoresTocaEssa.textoSecundario,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Row(
-                        children: [
-                          _IconeInicio(
-                            icone: Icons.people_alt_rounded,
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Área do Público',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Use o código mostrado pelo artista',
-                                  style: TextStyle(
-                                    color: CoresTocaEssa.textoSecundario,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _codigo,
-                        textCapitalization: TextCapitalization.characters,
-                        maxLength: 6,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 3,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Código da Apresentação',
-                          hintText: 'A1B2C3',
-                          counterText: '',
-                          prefixIcon: Icon(Icons.tag_rounded),
-                        ),
-                        onSubmitted: (_) => _entrar(),
-                      ),
-                      const SizedBox(height: 14),
-                      FilledButton.icon(
-                        onPressed: _entrar,
-                        icon: const Icon(Icons.arrow_forward_rounded),
-                        label: const Text('Entrar'),
-                      ),
-                    ],
-                  ),
+                  icon: const Icon(Icons.mic_rounded, size: 18),
+                  label: const Text('Sou artista'),
                 ),
-                const SizedBox(height: 22),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/minha-conta'),
-                  icon: const Icon(Icons.history),
-                  label: const Text('Minha conta e minhas resenhas'),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: CoresTocaEssa.superficie.withValues(alpha: 0.72),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: CoresTocaEssa.borda),
-                  ),
-                  child: Column(
-                    children: [
-                      const Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _IconeInicio(icone: Icons.mic_rounded),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Você é o artista?',
-                                  style: TextStyle(fontWeight: FontWeight.w600),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Gerencie apresentações e pedidos.',
-                                  style: TextStyle(
-                                    color: CoresTocaEssa.textoSecundario,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () =>
-                              Navigator.pushNamed(context, '/artista'),
-                          icon: const Icon(Icons.arrow_forward_rounded),
-                          label: const Text('Acessar Painel do Artista'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                const _AssinaturaInicio(),
-                const SizedBox(height: 32),
-              ],
-            ),
+              ),
+              const SizedBox(height: EspacoTocaEssa.grande),
+              Image.asset(
+                'assets/marca/toca_essa_horizontal.png',
+                height: 96,
+                fit: BoxFit.contain,
+                semanticLabel: 'TocaEssa',
+              ),
+              const SizedBox(height: EspacoTocaEssa.base),
+              Text(
+                'A música que você quer ouvir, mais perto do palco.',
+                textAlign: TextAlign.center,
+                style: texto.headlineSmall,
+              ),
+              const SizedBox(height: EspacoTocaEssa.enorme + 8),
+              CampoCodigo(
+                controlador: _codigo,
+                tamanho: _tamanhoCodigo,
+                aoCompletar: (_) => _entrar(),
+              ),
+              const SizedBox(height: EspacoTocaEssa.pequeno),
+              Text(
+                'Peça o código ao artista ou leia o QR Code do palco.',
+                textAlign: TextAlign.center,
+                style: texto.bodyMedium
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              ),
+              const SizedBox(height: EspacoTocaEssa.grande),
+              FilledButton(
+                onPressed: _codigoCompleto ? _entrar : null,
+                child: const Text('Entrar'),
+              ),
+              const SizedBox(height: EspacoTocaEssa.pequeno),
+              TextButton.icon(
+                onPressed: () => Navigator.pushNamed(context, '/minha-conta'),
+                icon: const Icon(Icons.history_rounded, size: 18),
+                label: const Text('Ver minhas resenhas'),
+              ),
+              const SizedBox(height: EspacoTocaEssa.enorme + 8),
+              const _AssinaturaInicio(),
+              const SizedBox(height: EspacoTocaEssa.base),
+            ],
           ),
         ),
-      );
-}
-
-class _IconeInicio extends StatelessWidget {
-  const _IconeInicio({required this.icone});
-
-  final IconData icone;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.roxo.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Icon(icone, color: CoresTocaEssa.roxoClaro),
-      );
+      ),
+    );
+  }
 }
 
 class _AssinaturaInicio extends StatelessWidget {
