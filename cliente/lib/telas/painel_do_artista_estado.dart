@@ -54,6 +54,10 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   @override
   void initState() {
     super.initState();
+    // Redesenha a prévia e o botão de salvar a cada tecla.
+    for (final campo in _camposDoPerfil) {
+      campo.addListener(_aoEditarPerfil);
+    }
     _carregar();
   }
 
@@ -75,23 +79,93 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
             _escolherApresentacaoDaGestao(apresentacoes)?.id;
         _filtroApresentacoes = _filtroInicial(apresentacoes);
         _carregando = false;
-        _nomeArtistico.text = perfil?.nomeArtistico ?? '';
-        _bio.text = perfil?.bio ?? '';
-        _instagram.text = configuracao?.instagram ?? '';
-        _whatsapp.text = configuracao?.whatsapp ?? '';
-        _pixChave.text = configuracao?.pixChave ?? '';
-        _pixNomeBeneficiario.text = configuracao?.pixNomeBeneficiario ?? '';
-        _pixCidadeBeneficiario.text = configuracao?.pixCidadeBeneficiario ?? '';
-        _pixMensagem.text = configuracao?.pixMensagem ?? '';
-        _exibirInstagram = configuracao?.exibirInstagram ?? false;
-        _exibirWhatsapp = configuracao?.exibirWhatsapp ?? false;
-        _pixAtivo = configuracao?.pixAtivo ?? false;
+        _restaurarPerfil();
       });
     } catch (erro) {
       if (!mounted) return;
       setState(() => _carregando = false);
       mostrarErro(context, erro);
     }
+  }
+
+  List<TextEditingController> get _camposDoPerfil => [
+        _nomeArtistico,
+        _bio,
+        _instagram,
+        _whatsapp,
+        _pixChave,
+        _pixNomeBeneficiario,
+        _pixCidadeBeneficiario,
+        _pixMensagem,
+      ];
+
+  void _aoEditarPerfil() {
+    if (mounted) setState(() {});
+  }
+
+  /// Volta os campos do perfil aos valores salvos.
+  void _restaurarPerfil() {
+    final configuracao = _configuracaoPerfil;
+    _nomeArtistico.text = configuracao?.perfil.nomeArtistico ?? '';
+    _bio.text = configuracao?.perfil.bio ?? '';
+    _instagram.text = configuracao?.instagram ?? '';
+    _whatsapp.text = configuracao?.whatsapp ?? '';
+    _pixChave.text = configuracao?.pixChave ?? '';
+    _pixNomeBeneficiario.text = configuracao?.pixNomeBeneficiario ?? '';
+    _pixCidadeBeneficiario.text = configuracao?.pixCidadeBeneficiario ?? '';
+    _pixMensagem.text = configuracao?.pixMensagem ?? '';
+    _exibirInstagram = configuracao?.exibirInstagram ?? false;
+    _exibirWhatsapp = configuracao?.exibirWhatsapp ?? false;
+    _pixAtivo = configuracao?.pixAtivo ?? false;
+  }
+
+  bool get _perfilAlterado {
+    final configuracao = _configuracaoPerfil;
+    if (configuracao == null) {
+      return _camposDoPerfil.any((campo) => campo.text.trim().isNotEmpty);
+    }
+    bool difere(TextEditingController campo, String? salvo) =>
+        campo.text.trim() != (salvo ?? '').trim();
+    return difere(_nomeArtistico, configuracao.perfil.nomeArtistico) ||
+        difere(_bio, configuracao.perfil.bio) ||
+        difere(_instagram, configuracao.instagram) ||
+        difere(_whatsapp, configuracao.whatsapp) ||
+        difere(_pixChave, configuracao.pixChave) ||
+        difere(_pixNomeBeneficiario, configuracao.pixNomeBeneficiario) ||
+        difere(_pixCidadeBeneficiario, configuracao.pixCidadeBeneficiario) ||
+        difere(_pixMensagem, configuracao.pixMensagem) ||
+        _exibirInstagram != configuracao.exibirInstagram ||
+        _exibirWhatsapp != configuracao.exibirWhatsapp ||
+        _pixAtivo != configuracao.pixAtivo;
+  }
+
+  /// Sai do perfil; com alterações pendentes, pergunta antes de descartar.
+  Future<void> _sairDoPerfil() async {
+    if (_perfilAlterado) {
+      final descartar = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Descartar alterações?'),
+              content: const Text(
+                'As mudanças no seu perfil artístico ainda não foram salvas.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Continuar editando'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Descartar'),
+                ),
+              ],
+            ),
+          ) ??
+          false;
+      if (!descartar || !mounted) return;
+      _restaurarPerfil();
+    }
+    _voltarAoInicio();
   }
 
   Apresentacao? _escolherApresentacaoDaGestao(
@@ -186,9 +260,11 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       setState(() {
         _configuracaoPerfil = configuracao;
         _perfil = configuracao.perfil;
+        // Adota os valores normalizados pela API para não sobrar "alteração".
+        _restaurarPerfil();
       });
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Perfil Artístico salvo.')));
+          const SnackBar(content: Text('Perfil artístico salvo.')));
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {

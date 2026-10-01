@@ -55,17 +55,22 @@ void main() {
     await tester.tap(find.text('Criar perfil artístico'));
     await tester.pumpAndSettle();
     expect(find.text('Criar perfil artístico'), findsOneWidget);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nome artístico'),
-      'Novo Artista',
-    );
+    await tester.enterText(campo('Nome artístico'), 'Novo Artista');
     final criarPerfil = find.text('Criar perfil artístico');
     await tester.ensureVisible(criarPerfil);
     await tester.tap(criarPerfil);
     await tester.pumpAndSettle();
 
-    expect(find.text('Perfil Artístico salvo.'), findsOneWidget);
-    expect(find.text('Salvar alterações'), findsOneWidget);
+    expect(find.text('Perfil artístico salvo.'), findsOneWidget);
+    // Sem alterações pendentes, o botão de salvar fica desabilitado.
+    expect(
+      tester
+          .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Salvar alterações'))
+          .enabled,
+      isFalse,
+    );
+    expect(find.text('Criar perfil artístico'), findsNothing);
   });
 
   testWidgets('Painel do Artista separa eventos por momento', (tester) async {

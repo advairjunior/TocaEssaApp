@@ -5,6 +5,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
 const _contaArtistaJson =
     '{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","nome":"Ana","email":"ana@artista.com","criadoEm":"2026-09-03T20:00:00Z"}';
@@ -141,8 +142,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Identidade artística'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'Nome artístico'), findsOneWidget);
-    expect(find.text('Estatísticas'), findsWidgets);
+    expect(find.widgetWithText(CampoTexto, 'Nome artístico'), findsOneWidget);
+    expect(find.text('Sua jornada'), findsOneWidget);
     expect(find.text('Conquistas'), findsOneWidget);
     expect(find.text('Nova apresentação'), findsNothing);
   });

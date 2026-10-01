@@ -3,6 +3,9 @@ part of 'painel_do_artista.dart';
 extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
   Widget _construirTelaPerfil(BuildContext context) {
     final paddingBottom = MediaQuery.paddingOf(context).bottom;
+    // Botão sempre no lugar (sem pular o layout); habilita só com alterações.
+    final podeSalvar = !_salvando && (_perfil == null || _perfilAlterado);
+
     return Column(
       children: [
         Expanded(
@@ -13,7 +16,12 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 560),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    EspacoTocaEssa.grande - 4,
+                    EspacoTocaEssa.grande,
+                    EspacoTocaEssa.grande - 4,
+                    EspacoTocaEssa.grande,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: _conteudoPerfil(context),
@@ -28,13 +36,23 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 560),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + paddingBottom),
-                child: FilledButton(
-                  onPressed: _salvando ? null : _salvarPerfil,
-                  child: Text(
-                    _perfil == null
-                        ? 'Criar perfil artístico'
-                        : 'Salvar alterações',
+                padding: EdgeInsets.fromLTRB(
+                  EspacoTocaEssa.grande - 4,
+                  EspacoTocaEssa.pequeno,
+                  EspacoTocaEssa.grande - 4,
+                  EspacoTocaEssa.base + paddingBottom,
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: podeSalvar ? _salvarPerfil : null,
+                    child: Text(
+                      _salvando
+                          ? 'Salvando...'
+                          : _perfil == null
+                              ? 'Criar perfil artístico'
+                              : 'Salvar alterações',
+                    ),
                   ),
                 ),
               ),
@@ -45,350 +63,292 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
     );
   }
 
-  List<Widget> _conteudoPerfil(BuildContext context) => [
-        _construirPreviewPerfil(context),
-        const SizedBox(height: 16),
-        _construirCardIdentidade(),
-        const SizedBox(height: 16),
-        _construirCardContatos(),
-        const SizedBox(height: 16),
-        _construirCardPix(),
-        const SizedBox(height: 16),
-        _construirCardRepertorios(context),
-        const SizedBox(height: 16),
-        _ProgressoDoArtista(apresentacoes: _apresentacoes),
-        const SizedBox(height: 16),
-        _construirCardConta(context),
-        const SizedBox(height: 8),
-      ];
-
-  Widget _construirPreviewPerfil(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _decoracaoPainel(destaque: true),
-        child: Row(
-          children: [
-            FotoPerfilArtistico(
-              enderecoFoto: _api.enderecoArquivo(_perfil?.fotoUrl),
-              tamanho: 80,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  List<Widget> _conteudoPerfil(BuildContext context) {
+    const entreSecoes = SizedBox(height: EspacoTocaEssa.enorme);
+    const entreCampos = SizedBox(height: EspacoTocaEssa.base + 4);
+    return [
+      _PreviaDoPerfil(
+        nome: _nomeArtistico.text.trim(),
+        bio: _bio.text.trim(),
+        enderecoFoto: _api.enderecoArquivo(_perfil?.fotoUrl),
+        temFoto: _perfil?.fotoUrl != null,
+        perfilSalvo: _perfil != null,
+        enviandoFoto: _enviandoFoto,
+        trocarFoto: _selecionarFoto,
+      ),
+      entreSecoes,
+      const _TituloGrupo('Identidade artística'),
+      CampoTexto(
+        rotulo: 'Nome artístico',
+        controlador: _nomeArtistico,
+        dica: 'Como o público te conhece',
+        capitalizacao: TextCapitalization.words,
+        acaoTeclado: TextInputAction.next,
+      ),
+      entreCampos,
+      CampoTexto(
+        rotulo: 'Apresentação breve',
+        controlador: _bio,
+        dica: 'Opcional. Ex.: Voz e violão, MPB e pop rock',
+        capitalizacao: TextCapitalization.sentences,
+        linhas: 3,
+      ),
+      entreSecoes,
+      const _TituloGrupo('Contatos públicos'),
+      CampoTexto(
+        rotulo: 'Instagram',
+        controlador: _instagram,
+        dica: '@seuperfil',
+        acaoTeclado: TextInputAction.next,
+      ),
+      _InterruptorDoPerfil(
+        titulo: 'Exibir Instagram ao público',
+        valor: _exibirInstagram,
+        alterar: (valor) => _mudarEstado(() => _exibirInstagram = valor),
+      ),
+      const SizedBox(height: EspacoTocaEssa.pequeno),
+      CampoTexto(
+        rotulo: 'WhatsApp profissional',
+        controlador: _whatsapp,
+        dica: '5511999999999',
+        teclado: TextInputType.phone,
+      ),
+      _InterruptorDoPerfil(
+        titulo: 'Exibir WhatsApp ao público',
+        valor: _exibirWhatsapp,
+        alterar: (valor) => _mudarEstado(() => _exibirWhatsapp = valor),
+      ),
+      entreSecoes,
+      const _TituloGrupo('Apoio via Pix'),
+      _InterruptorDoPerfil(
+        titulo: 'Aceitar contribuições',
+        descricao: 'Voluntária, sem confirmação automática.',
+        valor: _pixAtivo,
+        alterar: (valor) => _mudarEstado(() => _pixAtivo = valor),
+      ),
+      AnimatedSize(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOut,
+        alignment: Alignment.topCenter,
+        child: _pixAtivo
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    _nomeArtistico.text.trim().isEmpty
-                        ? 'Seu nome artístico'
-                        : _nomeArtistico.text.trim(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  const SizedBox(height: EspacoTocaEssa.medio),
+                  CampoTexto(
+                    rotulo: 'Chave Pix',
+                    controlador: _pixChave,
+                    ajuda: 'Prefira uma chave aleatória',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _bio.text.trim().isEmpty
-                        ? 'Adicione uma breve apresentação.'
-                        : _bio.text.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: CoresTocaEssa.textoSecundario,
-                      fontSize: 12,
-                    ),
+                  entreCampos,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: CampoTexto(
+                          rotulo: 'Beneficiário',
+                          controlador: _pixNomeBeneficiario,
+                          comprimentoMaximo: 25,
+                          capitalizacao: TextCapitalization.characters,
+                        ),
+                      ),
+                      const SizedBox(width: EspacoTocaEssa.medio),
+                      Expanded(
+                        flex: 2,
+                        child: CampoTexto(
+                          rotulo: 'Cidade',
+                          controlador: _pixCidadeBeneficiario,
+                          comprimentoMaximo: 15,
+                          capitalizacao: TextCapitalization.characters,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  if (_perfil != null)
-                    TextButton.icon(
-                      onPressed: _enviandoFoto ? null : _selecionarFoto,
-                      style: TextButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 32),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: const Icon(Icons.photo_camera_outlined, size: 16),
-                      label: Text(
-                        _enviandoFoto
-                            ? 'Enviando...'
-                            : _perfil?.fotoUrl == null
-                                ? 'Adicionar foto'
-                                : 'Trocar foto',
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                    )
-                  else
-                    const Text(
-                      'Salve o perfil para adicionar uma foto.',
-                      style: TextStyle(
-                        color: CoresTocaEssa.textoSecundario,
-                        fontSize: 11,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _construirCardIdentidade() => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _decoracaoPainel(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _CabecalhoSecaoPerfil(
-              Icons.badge_outlined,
-              'Identidade artística',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nomeArtistico,
-              decoration: const InputDecoration(
-                labelText: 'Nome artístico',
-                prefixIcon: Icon(Icons.badge_outlined),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _bio,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Apresentação breve (opcional)',
-                alignLabelWithHint: true,
-                prefixIcon: Padding(
-                  padding: EdgeInsets.only(bottom: 48),
-                  child: Icon(Icons.notes_rounded),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-
-  Widget _construirCardContatos() => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _decoracaoPainel(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _CabecalhoSecaoPerfil(
-              Icons.public_rounded,
-              'Contatos públicos',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _instagram,
-              decoration: const InputDecoration(
-                labelText: 'Instagram',
-                hintText: '@seuperfil',
-                prefixIcon: Icon(Icons.alternate_email_rounded),
-              ),
-            ),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Exibir Instagram ao público'),
-              value: _exibirInstagram,
-              onChanged: (v) => _mudarEstado(() => _exibirInstagram = v),
-            ),
-            const SizedBox(height: 4),
-            TextField(
-              controller: _whatsapp,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'WhatsApp profissional',
-                hintText: '5511999999999',
-                prefixIcon: Icon(Icons.chat_outlined),
-              ),
-            ),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Exibir WhatsApp ao público'),
-              value: _exibirWhatsapp,
-              onChanged: (v) => _mudarEstado(() => _exibirWhatsapp = v),
-            ),
-          ],
-        ),
-      );
-
-  Widget _construirCardPix() => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _decoracaoPainel(destaque: _pixAtivo),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _CabecalhoSecaoPerfil(
-              Icons.pix_rounded,
-              'Apoio via Pix',
-            ),
-            const SizedBox(height: 4),
-            SwitchListTile.adaptive(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Aceitar contribuições'),
-              subtitle: const Text(
-                'Voluntária, sem confirmação automática.',
-                style: TextStyle(
-                  color: CoresTocaEssa.textoSecundario,
-                  fontSize: 12,
-                ),
-              ),
-              value: _pixAtivo,
-              onChanged: (v) => _mudarEstado(() => _pixAtivo = v),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeInOut,
-              child: _pixAtivo
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const Divider(height: 24),
-                        TextField(
-                          controller: _pixChave,
-                          decoration: const InputDecoration(
-                            labelText: 'Chave Pix',
-                            prefixIcon: Icon(Icons.key_rounded),
-                            helperText: 'Prefira uma chave aleatória',
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: TextField(
-                                controller: _pixNomeBeneficiario,
-                                maxLength: 25,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nome do beneficiário',
-                                  prefixIcon:
-                                      Icon(Icons.person_outline_rounded),
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: TextField(
-                                controller: _pixCidadeBeneficiario,
-                                maxLength: 15,
-                                decoration: const InputDecoration(
-                                  labelText: 'Cidade',
-                                  prefixIcon:
-                                      Icon(Icons.location_city_outlined),
-                                  counterText: '',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _pixMensagem,
-                          maxLength: 72,
-                          decoration: const InputDecoration(
-                            labelText: 'Mensagem de agradecimento (opcional)',
-                            prefixIcon: Icon(Icons.favorite_border_rounded),
-                            helperText: 'Exibida ao público após gerar o Pix',
-                            counterText: '',
-                          ),
-                        ),
-                      ],
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      );
-
-  Widget _construirCardRepertorios(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: _decoracaoPainel(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const _CabecalhoSecaoPerfil(
-              Icons.queue_music_rounded,
-              'Repertórios',
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Crie listas de músicas para usar nos seus shows.',
-              style:
-                  TextStyle(color: CoresTocaEssa.textoSecundario, fontSize: 13),
-            ),
-            const SizedBox(height: 14),
-            OutlinedButton.icon(
-              onPressed: () => Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => GerenciarRepertorios(api: _api),
-                ),
-              ),
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-              label: const Text('Gerenciar repertórios'),
-            ),
-          ],
-        ),
-      );
-
-  Widget _construirCardConta(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _decoracaoPainel(),
-        child: Row(
-          children: [
-            const CircleAvatar(
-              backgroundColor: Color(0xFF352064),
-              foregroundColor: CoresTocaEssa.roxoClaro,
-              child: Icon(Icons.person_rounded),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_conta.nome,
-                      style: Theme.of(context).textTheme.titleMedium),
-                  Text(
-                    _conta.email,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: CoresTocaEssa.textoSecundario,
-                      fontSize: 12,
-                    ),
+                  entreCampos,
+                  CampoTexto(
+                    rotulo: 'Mensagem de agradecimento',
+                    controlador: _pixMensagem,
+                    dica: 'Opcional',
+                    ajuda: 'Exibida ao público depois de gerar o Pix',
+                    comprimentoMaximo: 72,
                   ),
                 ],
-              ),
+              )
+            : const SizedBox(width: double.infinity),
+      ),
+      entreSecoes,
+      _ProgressoDoArtista(apresentacoes: _apresentacoes),
+      entreSecoes,
+      const _TituloGrupo('Conta'),
+      _GrupoDeLinhas(
+        linhas: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              EspacoTocaEssa.base,
+              EspacoTocaEssa.medio,
+              EspacoTocaEssa.pequeno,
+              EspacoTocaEssa.medio,
             ),
-            TextButton(
-              onPressed: _salvando ? null : _sair,
-              child: const Text('Sair'),
-            ),
-          ],
-        ),
-      );
-}
-
-class _CabecalhoSecaoPerfil extends StatelessWidget {
-  const _CabecalhoSecaoPerfil(this.icone, this.titulo);
-  final IconData icone;
-  final String titulo;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icone, size: 15, color: CoresTocaEssa.roxoClaro),
-          const SizedBox(width: 7),
-          Text(
-            titulo,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: CoresTocaEssa.roxoClaro,
-              letterSpacing: 0.8,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(_conta.nome,
+                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        _conta.email,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: _salvando ? null : _sair,
+                  child: const Text('Sair'),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    ];
+  }
+}
+
+/// Mostra o perfil como o público verá, atualizado enquanto se digita.
+class _PreviaDoPerfil extends StatelessWidget {
+  const _PreviaDoPerfil({
+    required this.nome,
+    required this.bio,
+    required this.enderecoFoto,
+    required this.temFoto,
+    required this.perfilSalvo,
+    required this.enviandoFoto,
+    required this.trocarFoto,
+  });
+
+  final String nome;
+  final String bio;
+  final String? enderecoFoto;
+  final bool temFoto;
+  final bool perfilSalvo;
+  final bool enviandoFoto;
+  final VoidCallback trocarFoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final secundario = texto.bodyMedium?.copyWith(
+      color: CoresTocaEssa.textoSecundario,
+    );
+    return Column(
+      children: [
+        Text(
+          'Como o público vê',
+          style: texto.labelMedium?.copyWith(
+            color: CoresTocaEssa.textoSecundario,
+            letterSpacing: .4,
+          ),
+        ),
+        const SizedBox(height: EspacoTocaEssa.base),
+        SizedBox.square(
+          dimension: 112,
+          child: Stack(
+            children: [
+              FotoPerfilArtistico(enderecoFoto: enderecoFoto, tamanho: 112),
+              if (perfilSalvo)
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: IconButton.filled(
+                    tooltip: temFoto ? 'Trocar foto' : 'Adicionar foto',
+                    onPressed: enviandoFoto ? null : trocarFoto,
+                    style: IconButton.styleFrom(
+                      backgroundColor: CoresTocaEssa.roxo,
+                      side: const BorderSide(
+                        color: CoresTocaEssa.fundo,
+                        width: 3,
+                      ),
+                    ),
+                    icon: enviandoFoto
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: CoresTocaEssa.texto,
+                            ),
+                          )
+                        : const Icon(Icons.photo_camera_rounded, size: 20),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: EspacoTocaEssa.base),
+        Text(
+          nome.isEmpty ? 'Seu nome artístico' : nome,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: texto.headlineSmall,
+        ),
+        const SizedBox(height: EspacoTocaEssa.mini),
+        Text(
+          bio.isEmpty ? 'Adicione uma breve apresentação.' : bio,
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: secundario,
+        ),
+        if (!perfilSalvo) ...[
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(
+            'Salve o perfil para adicionar uma foto.',
+            textAlign: TextAlign.center,
+            style: texto.labelMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _InterruptorDoPerfil extends StatelessWidget {
+  const _InterruptorDoPerfil({
+    required this.titulo,
+    required this.valor,
+    required this.alterar,
+    this.descricao,
+  });
+
+  final String titulo;
+  final String? descricao;
+  final bool valor;
+  final ValueChanged<bool> alterar;
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile.adaptive(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.mini),
+        title: Text(titulo, style: Theme.of(context).textTheme.bodyLarge),
+        subtitle: descricao == null
+            ? null
+            : Text(
+                descricao!,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              ),
+        value: valor,
+        onChanged: alterar,
       );
 }

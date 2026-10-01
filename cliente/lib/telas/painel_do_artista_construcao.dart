@@ -19,7 +19,8 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
     return PopScope(
       canPop: _aba == _AbaPainel.inicio,
       onPopInvokedWithResult: (saiu, _) {
-        if (!saiu) _voltarAoInicio();
+        if (saiu) return;
+        _aba == _AbaPainel.perfil ? _sairDoPerfil() : _voltarAoInicio();
       },
       child: tela,
     );
@@ -31,7 +32,7 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
           leading: IconButton(
             tooltip: 'Voltar ao início',
             icon: const Icon(Icons.arrow_back),
-            onPressed: _voltarAoInicio,
+            onPressed: _sairDoPerfil,
           ),
         ),
         body: FundoTocaEssa(

@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({
@@ -55,7 +55,7 @@ void main() {
     expect(find.text('Contatos públicos'), findsOneWidget);
     expect(find.text('Exibir Instagram ao público'), findsOneWidget);
     expect(find.text('Aceitar contribuições'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'Chave Pix'), findsOneWidget);
+    expect(find.widgetWithText(CampoTexto, 'Chave Pix'), findsOneWidget);
     expect(find.text('Prefira uma chave aleatória'), findsOneWidget);
   });
 }

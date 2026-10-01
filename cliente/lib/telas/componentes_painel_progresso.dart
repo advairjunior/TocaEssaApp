@@ -16,70 +16,87 @@ class _ProgressoDoArtista extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _TituloSecaoPainel(
-          icone: Icons.insights_rounded,
-          titulo: 'Estatísticas',
-          descricao: 'Seu progresso no TocaEssa',
+        const _TituloGrupo('Sua jornada'),
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: EspacoTocaEssa.base),
+          decoration: BoxDecoration(
+            color: CoresTocaEssa.superficie,
+            borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+            border: Border.all(color: CoresTocaEssa.borda),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                _NumeroDaJornada(
+                    valor: apresentacoes.length, rotulo: 'apresentações'),
+                const VerticalDivider(width: 1),
+                _NumeroDaJornada(valor: aoVivo, rotulo: 'ao vivo'),
+                const VerticalDivider(width: 1),
+                _NumeroDaJornada(valor: encerradas, rotulo: 'realizadas'),
+              ],
+            ),
+          ),
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            _ResumoDoArtista(
-                valor: apresentacoes.length, rotulo: 'apresentações'),
-            const SizedBox(width: 10),
-            _ResumoDoArtista(valor: aoVivo, rotulo: 'ao vivo'),
-            const SizedBox(width: 10),
-            _ResumoDoArtista(valor: encerradas, rotulo: 'realizadas'),
+        const SizedBox(height: EspacoTocaEssa.base),
+        Padding(
+          padding: const EdgeInsets.only(
+            left: EspacoTocaEssa.mini,
+            bottom: EspacoTocaEssa.pequeno,
+          ),
+          child: Text(
+            'Conquistas',
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        ),
+        _GrupoDeLinhas(
+          linhas: [
+            _ConquistaDoArtista(
+              icone: Icons.mic_external_on_rounded,
+              titulo: 'Primeiro palco',
+              descricao: 'Crie sua primeira apresentação',
+              desbloqueada: apresentacoes.isNotEmpty,
+            ),
+            _ConquistaDoArtista(
+              icone: Icons.waves_rounded,
+              titulo: 'Som ao vivo',
+              descricao: 'Inicie uma apresentação',
+              desbloqueada: aoVivo > 0 || encerradas > 0,
+            ),
           ],
-        ),
-        const SizedBox(height: 28),
-        const _TituloSecaoPainel(
-          icone: Icons.emoji_events_rounded,
-          titulo: 'Conquistas',
-          descricao: 'Marcos da sua jornada musical',
-        ),
-        const SizedBox(height: 12),
-        _ConquistaDoArtista(
-          icone: Icons.mic_external_on_rounded,
-          titulo: 'Primeiro palco',
-          descricao: 'Crie sua primeira Apresentação',
-          desbloqueada: apresentacoes.isNotEmpty,
-        ),
-        const SizedBox(height: 10),
-        _ConquistaDoArtista(
-          icone: Icons.waves_rounded,
-          titulo: 'Som ao vivo',
-          descricao: 'Inicie uma Apresentação',
-          desbloqueada: aoVivo > 0 || encerradas > 0,
         ),
       ],
     );
   }
 }
 
-class _ResumoDoArtista extends StatelessWidget {
-  const _ResumoDoArtista({required this.valor, required this.rotulo});
+class _NumeroDaJornada extends StatelessWidget {
+  const _NumeroDaJornada({required this.valor, required this.rotulo});
 
   final int valor;
   final String rotulo;
 
   @override
-  Widget build(BuildContext context) => Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 6),
-          decoration: _decoracaoPainel(),
-          child: Column(
-            children: [
-              Text('$valor', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 3),
-              Text(rotulo,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                      color: CoresTocaEssa.textoSecundario, fontSize: 11)),
-            ],
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Expanded(
+      child: Column(
+        children: [
+          Text('$valor', style: texto.headlineSmall),
+          const SizedBox(height: 2),
+          Text(
+            rotulo,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: texto.labelMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
           ),
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class _ConquistaDoArtista extends StatelessWidget {
@@ -96,39 +113,44 @@ class _ConquistaDoArtista extends StatelessWidget {
   final bool desbloqueada;
 
   @override
-  Widget build(BuildContext context) => Opacity(
-        opacity: desbloqueada ? 1 : .45,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: _decoracaoPainel(destaque: desbloqueada),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFF352064),
-                foregroundColor: CoresTocaEssa.roxoClaro,
-                child: Icon(desbloqueada ? icone : Icons.lock_outline_rounded),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(titulo,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    Text(descricao,
-                        style: const TextStyle(
-                            color: CoresTocaEssa.textoSecundario,
-                            fontSize: 12)),
-                  ],
-                ),
-              ),
-              if (desbloqueada)
-                const Icon(Icons.check_circle_rounded,
-                    color: Color(0xFF54D98C)),
-            ],
-          ),
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Opacity(
+      opacity: desbloqueada ? 1 : .5,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: EspacoTocaEssa.base,
+          vertical: EspacoTocaEssa.medio,
         ),
-      );
+        child: Row(
+          children: [
+            Icon(
+              desbloqueada ? icone : Icons.lock_outline_rounded,
+              size: 20,
+              color: CoresTocaEssa.roxoClaro,
+            ),
+            const SizedBox(width: EspacoTocaEssa.base),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titulo, style: texto.titleMedium),
+                  Text(
+                    descricao,
+                    style: texto.bodyMedium
+                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  ),
+                ],
+              ),
+            ),
+            if (desbloqueada)
+              const Icon(Icons.check_circle_rounded,
+                  size: 20, color: Color(0xFF54D98C)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 BoxDecoration _decoracaoPainel({bool destaque = false}) => BoxDecoration(
@@ -147,46 +169,3 @@ BoxDecoration _decoracaoPainel({bool destaque = false}) => BoxDecoration(
             ]
           : null,
     );
-
-class _TituloSecaoPainel extends StatelessWidget {
-  const _TituloSecaoPainel({
-    required this.icone,
-    required this.titulo,
-    required this.descricao,
-  });
-
-  final IconData icone;
-  final String titulo;
-  final String descricao;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: CoresTocaEssa.roxo.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(icone, color: CoresTocaEssa.roxoClaro, size: 21),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(titulo, style: Theme.of(context).textTheme.titleLarge),
-                Text(
-                  descricao,
-                  style: const TextStyle(
-                    color: CoresTocaEssa.textoSecundario,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-}
