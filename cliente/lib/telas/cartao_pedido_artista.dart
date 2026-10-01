@@ -12,6 +12,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
     this.inicio,
     this.fim,
     this.somenteLeitura = false,
+    this.eoPrimeiroDaFila = false,
     this.abrirCifra,
     this.escolherCifra,
   });
@@ -21,6 +22,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
   final Widget? inicio;
   final Widget? fim;
   final bool somenteLeitura;
+  final bool eoPrimeiroDaFila;
   final VoidCallback? abrirCifra;
   final VoidCallback? escolherCifra;
 
@@ -31,6 +33,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
         inicio: inicio,
         fim: fim,
         somenteLeitura: somenteLeitura,
+        eoPrimeiroDaFila: eoPrimeiroDaFila,
         abrirCifra: abrirCifra,
         escolherCifra: escolherCifra,
       );
@@ -44,6 +47,7 @@ class CartaoPedidoArtista extends StatelessWidget {
     this.inicio,
     this.fim,
     this.somenteLeitura = false,
+    this.eoPrimeiroDaFila = false,
     this.abrirCifra,
     this.escolherCifra,
   });
@@ -53,6 +57,7 @@ class CartaoPedidoArtista extends StatelessWidget {
   final Widget? inicio;
   final Widget? fim;
   final bool somenteLeitura;
+  final bool eoPrimeiroDaFila;
   final VoidCallback? abrirCifra;
   final VoidCallback? escolherCifra;
 
@@ -75,6 +80,32 @@ class CartaoPedidoArtista extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (eoPrimeiroDaFila &&
+                  pedido.status == StatusPedidoMusical.aceito) ...[
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4ADE80),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    const Text(
+                      'PRÓXIMA A TOCAR',
+                      style: TextStyle(
+                        color: Color(0xFF4ADE80),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.9,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
               _cabecalho(context),
               if (_textoDosSolicitantes != null) ...[
                 const SizedBox(height: 6),

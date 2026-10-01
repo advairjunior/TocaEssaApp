@@ -27,13 +27,15 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
           ],
           const SizedBox(height: 20),
           _seletorDaFila(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
+          _campoBusca(),
+          const SizedBox(height: 12),
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 220),
             switchInCurve: Curves.easeOutCubic,
             switchOutCurve: Curves.easeInCubic,
             child: KeyedSubtree(
-              key: ValueKey(_visaoFila),
+              key: ValueKey('$_visaoFila-$_textoBusca'),
               child: _secaoSelecionada(),
             ),
           ),
@@ -41,6 +43,23 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       ),
     );
   }
+
+  Widget _campoBusca() => TextField(
+        controller: _busca,
+        decoration: InputDecoration(
+          hintText: 'Buscar música ou artista…',
+          prefixIcon: const Icon(Icons.search_rounded, size: 20),
+          suffixIcon: _textoBusca.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => _busca.clear(),
+                )
+              : null,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          isDense: true,
+        ),
+      );
 
   Widget _conteudoEncerrado() => ConteudoMobile(
         filho: Column(
@@ -109,27 +128,43 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       };
 
   Widget _secaoPendentes() {
-    final pendentes = [..._alosPendentes, ..._aguardando];
+    final musicas = _aguardandoFiltrado;
+    final alos = _alosPendentes.where(_correspondeAoBusca).toList();
+    final pendentes = [...alos, ...musicas];
     if (pendentes.isEmpty) {
-      return const _MensagemVazia(
-        'Tudo em dia. Novos pedidos aparecerão aqui.',
-        icone: Icons.check_circle_outline_rounded,
-      );
+      return _textoBusca.isNotEmpty
+          ? const _MensagemVazia('Nenhum resultado para a busca.')
+          : const _MensagemVazia(
+              'Tudo em dia. Novos pedidos aparecerão aqui.',
+              icone: Icons.check_circle_outline_rounded,
+            );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Analise os novos pedidos antes de enviá-los para a fila.',
+          'Deslize para aceitar → ou recusar ←.',
           style: TextStyle(color: CoresTocaEssa.textoSecundario),
         ),
         const SizedBox(height: 10),
         for (final pedido in pendentes) ...[
-          CartaoGrupoPedidoArtista(
-            grupo: pedido,
-            abrirCifra: () => _abrirCifra(pedido),
-            escolherCifra: () => _escolherCifra(pedido),
-            alterar: (status) => _alterar(pedido, status),
+          _PendenteDeslizavel(
+            key: ValueKey(pedido.pedidoRepresentativoId),
+            pedido: pedido,
+            onAceitar: () => _alterar(pedido, StatusPedidoMusical.aceito),
+            onRecusar: () => _alterar(
+                pedido,
+                pedido.tipo == TipoPedido.alo
+                    ? StatusPedidoMusical.finalizado
+                    : StatusPedidoMusical.naoConhecemos),
+            onRemoverDaLista: () =>
+                _removerPendente(pedido.pedidoRepresentativoId),
+            child: CartaoGrupoPedidoArtista(
+              grupo: pedido,
+              abrirCifra: () => _abrirCifra(pedido),
+              escolherCifra: () => _escolherCifra(pedido),
+              alterar: (status) => _alterar(pedido, status),
+            ),
           ),
           const SizedBox(height: 10),
         ],
@@ -138,11 +173,14 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
   }
 
   Widget _secaoFila() {
-    if (_fila.isEmpty) {
-      return const _MensagemVazia(
-        'Aceite um pedido para começar a montar a fila.',
-        icone: Icons.queue_music_rounded,
-      );
+    final fila = _filaFiltrada;
+    if (fila.isEmpty) {
+      return _textoBusca.isNotEmpty
+          ? const _MensagemVazia('Nenhum resultado para a busca.')
+          : const _MensagemVazia(
+              'Aceite um pedido para começar a montar a fila.',
+              icone: Icons.queue_music_rounded,
+            );
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -156,15 +194,16 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           buildDefaultDragHandles: false,
-          itemCount: _fila.length,
+          itemCount: fila.length,
           onReorder: _reordenar,
           itemBuilder: (context, indice) {
-            final pedido = _fila[indice];
+            final pedido = fila[indice];
             return Padding(
               key: ValueKey(pedido.pedidoRepresentativoId),
               padding: const EdgeInsets.only(bottom: 10),
               child: CartaoGrupoPedidoArtista(
                 grupo: pedido,
+                eoPrimeiroDaFila: indice == 0,
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),
@@ -207,4 +246,86 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       ],
     );
   }
+}
+
+class _PendenteDeslizavel extends StatelessWidget {
+  const _PendenteDeslizavel({
+    super.key,
+    required this.pedido,
+    required this.child,
+    required this.onAceitar,
+    required this.onRecusar,
+    required this.onRemoverDaLista,
+  });
+
+  final GrupoPedidoMusical pedido;
+  final Widget child;
+  final VoidCallback onAceitar;
+  final VoidCallback onRecusar;
+  final VoidCallback onRemoverDaLista;
+
+  @override
+  Widget build(BuildContext context) => Dismissible(
+        key: ValueKey('dismissivel-${pedido.pedidoRepresentativoId}'),
+        background: _fundo(
+          alinhamento: Alignment.centerLeft,
+          cor: const Color(0xFF4ADE80),
+          icone: Icons.check_rounded,
+          texto: 'Aceitar',
+          padding: const EdgeInsets.only(left: 20),
+        ),
+        secondaryBackground: _fundo(
+          alinhamento: Alignment.centerRight,
+          cor: const Color(0xFFFB7185),
+          icone: Icons.close_rounded,
+          texto: 'Recusar',
+          padding: const EdgeInsets.only(right: 20),
+          inverter: true,
+        ),
+        onDismissed: (direction) {
+          onRemoverDaLista();
+          if (direction == DismissDirection.startToEnd) {
+            onAceitar();
+          } else {
+            onRecusar();
+          }
+        },
+        child: child,
+      );
+
+  Widget _fundo({
+    required Alignment alinhamento,
+    required Color cor,
+    required IconData icone,
+    required String texto,
+    required EdgeInsets padding,
+    bool inverter = false,
+  }) =>
+      Container(
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: cor.withValues(alpha: 0.35)),
+        ),
+        alignment: alinhamento,
+        padding: padding,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: inverter
+              ? [
+                  Text(texto,
+                      style: TextStyle(
+                          color: cor, fontWeight: FontWeight.w700)),
+                  const SizedBox(width: 8),
+                  Icon(icone, color: cor),
+                ]
+              : [
+                  Icon(icone, color: cor),
+                  const SizedBox(width: 8),
+                  Text(texto,
+                      style: TextStyle(
+                          color: cor, fontWeight: FontWeight.w700)),
+                ],
+        ),
+      );
 }

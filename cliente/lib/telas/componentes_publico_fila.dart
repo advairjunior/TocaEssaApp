@@ -61,16 +61,41 @@ class _CartaoFilaPublica extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 7),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  _textoSolicitantes(pedido.solicitantes),
-                  style: const TextStyle(
-                    color: CoresTocaEssa.textoSecundario,
-                    fontSize: 11,
+              const SizedBox(height: 6),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Text(
+                      _textoSolicitantes(pedido.solicitantes),
+                      style: const TextStyle(
+                        color: CoresTocaEssa.textoSecundario,
+                        fontSize: 11,
+                      ),
+                    ),
                   ),
-                ),
+                  if (posicao != null && posicao! > 0) ...[
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.schedule_rounded,
+                            size: 12,
+                            color: CoresTocaEssa.textoSecundario),
+                        const SizedBox(width: 3),
+                        Text(
+                          posicao == 1
+                              ? '≈ 3 min'
+                              : '≈ ${posicao! * 3} min',
+                          style: const TextStyle(
+                            color: CoresTocaEssa.textoSecundario,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
               if (avaliar != null) ...[
                 const Divider(height: 18),

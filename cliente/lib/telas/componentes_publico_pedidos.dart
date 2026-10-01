@@ -119,6 +119,39 @@ class _CartaoMeuPedido extends StatelessWidget {
                   ),
                 ],
               ],
+              if (pedido.status == StatusPedidoMusical.aceito &&
+                  pedido.posicao != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: CoresTocaEssa.roxo.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color:
+                            CoresTocaEssa.roxoClaro.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.queue_music_rounded,
+                          size: 15, color: CoresTocaEssa.roxoClaro),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          pedido.posicao == 1
+                              ? '🎵 Próxima na fila! Já vai!'
+                              : 'Posição ${pedido.posicao} na fila  ·  ≈ ${pedido.posicao! * 3} min de espera',
+                          style: const TextStyle(
+                            color: CoresTocaEssa.roxoClaro,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (cancelar != null || cancelando) ...[
                 const SizedBox(height: 6),
                 Align(

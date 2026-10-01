@@ -45,17 +45,29 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   int _visaoFila = 1;
   Timer? _atualizacaoAutomatica;
   AssinaturaTempoReal? _tempoReal;
+  final _busca = TextEditingController();
+  String _textoBusca = '';
+
+  bool _correspondeAoBusca(GrupoPedidoMusical p) =>
+      _textoBusca.isEmpty ||
+      p.musica.toLowerCase().contains(_textoBusca) ||
+      (p.artista?.toLowerCase().contains(_textoBusca) ?? false);
 
   List<GrupoPedidoMusical> get _aguardando => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
           item.status == StatusPedidoMusical.aguardando)
       .toList();
+  List<GrupoPedidoMusical> get _aguardandoFiltrado =>
+      _aguardando.where(_correspondeAoBusca).toList();
+
   List<GrupoPedidoMusical> get _fila => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
           item.status == StatusPedidoMusical.aceito)
       .toList();
+  List<GrupoPedidoMusical> get _filaFiltrada =>
+      _fila.where(_correspondeAoBusca).toList();
   List<GrupoPedidoMusical> get _tocando => _pedidos
       .where((item) =>
           item.tipo == TipoPedido.musica &&
@@ -79,6 +91,9 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   void initState() {
     super.initState();
     _abaSelecionada = widget.abaInicial;
+    _busca.addListener(() {
+      if (mounted) setState(() => _textoBusca = _busca.text.trim().toLowerCase());
+    });
     _carregar();
     _atualizacaoAutomatica = Timer.periodic(
       const Duration(seconds: 30),
@@ -94,6 +109,7 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   void dispose() {
     _atualizacaoAutomatica?.cancel();
     _tempoReal?.encerrar();
+    _busca.dispose();
     super.dispose();
   }
 
@@ -164,6 +180,10 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   }
 
   void _selecionarVisaoFila(int indice) => setState(() => _visaoFila = indice);
+
+  void _removerPendente(String pedidoId) => setState(() => _pedidos = _pedidos
+      .where((p) => p.pedidoRepresentativoId != pedidoId)
+      .toList());
 
   @override
   Widget build(BuildContext context) {

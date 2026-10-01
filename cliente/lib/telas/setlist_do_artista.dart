@@ -29,6 +29,8 @@ class SetlistDoArtista extends StatefulWidget {
 
 class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   List<ItemDoSetlist> _itens = [];
+  // título normalizado → quantidade de pedidos na fila
+  Map<String, int> _pedidosNaFila = {};
   bool _carregando = true;
   bool _salvando = false;
 
@@ -40,9 +42,27 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
 
   Future<void> _carregar() async {
     try {
-      final itens = await widget.api.obterSetlist(widget.apresentacao.id);
+      final resultados = await Future.wait([
+        widget.api.obterSetlist(widget.apresentacao.id),
+        widget.api
+            .listarGruposDePedidosDoArtista(widget.apresentacao.id)
+            .catchError((_) => <GrupoPedidoMusical>[]),
+      ]);
       if (!mounted) return;
-      setState(() => _itens = itens);
+      final itens = resultados[0] as List<ItemDoSetlist>;
+      final grupos = resultados[1] as List<GrupoPedidoMusical>;
+      final mapa = <String, int>{};
+      for (final g in grupos) {
+        if (g.status == StatusPedidoMusical.aguardando ||
+            g.status == StatusPedidoMusical.aceito) {
+          final chave = g.musica.toLowerCase().trim();
+          mapa[chave] = (mapa[chave] ?? 0) + g.quantidadePedidos;
+        }
+      }
+      setState(() {
+        _itens = itens;
+        _pedidosNaFila = mapa;
+      });
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
@@ -154,6 +174,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   }
 
   int get _tocadas => _itens.where((i) => i.tocada).length;
+  int get _proximaIndex => _itens.indexWhere((i) => !i.tocada);
 
   @override
   Widget build(BuildContext context) {
@@ -175,9 +196,56 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     }
     return Column(
       children: [
+        _construirBarraProgresso(),
         Expanded(child: _construirLista()),
         _construirRodape(context),
       ],
+    );
+  }
+
+  Widget _construirBarraProgresso() {
+    final total = _itens.length;
+    final progresso = total > 0 ? _tocadas / total : 0.0;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progresso,
+              backgroundColor: CoresTocaEssa.borda,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                progresso == 1.0
+                    ? const Color(0xFF4ADE80)
+                    : CoresTocaEssa.roxo,
+              ),
+              minHeight: 6,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                '$_tocadas de $total tocadas',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: CoresTocaEssa.textoSecundario,
+                ),
+              ),
+              const Spacer(),
+              if (total - _tocadas > 0)
+                Text(
+                  '${total - _tocadas} restantes',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CoresTocaEssa.textoSecundario,
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -212,19 +280,25 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         ),
       );
 
-  Widget _construirLista() => ListView.builder(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-        itemCount: _itens.length,
-        itemBuilder: (context, index) {
-          final item = _itens[index];
-          return _CartaoItemSetlist(
-            item: item,
-            salvando: _salvando,
-            onMarcar: (tocada) => _marcar(item, tocada),
-            onCifra: () => _abrirCifra(item),
-          );
-        },
-      );
+  Widget _construirLista() {
+    final proxima = _proximaIndex;
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      itemCount: _itens.length,
+      itemBuilder: (context, index) {
+        final item = _itens[index];
+        final chave = item.titulo.toLowerCase().trim();
+        return _CartaoItemSetlist(
+          item: item,
+          salvando: _salvando,
+          eProxima: index == proxima,
+          pedidosNaFila: _pedidosNaFila[chave] ?? 0,
+          onMarcar: (tocada) => _marcar(item, tocada),
+          onCifra: () => _abrirCifra(item),
+        );
+      },
+    );
+  }
 
   Widget _construirRodape(BuildContext context) => Container(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -253,52 +327,130 @@ class _CartaoItemSetlist extends StatelessWidget {
   const _CartaoItemSetlist({
     required this.item,
     required this.salvando,
+    required this.eProxima,
+    required this.pedidosNaFila,
     required this.onMarcar,
     required this.onCifra,
   });
 
   final ItemDoSetlist item;
   final bool salvando;
+  final bool eProxima;
+  final int pedidosNaFila;
   final ValueChanged<bool> onMarcar;
   final VoidCallback onCifra;
 
   @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        color: item.tocada
-            ? CoresTocaEssa.superficieElevada.withValues(alpha: 0.5)
-            : CoresTocaEssa.superficieElevada,
-        child: ListTile(
-          contentPadding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
-          leading: Checkbox(
-            value: item.tocada,
-            onChanged: salvando ? null : (v) => onMarcar(v ?? false),
-            activeColor: CoresTocaEssa.roxo,
-          ),
-          title: Text(
-            item.titulo,
-            style: TextStyle(
-              decoration: item.tocada ? TextDecoration.lineThrough : null,
-              color: item.tocada ? CoresTocaEssa.textoSecundario : null,
+  Widget build(BuildContext context) {
+    final tocada = item.tocada;
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      color: tocada
+          ? CoresTocaEssa.superficieElevada.withValues(alpha: 0.5)
+          : eProxima
+              ? CoresTocaEssa.roxo.withValues(alpha: 0.10)
+              : CoresTocaEssa.superficieElevada,
+      shape: eProxima && !tocada
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: CoresTocaEssa.roxoClaro.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (eProxima && !tocada)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: CoresTocaEssa.roxoClaro,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 7),
+                  const Text(
+                    'PRÓXIMA',
+                    style: TextStyle(
+                      color: CoresTocaEssa.roxoClaro,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ListTile(
+            contentPadding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
+            leading: Checkbox(
+              value: tocada,
+              onChanged: salvando ? null : (v) => onMarcar(v ?? false),
+              activeColor: CoresTocaEssa.roxo,
+            ),
+            title: Text(
+              item.titulo,
+              style: TextStyle(
+                decoration: tocada ? TextDecoration.lineThrough : null,
+                color: tocada ? CoresTocaEssa.textoSecundario : null,
+                fontWeight:
+                    eProxima && !tocada ? FontWeight.w600 : null,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (item.artista != null)
+                  Text(
+                    item.artista!,
+                    style: const TextStyle(
+                      color: CoresTocaEssa.textoSecundario,
+                      fontSize: 12,
+                    ),
+                  ),
+                if (pedidosNaFila > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.people_outline_rounded,
+                            size: 12,
+                            color: CoresTocaEssa.roxoClaro),
+                        const SizedBox(width: 4),
+                        Text(
+                          pedidosNaFila == 1
+                              ? '1 pedido na fila'
+                              : '$pedidosNaFila pedidos na fila',
+                          style: const TextStyle(
+                            color: CoresTocaEssa.roxoClaro,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            trailing: IconButton(
+              tooltip: 'Ver cifra',
+              icon: const Icon(Icons.library_music_outlined,
+                  color: CoresTocaEssa.roxoClaro, size: 20),
+              onPressed: onCifra,
             ),
           ),
-          subtitle: item.artista != null
-              ? Text(
-                  item.artista!,
-                  style: const TextStyle(
-                    color: CoresTocaEssa.textoSecundario,
-                    fontSize: 12,
-                  ),
-                )
-              : null,
-          trailing: IconButton(
-            tooltip: 'Ver cifra',
-            icon: const Icon(Icons.library_music_outlined,
-                color: CoresTocaEssa.roxoClaro, size: 20),
-            onPressed: onCifra,
-          ),
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }
 
 class _SelecionarRepertorioSheet extends StatelessWidget {
