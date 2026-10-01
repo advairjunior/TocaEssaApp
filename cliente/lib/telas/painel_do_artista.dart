@@ -15,6 +15,8 @@ import 'perfil_participante.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'fila_musical_artista.dart';
 import 'fundo_toca_essa.dart';
+import 'setlist_do_artista.dart';
+import 'gerenciar_repertorios.dart';
 
 part 'painel_do_artista_estado.dart';
 part 'painel_do_artista_acoes_apresentacao.dart';
@@ -30,6 +32,9 @@ part 'editar_apresentacao.dart';
 part 'codigo_da_apresentacao.dart';
 
 enum _FiltroApresentacoes { aoVivo, agendadas, historico }
+
+// Índice das abas: 0=Apresentações, 1=Fila, 2=Criar, 3=Estatísticas,
+//                  4=Galera, 5=Perfil geral, 6=Apresentação, 7=Setlist
 
 class PainelDoArtista extends StatefulWidget {
   const PainelDoArtista({

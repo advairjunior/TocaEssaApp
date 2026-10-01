@@ -8,11 +8,14 @@ extension _AbasDeGestaoDoArtista on _PainelDoArtistaState {
     }
     return KeyedSubtree(
       key: ValueKey('$_abaSelecionada-${apresentacao.id}'),
-      child: _abaSelecionada == 1
-          ? FilaMusicalArtista(
-              api: _api, apresentacao: apresentacao, incorporada: true)
-          : EstatisticasDaApresentacaoTela(
-              api: _api, apresentacao: apresentacao, incorporada: true),
+      child: switch (_abaSelecionada) {
+        1 => FilaMusicalArtista(
+            api: _api, apresentacao: apresentacao, incorporada: true),
+        7 => SetlistDoArtista(
+            api: _api, apresentacao: apresentacao, incorporada: true),
+        _ => EstatisticasDaApresentacaoTela(
+            api: _api, apresentacao: apresentacao, incorporada: true),
+      },
     );
   }
 }

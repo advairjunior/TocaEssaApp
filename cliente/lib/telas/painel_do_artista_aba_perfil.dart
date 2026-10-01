@@ -50,6 +50,8 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
         const SizedBox(height: 16),
         _construirCardPix(),
         const SizedBox(height: 16),
+        _construirCardRepertorios(context),
+        const SizedBox(height: 16),
         _ProgressoDoArtista(apresentacoes: _apresentacoes),
         const SizedBox(height: 16),
         _construirCardConta(context),
@@ -291,6 +293,37 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
                       ],
                     )
                   : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+
+  Widget _construirCardRepertorios(BuildContext context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: _decoracaoPainel(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _CabecalhoSecaoPerfil(
+              Icons.queue_music_rounded,
+              'Repertórios',
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Crie listas de músicas para usar nos seus shows.',
+              style: TextStyle(
+                  color: CoresTocaEssa.textoSecundario, fontSize: 13),
+            ),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => GerenciarRepertorios(api: _api),
+                ),
+              ),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+              label: const Text('Gerenciar repertórios'),
             ),
           ],
         ),

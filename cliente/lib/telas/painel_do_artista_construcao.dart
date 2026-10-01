@@ -4,8 +4,9 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
   Widget _construirPainel(BuildContext context) {
     final apresentacao = _apresentacaoDaGestao;
     final resenha = apresentacao?.tipo == TipoApresentacao.resenhaEntreAmigos;
-    final abas =
-        _dentroDaApresentacao ? [1, 3, if (resenha) 4, 6, 5] : [0, 2, 5];
+    final abas = _dentroDaApresentacao
+        ? [1, 7, 3, if (resenha) 4, 6, 5]
+        : [0, 2, 5];
     const nomes = [
       'Apresentações',
       'Fila',
@@ -13,7 +14,8 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
       'Estatísticas',
       'Galera',
       'Perfil geral',
-      'Apresentação'
+      'Apresentação',
+      'Setlist',
     ];
     const icones = [
       Icons.calendar_month,
@@ -22,7 +24,8 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
       Icons.insights,
       Icons.groups,
       Icons.person_outline,
-      Icons.celebration_outlined
+      Icons.celebration_outlined,
+      Icons.playlist_play_rounded,
     ];
     final intensidadeDoFundo = switch (_abaSelecionada) {
       0 || 1 || 3 => IntensidadeFundoTocaEssa.cabecalho,
@@ -67,7 +70,7 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
               : _dentroDaApresentacao &&
                       (_abaSelecionada == 1 || _abaSelecionada == 3)
                   ? _construirAbaGestao(context)
-                  : _abaSelecionada == 5
+                  : (_abaSelecionada == 5)
                   ? _construirTelaPerfil(context)
                   : ConteudoMobile(
                       filho: Column(

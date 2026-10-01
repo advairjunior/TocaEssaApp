@@ -7,6 +7,7 @@ part 'api_toca_essa_cifras_perfil.dart';
 part 'api_toca_essa_apresentacoes.dart';
 part 'api_toca_essa_pedidos.dart';
 part 'api_toca_essa_contas.dart';
+part 'api_toca_essa_repertorio.dart';
 
 abstract class _ApiTocaEssaBase {
   _ApiTocaEssaBase({http.Client? cliente, String? enderecoBase})
@@ -66,7 +67,8 @@ abstract class _ApiTocaEssaBase {
 }
 
 class ApiTocaEssa extends _ApiTocaEssaBase
-    with _ApiCifrasPerfil, _ApiApresentacoes, _ApiPedidos, _ApiContas {
+    with _ApiCifrasPerfil, _ApiApresentacoes, _ApiPedidos, _ApiContas,
+        _ApiRepertorio {
   ApiTocaEssa({super.cliente, super.enderecoBase});
 }
 
