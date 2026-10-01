@@ -125,3 +125,32 @@ internal sealed class CifraDoArtistaRegistro
     public DateTimeOffset CriadaEm { get; set; }
     public DateTimeOffset AtualizadaEm { get; set; }
 }
+
+internal sealed class RepertorioRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Nome { get; set; } = string.Empty;
+    public DateTimeOffset CriadoEm { get; set; }
+}
+
+internal sealed class MusicaDoRepertorioRegistro
+{
+    public Guid Id { get; set; }
+    public Guid RepertorioId { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string? Artista { get; set; }
+    public int Ordem { get; set; }
+}
+
+internal sealed class ItemDoSetlistRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ApresentacaoId { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Titulo { get; set; } = string.Empty;
+    public string? Artista { get; set; }
+    public bool Tocada { get; set; }
+    public int Ordem { get; set; }
+}

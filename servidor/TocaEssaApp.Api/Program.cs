@@ -39,7 +39,8 @@ app.Use(async (contexto, proximo) =>
 {
     if (contexto.Request.Path.StartsWithSegments("/api/perfil-artistico") ||
         contexto.Request.Path.StartsWithSegments("/api/apresentacoes") ||
-        contexto.Request.Path.StartsWithSegments("/api/artista/cifras"))
+        contexto.Request.Path.StartsWithSegments("/api/artista/cifras") ||
+        contexto.Request.Path.StartsWithSegments("/api/artista/repertorios"))
     {
         var repositorio = contexto.RequestServices.GetRequiredService<RepositorioTocaEssa>();
         repositorio.ValidarSessaoArtista(ObterToken(contexto.Request) ?? string.Empty);
@@ -147,6 +148,71 @@ app.MapDelete("/api/artista/cifras/{id:guid}", (
 {
     repositorio.RemoverCifraDoArtista(
         ObterToken(http) ?? string.Empty, id);
+    return Results.NoContent();
+});
+
+// Repertórios do artista
+app.MapGet("/api/artista/repertorios", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarRepertorios(ObterToken(http) ?? string.Empty)));
+
+app.MapPost("/api/artista/repertorios", (
+    CriarRepertorio requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    if (string.IsNullOrWhiteSpace(requisicao.Nome))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["nome"] = ["Informe o nome do repertório."] });
+    return Results.Ok(repositorio.CriarRepertorio(ObterToken(http) ?? string.Empty,
+        requisicao.Nome));
+});
+
+app.MapDelete("/api/artista/repertorios/{id:guid}", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.ExcluirRepertorio(ObterToken(http) ?? string.Empty, id);
+    return Results.NoContent();
+});
+
+app.MapPost("/api/artista/repertorios/{id:guid}/musicas", (
+    Guid id, AdicionarMusicaAoRepertorio requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    if (string.IsNullOrWhiteSpace(requisicao.Titulo))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["titulo"] = ["Informe o título da música."] });
+    return Results.Ok(repositorio.AdicionarMusicaAoRepertorio(
+        ObterToken(http) ?? string.Empty, id, requisicao.Titulo, requisicao.Artista));
+});
+
+app.MapDelete("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}", (
+    Guid repertorioId, Guid musicaId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.RemoverMusicaDoRepertorio(
+        ObterToken(http) ?? string.Empty, repertorioId, musicaId);
+    return Results.NoContent();
+});
+
+// Setlist da apresentação
+app.MapGet("/api/apresentacoes/{id:guid}/setlist", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ObterSetlist(ObterToken(http) ?? string.Empty, id)));
+
+app.MapPost("/api/apresentacoes/{id:guid}/setlist/importar", (
+    Guid id, ImportarRepertorio requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ImportarRepertorioParaSetlist(
+        ObterToken(http) ?? string.Empty, id, requisicao.RepertorioId)));
+
+app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/setlist/{itemId:guid}/tocada", (
+    Guid apresentacaoId, Guid itemId, MarcarItemDoSetlist requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.MarcarItemDoSetlist(
+        ObterToken(http) ?? string.Empty, apresentacaoId, itemId, requisicao.Tocada)));
+
+app.MapDelete("/api/apresentacoes/{id:guid}/setlist", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.LimparSetlist(ObterToken(http) ?? string.Empty, id);
     return Results.NoContent();
 });
 

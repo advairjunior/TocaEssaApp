@@ -21,6 +21,9 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<ContaArtistaRegistro> ContasArtistas => Set<ContaArtistaRegistro>();
     internal DbSet<SessaoArtistaRegistro> SessoesArtistas => Set<SessaoArtistaRegistro>();
     internal DbSet<CifraDoArtistaRegistro> CifrasDoArtista => Set<CifraDoArtistaRegistro>();
+    internal DbSet<RepertorioRegistro> Repertorios => Set<RepertorioRegistro>();
+    internal DbSet<MusicaDoRepertorioRegistro> MusicasDoRepertorio => Set<MusicaDoRepertorioRegistro>();
+    internal DbSet<ItemDoSetlistRegistro> ItensDoSetlist => Set<ItemDoSetlistRegistro>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder opcoes)
     {
@@ -165,6 +168,34 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.Property(item => item.Url).HasMaxLength(2048);
             entidade.Property(item => item.Fonte).HasMaxLength(255);
         });
+
+        modelo.Entity<RepertorioRegistro>(entidade =>
+        {
+            entidade.ToTable("Repertorios");
+            entidade.HasKey(item => item.Id);
+            entidade.HasIndex(item => item.ArtistaId);
+            entidade.Property(item => item.Nome).HasMaxLength(120);
+        });
+
+        modelo.Entity<MusicaDoRepertorioRegistro>(entidade =>
+        {
+            entidade.ToTable("MusicasDoRepertorio");
+            entidade.HasKey(item => item.Id);
+            entidade.HasIndex(item => item.RepertorioId);
+            entidade.HasIndex(item => item.ArtistaId);
+            entidade.Property(item => item.Titulo).HasMaxLength(200);
+            entidade.Property(item => item.Artista).HasMaxLength(200);
+        });
+
+        modelo.Entity<ItemDoSetlistRegistro>(entidade =>
+        {
+            entidade.ToTable("ItensDoSetlist");
+            entidade.HasKey(item => item.Id);
+            entidade.HasIndex(item => item.ApresentacaoId);
+            entidade.HasIndex(item => item.ArtistaId);
+            entidade.Property(item => item.Titulo).HasMaxLength(200);
+            entidade.Property(item => item.Artista).HasMaxLength(200);
+        });
     }
 
     internal void GarantirEstrutura()
@@ -231,6 +262,38 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasDoArtista_Chave"
                     ON "CifrasDoArtista" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+                CREATE TABLE IF NOT EXISTS "Repertorios" (
+                    "Id" uuid NOT NULL,
+                    "ArtistaId" uuid NOT NULL,
+                    "Nome" character varying(120) NOT NULL,
+                    "CriadoEm" timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_Repertorios" PRIMARY KEY ("Id")
+                );
+                CREATE INDEX IF NOT EXISTS "IX_Repertorios_ArtistaId"
+                    ON "Repertorios" ("ArtistaId");
+                CREATE TABLE IF NOT EXISTS "MusicasDoRepertorio" (
+                    "Id" uuid NOT NULL,
+                    "RepertorioId" uuid NOT NULL,
+                    "ArtistaId" uuid NOT NULL,
+                    "Titulo" character varying(200) NOT NULL,
+                    "Artista" character varying(200) NULL,
+                    "Ordem" integer NOT NULL DEFAULT 0,
+                    CONSTRAINT "PK_MusicasDoRepertorio" PRIMARY KEY ("Id")
+                );
+                CREATE INDEX IF NOT EXISTS "IX_MusicasDoRepertorio_RepertorioId"
+                    ON "MusicasDoRepertorio" ("RepertorioId");
+                CREATE TABLE IF NOT EXISTS "ItensDoSetlist" (
+                    "Id" uuid NOT NULL,
+                    "ApresentacaoId" uuid NOT NULL,
+                    "ArtistaId" uuid NOT NULL,
+                    "Titulo" character varying(200) NOT NULL,
+                    "Artista" character varying(200) NULL,
+                    "Tocada" boolean NOT NULL DEFAULT FALSE,
+                    "Ordem" integer NOT NULL DEFAULT 0,
+                    CONSTRAINT "PK_ItensDoSetlist" PRIMARY KEY ("Id")
+                );
+                CREATE INDEX IF NOT EXISTS "IX_ItensDoSetlist_ApresentacaoId"
+                    ON "ItensDoSetlist" ("ApresentacaoId");
                 ALTER TABLE "PerfisArtisticos"
                     ADD COLUMN IF NOT EXISTS "Instagram" character varying(120) NULL;
                 ALTER TABLE "PerfisArtisticos"
@@ -329,6 +392,35 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             );
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasDoArtista_Chave"
                 ON "CifrasDoArtista" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+            CREATE TABLE IF NOT EXISTS "Repertorios" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_Repertorios" PRIMARY KEY,
+                "ArtistaId" TEXT NOT NULL,
+                "Nome" TEXT NOT NULL,
+                "CriadoEm" TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS "IX_Repertorios_ArtistaId"
+                ON "Repertorios" ("ArtistaId");
+            CREATE TABLE IF NOT EXISTS "MusicasDoRepertorio" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_MusicasDoRepertorio" PRIMARY KEY,
+                "RepertorioId" TEXT NOT NULL,
+                "ArtistaId" TEXT NOT NULL,
+                "Titulo" TEXT NOT NULL,
+                "Artista" TEXT NULL,
+                "Ordem" INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS "IX_MusicasDoRepertorio_RepertorioId"
+                ON "MusicasDoRepertorio" ("RepertorioId");
+            CREATE TABLE IF NOT EXISTS "ItensDoSetlist" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_ItensDoSetlist" PRIMARY KEY,
+                "ApresentacaoId" TEXT NOT NULL,
+                "ArtistaId" TEXT NOT NULL,
+                "Titulo" TEXT NOT NULL,
+                "Artista" TEXT NULL,
+                "Tocada" INTEGER NOT NULL DEFAULT 0,
+                "Ordem" INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS "IX_ItensDoSetlist_ApresentacaoId"
+                ON "ItensDoSetlist" ("ApresentacaoId");
             """);
 
         using var comando = Database.GetDbConnection().CreateCommand();

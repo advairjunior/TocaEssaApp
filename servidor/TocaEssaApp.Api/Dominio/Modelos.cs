@@ -88,6 +88,35 @@ public sealed record ResultadoCifraDoArtista(
 public sealed record SalvarCifraDoArtista(
     string Musica, string? Artista, string Url);
 
+public sealed record Repertorio(
+    Guid Id,
+    Guid ArtistaId,
+    string Nome,
+    IReadOnlyCollection<MusicaDoRepertorio> Musicas);
+
+public sealed record MusicaDoRepertorio(
+    Guid Id,
+    Guid RepertorioId,
+    string Titulo,
+    string? Artista,
+    int Ordem);
+
+public sealed record ItemDoSetlist(
+    Guid Id,
+    Guid ApresentacaoId,
+    string Titulo,
+    string? Artista,
+    bool Tocada,
+    int Ordem);
+
+public sealed record CriarRepertorio(string Nome);
+
+public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista);
+
+public sealed record MarcarItemDoSetlist(bool Tocada);
+
+public sealed record ImportarRepertorio(Guid RepertorioId);
+
 public sealed record CriarApresentacao(
     string Nome, DateOnly Data, string Local, TipoApresentacao Tipo = TipoApresentacao.Publica);
 

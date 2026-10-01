@@ -173,5 +173,20 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "O apoio por Pix não está disponível nesta apresentação."
             });
         }
+        catch (RepertorioNaoEncontradoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Repertório não encontrado." });
+        }
+        catch (MusicaDoRepertorioNaoEncontradaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Música não encontrada no repertório." });
+        }
+        catch (ItemDoSetlistNaoEncontradoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Item não encontrado no setlist." });
+        }
     }
 }

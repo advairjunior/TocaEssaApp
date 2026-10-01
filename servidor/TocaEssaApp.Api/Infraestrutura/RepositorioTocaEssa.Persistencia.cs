@@ -132,6 +132,12 @@ public sealed partial class RepositorioTocaEssa
         foreach (var cifra in banco.CifrasDoArtista.AsNoTracking())
             _cifrasDoArtista[(cifra.ArtistaId, cifra.MusicaNormalizada,
                 cifra.ArtistaNormalizado)] = cifra;
+        foreach (var r in banco.Repertorios.AsNoTracking())
+            _repertorios[r.Id] = r;
+        foreach (var m in banco.MusicasDoRepertorio.AsNoTracking())
+            _musicasDoRepertorio[m.Id] = m;
+        foreach (var i in banco.ItensDoSetlist.AsNoTracking())
+            _itensDoSetlist[i.Id] = i;
 
         if (_configuracoesPerfis.Count > 0 || _apresentacoes.Count > 0 || _pedidos.Count > 0 ||
             _caminhoJsonLegado is null || !File.Exists(_caminhoJsonLegado))
@@ -184,6 +190,9 @@ public sealed partial class RepositorioTocaEssa
         banco.PerfisPublicos.RemoveRange(banco.PerfisPublicos);
         banco.ContasArtistas.RemoveRange(banco.ContasArtistas);
         banco.CifrasDoArtista.RemoveRange(banco.CifrasDoArtista);
+        banco.ItensDoSetlist.RemoveRange(banco.ItensDoSetlist);
+        banco.MusicasDoRepertorio.RemoveRange(banco.MusicasDoRepertorio);
+        banco.Repertorios.RemoveRange(banco.Repertorios);
         banco.SaveChanges();
 
         var configuracoes = _configuracoesPerfis.Count > 0
@@ -262,6 +271,9 @@ public sealed partial class RepositorioTocaEssa
             .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
         banco.ContasArtistas.AddRange(_contasArtistas.Values);
         banco.CifrasDoArtista.AddRange(_cifrasDoArtista.Values);
+        banco.Repertorios.AddRange(_repertorios.Values);
+        banco.MusicasDoRepertorio.AddRange(_musicasDoRepertorio.Values);
+        banco.ItensDoSetlist.AddRange(_itensDoSetlist.Values);
         banco.SessoesArtistas.AddRange(_sessoesArtistas.Values
             .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
 
