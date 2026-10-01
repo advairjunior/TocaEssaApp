@@ -147,6 +147,8 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
           builder: (_) => _CodigoDaApresentacao(
             apresentacao: apresentacao,
             linkPublico: _linkPublico(apresentacao.codigo),
+            enderecoFoto: _api.enderecoArquivo(
+                apresentacao.perfilArtistico.fotoUrl),
           ),
         ),
       );

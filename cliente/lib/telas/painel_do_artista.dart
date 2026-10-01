@@ -1,10 +1,14 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/baixar_arquivo.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'perfil_participante.dart';
