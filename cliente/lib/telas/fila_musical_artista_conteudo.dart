@@ -12,7 +12,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ResumoApresentacao(apresentacao: widget.apresentacao),
+          if (!widget.incorporada)
+            _ResumoApresentacao(apresentacao: widget.apresentacao),
           if (_tocando.isNotEmpty) ...[
             const SizedBox(height: 20),
             const _TituloSecao('Tocando agora'),
@@ -65,8 +66,10 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
         filho: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ResumoApresentacao(apresentacao: widget.apresentacao),
-            const SizedBox(height: 20),
+            if (!widget.incorporada) ...[
+              _ResumoApresentacao(apresentacao: widget.apresentacao),
+              const SizedBox(height: 20),
+            ],
             const _TituloSecao('Memórias musicais'),
             const SizedBox(height: 4),
             const Text(
@@ -314,8 +317,8 @@ class _PendenteDeslizavel extends StatelessWidget {
           children: inverter
               ? [
                   Text(texto,
-                      style: TextStyle(
-                          color: cor, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(color: cor, fontWeight: FontWeight.w700)),
                   const SizedBox(width: 8),
                   Icon(icone, color: cor),
                 ]
@@ -323,8 +326,8 @@ class _PendenteDeslizavel extends StatelessWidget {
                   Icon(icone, color: cor),
                   const SizedBox(width: 8),
                   Text(texto,
-                      style: TextStyle(
-                          color: cor, fontWeight: FontWeight.w700)),
+                      style:
+                          TextStyle(color: cor, fontWeight: FontWeight.w700)),
                 ],
         ),
       );

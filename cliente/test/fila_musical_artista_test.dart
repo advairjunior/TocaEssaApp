@@ -25,6 +25,9 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
+    // Incorporada no painel, o título e o status já ficam na barra superior.
+    expect(find.text('Resenha de teste'), findsNothing);
+    expect(find.text('Ao vivo'), findsNothing);
     expect(find.text('Pendentes 1'), findsOneWidget);
     expect(find.text('Fila 1'), findsOneWidget);
     expect(find.text('Histórico 1'), findsOneWidget);
