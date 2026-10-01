@@ -81,6 +81,28 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    public MusicaDoRepertorio EditarMusicaDoRepertorio(
+        string token, Guid repertorioId, Guid musicaId,
+        string titulo, string? artista, string? tom)
+    {
+        var conta = ExigirRegistroArtista(token);
+        lock (_sincronizacao)
+        {
+            if (!_repertorios.TryGetValue(repertorioId, out var repertorio) ||
+                repertorio.ArtistaId != conta.Id)
+                throw new RepertorioNaoEncontradoException();
+            if (!_musicasDoRepertorio.TryGetValue(musicaId, out var musica) ||
+                musica.RepertorioId != repertorioId)
+                throw new MusicaDoRepertorioNaoEncontradaException();
+            musica.Titulo = titulo.Trim();
+            musica.Artista = string.IsNullOrWhiteSpace(artista) ? null : artista.Trim();
+            musica.Tom = string.IsNullOrWhiteSpace(tom) ? null : tom.Trim();
+            _musicasDoRepertorio[musicaId] = musica;
+            SalvarEstado();
+            return ParaDominio(musica);
+        }
+    }
+
     public void RemoverMusicaDoRepertorio(string token, Guid repertorioId, Guid musicaId)
     {
         var conta = ExigirRegistroArtista(token);

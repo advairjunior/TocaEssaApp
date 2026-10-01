@@ -185,6 +185,18 @@ app.MapPost("/api/artista/repertorios/{id:guid}/musicas", (
         requisicao.Artista, requisicao.Tom));
 });
 
+app.MapPut("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}", (
+    Guid repertorioId, Guid musicaId, EditarMusicaDoRepertorio requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    if (string.IsNullOrWhiteSpace(requisicao.Titulo))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["titulo"] = ["Informe o título da música."] });
+    return Results.Ok(repositorio.EditarMusicaDoRepertorio(
+        ObterToken(http) ?? string.Empty, repertorioId, musicaId,
+        requisicao.Titulo, requisicao.Artista, requisicao.Tom));
+});
+
 app.MapDelete("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}", (
     Guid repertorioId, Guid musicaId, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

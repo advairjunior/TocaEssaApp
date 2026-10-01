@@ -216,6 +216,33 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
     }
   }
 
+  Future<void> _editarMusica(MusicaDoRepertorio musica) async {
+    final resultado = await _pedirMusica(
+      context,
+      tituloInicial: musica.titulo,
+      artistaInicial: musica.artista,
+      tomInicial: musica.tom,
+    );
+    if (resultado == null || !mounted) return;
+    setState(() => _salvando = true);
+    try {
+      final editada = await widget.api.editarMusicaDoRepertorio(
+        widget.repertorio.id,
+        musica.id,
+        resultado.$1,
+        artista: resultado.$2,
+        tom: resultado.$3,
+      );
+      if (!mounted) return;
+      setState(() => _musicas =
+          _musicas.map((m) => m.id == editada.id ? editada : m).toList());
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
+
   Future<void> _removerMusica(MusicaDoRepertorio musica) async {
     setState(() => _salvando = true);
     try {
@@ -300,11 +327,24 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
                               fontSize: 12),
                         )
                       : null,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.remove_circle_outline_rounded,
-                        color: CoresTocaEssa.textoSecundario),
-                    tooltip: 'Remover',
-                    onPressed: _salvando ? null : () => _removerMusica(musica),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined,
+                            color: CoresTocaEssa.roxoClaro, size: 20),
+                        tooltip: 'Editar',
+                        onPressed:
+                            _salvando ? null : () => _editarMusica(musica),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.remove_circle_outline_rounded,
+                            color: CoresTocaEssa.textoSecundario, size: 20),
+                        tooltip: 'Remover',
+                        onPressed:
+                            _salvando ? null : () => _removerMusica(musica),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -364,15 +404,20 @@ Future<String?> _pedirNome(
 }
 
 Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
-    BuildContext context) async {
-  final tituloCtrl = TextEditingController();
-  final artistaCtrl = TextEditingController();
-  final tomCtrl = TextEditingController();
+    BuildContext context, {
+  String? tituloInicial,
+  String? artistaInicial,
+  String? tomInicial,
+}) async {
+  final tituloCtrl = TextEditingController(text: tituloInicial);
+  final artistaCtrl = TextEditingController(text: artistaInicial ?? '');
+  final tomCtrl = TextEditingController(text: tomInicial ?? '');
   try {
+    final editando = tituloInicial != null;
     return await showDialog<(String, String?, String?)>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Adicionar música'),
+        title: Text(editando ? 'Editar música' : 'Adicionar música'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -415,7 +460,7 @@ Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
               Navigator.pop(
                   context, (t, a.isEmpty ? null : a, tom.isEmpty ? null : tom));
             },
-            child: const Text('Adicionar'),
+            child: Text(editando ? 'Salvar' : 'Adicionar'),
           ),
         ],
       ),

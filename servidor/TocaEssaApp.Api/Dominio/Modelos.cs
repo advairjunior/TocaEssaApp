@@ -115,6 +115,8 @@ public sealed record CriarRepertorio(string Nome);
 
 public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
+public sealed record EditarMusicaDoRepertorio(string Titulo, string? Artista, string? Tom = null);
+
 public sealed record MarcarItemDoSetlist(bool Tocada);
 
 public sealed record ImportarRepertorio(Guid RepertorioId);

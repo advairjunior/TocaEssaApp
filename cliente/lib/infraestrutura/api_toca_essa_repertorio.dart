@@ -45,6 +45,20 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
+  Future<MusicaDoRepertorio> editarMusicaDoRepertorio(
+      String repertorioId, String musicaId, String titulo,
+      {String? artista, String? tom}) async {
+    final resposta = await _cliente.put(
+      Uri.parse(
+          '$_enderecoBase/api/artista/repertorios/$repertorioId/musicas/$musicaId'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'titulo': titulo, 'artista': artista, 'tom': tom}),
+    );
+    _validar(resposta);
+    return MusicaDoRepertorio.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
   Future<void> removerMusicaDoRepertorio(
       String repertorioId, String musicaId) async {
     final resposta = await _cliente.delete(
