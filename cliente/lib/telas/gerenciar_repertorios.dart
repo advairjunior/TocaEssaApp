@@ -418,34 +418,36 @@ Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
       context: context,
       builder: (_) => AlertDialog(
         title: Text(editando ? 'Editar música' : 'Adicionar música'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: tituloCtrl,
-              autofocus: true,
-              decoration:
-                  const InputDecoration(labelText: 'Título da música'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: artistaCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Artista (opcional)'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: tomCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Tom preferido (opcional)',
-                hintText: 'Ex: Lá, Mi, Ré menor…',
-                prefixIcon: Icon(Icons.music_note_rounded),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: tituloCtrl,
+                autofocus: true,
+                decoration:
+                    const InputDecoration(labelText: 'Título da música'),
+                textCapitalization: TextCapitalization.words,
               ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-          ],
+              const SizedBox(height: 12),
+              TextField(
+                controller: artistaCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'Artista (opcional)'),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: tomCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Tom preferido (opcional)',
+                  hintText: 'Ex: Lá, Mi, Ré menor…',
+                  prefixIcon: Icon(Icons.music_note_rounded),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
