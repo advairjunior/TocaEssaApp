@@ -194,6 +194,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasKey(item => item.Id);
             entidade.HasIndex(item => item.ApresentacaoId);
             entidade.HasIndex(item => item.ArtistaId);
+            entidade.HasIndex(item => item.MusicaDoRepertorioId);
             entidade.Property(item => item.Titulo).HasMaxLength(200);
             entidade.Property(item => item.Artista).HasMaxLength(200);
             entidade.Property(item => item.Tom).HasMaxLength(10);
@@ -291,6 +292,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     "Id" uuid NOT NULL,
                     "ApresentacaoId" uuid NOT NULL,
                     "ArtistaId" uuid NOT NULL,
+                    "MusicaDoRepertorioId" uuid NULL,
                     "Titulo" character varying(200) NOT NULL,
                     "Artista" character varying(200) NULL,
                     "Tom" character varying(10) NULL,
@@ -302,6 +304,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     ON "ItensDoSetlist" ("ApresentacaoId");
                 ALTER TABLE "ItensDoSetlist"
                     ADD COLUMN IF NOT EXISTS "Tom" character varying(10) NULL;
+                ALTER TABLE "ItensDoSetlist"
+                    ADD COLUMN IF NOT EXISTS "MusicaDoRepertorioId" uuid NULL;
                 ALTER TABLE "PerfisArtisticos"
                     ADD COLUMN IF NOT EXISTS "Instagram" character varying(120) NULL;
                 ALTER TABLE "PerfisArtisticos"
@@ -423,6 +427,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 "Id" TEXT NOT NULL CONSTRAINT "PK_ItensDoSetlist" PRIMARY KEY,
                 "ApresentacaoId" TEXT NOT NULL,
                 "ArtistaId" TEXT NOT NULL,
+                "MusicaDoRepertorioId" TEXT NULL,
                 "Titulo" TEXT NOT NULL,
                 "Artista" TEXT NULL,
                 "Tom" TEXT NULL,
@@ -490,6 +495,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             comando, "MusicasDoRepertorio", "Tom", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(
             comando, "ItensDoSetlist", "Tom", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "ItensDoSetlist", "MusicaDoRepertorioId", "TEXT NULL");
 
         comando.CommandText = "PRAGMA table_info('Apresentacoes')";
         using var leitorFotoRetrospectiva = comando.ExecuteReader();

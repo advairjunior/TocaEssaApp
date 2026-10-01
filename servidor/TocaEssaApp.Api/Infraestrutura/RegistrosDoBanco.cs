@@ -150,6 +150,7 @@ internal sealed class ItemDoSetlistRegistro
     public Guid Id { get; set; }
     public Guid ApresentacaoId { get; set; }
     public Guid ArtistaId { get; set; }
+    public Guid? MusicaDoRepertorioId { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string? Artista { get; set; }
     public string? Tom { get; set; }

@@ -98,6 +98,16 @@ public sealed partial class RepositorioTocaEssa
             musica.Artista = string.IsNullOrWhiteSpace(artista) ? null : artista.Trim();
             musica.Tom = string.IsNullOrWhiteSpace(tom) ? null : tom.Trim();
             _musicasDoRepertorio[musicaId] = musica;
+
+            // Propagar edição para todos os setlists que usam esta música
+            foreach (var item in _itensDoSetlist.Values
+                         .Where(i => i.MusicaDoRepertorioId == musicaId))
+            {
+                item.Titulo = musica.Titulo;
+                item.Artista = musica.Artista;
+                item.Tom = musica.Tom;
+            }
+
             SalvarEstado();
             return ParaDominio(musica);
         }
@@ -161,6 +171,7 @@ public sealed partial class RepositorioTocaEssa
                     Id = Guid.NewGuid(),
                     ApresentacaoId = apresentacaoId,
                     ArtistaId = conta.Id,
+                    MusicaDoRepertorioId = musica.Id,
                     Titulo = musica.Titulo,
                     Artista = musica.Artista,
                     Tom = musica.Tom,
