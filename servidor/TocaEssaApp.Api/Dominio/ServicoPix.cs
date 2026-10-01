@@ -9,8 +9,7 @@ public static class ServicoPix
         string chave,
         string nomeBeneficiario,
         string cidadeBeneficiario,
-        decimal valor,
-        string? mensagem)
+        decimal valor)
     {
         if (valor is < 1m or > 1000m)
             throw new ValorApoioPixInvalidoException();
@@ -21,8 +20,6 @@ public static class ServicoPix
 
         var contaPix = Campo("00", "BR.GOV.BCB.PIX") +
                        Campo("01", chaveNormalizada);
-        var descricao = NormalizarTexto(mensagem, 40);
-        if (descricao.Length > 0) contaPix += Campo("02", descricao);
 
         var valorFormatado = valor.ToString("0.00", CultureInfo.InvariantCulture);
         var payload =

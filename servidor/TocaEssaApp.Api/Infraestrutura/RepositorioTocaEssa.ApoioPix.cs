@@ -8,7 +8,7 @@ public sealed partial class RepositorioTocaEssa
     {
         var apresentacao = ObterApresentacaoPublica(codigo)
             ?? throw new ApresentacaoNaoEncontradaException();
-        var configuracao = _configuracaoPerfil;
+        var configuracao = _configuracoesPerfis.GetValueOrDefault(apresentacao.ArtistaId);
         if (apresentacao.Tipo != TipoApresentacao.Publica ||
             configuracao is null || !configuracao.PixAtivo ||
             string.IsNullOrWhiteSpace(configuracao.PixChave) ||
@@ -20,8 +20,7 @@ public sealed partial class RepositorioTocaEssa
             configuracao.PixChave,
             configuracao.PixNomeBeneficiario,
             configuracao.PixCidadeBeneficiario,
-            valor,
-            configuracao.PixMensagem);
+            valor);
         return new ApoioPix(
             valor,
             payload,

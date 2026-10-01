@@ -15,8 +15,7 @@ public class ServicoPixTestes
             "123e4567-e89b-12d3-a456-426614174000",
             "Duo Auróra",
             "São Paulo",
-            valor,
-            "TocaEssa");
+            valor);
 
         var valorFormatado = valor.ToString("0.00", CultureInfo.InvariantCulture);
         Assert.StartsWith("000201", payload);
@@ -33,6 +32,16 @@ public class ServicoPixTestes
     public void RejeitaValorForaDoIntervalo(decimal valor)
     {
         Assert.Throws<ValorApoioPixInvalidoException>(() =>
-            ServicoPix.Gerar("chave", "ARTISTA", "RECIFE", valor, null));
+            ServicoPix.Gerar("chave", "ARTISTA", "RECIFE", valor));
+    }
+
+    [Fact]
+    public void PayloadNaoContemMensagemDeAgradecimento()
+    {
+        var payload = ServicoPix.Gerar(
+            "artista@pix.com", "DUO AURORA", "SAO PAULO", 10m);
+
+        Assert.DoesNotContain("MUITO OBRIGADO", payload);
+        Assert.True(ServicoPix.CrcEhValido(payload));
     }
 }

@@ -21,10 +21,11 @@ public class ApoioPixApiTestes
         try
         {
             var repositorio = new RepositorioTocaEssa(banco, $"{banco}.json");
-            repositorio.SalvarPerfil(new SalvarPerfilArtistico(
+            var token = repositorio.CriarContaArtista("Duo Aurora", "duo@teste.com", "senha").Token;
+            repositorio.SalvarPerfilDaConta(token, new SalvarPerfilArtistico(
                 "Duo Aurora", null, null, false, null, false, true,
                 "chave-pix-secreta", "DUO AURORA", "SAO PAULO", "Valeu!"));
-            var apresentacao = repositorio.CriarApresentacao(
+            var apresentacao = repositorio.CriarApresentacao(token,
                 "Noite acústica", new DateOnly(2026, 9, 20), "Café Central");
 
             await using var fabrica = new WebApplicationFactory<Program>()
@@ -86,9 +87,41 @@ public class ApoioPixApiTestes
         Assert.Equal(HttpStatusCode.NotFound, resposta.StatusCode);
     }
 
+    [Fact]
+    public void PixIsolaChaveDoArtistaProprietario()
+    {
+        var banco = Path.Combine(
+            Path.GetTempPath(), $"tocaessa-pix-isolamento-{Guid.NewGuid():N}.db");
+        try
+        {
+            var repositorio = new RepositorioTocaEssa(banco, $"{banco}.json");
+
+            var tokenAna = repositorio.CriarContaArtista("Ana", "ana@pix.com", "senha").Token;
+            repositorio.SalvarPerfilDaConta(tokenAna, new SalvarPerfilArtistico(
+                "Ana Música", null, null, false, null, false, true,
+                "chave-exclusiva-ana", "ANA MUSICA", "SAO PAULO"));
+            var showAna = repositorio.CriarApresentacao(tokenAna,
+                "Show da Ana", new DateOnly(2026, 9, 20), "Bar A");
+
+            var tokenBia = repositorio.CriarContaArtista("Bia", "bia@pix.com", "senha").Token;
+            repositorio.SalvarPerfilDaConta(tokenBia, new SalvarPerfilArtistico(
+                "Bia Música", null, null, false, null, false, true,
+                "chave-exclusiva-bia", "BIA MUSICA", "SAO PAULO"));
+
+            var pix = repositorio.GerarApoioPix(showAna.Codigo, 10m);
+
+            Assert.Contains("chave-exclusiva-ana", pix.PixCopiaECola);
+            Assert.DoesNotContain("chave-exclusiva-bia", pix.PixCopiaECola);
+        }
+        finally
+        {
+            ExcluirBanco(banco);
+        }
+    }
+
     private static void ExcluirBanco(string caminho)
     {
-        foreach (var arquivo in new[] { caminho, $"{caminho}-shm", $"{caminho}-wal" })
+        foreach (var arquivo in new[] { caminho, $"{caminho}-shm", $"{caminho}-wal", $"{caminho}.json" })
             if (File.Exists(arquivo)) File.Delete(arquivo);
     }
 
