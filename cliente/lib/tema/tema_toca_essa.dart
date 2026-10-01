@@ -12,6 +12,22 @@ abstract final class CoresTocaEssa {
   static const textoSecundario = Color(0xFFC8C2D0);
 }
 
+/// Escala de espaçamentos usada em todas as telas redesenhadas.
+abstract final class EspacoTocaEssa {
+  static const double mini = 4;
+  static const double pequeno = 8;
+  static const double medio = 12;
+  static const double base = 16;
+  static const double grande = 24;
+  static const double enorme = 32;
+}
+
+abstract final class RaioTocaEssa {
+  static const double campo = 14;
+  static const double cartao = 20;
+  static const double pilula = 999;
+}
+
 abstract final class TemaTocaEssa {
   static ThemeData get escuro {
     const esquema = ColorScheme.dark(
