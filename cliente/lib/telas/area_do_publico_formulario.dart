@@ -7,262 +7,170 @@ extension _FormularioPedidoPublico on _AreaDoPublicoState {
   ) {
     final ehAlo = _tipoPedido == TipoPedido.alo;
     final ehResenha = apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos;
+    final texto = Theme.of(context).textTheme;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          ehAlo ? 'Mande um alô' : 'O que você quer ouvir?',
+          style: texto.headlineSmall,
+        ),
+        const SizedBox(height: EspacoTocaEssa.mini),
+        Text(
+          ehAlo
+              ? 'O artista anuncia seu recado no palco.'
+              : 'Seu pedido chega na hora para o artista.',
+          style:
+              texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario),
+        ),
+        const SizedBox(height: EspacoTocaEssa.base),
+        Wrap(
+          spacing: EspacoTocaEssa.pequeno,
           children: [
-            Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: CoresTocaEssa.roxo.withValues(alpha: .18),
-                    borderRadius: BorderRadius.circular(13),
-                  ),
-                  child: Icon(
-                    ehAlo ? Icons.campaign_rounded : Icons.music_note_rounded,
-                    color: CoresTocaEssa.roxoClaro,
-                  ),
+            for (final (tipo, rotulo, icone) in const [
+              (TipoPedido.musica, 'Música', Icons.music_note_rounded),
+              (TipoPedido.alo, 'Alô', Icons.campaign_rounded),
+            ])
+              ChoiceChip(
+                selected: _tipoPedido == tipo,
+                showCheckmark: false,
+                side: BorderSide(
+                  color: _tipoPedido == tipo
+                      ? Colors.transparent
+                      : CoresTocaEssa.borda,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ehAlo ? 'Mandar um Alô' : 'Novo pedido',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Text(
-                        ehAlo
-                            ? 'Envie um recado para o artista anunciar.'
-                            : 'Escolha a música que você quer ouvir.',
-                        style: const TextStyle(
-                          color: CoresTocaEssa.textoSecundario,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SegmentedButton<TipoPedido>(
-              segments: const [
-                ButtonSegment(
-                  value: TipoPedido.musica,
-                  icon: Icon(Icons.music_note_rounded),
-                  label: Text('Música'),
-                ),
-                ButtonSegment(
-                  value: TipoPedido.alo,
-                  icon: Icon(Icons.campaign_rounded),
-                  label: Text('Alô'),
-                ),
-              ],
-              selected: {_tipoPedido},
-              onSelectionChanged: (selecao) => _mudarEstado(() {
-                _tipoPedido = selecao.first;
-                _mostrarDetalhesPedido = false;
-              }),
-            ),
-            const SizedBox(height: 16),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              child: Column(
-                key: ValueKey(_tipoPedido),
-                children: ehAlo
-                    ? _construirCamposAlo()
-                    : _construirCamposMusica(ehResenha),
+                avatar: Icon(icone, size: 18),
+                label: Text(rotulo),
+                onSelected: (_) => _mudarEstado(() {
+                  _tipoPedido = tipo;
+                  _mostrarDetalhesPedido = false;
+                }),
               ),
-            ),
-            const SizedBox(height: 14),
-            _construirIdentificacao(apresentacao),
-            const SizedBox(height: 14),
-            FilledButton.icon(
-              onPressed: _enviando ? null : _pedirMusica,
-              icon: Icon(ehAlo ? Icons.campaign_rounded : Icons.send_rounded),
-              label: Text(
-                _enviando
-                    ? 'Enviando...'
-                    : ehAlo
-                        ? 'Enviar Alô'
-                        : 'Enviar pedido',
-              ),
-            ),
           ],
         ),
-      ),
+        const SizedBox(height: EspacoTocaEssa.grande - 4),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: Column(
+            key: ValueKey(_tipoPedido),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: ehAlo
+                ? _construirCamposAlo()
+                : _construirCamposMusica(ehResenha),
+          ),
+        ),
+        const SizedBox(height: EspacoTocaEssa.base + 4),
+        _construirIdentificacao(apresentacao),
+        const SizedBox(height: EspacoTocaEssa.grande),
+        FilledButton.icon(
+          onPressed: _enviando ? null : _pedirMusica,
+          icon: Icon(ehAlo ? Icons.campaign_rounded : Icons.send_rounded),
+          label: Text(
+            _enviando
+                ? 'Enviando...'
+                : ehAlo
+                    ? 'Enviar alô'
+                    : 'Enviar pedido',
+          ),
+        ),
+      ],
     );
   }
 
-  List<Widget> _construirCamposMusica(bool ehResenha) => [
-        TextField(
-          controller: _musica,
-          decoration: const InputDecoration(
-            labelText: 'Música',
-            prefixIcon: Icon(Icons.music_note_rounded),
+  Widget _alternarDetalhes(String mostrar, String ocultar) => Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () => _mudarEstado(
+            () => _mostrarDetalhesPedido = !_mostrarDetalhesPedido,
           ),
+          icon: Icon(
+            _mostrarDetalhesPedido
+                ? Icons.expand_less_rounded
+                : Icons.add_rounded,
+            size: 18,
+          ),
+          label: Text(_mostrarDetalhesPedido ? ocultar : mostrar),
         ),
-        const SizedBox(height: 10),
-        TextField(
-          controller: _artista,
-          decoration: const InputDecoration(
-            labelText: 'Cantor ou banda (opcional)',
-            prefixIcon: Icon(Icons.library_music_rounded),
-          ),
+      );
+
+  List<Widget> _construirCamposMusica(bool ehResenha) => [
+        CampoTexto(
+          rotulo: 'Música',
+          controlador: _musica,
+          dica: 'Nome da música',
+          capitalizacao: TextCapitalization.sentences,
+          acaoTeclado: TextInputAction.next,
+        ),
+        const SizedBox(height: EspacoTocaEssa.base),
+        CampoTexto(
+          rotulo: 'Cantor ou banda',
+          controlador: _artista,
+          dica: 'Opcional',
+          capitalizacao: TextCapitalization.words,
         ),
         if (ehResenha) ...[
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChip(
-                selected: _formaParticipacao == FormaParticipacaoPedido.euCanto,
-                avatar: const Icon(Icons.mic_rounded, size: 18),
-                label: const Text('Eu canto'),
-                onSelected: (selecionado) => _mudarEstado(() {
-                  _formaParticipacao = selecionado
-                      ? FormaParticipacaoPedido.euCanto
-                      : FormaParticipacaoPedido.pedidoNormal;
-                }),
-              ),
-              ActionChip(
-                avatar: Icon(
-                  _mostrarDetalhesPedido
-                      ? Icons.expand_less_rounded
-                      : Icons.add_comment_outlined,
-                  size: 18,
-                ),
-                label: Text(
-                  _mostrarDetalhesPedido
-                      ? 'Ocultar detalhes'
-                      : 'Adicionar detalhes',
-                ),
-                onPressed: () => _mudarEstado(
-                  () => _mostrarDetalhesPedido = !_mostrarDetalhesPedido,
-                ),
-              ),
-            ],
+          const SizedBox(height: EspacoTocaEssa.medio),
+          _InterruptorEuCanto(
+            ativo: _formaParticipacao == FormaParticipacaoPedido.euCanto,
+            alterar: (ativo) => _mudarEstado(() {
+              _formaParticipacao = ativo
+                  ? FormaParticipacaoPedido.euCanto
+                  : FormaParticipacaoPedido.pedidoNormal;
+            }),
           ),
-          if (_formaParticipacao == FormaParticipacaoPedido.euCanto) ...[
-            const SizedBox(height: 8),
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'O artista verá que você quer assumir o vocal.',
-                style: TextStyle(
-                  color: CoresTocaEssa.textoSecundario,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
+          _alternarDetalhes('Adicionar detalhes', 'Ocultar detalhes'),
           if (_mostrarDetalhesPedido) ...[
-            const SizedBox(height: 12),
             if (_formaParticipacao == FormaParticipacaoPedido.euCanto) ...[
-              TextField(
-                controller: _tomPreferido,
-                maxLength: 30,
-                decoration: const InputDecoration(
-                  labelText: 'Tom preferido (opcional)',
-                  hintText: 'Ex.: G, Am ou tom original',
-                  prefixIcon: Icon(Icons.tune_rounded),
-                  counterText: '',
-                ),
+              CampoTexto(
+                rotulo: 'Tom preferido',
+                controlador: _tomPreferido,
+                dica: 'Opcional. Ex.: G, Am ou tom original',
+                comprimentoMaximo: 30,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: EspacoTocaEssa.base),
             ],
-            TextField(
-              controller: _recado,
-              maxLength: 240,
-              minLines: 1,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Recado ou dedicação (opcional)',
-                prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
-                counterText: '',
-              ),
+            CampoTexto(
+              rotulo: 'Recado ou dedicação',
+              controlador: _recado,
+              dica: 'Opcional',
+              capitalizacao: TextCapitalization.sentences,
+              comprimentoMaximo: 240,
+              linhas: 3,
             ),
           ],
         ],
       ];
 
   List<Widget> _construirCamposAlo() => [
-        TextField(
-          controller: _destinatarioAlo,
-          decoration: const InputDecoration(
-            labelText: 'Para quem é o Alô?',
-            hintText: 'Ex.: João, mesa 8 ou aniversariante',
-            prefixIcon: Icon(Icons.record_voice_over_rounded),
-          ),
+        CampoTexto(
+          rotulo: 'Para quem é o alô?',
+          controlador: _destinatarioAlo,
+          dica: 'Ex.: João, mesa 8 ou aniversariante',
+          capitalizacao: TextCapitalization.words,
         ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ActionChip(
-            avatar: Icon(
-              _mostrarDetalhesPedido
-                  ? Icons.expand_less_rounded
-                  : Icons.add_comment_outlined,
-              size: 18,
-            ),
-            label: Text(
-              _mostrarDetalhesPedido
-                  ? 'Ocultar mensagem'
-                  : 'Adicionar mensagem',
-            ),
-            onPressed: () => _mudarEstado(
-              () => _mostrarDetalhesPedido = !_mostrarDetalhesPedido,
-            ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        _alternarDetalhes('Adicionar mensagem', 'Ocultar mensagem'),
+        if (_mostrarDetalhesPedido)
+          CampoTexto(
+            rotulo: 'Mensagem ou ocasião',
+            controlador: _recado,
+            dica: 'Opcional. Ex.: aniversário da Maria',
+            capitalizacao: TextCapitalization.sentences,
+            comprimentoMaximo: 240,
+            linhas: 3,
           ),
-        ),
-        if (_mostrarDetalhesPedido) ...[
-          const SizedBox(height: 12),
-          TextField(
-            controller: _recado,
-            maxLength: 240,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Mensagem ou ocasião (opcional)',
-              hintText: 'Ex.: aniversário da Maria',
-              prefixIcon: Icon(Icons.chat_bubble_outline_rounded),
-              counterText: '',
-            ),
-          ),
-        ],
       ];
 
   Widget _construirIdentificacao(Apresentacao apresentacao) {
     if (apresentacao.tipo == TipoApresentacao.publica &&
         _perfilPublico == null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _nome,
-            decoration: const InputDecoration(
-              labelText: 'Seu nome (opcional)',
-              prefixIcon: Icon(Icons.person_outline_rounded),
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Seu nome e seus pedidos ficam salvos somente neste aparelho.',
-            style: TextStyle(
-              color: CoresTocaEssa.textoSecundario,
-              fontSize: 11,
-            ),
-          ),
-        ],
+      return CampoTexto(
+        rotulo: 'Seu nome',
+        controlador: _nome,
+        dica: 'Opcional',
+        capitalizacao: TextCapitalization.words,
+        ajuda: 'Seu nome e seus pedidos ficam salvos só neste aparelho.',
       );
     }
 
@@ -270,17 +178,40 @@ extension _FormularioPedidoPublico on _AreaDoPublicoState {
       children: [
         const Icon(
           Icons.account_circle_rounded,
-          size: 19,
+          size: 20,
           color: CoresTocaEssa.roxoClaro,
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: EspacoTocaEssa.pequeno),
         Expanded(
           child: Text(
             'Enviando como ${_perfilPublico!.nome}',
-            style: const TextStyle(fontSize: 12),
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
         ),
       ],
     );
   }
+}
+
+class _InterruptorEuCanto extends StatelessWidget {
+  const _InterruptorEuCanto({required this.ativo, required this.alterar});
+
+  final bool ativo;
+  final ValueChanged<bool> alterar;
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile.adaptive(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.mini),
+        title: const Text('Eu canto'),
+        subtitle: Text(
+          'O artista verá que você quer assumir o vocal.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: CoresTocaEssa.textoSecundario),
+        ),
+        value: ativo,
+        onChanged: alterar,
+      );
 }

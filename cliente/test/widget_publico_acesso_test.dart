@@ -5,6 +5,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -48,9 +49,12 @@ void main() {
       find.image(const AssetImage('assets/fundos/atmosfera.png')),
       findsOneWidget,
     );
-    expect(find.text('Área do Público'), findsOneWidget);
+    expect(find.text('Duo Aurora'), findsWidgets);
     final campoNome = tester.widget<TextField>(
-      find.widgetWithText(TextField, 'Seu nome (opcional)'),
+      find.descendant(
+        of: find.widgetWithText(CampoTexto, 'Seu nome'),
+        matching: find.byType(TextField),
+      ),
     );
     expect(campoNome.controller?.text, 'Ana');
     expect(find.text('Evidências'), findsOneWidget);
@@ -101,7 +105,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Novo pedido'), findsOneWidget);
+    expect(find.text('O que você quer ouvir?'), findsOneWidget);
     expect(find.text('Música 1'), findsOneWidget);
     expect(find.text('Música 2'), findsOneWidget);
     expect(find.text('Música 3'), findsNothing);

@@ -5,6 +5,7 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -123,7 +124,7 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Seu nome (opcional)'), findsOneWidget);
+    expect(find.widgetWithText(CampoTexto, 'Seu nome'), findsOneWidget);
     expect(find.text('Perfil do Público'), findsNothing);
     await tester.tap(find.text('Perfil').last);
     await tester.pumpAndSettle();
@@ -169,7 +170,10 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    final campoMusica = find.widgetWithText(TextField, 'Música');
+    final campoMusica = find.descendant(
+      of: find.widgetWithText(CampoTexto, 'Música'),
+      matching: find.byType(TextField),
+    );
     await tester.ensureVisible(campoMusica);
     await tester.tap(campoMusica);
     await tester.enterText(campoMusica, 'Minha música favorita');

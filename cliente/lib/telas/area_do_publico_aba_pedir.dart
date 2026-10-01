@@ -14,32 +14,19 @@ extension _ConstrucaoAbaPedir on _AreaDoPublicoState {
         else if (!apresentacao.pedidosAbertos)
           const _AvisoPedidosEncerrados(),
         if (_meusPedidos.isNotEmpty) ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: EspacoTocaEssa.enorme + 8),
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Seus pedidos recentes',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 2),
-                    const Text(
-                      'Acompanhe o andamento sem sair desta tela.',
-                      style: TextStyle(
-                        color: CoresTocaEssa.textoSecundario,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Seus pedidos',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
               _ContadorPedidos(quantidade: _meusPedidos.length),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: EspacoTocaEssa.medio),
           for (final pedido in _pedidosExibidos) ...[
             _CartaoMeuPedido(
               pedido: pedido,

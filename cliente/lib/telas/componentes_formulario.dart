@@ -211,6 +211,8 @@ InputDecoration decoracaoCampoTocaEssa({String? dica, String? ajuda}) {
   return InputDecoration(
     hintText: dica,
     helperText: ajuda,
+    helperMaxLines: 3,
+    helperStyle: const TextStyle(color: CoresTocaEssa.textoSecundario),
     counterText: '',
     filled: true,
     fillColor: CoresTocaEssa.superficieElevada,

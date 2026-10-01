@@ -8,12 +8,19 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
         ? IntensidadeFundoTocaEssa.cabecalho
         : IntensidadeFundoTocaEssa.suave;
     return Scaffold(
-      appBar: AppBar(title: const Text('Área do Público'), actions: [
-        IconButton(
-            tooltip: 'Minha conta e histórico',
-            icon: const Icon(Icons.account_circle_outlined),
-            onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
-      ]),
+      appBar: AppBar(
+          title: FutureBuilder<Apresentacao?>(
+            future: _consulta,
+            builder: (context, snapshot) => snapshot.data == null
+                ? const Text('TocaEssa')
+                : _TituloDoShow(apresentacao: snapshot.data!),
+          ),
+          actions: [
+            IconButton(
+                tooltip: 'Minha conta e histórico',
+                icon: const Icon(Icons.account_circle_outlined),
+                onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
+          ]),
       bottomNavigationBar: OcultoComTecladoAberto(
         child: NavigationBar(
           selectedIndex: _abaSelecionada,

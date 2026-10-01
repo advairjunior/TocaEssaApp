@@ -50,8 +50,8 @@ extension _PedidosAreaDoPublico on _AreaDoPublicoState {
       ScaffoldMessenger.of(_contexto).showSnackBar(
         SnackBar(
           content: Text(_tipoPedido == TipoPedido.alo
-              ? 'Pedido de Alô enviado para o artista.'
-              : 'Pedido Musical enviado para análise do artista.'),
+              ? 'Alô enviado! O artista vai anunciar no palco.'
+              : 'Pedido enviado! Acompanhe logo abaixo.'),
         ),
       );
     } catch (erro) {
