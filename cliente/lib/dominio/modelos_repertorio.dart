@@ -29,6 +29,7 @@ class MusicaDoRepertorio {
     required this.repertorioId,
     required this.titulo,
     this.artista,
+    this.tom,
     required this.ordem,
   });
 
@@ -36,6 +37,7 @@ class MusicaDoRepertorio {
   final String repertorioId;
   final String titulo;
   final String? artista;
+  final String? tom;
   final int ordem;
 
   factory MusicaDoRepertorio.deJson(Map<String, dynamic> json) =>
@@ -44,6 +46,7 @@ class MusicaDoRepertorio {
         repertorioId: json['repertorioId'] as String,
         titulo: json['titulo'] as String,
         artista: json['artista'] as String?,
+        tom: json['tom'] as String?,
         ordem: json['ordem'] as int,
       );
 }
@@ -54,6 +57,7 @@ class ItemDoSetlist {
     required this.apresentacaoId,
     required this.titulo,
     this.artista,
+    this.tom,
     required this.tocada,
     required this.ordem,
   });
@@ -62,6 +66,7 @@ class ItemDoSetlist {
   final String apresentacaoId;
   final String titulo;
   final String? artista;
+  final String? tom;
   final bool tocada;
   final int ordem;
 
@@ -70,6 +75,7 @@ class ItemDoSetlist {
         apresentacaoId: json['apresentacaoId'] as String,
         titulo: json['titulo'] as String,
         artista: json['artista'] as String?,
+        tom: json['tom'] as String?,
         tocada: json['tocada'] as bool,
         ordem: json['ordem'] as int,
       );

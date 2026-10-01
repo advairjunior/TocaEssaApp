@@ -205,6 +205,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
         widget.repertorio.id,
         resultado.$1,
         resultado.$2,
+        tom: resultado.$3,
       );
       if (!mounted) return;
       setState(() => _musicas = [..._musicas, nova]);
@@ -288,11 +289,16 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
                         style: const TextStyle(fontSize: 13)),
                   ),
                   title: Text(musica.titulo),
-                  subtitle: musica.artista != null
-                      ? Text(musica.artista!,
+                  subtitle: (musica.artista != null || musica.tom != null)
+                      ? Text(
+                          [
+                            if (musica.artista != null) musica.artista!,
+                            if (musica.tom != null) 'Tom ${musica.tom}',
+                          ].join(' · '),
                           style: const TextStyle(
                               color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12))
+                              fontSize: 12),
+                        )
                       : null,
                   trailing: IconButton(
                     icon: const Icon(Icons.remove_circle_outline_rounded,
@@ -357,12 +363,13 @@ Future<String?> _pedirNome(
   }
 }
 
-Future<(String titulo, String? artista)?> _pedirMusica(
+Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
     BuildContext context) async {
   final tituloCtrl = TextEditingController();
   final artistaCtrl = TextEditingController();
+  final tomCtrl = TextEditingController();
   try {
-    return await showDialog<(String, String?)>(
+    return await showDialog<(String, String?, String?)>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Adicionar música'),
@@ -383,6 +390,16 @@ Future<(String titulo, String? artista)?> _pedirMusica(
                   labelText: 'Artista (opcional)'),
               textCapitalization: TextCapitalization.words,
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tomCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Tom preferido (opcional)',
+                hintText: 'Ex: Lá, Mi, Ré menor…',
+                prefixIcon: Icon(Icons.music_note_rounded),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
           ],
         ),
         actions: [
@@ -394,7 +411,9 @@ Future<(String titulo, String? artista)?> _pedirMusica(
               final t = tituloCtrl.text.trim();
               if (t.isEmpty) return;
               final a = artistaCtrl.text.trim();
-              Navigator.pop(context, (t, a.isEmpty ? null : a));
+              final tom = tomCtrl.text.trim();
+              Navigator.pop(
+                  context, (t, a.isEmpty ? null : a, tom.isEmpty ? null : tom));
             },
             child: const Text('Adicionar'),
           ),
@@ -404,5 +423,6 @@ Future<(String titulo, String? artista)?> _pedirMusica(
   } finally {
     tituloCtrl.dispose();
     artistaCtrl.dispose();
+    tomCtrl.dispose();
   }
 }

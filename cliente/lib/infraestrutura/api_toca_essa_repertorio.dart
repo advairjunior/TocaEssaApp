@@ -32,12 +32,13 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
   }
 
   Future<MusicaDoRepertorio> adicionarMusicaAoRepertorio(
-      String repertorioId, String titulo, String? artista) async {
+      String repertorioId, String titulo, String? artista,
+      {String? tom}) async {
     final resposta = await _cliente.post(
       Uri.parse(
           '$_enderecoBase/api/artista/repertorios/$repertorioId/musicas'),
       headers: _cabecalhos(token: _tokenArtista, json: true),
-      body: jsonEncode({'titulo': titulo, 'artista': artista}),
+      body: jsonEncode({'titulo': titulo, 'artista': artista, 'tom': tom}),
     );
     _validar(resposta);
     return MusicaDoRepertorio.deJson(

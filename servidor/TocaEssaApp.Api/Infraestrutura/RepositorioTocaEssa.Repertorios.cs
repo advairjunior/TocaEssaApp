@@ -51,7 +51,8 @@ public sealed partial class RepositorioTocaEssa
     }
 
     public MusicaDoRepertorio AdicionarMusicaAoRepertorio(
-        string token, Guid repertorioId, string titulo, string? artista)
+        string token, Guid repertorioId, string titulo, string? artista,
+        string? tom = null)
     {
         var conta = ExigirRegistroArtista(token);
         lock (_sincronizacao)
@@ -71,6 +72,7 @@ public sealed partial class RepositorioTocaEssa
                 ArtistaId = conta.Id,
                 Titulo = titulo.Trim(),
                 Artista = string.IsNullOrWhiteSpace(artista) ? null : artista.Trim(),
+                Tom = string.IsNullOrWhiteSpace(tom) ? null : tom.Trim(),
                 Ordem = proxima
             };
             _musicasDoRepertorio[registro.Id] = registro;
@@ -139,6 +141,7 @@ public sealed partial class RepositorioTocaEssa
                     ArtistaId = conta.Id,
                     Titulo = musica.Titulo,
                     Artista = musica.Artista,
+                    Tom = musica.Tom,
                     Tocada = false,
                     Ordem = musica.Ordem
                 };
@@ -197,8 +200,8 @@ public sealed partial class RepositorioTocaEssa
             .ToArray());
 
     private static MusicaDoRepertorio ParaDominio(MusicaDoRepertorioRegistro m) => new(
-        m.Id, m.RepertorioId, m.Titulo, m.Artista, m.Ordem);
+        m.Id, m.RepertorioId, m.Titulo, m.Artista, m.Tom, m.Ordem);
 
     private static ItemDoSetlist ParaDominio(ItemDoSetlistRegistro i) => new(
-        i.Id, i.ApresentacaoId, i.Titulo, i.Artista, i.Tocada, i.Ordem);
+        i.Id, i.ApresentacaoId, i.Titulo, i.Artista, i.Tom, i.Tocada, i.Ordem);
 }

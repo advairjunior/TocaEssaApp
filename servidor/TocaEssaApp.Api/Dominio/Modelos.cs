@@ -99,6 +99,7 @@ public sealed record MusicaDoRepertorio(
     Guid RepertorioId,
     string Titulo,
     string? Artista,
+    string? Tom,
     int Ordem);
 
 public sealed record ItemDoSetlist(
@@ -106,12 +107,13 @@ public sealed record ItemDoSetlist(
     Guid ApresentacaoId,
     string Titulo,
     string? Artista,
+    string? Tom,
     bool Tocada,
     int Ordem);
 
 public sealed record CriarRepertorio(string Nome);
 
-public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista);
+public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
 public sealed record MarcarItemDoSetlist(bool Tocada);
 

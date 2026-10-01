@@ -407,9 +407,12 @@ class _CartaoItemSetlist extends StatelessWidget {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (item.artista != null)
+                if (item.artista != null || item.tom != null)
                   Text(
-                    item.artista!,
+                    [
+                      if (item.artista != null) item.artista!,
+                      if (item.tom != null) 'Tom ${item.tom}',
+                    ].join(' · '),
                     style: const TextStyle(
                       color: CoresTocaEssa.textoSecundario,
                       fontSize: 12,

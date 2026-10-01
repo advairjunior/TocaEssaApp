@@ -141,6 +141,7 @@ internal sealed class MusicaDoRepertorioRegistro
     public Guid ArtistaId { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string? Artista { get; set; }
+    public string? Tom { get; set; }
     public int Ordem { get; set; }
 }
 
@@ -151,6 +152,7 @@ internal sealed class ItemDoSetlistRegistro
     public Guid ArtistaId { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string? Artista { get; set; }
+    public string? Tom { get; set; }
     public bool Tocada { get; set; }
     public int Ordem { get; set; }
 }

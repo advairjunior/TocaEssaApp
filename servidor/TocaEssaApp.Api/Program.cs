@@ -181,7 +181,8 @@ app.MapPost("/api/artista/repertorios/{id:guid}/musicas", (
         return Results.ValidationProblem(new Dictionary<string, string[]>
             { ["titulo"] = ["Informe o título da música."] });
     return Results.Ok(repositorio.AdicionarMusicaAoRepertorio(
-        ObterToken(http) ?? string.Empty, id, requisicao.Titulo, requisicao.Artista));
+        ObterToken(http) ?? string.Empty, id, requisicao.Titulo,
+        requisicao.Artista, requisicao.Tom));
 });
 
 app.MapDelete("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}", (

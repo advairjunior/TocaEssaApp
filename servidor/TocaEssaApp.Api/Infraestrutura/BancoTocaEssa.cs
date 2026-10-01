@@ -185,6 +185,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasIndex(item => item.ArtistaId);
             entidade.Property(item => item.Titulo).HasMaxLength(200);
             entidade.Property(item => item.Artista).HasMaxLength(200);
+            entidade.Property(item => item.Tom).HasMaxLength(10);
         });
 
         modelo.Entity<ItemDoSetlistRegistro>(entidade =>
@@ -195,6 +196,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasIndex(item => item.ArtistaId);
             entidade.Property(item => item.Titulo).HasMaxLength(200);
             entidade.Property(item => item.Artista).HasMaxLength(200);
+            entidade.Property(item => item.Tom).HasMaxLength(10);
         });
     }
 
@@ -277,23 +279,29 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     "ArtistaId" uuid NOT NULL,
                     "Titulo" character varying(200) NOT NULL,
                     "Artista" character varying(200) NULL,
+                    "Tom" character varying(10) NULL,
                     "Ordem" integer NOT NULL DEFAULT 0,
                     CONSTRAINT "PK_MusicasDoRepertorio" PRIMARY KEY ("Id")
                 );
                 CREATE INDEX IF NOT EXISTS "IX_MusicasDoRepertorio_RepertorioId"
                     ON "MusicasDoRepertorio" ("RepertorioId");
+                ALTER TABLE "MusicasDoRepertorio"
+                    ADD COLUMN IF NOT EXISTS "Tom" character varying(10) NULL;
                 CREATE TABLE IF NOT EXISTS "ItensDoSetlist" (
                     "Id" uuid NOT NULL,
                     "ApresentacaoId" uuid NOT NULL,
                     "ArtistaId" uuid NOT NULL,
                     "Titulo" character varying(200) NOT NULL,
                     "Artista" character varying(200) NULL,
+                    "Tom" character varying(10) NULL,
                     "Tocada" boolean NOT NULL DEFAULT FALSE,
                     "Ordem" integer NOT NULL DEFAULT 0,
                     CONSTRAINT "PK_ItensDoSetlist" PRIMARY KEY ("Id")
                 );
                 CREATE INDEX IF NOT EXISTS "IX_ItensDoSetlist_ApresentacaoId"
                     ON "ItensDoSetlist" ("ApresentacaoId");
+                ALTER TABLE "ItensDoSetlist"
+                    ADD COLUMN IF NOT EXISTS "Tom" character varying(10) NULL;
                 ALTER TABLE "PerfisArtisticos"
                     ADD COLUMN IF NOT EXISTS "Instagram" character varying(120) NULL;
                 ALTER TABLE "PerfisArtisticos"
@@ -406,6 +414,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 "ArtistaId" TEXT NOT NULL,
                 "Titulo" TEXT NOT NULL,
                 "Artista" TEXT NULL,
+                "Tom" TEXT NULL,
                 "Ordem" INTEGER NOT NULL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS "IX_MusicasDoRepertorio_RepertorioId"
@@ -416,6 +425,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 "ArtistaId" TEXT NOT NULL,
                 "Titulo" TEXT NOT NULL,
                 "Artista" TEXT NULL,
+                "Tom" TEXT NULL,
                 "Tocada" INTEGER NOT NULL DEFAULT 0,
                 "Ordem" INTEGER NOT NULL DEFAULT 0
             );
@@ -476,6 +486,10 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             comando, "PerfisArtisticos", "PixCidadeBeneficiario", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(
             comando, "PerfisArtisticos", "PixMensagem", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "MusicasDoRepertorio", "Tom", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "ItensDoSetlist", "Tom", "TEXT NULL");
 
         comando.CommandText = "PRAGMA table_info('Apresentacoes')";
         using var leitorFotoRetrospectiva = comando.ExecuteReader();
