@@ -47,7 +47,9 @@ void main() {
     await tester.ensureVisible(acessar);
     await tester.tap(acessar);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Perfil geral').last);
+    await tester.tap(find.byTooltip('Minha conta'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Perfil artístico'));
     await tester.pumpAndSettle();
 
     expect(find.text('Contatos públicos'), findsOneWidget);

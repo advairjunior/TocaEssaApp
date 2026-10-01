@@ -3,113 +3,47 @@ part of 'painel_do_artista.dart';
 extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
   Widget _construirPainel(BuildContext context) {
     final apresentacao = _apresentacaoDaGestao;
-    final resenha = apresentacao?.tipo == TipoApresentacao.resenhaEntreAmigos;
-    final abas = _dentroDaApresentacao
-        ? [1, 7, 3, if (resenha) 4, 6, 5]
-        : [0, 2, 5];
-    const nomes = [
-      'Apresentações',
-      'Fila',
-      'Criar',
-      'Estatísticas',
-      'Galera',
-      'Perfil geral',
-      'Apresentação',
-      'Setlist',
-    ];
-    const icones = [
-      Icons.calendar_month,
-      Icons.queue_music,
-      Icons.add_circle_outline,
-      Icons.insights,
-      Icons.groups,
-      Icons.person_outline,
-      Icons.celebration_outlined,
-      Icons.playlist_play_rounded,
-    ];
-    final intensidadeDoFundo = switch (_abaSelecionada) {
-      0 || 1 || 3 => IntensidadeFundoTocaEssa.cabecalho,
-      _ => IntensidadeFundoTocaEssa.suave,
-    };
+    final tela = _carregando
+        ? const Scaffold(
+            body: FundoTocaEssa(
+              variante: VarianteFundoTocaEssa.bastidores,
+              intensidade: IntensidadeFundoTocaEssa.cabecalho,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        : _dentroDaApresentacao && apresentacao != null
+            ? _construirApresentacao(context, apresentacao)
+            : _aba == _AbaPainel.perfil
+                ? _construirPerfil(context)
+                : _construirInicio(context);
     return PopScope(
-      canPop: !_dentroDaApresentacao,
+      canPop: _aba == _AbaPainel.inicio,
       onPopInvokedWithResult: (saiu, _) {
-        if (!saiu) _voltarParaApresentacoes();
+        if (!saiu) _voltarAoInicio();
       },
-      child: Scaffold(
+      child: tela,
+    );
+  }
+
+  Widget _construirPerfil(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Text(_dentroDaApresentacao
-              ? apresentacao?.nome ?? 'Apresentação'
-              : 'Painel do Artista'),
-          leading: _dentroDaApresentacao
-              ? IconButton(
-                  tooltip: 'Voltar às apresentações',
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: _voltarParaApresentacoes)
-              : null,
-        ),
-        bottomNavigationBar: OcultoComTecladoAberto(
-          child: NavigationBar(
-            selectedIndex:
-                abas.indexOf(_abaSelecionada).clamp(0, abas.length - 1),
-            onDestinationSelected: (indice) => _selecionarAba(abas[indice]),
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: [
-              for (final indice in abas)
-                NavigationDestination(
-                    icon: Icon(icones[indice]),
-                    label: indice == 6 && resenha
-                        ? 'Perfil da resenha'
-                        : nomes[indice])
-            ],
+          title: const Text('Perfil artístico'),
+          leading: IconButton(
+            tooltip: 'Voltar ao início',
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _voltarAoInicio,
           ),
         ),
         body: FundoTocaEssa(
           variante: VarianteFundoTocaEssa.bastidores,
-          intensidade: intensidadeDoFundo,
-          child: _carregando
-              ? const Center(child: CircularProgressIndicator())
-              : _dentroDaApresentacao &&
-                      (_abaSelecionada == 1 || _abaSelecionada == 3 ||
-                          _abaSelecionada == 7)
-                  ? _construirAbaGestao(context)
-                  : (_abaSelecionada == 5)
-                  ? _construirTelaPerfil(context)
-                  : ConteudoMobile(
-                      filho: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: _construirAbaPainel(context))),
+          intensidade: IntensidadeFundoTocaEssa.suave,
+          child: _construirTelaPerfil(context),
         ),
-      ),
-    );
-  }
+      );
 
-  List<Widget> _construirAbaPainel(BuildContext context) {
-    if (_abaSelecionada == 4) return _construirAbaGalera(context);
-    if (_abaSelecionada == 2) return _construirAbaCriar(context);
-    if (_abaSelecionada == 6) {
-      final apresentacao = _apresentacaoDaGestao!;
-      return [
-        Text('Sobre a apresentação',
-            style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        _CartaoApresentacaoArtista(
-          apresentacao: apresentacao,
-          salvando: _salvando,
-          mostrarCodigo: () => _mostrarCodigo(apresentacao),
-          alterarStatus: (status) =>
-              _alterarStatusApresentacao(apresentacao, status),
-          alterarPedidos: () => _alterarPedidos(apresentacao),
-          selecionarOpcao: (opcao) {
-            if (opcao == 'editar') _editarApresentacao(apresentacao);
-            if (opcao == 'excluir') _excluirApresentacao(apresentacao);
-          },
-        ),
-        const SizedBox(height: 16),
-        const Text(
-            'A retrospectiva e a foto para compartilhar ficam na aba Estatísticas.'),
-      ];
-    }
-    return _construirAbaApresentacoes(context);
+  String get _nomeDeSaudacao {
+    final nomeArtistico = _perfil?.nomeArtistico.trim() ?? '';
+    if (nomeArtistico.isNotEmpty) return nomeArtistico;
+    return _conta.nome.trim().split(' ').first;
   }
 }

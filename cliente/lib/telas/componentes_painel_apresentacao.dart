@@ -1,294 +1,233 @@
 part of 'painel_do_artista.dart';
 
-class _EstadoVazioApresentacoes extends StatelessWidget {
-  const _EstadoVazioApresentacoes({required this.filtro});
-  final _FiltroApresentacoes filtro;
-
-  @override
-  Widget build(BuildContext context) {
-    final (icone, titulo, descricao) = switch (filtro) {
-      _FiltroApresentacoes.aoVivo => (
-          Icons.graphic_eq_rounded,
-          'Nada ao vivo agora',
-          'Quando você iniciar uma apresentação, ela aparecerá aqui.'
-        ),
-      _FiltroApresentacoes.agendadas => (
-          Icons.event_outlined,
-          'Nenhuma apresentação agendada',
-          'Use a aba Criar para preparar seu próximo evento.'
-        ),
-      _FiltroApresentacoes.historico => (
-          Icons.history_rounded,
-          'Seu histórico está vazio',
-          'As apresentações encerradas ficarão guardadas aqui.'
-        ),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-      decoration: _decoracaoPainel(),
-      child: Column(
-        children: [
-          Icon(icone, size: 38, color: CoresTocaEssa.roxoClaro),
-          const SizedBox(height: 12),
-          Text(titulo,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 5),
-          Text(
-            descricao,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: CoresTocaEssa.textoSecundario,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CartaoApresentacaoArtista extends StatelessWidget {
-  const _CartaoApresentacaoArtista({
+/// Faixa abaixo do título com os controles principais do show.
+class _BarraStatusApresentacao extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _BarraStatusApresentacao({
     required this.apresentacao,
     required this.salvando,
-    required this.mostrarCodigo,
-    required this.alterarStatus,
     required this.alterarPedidos,
-    required this.selecionarOpcao,
+    required this.alterarStatus,
   });
 
   final Apresentacao apresentacao;
   final bool salvando;
-  final VoidCallback mostrarCodigo;
-  final ValueChanged<StatusApresentacao> alterarStatus;
   final VoidCallback alterarPedidos;
-  final ValueChanged<String> selecionarOpcao;
+  final ValueChanged<StatusApresentacao> alterarStatus;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(56);
 
   @override
   Widget build(BuildContext context) {
-    final emAndamento = apresentacao.status == StatusApresentacao.emAndamento;
-    final encerrada = apresentacao.status == StatusApresentacao.encerrada;
-    void executarAcao(String acao) {
-      switch (acao) {
-        case 'codigo':
-          mostrarCodigo();
-        case 'pedidos':
-          alterarPedidos();
-        case 'iniciar':
-          alterarStatus(StatusApresentacao.emAndamento);
-        case 'encerrar':
-          alterarStatus(StatusApresentacao.encerrada);
-        default:
-          selecionarOpcao(acao);
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: _decoracaoPainel(destaque: emAndamento),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    final agendada = apresentacao.status == StatusApresentacao.agendada;
+    final estilo =
+        (agendada ? FilledButton.styleFrom : OutlinedButton.styleFrom)(
+      minimumSize: const Size(0, 40),
+      padding: const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.base),
+    );
+    final acao = salvando
+        ? null
+        : () => alterarStatus(agendada
+            ? StatusApresentacao.emAndamento
+            : StatusApresentacao.encerrada);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        EspacoTocaEssa.base,
+        0,
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.pequeno,
+      ),
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      apresentacao.nome,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_rounded, size: 15),
-                        const SizedBox(width: 6),
-                        Text(formatarData(apresentacao.data)),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.location_on_outlined, size: 16),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            apresentacao.local,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+          Tooltip(
+            message: 'Receber pedidos',
+            child: Switch(
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              value: apresentacao.pedidosAbertos,
+              onChanged: salvando ? null : (_) => alterarPedidos(),
+            ),
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          Expanded(
+            child: Text(
+              apresentacao.pedidosAbertos
+                  ? 'Recebendo pedidos'
+                  : 'Pedidos pausados',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            ),
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          agendada
+              ? FilledButton(
+                  style: estilo,
+                  onPressed: acao,
+                  child: const Text('Iniciar'),
+                )
+              : OutlinedButton(
+                  style: estilo,
+                  onPressed: acao,
+                  child: const Text('Encerrar'),
                 ),
-              ),
-              PopupMenuButton<String>(
-                tooltip: 'Opções da Apresentação',
-                onSelected: executarAcao,
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'codigo',
-                    child: ListTile(
-                      leading: Icon(Icons.qr_code_2_rounded),
-                      title: Text('Código e link'),
-                    ),
-                  ),
-                  if (!encerrada)
-                    PopupMenuItem(
-                      value: 'pedidos',
-                      child: ListTile(
-                        leading: Icon(apresentacao.pedidosAbertos
-                            ? Icons.lock_outline_rounded
-                            : Icons.lock_open_rounded),
-                        title: Text(apresentacao.pedidosAbertos
-                            ? 'Encerrar pedidos'
-                            : 'Reabrir pedidos'),
-                      ),
-                    ),
-                  if (emAndamento)
-                    const PopupMenuItem(
-                      value: 'encerrar',
-                      child: ListTile(
-                        leading: Icon(Icons.stop_circle_outlined),
-                        title: Text('Encerrar Apresentação'),
-                      ),
-                    ),
-                  const PopupMenuDivider(),
-                  const PopupMenuItem(
-                    value: 'editar',
-                    child: ListTile(
-                      leading: Icon(Icons.edit_outlined),
-                      title: Text('Editar'),
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'excluir',
-                    child: ListTile(
-                      leading: Icon(Icons.delete_outline_rounded),
-                      title: Text('Excluir'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _EtiquetaPainel(
-                texto:
-                    '${apresentacao.tipo.rotulo} · ${apresentacao.status.rotulo}',
-                destaque: emAndamento,
-              ),
-              _EtiquetaPainel(
-                texto: apresentacao.pedidosAbertos
-                    ? 'Pedidos abertos'
-                    : 'Pedidos fechados',
-                icone: apresentacao.pedidosAbertos
-                    ? Icons.lock_open_rounded
-                    : Icons.lock_rounded,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: mostrarCodigo,
-            borderRadius: BorderRadius.circular(14),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              decoration: BoxDecoration(
-                color: CoresTocaEssa.fundo.withValues(alpha: 0.55),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.tag_rounded,
-                      size: 18, color: CoresTocaEssa.roxoClaro),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Código público',
-                    style: TextStyle(
-                      color: CoresTocaEssa.textoSecundario,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    apresentacao.codigo,
-                    style: const TextStyle(
-                      color: CoresTocaEssa.roxoClaro,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.qr_code_2_rounded,
-                      size: 20, color: CoresTocaEssa.roxoClaro),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (!emAndamento && !encerrada) ...[
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: salvando
-                  ? null
-                  : () => alterarStatus(StatusApresentacao.emAndamento),
-              icon: const Icon(Icons.play_arrow_rounded),
-              label: const Text('Iniciar Apresentação'),
-            ),
-          ],
         ],
       ),
     );
   }
 }
 
-class _EtiquetaPainel extends StatelessWidget {
-  const _EtiquetaPainel({
-    required this.texto,
-    this.icone,
-    this.destaque = false,
-  });
-
-  final String texto;
-  final IconData? icone;
-  final bool destaque;
+/// Título da apresentação com o status logo abaixo do nome.
+class _TituloApresentacao extends StatelessWidget {
+  const _TituloApresentacao({required this.apresentacao});
+  final Apresentacao apresentacao;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-        decoration: BoxDecoration(
-          color: destaque
-              ? CoresTocaEssa.roxo.withValues(alpha: 0.24)
-              : CoresTocaEssa.superficieElevada,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: destaque
-                ? CoresTocaEssa.roxo.withValues(alpha: 0.6)
-                : CoresTocaEssa.borda,
-          ),
+  Widget build(BuildContext context) {
+    final (rotulo, cor) = switch (apresentacao.status) {
+      StatusApresentacao.emAndamento => ('Ao vivo', CoresTocaEssa.rosa),
+      StatusApresentacao.agendada => ('Agendada', CoresTocaEssa.roxoClaro),
+      StatusApresentacao.encerrada => (
+          'Encerrada',
+          CoresTocaEssa.textoSecundario
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(apresentacao.nome, overflow: TextOverflow.ellipsis),
+        Row(
           children: [
-            if (icone != null) ...[
-              Icon(icone, size: 14, color: CoresTocaEssa.roxoClaro),
-              const SizedBox(width: 5),
-            ],
-            Text(
-              texto,
-              style: TextStyle(
-                color: destaque
-                    ? CoresTocaEssa.roxoClaro
-                    : CoresTocaEssa.textoSecundario,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: EspacoTocaEssa.pequeno - 2),
+            Flexible(
+              child: Text(
+                rotulo,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(color: cor),
               ),
             ),
           ],
         ),
+      ],
+    );
+  }
+}
+
+class _TituloGrupo extends StatelessWidget {
+  const _TituloGrupo(this.texto);
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(
+          left: EspacoTocaEssa.mini,
+          bottom: EspacoTocaEssa.pequeno,
+        ),
+        child: Text(
+          texto,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: CoresTocaEssa.roxoClaro,
+                letterSpacing: .4,
+              ),
+        ),
       );
+}
+
+/// Lista agrupada em uma única superfície, com divisórias finas.
+class _GrupoDeLinhas extends StatelessWidget {
+  const _GrupoDeLinhas({required this.linhas});
+  final List<Widget> linhas;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.superficie,
+          borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+          border: Border.all(color: CoresTocaEssa.borda),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(
+            children: [
+              for (final (indice, linha) in linhas.indexed) ...[
+                if (indice > 0)
+                  const Divider(height: 1, indent: 52, endIndent: 16),
+                linha,
+              ],
+            ],
+          ),
+        ),
+      );
+}
+
+class _LinhaDetalhe extends StatelessWidget {
+  const _LinhaDetalhe({
+    required this.icone,
+    required this.rotulo,
+    required this.valor,
+    this.destaque = false,
+    this.tocar,
+  });
+
+  final IconData icone;
+  final String rotulo;
+  final String valor;
+  final bool destaque;
+  final VoidCallback? tocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return InkWell(
+      onTap: tocar,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: EspacoTocaEssa.base,
+          vertical: EspacoTocaEssa.base - 2,
+        ),
+        child: Row(
+          children: [
+            Icon(icone, size: 20, color: CoresTocaEssa.roxoClaro),
+            const SizedBox(width: EspacoTocaEssa.base),
+            Text(
+              rotulo,
+              style: texto.bodyMedium
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            ),
+            const SizedBox(width: EspacoTocaEssa.base),
+            Expanded(
+              child: Text(
+                valor,
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                style: destaque
+                    ? texto.titleMedium?.copyWith(
+                        color: CoresTocaEssa.roxoClaro,
+                        letterSpacing: 2,
+                      )
+                    : texto.bodyLarge,
+              ),
+            ),
+            if (tocar != null) ...[
+              const SizedBox(width: EspacoTocaEssa.mini),
+              const Icon(Icons.chevron_right_rounded,
+                  color: CoresTocaEssa.textoSecundario),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 }

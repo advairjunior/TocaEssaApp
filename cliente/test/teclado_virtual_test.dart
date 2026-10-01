@@ -45,7 +45,7 @@ void main() {
   });
 
   testWidgets(
-      'Painel do Artista esconde abas e botão fixo do perfil com teclado aberto',
+      'Painel do Artista esconde o botão fixo do perfil com teclado aberto',
       (tester) async {
     addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
@@ -69,24 +69,20 @@ void main() {
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Perfil geral').last);
+    await tester.tap(find.text('Criar perfil artístico'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Criar Perfil Artístico'),
-        findsOneWidget);
+    final botaoFixo =
+        find.widgetWithText(FilledButton, 'Criar perfil artístico');
+    expect(botaoFixo, findsOneWidget);
 
     _abrirTeclado(tester);
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsNothing);
-    expect(find.widgetWithText(FilledButton, 'Criar Perfil Artístico'),
-        findsNothing);
+    expect(botaoFixo, findsNothing);
 
     _fecharTeclado(tester);
     await tester.pumpAndSettle();
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Criar Perfil Artístico'),
-        findsOneWidget);
+    expect(botaoFixo, findsOneWidget);
   });
 
   testWidgets('o app inteiro mantém o campo focado visível', (tester) async {

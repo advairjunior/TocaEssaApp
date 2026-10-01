@@ -24,9 +24,9 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
       final confirmou = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Encerrar Apresentação?'),
+              title: const Text('Encerrar apresentação?'),
               content: const Text(
-                'Novos Pedidos Musicais serão encerrados. A fila e o histórico continuarão disponíveis.',
+                'O público deixa de enviar pedidos. A fila e o histórico continuam disponíveis.',
               ),
               actions: [
                 TextButton(
@@ -53,11 +53,9 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
         _apresentacoes = _apresentacoes
             .map((item) => item.id == atualizada.id ? atualizada : item)
             .toList();
-        _filtroApresentacoes = switch (status) {
-          StatusApresentacao.agendada => _FiltroApresentacoes.agendadas,
-          StatusApresentacao.emAndamento => _FiltroApresentacoes.aoVivo,
-          StatusApresentacao.encerrada => _FiltroApresentacoes.historico,
-        };
+        _filtroApresentacoes = status == StatusApresentacao.encerrada
+            ? _FiltroApresentacoes.historico
+            : _FiltroApresentacoes.proximas;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Apresentação ${status.rotulo.toLowerCase()}.')),
@@ -70,16 +68,22 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
   }
 
   Future<void> _editarApresentacao(Apresentacao apresentacao) async {
-    final atualizada = await Navigator.push<Apresentacao>(
+    final atualizada = await Navigator.push<Object>(
       context,
-      MaterialPageRoute<Apresentacao>(
-        builder: (_) => _EditarApresentacao(
-          api: widget.api,
+      MaterialPageRoute<Object>(
+        builder: (_) => _FormularioApresentacao(
           apresentacao: apresentacao,
+          salvar: (dados) => widget.api.editarApresentacao(
+            apresentacao.id,
+            dados.nome,
+            dados.data,
+            dados.local,
+            dados.tipo,
+          ),
         ),
       ),
     );
-    if (!mounted || atualizada == null) return;
+    if (!mounted || atualizada is! Apresentacao) return;
     _mudarEstado(() => _apresentacoes = _apresentacoes
         .map((item) => item.id == atualizada.id ? atualizada : item)
         .toList());
@@ -89,9 +93,9 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
     final confirmou = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Excluir Apresentação?'),
+            title: const Text('Excluir apresentação?'),
             content: Text(
-              '“${apresentacao.nome}” e todos os seus Pedidos Musicais serão excluídos.',
+              '“${apresentacao.nome}” e todos os pedidos dela serão excluídos. Não é possível desfazer.',
             ),
             actions: [
               TextButton(
@@ -99,6 +103,9 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
                 child: const Text('Cancelar'),
               ),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: CoresTocaEssa.rosa,
+                ),
                 onPressed: () => Navigator.pop(context, true),
                 child: const Text('Excluir'),
               ),
@@ -114,8 +121,7 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
       _mudarEstado(() {
         _apresentacoes.removeWhere((item) => item.id == apresentacao.id);
         if (_dentroDaApresentacao && _apresentacaoGestaoId == apresentacao.id) {
-          _dentroDaApresentacao = false;
-          _abaSelecionada = 0;
+          _aba = _AbaPainel.inicio;
         }
         if (_apresentacaoGestaoId == apresentacao.id) {
           _apresentacaoGestaoId =
@@ -147,8 +153,8 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
           builder: (_) => _CodigoDaApresentacao(
             apresentacao: apresentacao,
             linkPublico: _linkPublico(apresentacao.codigo),
-            enderecoFoto: _api.enderecoArquivo(
-                apresentacao.perfilArtistico.fotoUrl),
+            enderecoFoto:
+                _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
           ),
         ),
       );

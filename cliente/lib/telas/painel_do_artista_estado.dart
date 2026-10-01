@@ -9,8 +9,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   final _pixNomeBeneficiario = TextEditingController();
   final _pixCidadeBeneficiario = TextEditingController();
   final _pixMensagem = TextEditingController();
-  final _nomeApresentacao = TextEditingController();
-  final _local = TextEditingController();
   PerfilArtistico? _perfil;
   ConfiguracaoPerfilArtistico? _configuracaoPerfil;
   bool _exibirInstagram = false;
@@ -18,44 +16,39 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   bool _pixAtivo = false;
   List<Apresentacao> _apresentacoes = [];
   List<ParticipanteDaResenha> _galera = [];
-  DateTime _data = DateTime.now();
-  TipoApresentacao _tipo = TipoApresentacao.publica;
   bool _carregando = true;
   bool _salvando = false;
   bool _enviandoFoto = false;
   bool _carregandoGalera = false;
-  int _abaSelecionada = 0;
-  bool _dentroDaApresentacao = false;
+  _AbaPainel _aba = _AbaPainel.inicio;
   String? _resenhaGaleraId;
   String? _apresentacaoGestaoId;
-  _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.aoVivo;
+  _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.proximas;
 
-  List<Apresentacao> get _apresentacoesFiltradas => _apresentacoes
-      .where((apresentacao) => switch (_filtroApresentacoes) {
-            _FiltroApresentacoes.aoVivo =>
-              apresentacao.status == StatusApresentacao.emAndamento,
-            _FiltroApresentacoes.agendadas =>
-              apresentacao.status == StatusApresentacao.agendada,
-            _FiltroApresentacoes.historico =>
-              apresentacao.status == StatusApresentacao.encerrada,
-          })
+  bool get _dentroDaApresentacao => _abasDaApresentacao.contains(_aba);
+
+  List<Apresentacao> _comStatus(StatusApresentacao status) => _apresentacoes
+      .where((apresentacao) => apresentacao.status == status)
       .toList()
     ..sort((a, b) => b.data.compareTo(a.data));
 
-  List<Apresentacao> get _resenhas => _apresentacoes
-      .where((item) => item.tipo == TipoApresentacao.resenhaEntreAmigos)
-      .toList();
+  List<Apresentacao> get _apresentacoesAoVivo =>
+      _comStatus(StatusApresentacao.emAndamento);
+
+  List<Apresentacao> get _apresentacoesFiltradas =>
+      _comStatus(switch (_filtroApresentacoes) {
+        _FiltroApresentacoes.proximas => StatusApresentacao.agendada,
+        _FiltroApresentacoes.historico => StatusApresentacao.encerrada,
+      });
 
   _FiltroApresentacoes _filtroInicial(List<Apresentacao> apresentacoes) {
-    if (apresentacoes
-        .any((item) => item.status == StatusApresentacao.emAndamento)) {
-      return _FiltroApresentacoes.aoVivo;
-    }
-    if (apresentacoes
-        .any((item) => item.status == StatusApresentacao.agendada)) {
-      return _FiltroApresentacoes.agendadas;
-    }
-    return _FiltroApresentacoes.historico;
+    final temProximas =
+        apresentacoes.any((item) => item.status == StatusApresentacao.agendada);
+    final temHistorico = apresentacoes
+        .any((item) => item.status == StatusApresentacao.encerrada);
+    return !temProximas && temHistorico
+        ? _FiltroApresentacoes.historico
+        : _FiltroApresentacoes.proximas;
   }
 
   @override
@@ -78,7 +71,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         _perfil = perfil;
         _configuracaoPerfil = configuracao;
         _apresentacoes = apresentacoes;
-        _resenhaGaleraId = _escolherResenhaDaGalera(apresentacoes)?.id;
         _apresentacaoGestaoId =
             _escolherApresentacaoDaGestao(apresentacoes)?.id;
         _filtroApresentacoes = _filtroInicial(apresentacoes);
@@ -100,17 +92,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       setState(() => _carregando = false);
       mostrarErro(context, erro);
     }
-  }
-
-  Apresentacao? _escolherResenhaDaGalera(List<Apresentacao> apresentacoes) {
-    final resenhas = apresentacoes
-        .where((item) => item.tipo == TipoApresentacao.resenhaEntreAmigos)
-        .toList();
-    if (resenhas.isEmpty) return null;
-    return resenhas.firstWhere(
-      (item) => item.status == StatusApresentacao.emAndamento,
-      orElse: () => resenhas.first,
-    );
   }
 
   Apresentacao? _escolherApresentacaoDaGestao(
@@ -137,29 +118,30 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     return _escolherApresentacaoDaGestao(_apresentacoes);
   }
 
-  Future<void> _selecionarAba(int indice) async {
-    setState(() => _abaSelecionada = indice);
-    if (indice == 4) await _carregarGalera();
+  Future<void> _selecionarAba(_AbaPainel aba) async {
+    setState(() => _aba = aba);
+    final apresentacao = _apresentacaoDaGestao;
+    if (aba == _AbaPainel.mais &&
+        apresentacao?.tipo == TipoApresentacao.resenhaEntreAmigos) {
+      await _carregarGalera(apresentacao!.id);
+    }
   }
 
-  void _abrirApresentacao(Apresentacao apresentacao) {
+  void _abrirApresentacao(Apresentacao apresentacao, {_AbaPainel? aba}) {
     setState(() {
       _apresentacaoGestaoId = apresentacao.id;
       _resenhaGaleraId = apresentacao.id;
       _galera = [];
-      _dentroDaApresentacao = true;
-      _abaSelecionada = switch (apresentacao.status) {
-        StatusApresentacao.encerrada => 3,
-        StatusApresentacao.agendada => 6,
-        StatusApresentacao.emAndamento => 1,
-      };
     });
+    _selecionarAba(aba ??
+        switch (apresentacao.status) {
+          StatusApresentacao.encerrada => _AbaPainel.estatisticas,
+          StatusApresentacao.agendada => _AbaPainel.mais,
+          StatusApresentacao.emAndamento => _AbaPainel.fila,
+        });
   }
 
-  void _voltarParaApresentacoes() => setState(() {
-        _dentroDaApresentacao = false;
-        _abaSelecionada = 0;
-      });
+  void _voltarAoInicio() => setState(() => _aba = _AbaPainel.inicio);
 
   Future<void> _carregarGalera([String? apresentacaoId]) async {
     final id = apresentacaoId ?? _resenhaGaleraId;
@@ -250,44 +232,27 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     }
   }
 
-  Future<void> _escolherData() async {
-    final escolhida = await showDatePicker(
-      context: context,
-      initialDate: _data,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 3650)),
+  Future<void> _novaApresentacao() async {
+    final criada = await Navigator.push<Object>(
+      context,
+      MaterialPageRoute<Object>(
+        builder: (_) => _FormularioApresentacao(
+          salvar: (dados) => widget.api.criarApresentacao(
+            dados.nome,
+            dados.data,
+            dados.local,
+            dados.tipo,
+          ),
+        ),
+      ),
     );
-    if (escolhida != null) setState(() => _data = escolhida);
-  }
-
-  Future<void> _criarApresentacao() async {
-    if (_nomeApresentacao.text.trim().isEmpty || _local.text.trim().isEmpty) {
-      mostrarErro(context, 'Informe o nome e o local da Apresentação.');
-      return;
-    }
-    setState(() => _salvando = true);
-    try {
-      final criada = await widget.api.criarApresentacao(
-        _nomeApresentacao.text.trim(),
-        _data,
-        _local.text.trim(),
-        _tipo,
-      );
-      if (!mounted) return;
-      setState(() {
-        _apresentacoes = [criada.apresentacao, ..._apresentacoes];
-        _apresentacaoGestaoId = criada.apresentacao.id;
-        _abaSelecionada = 0;
-        _filtroApresentacoes = _FiltroApresentacoes.agendadas;
-      });
-      _nomeApresentacao.clear();
-      _local.clear();
-      await _mostrarCodigo(criada.apresentacao);
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    } finally {
-      if (mounted) setState(() => _salvando = false);
-    }
+    if (!mounted || criada is! ApresentacaoCriada) return;
+    setState(() {
+      _apresentacoes = [criada.apresentacao, ..._apresentacoes];
+      _apresentacaoGestaoId = criada.apresentacao.id;
+      _filtroApresentacoes = _FiltroApresentacoes.proximas;
+    });
+    await _mostrarCodigo(criada.apresentacao);
   }
 
   @override
@@ -300,8 +265,6 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     _pixNomeBeneficiario.dispose();
     _pixCidadeBeneficiario.dispose();
     _pixMensagem.dispose();
-    _nomeApresentacao.dispose();
-    _local.dispose();
     super.dispose();
   }
 

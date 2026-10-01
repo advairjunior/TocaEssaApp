@@ -5,9 +5,15 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
 const _contaArtistaJson =
     '{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","nome":"Ana","email":"ana@artista.com","criadoEm":"2026-09-03T20:00:00Z"}';
+
+Finder campo(String rotulo) => find.descendant(
+      of: find.widgetWithText(CampoTexto, rotulo),
+      matching: find.byType(TextField),
+    );
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -46,15 +52,14 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
 
-    expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
-    await tester.tap(find.text('Perfil geral').last);
+    await tester.tap(find.text('Criar perfil artístico'));
     await tester.pumpAndSettle();
-    expect(find.text('Criar Perfil Artístico'), findsOneWidget);
+    expect(find.text('Criar perfil artístico'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'Nome artístico'),
       'Novo Artista',
     );
-    final criarPerfil = find.text('Criar Perfil Artístico');
+    final criarPerfil = find.text('Criar perfil artístico');
     await tester.ensureVisible(criarPerfil);
     await tester.tap(criarPerfil);
     await tester.pumpAndSettle();
@@ -89,15 +94,15 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
 
+    expect(find.text('Ao vivo agora'), findsOneWidget);
     expect(find.text('Show de hoje'), findsOneWidget);
-    expect(find.text('Show de sábado'), findsNothing);
-    await tester.tap(find.text('Agendadas'));
-    await tester.pumpAndSettle();
     expect(find.text('Show de sábado'), findsOneWidget);
-    expect(find.text('Show de hoje'), findsNothing);
+    expect(find.text('Show anterior'), findsNothing);
     await tester.tap(find.text('Histórico'));
     await tester.pumpAndSettle();
     expect(find.text('Show anterior'), findsOneWidget);
+    expect(find.text('Show de sábado'), findsNothing);
+    expect(find.text('Show de hoje'), findsOneWidget);
     expect(find.text('Ver estatísticas'), findsNothing);
     expect(find.text('Estatísticas'), findsNothing);
   });
@@ -167,20 +172,13 @@ void main() {
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Criar').last);
+    await tester.tap(find.text('Nova apresentação'));
     await tester.pumpAndSettle();
-    final tipoPublico = find.text('Apresentação Pública');
-    await tester.ensureVisible(tipoPublico);
-    await tester.tap(tipoPublico);
+    await tester.tap(find.text('Resenha'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Resenha entre Amigos').last);
-    await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Nome da apresentação'),
-        'Noite Acústica');
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Local'), 'Café Central');
-    final criar = find.text('Criar Apresentação');
+    await tester.enterText(campo('Nome da apresentação'), 'Noite Acústica');
+    await tester.enterText(campo('Local'), 'Café Central');
+    final criar = find.text('Criar apresentação');
     await tester.ensureVisible(criar);
     await tester.tap(criar);
     await tester.pumpAndSettle();
@@ -222,25 +220,15 @@ void main() {
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
-    final opcoes = find.byTooltip('Opções da Apresentação');
     await tester.tap(find.text('Noite Acústica'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Apresentação').last);
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(opcoes);
-    await tester.tap(opcoes);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Editar'));
+    final editar = find.text('Editar apresentação');
+    await tester.ensureVisible(editar);
+    await tester.tap(editar);
     await tester.pumpAndSettle();
 
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nome da apresentação'),
-      'Especial de Sábado',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Local'),
-      'Praça Central',
-    );
+    await tester.enterText(campo('Nome da apresentação'), 'Especial de Sábado');
+    await tester.enterText(campo('Local'), 'Praça Central');
     await tester.tap(find.text('Salvar'));
     await tester.pumpAndSettle();
 
@@ -279,16 +267,13 @@ void main() {
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
-    final iniciar = find.text('Iniciar Apresentação');
     await tester.tap(find.text('Noite Acústica'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(iniciar);
-    await tester.tap(iniciar);
+    await tester.tap(find.text('Iniciar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Apresentação Pública · Em andamento'), findsOneWidget);
-    await tester.tap(find.byTooltip('Opções da Apresentação'));
-    await tester.pumpAndSettle();
-    expect(find.text('Encerrar Apresentação'), findsOneWidget);
+    expect(find.text('Ao vivo'), findsOneWidget);
+    expect(find.text('Encerrar'), findsOneWidget);
+    expect(find.text('Iniciar'), findsNothing);
   });
 }

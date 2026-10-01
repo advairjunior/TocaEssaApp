@@ -33,7 +33,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
                   onPressed: _salvando ? null : _salvarPerfil,
                   child: Text(
                     _perfil == null
-                        ? 'Criar Perfil Artístico'
+                        ? 'Criar perfil artístico'
                         : 'Salvar alterações',
                   ),
                 ),
@@ -315,8 +315,8 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
             const SizedBox(height: 6),
             const Text(
               'Crie listas de músicas para usar nos seus shows.',
-              style: TextStyle(
-                  color: CoresTocaEssa.textoSecundario, fontSize: 13),
+              style:
+                  TextStyle(color: CoresTocaEssa.textoSecundario, fontSize: 13),
             ),
             const SizedBox(height: 14),
             OutlinedButton.icon(

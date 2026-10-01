@@ -186,6 +186,11 @@ enum TipoApresentacao {
         resenhaEntreAmigos => 'Resenha entre Amigos',
       };
 
+  String get rotuloCurto => switch (this) {
+        publica => 'Pública',
+        resenhaEntreAmigos => 'Resenha',
+      };
+
   String get descricao => switch (this) {
         publica => 'Entrada rápida pelo código, sem cadastro.',
         resenhaEntreAmigos =>

@@ -65,8 +65,8 @@ void main() {
     await tester.tap(find.text('Criar conta e entrar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Painel do Artista'), findsOneWidget);
-    expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
+    expect(find.text('Olá, Duo Aurora'), findsOneWidget);
+    expect(find.text('Nenhuma apresentação ainda'), findsOneWidget);
     expect(
       find.text('A conta do artista já foi configurada.'),
       findsNothing,
@@ -102,9 +102,9 @@ void main() {
       find.image(const AssetImage('assets/fundos/bastidores.png')),
       findsOneWidget,
     );
-    expect(find.text('Apresentações'), findsOneWidget);
-    expect(find.text('Criar'), findsOneWidget);
-    expect(find.text('Perfil geral'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+    expect(find.text('Nova apresentação'), findsOneWidget);
+    expect(find.byTooltip('Minha conta'), findsOneWidget);
   });
 
   testWidgets('Painel separa Apresentações, Fila, Estatísticas e Perfil',
@@ -131,22 +131,20 @@ void main() {
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
 
-    expect(find.text('Nenhuma Apresentação ainda'), findsOneWidget);
+    expect(find.text('Nenhuma apresentação ainda'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Nome artístico'), findsNothing);
     expect(find.text('Fila'), findsNothing);
     expect(find.text('Galera'), findsNothing);
-    await tester.tap(find.text('Criar').last);
+    await tester.tap(find.byTooltip('Minha conta'));
     await tester.pumpAndSettle();
-    expect(find.text('Nova Apresentação'), findsOneWidget);
-    expect(find.text('Nenhuma Apresentação ainda'), findsNothing);
-    await tester.tap(find.text('Perfil geral').last);
+    await tester.tap(find.text('Perfil artístico'));
     await tester.pumpAndSettle();
 
     expect(find.text('Identidade artística'), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Nome artístico'), findsOneWidget);
     expect(find.text('Estatísticas'), findsWidgets);
     expect(find.text('Conquistas'), findsOneWidget);
-    expect(find.text('Nova Apresentação'), findsNothing);
+    expect(find.text('Nova apresentação'), findsNothing);
   });
 
   testWidgets('artista acompanha a Galera e participa da resenha',
@@ -182,7 +180,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Resenha de sexta'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Galera').last);
+    await tester.tap(find.text('Mais'));
     await tester.pumpAndSettle();
 
     expect(find.text('Galera da resenha'), findsOneWidget);
@@ -191,5 +189,4 @@ void main() {
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('0 pedidos · 0 tocados'), findsOneWidget);
   });
-
 }

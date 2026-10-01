@@ -11,6 +11,7 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/baixar_arquivo.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
 import 'perfil_participante.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'fila_musical_artista.dart';
@@ -23,18 +24,27 @@ part 'painel_do_artista_acoes_apresentacao.dart';
 part 'painel_do_artista_construcao.dart';
 part 'painel_do_artista_aba_perfil.dart';
 part 'painel_do_artista_perfil_publico.dart';
-part 'painel_do_artista_aba_galera.dart';
-part 'painel_do_artista_abas_apresentacoes.dart';
-part 'painel_do_artista_abas_gestao.dart';
+part 'painel_do_artista_galera.dart';
+part 'painel_do_artista_inicio.dart';
+part 'painel_do_artista_apresentacao.dart';
 part 'componentes_painel_progresso.dart';
+part 'componentes_painel_inicio.dart';
 part 'componentes_painel_apresentacao.dart';
-part 'editar_apresentacao.dart';
+part 'formulario_apresentacao.dart';
 part 'codigo_da_apresentacao.dart';
 
-enum _FiltroApresentacoes { aoVivo, agendadas, historico }
+enum _FiltroApresentacoes { proximas, historico }
 
-// Índice das abas: 0=Apresentações, 1=Fila, 2=Criar, 3=Estatísticas,
-//                  4=Galera, 5=Perfil geral, 6=Apresentação, 7=Setlist
+/// Telas do painel: o início e o perfil ficam fora de uma apresentação;
+/// as demais são as abas de uma apresentação aberta.
+enum _AbaPainel { inicio, perfil, fila, setlist, estatisticas, mais }
+
+const _abasDaApresentacao = [
+  _AbaPainel.fila,
+  _AbaPainel.setlist,
+  _AbaPainel.estatisticas,
+  _AbaPainel.mais,
+];
 
 class PainelDoArtista extends StatefulWidget {
   const PainelDoArtista({
