@@ -10,17 +10,20 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         ]),
         bottomNavigationBar: _perfil == null
             ? null
-            : NavigationBar(
-                selectedIndex: _aba,
-                onDestinationSelected: (indice) =>
-                    _alterar(() => _aba = indice),
-                destinations: const [
-                  NavigationDestination(
-                      icon: Icon(Icons.celebration_outlined),
-                      label: 'Participações'),
-                  NavigationDestination(
-                      icon: Icon(Icons.person_outline), label: 'Perfil geral'),
-                ],
+            : OcultoComTecladoAberto(
+                child: NavigationBar(
+                  selectedIndex: _aba,
+                  onDestinationSelected: (indice) =>
+                      _alterar(() => _aba = indice),
+                  destinations: const [
+                    NavigationDestination(
+                        icon: Icon(Icons.celebration_outlined),
+                        label: 'Participações'),
+                    NavigationDestination(
+                        icon: Icon(Icons.person_outline),
+                        label: 'Perfil geral'),
+                  ],
+                ),
               ),
         body: FundoTocaEssa(
           variante: VarianteFundoTocaEssa.atmosfera,

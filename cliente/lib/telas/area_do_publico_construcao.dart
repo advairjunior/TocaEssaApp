@@ -14,48 +14,50 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
             icon: const Icon(Icons.account_circle_outlined),
             onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
       ]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _abaSelecionada,
-        onDestinationSelected: (indice) {
-          if (indice != _indicePerfil &&
-              indice != _indiceArtista &&
-              _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
-              _perfilPublico == null) {
-            mostrarErro(
-                context, 'Entre no seu perfil para participar da resenha.');
-            _mudarEstado(() => _abaSelecionada = _indicePerfil);
-            return;
-          }
-          _mudarEstado(() => _abaSelecionada = indice);
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.music_note_outlined),
-            selectedIcon: Icon(Icons.music_note_rounded),
-            label: 'Pedir',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.queue_music_outlined),
-            selectedIcon: Icon(Icons.queue_music_rounded),
-            label: 'Fila',
-          ),
-          if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
+      bottomNavigationBar: OcultoComTecladoAberto(
+        child: NavigationBar(
+          selectedIndex: _abaSelecionada,
+          onDestinationSelected: (indice) {
+            if (indice != _indicePerfil &&
+                indice != _indiceArtista &&
+                _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
+                _perfilPublico == null) {
+              mostrarErro(
+                  context, 'Entre no seu perfil para participar da resenha.');
+              _mudarEstado(() => _abaSelecionada = _indicePerfil);
+              return;
+            }
+            _mudarEstado(() => _abaSelecionada = indice);
+          },
+          destinations: [
             const NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups_rounded),
-              label: 'Galera',
+              icon: Icon(Icons.music_note_outlined),
+              selectedIcon: Icon(Icons.music_note_rounded),
+              label: 'Pedir',
             ),
-          const NavigationDestination(
-            icon: Icon(Icons.mic_external_on_outlined),
-            selectedIcon: Icon(Icons.mic_external_on_rounded),
-            label: 'Artista',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Perfil',
-          ),
-        ],
+            const NavigationDestination(
+              icon: Icon(Icons.queue_music_outlined),
+              selectedIcon: Icon(Icons.queue_music_rounded),
+              label: 'Fila',
+            ),
+            if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
+              const NavigationDestination(
+                icon: Icon(Icons.groups_outlined),
+                selectedIcon: Icon(Icons.groups_rounded),
+                label: 'Galera',
+              ),
+            const NavigationDestination(
+              icon: Icon(Icons.mic_external_on_outlined),
+              selectedIcon: Icon(Icons.mic_external_on_rounded),
+              label: 'Artista',
+            ),
+            const NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Perfil',
+            ),
+          ],
+        ),
       ),
       body: FundoTocaEssa(
         variante: VarianteFundoTocaEssa.atmosfera,

@@ -197,22 +197,24 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
               onPressed: _carregar, icon: const Icon(Icons.refresh_rounded))
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _abaSelecionada,
-        onDestinationSelected: (indice) =>
-            setState(() => _abaSelecionada = indice),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.queue_music_outlined),
-            selectedIcon: Icon(Icons.queue_music_rounded),
-            label: 'Fila',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights_rounded),
-            label: 'Estatísticas',
-          ),
-        ],
+      bottomNavigationBar: OcultoComTecladoAberto(
+        child: NavigationBar(
+          selectedIndex: _abaSelecionada,
+          onDestinationSelected: (indice) =>
+              setState(() => _abaSelecionada = indice),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.queue_music_outlined),
+              selectedIcon: Icon(Icons.queue_music_rounded),
+              label: 'Fila',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights_rounded),
+              label: 'Estatísticas',
+            ),
+          ],
+        ),
       ),
       body: _abaSelecionada == 1
           ? EstatisticasDaApresentacaoTela(

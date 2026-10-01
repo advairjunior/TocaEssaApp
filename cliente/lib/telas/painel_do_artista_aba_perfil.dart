@@ -23,15 +23,19 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
             ),
           ),
         ),
-        Align(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + paddingBottom),
-              child: FilledButton(
-                onPressed: _salvando ? null : _salvarPerfil,
-                child: Text(
-                  _perfil == null ? 'Criar Perfil Artístico' : 'Salvar alterações',
+        OcultoComTecladoAberto(
+          child: Align(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(20, 8, 20, 16 + paddingBottom),
+                child: FilledButton(
+                  onPressed: _salvando ? null : _salvarPerfil,
+                  child: Text(
+                    _perfil == null
+                        ? 'Criar Perfil Artístico'
+                        : 'Salvar alterações',
+                  ),
                 ),
               ),
             ),

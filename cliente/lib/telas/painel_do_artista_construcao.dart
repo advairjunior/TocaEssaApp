@@ -48,19 +48,21 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
                   onPressed: _voltarParaApresentacoes)
               : null,
         ),
-        bottomNavigationBar: NavigationBar(
-          selectedIndex:
-              abas.indexOf(_abaSelecionada).clamp(0, abas.length - 1),
-          onDestinationSelected: (indice) => _selecionarAba(abas[indice]),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          destinations: [
-            for (final indice in abas)
-              NavigationDestination(
-                  icon: Icon(icones[indice]),
-                  label: indice == 6 && resenha
-                      ? 'Perfil da resenha'
-                      : nomes[indice])
-          ],
+        bottomNavigationBar: OcultoComTecladoAberto(
+          child: NavigationBar(
+            selectedIndex:
+                abas.indexOf(_abaSelecionada).clamp(0, abas.length - 1),
+            onDestinationSelected: (indice) => _selecionarAba(abas[indice]),
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              for (final indice in abas)
+                NavigationDestination(
+                    icon: Icon(icones[indice]),
+                    label: indice == 6 && resenha
+                        ? 'Perfil da resenha'
+                        : nomes[indice])
+            ],
+          ),
         ),
         body: FundoTocaEssa(
           variante: VarianteFundoTocaEssa.bastidores,

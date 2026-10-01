@@ -54,6 +54,40 @@ class ConteudoMobile extends StatelessWidget {
       );
 }
 
+/// Esconde [child] enquanto o teclado virtual estiver aberto, para que barras
+/// e botões fixos no rodapé não subam junto com o teclado e cubram os campos.
+class OcultoComTecladoAberto extends StatefulWidget {
+  const OcultoComTecladoAberto({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<OcultoComTecladoAberto> createState() => _OcultoComTecladoAbertoState();
+}
+
+// Lê os recuos direto da View: o Scaffold zera viewInsets no MediaQuery do body.
+class _OcultoComTecladoAbertoState extends State<OcultoComTecladoAberto>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() => setState(() {});
+
+  @override
+  Widget build(BuildContext context) => View.of(context).viewInsets.bottom > 0
+      ? const SizedBox.shrink()
+      : widget.child;
+}
+
 class FotoPerfilArtistico extends StatelessWidget {
   const FotoPerfilArtistico({
     super.key,
