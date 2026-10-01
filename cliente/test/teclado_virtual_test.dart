@@ -3,9 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes.dart';
+import 'package:toca_essa_app/telas/escolher_cifra.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
@@ -128,5 +130,66 @@ void main() {
       scrollable:
           find.descendant(of: rolagem, matching: find.byType(Scrollable)).first,
     );
+  });
+
+  testWidgets('o app inteiro mantém o campo focado visível', (tester) async {
+    await tester.pumpWidget(TocaEssaApp(
+      api: ApiTocaEssa(
+        cliente: MockClient((_) async => http.Response('[]', 200)),
+        enderecoBase: 'http://teste',
+      ),
+    ));
+
+    expect(find.byType(ManterCampoFocadoVisivel), findsOneWidget);
+  });
+
+  testWidgets('campo do link da cifra continua visível quando o teclado abre',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    // iPhone de 390x844 pontos; teclado do Safari com a barra de atalhos
+    // ocupa cerca de 380 pontos.
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(1170, 2532);
+    await tester.pumpWidget(MaterialApp(
+      theme: TemaTocaEssa.escuro,
+      builder: (context, filho) => ManterCampoFocadoVisivel(child: filho!),
+      home: Builder(
+        builder: (context) => TextButton(
+          onPressed: () => mostrarEscolhaDeCifra(
+            context,
+            musica: 'Evidências',
+            artista: 'Chitãozinho & Xororó',
+            resultado: const ResultadoCifraDoArtista(
+              urlPesquisa: 'https://www.google.com/search?q=evidencias',
+              urlSugerida: 'https://www.cifraclub.com.br/evidencias/',
+            ),
+            abrirUrl: (_) async {},
+          ),
+          child: const Text('Abrir'),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('Abrir'));
+    await tester.pumpAndSettle();
+
+    final campo = find.widgetWithText(TextField, 'Link da cifra');
+    await tester.tap(campo);
+    await tester.pump();
+    // O teclado chega enquanto a janela ainda anima o próprio encolhimento.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1140);
+    await tester.pump();
+    await tester.pumpAndSettle();
+    await tester.pump(ManterCampoFocadoVisivel.espera);
+    await tester.pumpAndSettle();
+
+    final areaVisivel = tester.getRect(find
+        .descendant(
+          of: find.byType(AlertDialog),
+          matching: find.byType(SingleChildScrollView),
+        )
+        .first);
+    final retanguloDoCampo = tester.getRect(campo);
+    expect(retanguloDoCampo.top, greaterThanOrEqualTo(areaVisivel.top));
+    expect(retanguloDoCampo.bottom, lessThanOrEqualTo(areaVisivel.bottom));
   });
 }

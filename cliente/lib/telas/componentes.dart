@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../tema/tema_toca_essa.dart';
@@ -86,6 +88,64 @@ class _OcultoComTecladoAbertoState extends State<OcultoComTecladoAberto>
   Widget build(BuildContext context) => View.of(context).viewInsets.bottom > 0
       ? const SizedBox.shrink()
       : widget.child;
+}
+
+/// Rola o campo focado até a área visível depois que o teclado termina de abrir.
+///
+/// O Flutter só rola o campo no primeiro quadro após o teclado aparecer; em
+/// janelas e folhas que encolhem com animação, o cálculo usa o tamanho antigo
+/// e o campo termina escondido atrás do teclado ou dos botões.
+class ManterCampoFocadoVisivel extends StatefulWidget {
+  const ManterCampoFocadoVisivel({super.key, required this.child});
+  final Widget child;
+
+  static const espera = Duration(milliseconds: 300);
+
+  @override
+  State<ManterCampoFocadoVisivel> createState() =>
+      _ManterCampoFocadoVisivelState();
+}
+
+class _ManterCampoFocadoVisivelState extends State<ManterCampoFocadoVisivel>
+    with WidgetsBindingObserver {
+  Timer? _espera;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    _espera?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    _espera?.cancel();
+    _espera = Timer(ManterCampoFocadoVisivel.espera, _mostrarCampoFocado);
+  }
+
+  void _mostrarCampoFocado() {
+    if (!mounted || View.of(context).viewInsets.bottom <= 0) return;
+    final campo = FocusManager.instance.primaryFocus?.context;
+    if (campo == null ||
+        campo.findAncestorWidgetOfExactType<EditableText>() == null) {
+      return;
+    }
+    final caixa = campo.findRenderObject();
+    if (caixa is! RenderBox || !caixa.attached) return;
+    caixa.showOnScreen(
+      rect: (Offset.zero & caixa.size).inflate(20),
+      duration: const Duration(milliseconds: 150),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class FotoPerfilArtistico extends StatelessWidget {
