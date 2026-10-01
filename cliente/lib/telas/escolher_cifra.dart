@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
+import 'componentes.dart';
 
 enum TipoDecisaoCifra { salvar, remover }
 
@@ -13,6 +14,8 @@ class DecisaoCifra {
   final String? url;
 }
 
+/// Abre a escolha de cifra em tela cheia: o link fica no topo e o botão de
+/// confirmar fica na barra superior, onde o teclado virtual nunca o cobre.
 Future<DecisaoCifra?> mostrarEscolhaDeCifra(
   BuildContext context, {
   required String musica,
@@ -20,15 +23,15 @@ Future<DecisaoCifra?> mostrarEscolhaDeCifra(
   required ResultadoCifraDoArtista resultado,
   required Future<void> Function(Uri url) abrirUrl,
 }) =>
-    showDialog<DecisaoCifra>(
-      context: context,
+    Navigator.of(context).push<DecisaoCifra>(MaterialPageRoute(
+      fullscreenDialog: true,
       builder: (_) => _EscolherCifra(
         musica: musica,
         artista: artista,
         resultado: resultado,
         abrirUrl: abrirUrl,
       ),
-    );
+    ));
 
 class _EscolherCifra extends StatefulWidget {
   const _EscolherCifra({
@@ -96,91 +99,101 @@ class _EscolherCifraState extends State<_EscolherCifra> {
     _url.text = texto;
   }
 
-  // Título, conteúdo e botões rolam juntos: com o teclado aberto sobra pouca
-  // altura, e botões fixos no rodapé da janela cobriam o campo do link.
   @override
-  Widget build(BuildContext context) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 488),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Escolher cifra',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 16),
-                Text(widget.musica,
-                    style: Theme.of(context).textTheme.titleMedium),
-                if (widget.artista?.isNotEmpty == true)
-                  Text(widget.artista!,
-                      style: const TextStyle(
-                          color: CoresTocaEssa.textoSecundario)),
-                if (widget.resultado.urlSugerida case final sugestao?) ...[
-                  const SizedBox(height: 20),
-                  const Text('Sugestão do Cifra Club'),
-                  const SizedBox(height: 8),
-                  FilledButton.icon(
-                    onPressed: () => _abrirSugestao(sugestao),
-                    icon: const Icon(Icons.auto_awesome_rounded),
-                    label: const Text('Abrir sugestão'),
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Fechar',
+            icon: const Icon(Icons.close_rounded),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: const Text('Escolher cifra'),
+          actions: [
+            TextButton(
+              onPressed: () => _salvar(_url.text),
+              child: const Text('Confirmar cifra'),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: ConteudoMobile(
+          filho: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(widget.musica,
+                  style: Theme.of(context).textTheme.titleMedium),
+              if (widget.artista?.isNotEmpty == true)
+                Text(widget.artista!,
+                    style:
+                        const TextStyle(color: CoresTocaEssa.textoSecundario)),
+              const SizedBox(height: 20),
+              TextField(
+                controller: _url,
+                keyboardType: TextInputType.url,
+                decoration: InputDecoration(
+                  labelText: 'Link da cifra',
+                  hintText: 'https://...',
+                  prefixIcon: const Icon(Icons.link_rounded),
+                  suffixIcon: IconButton(
+                    tooltip: 'Colar link',
+                    icon: const Icon(Icons.content_paste_rounded),
+                    onPressed: _colarLink,
                   ),
-                ],
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => _abrir(widget.resultado.urlPesquisa),
-                  icon: const Icon(Icons.search_rounded),
-                  label: const Text('Pesquisar na web'),
                 ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _url,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: 'Link da cifra',
-                    hintText: 'https://...',
-                    prefixIcon: const Icon(Icons.link_rounded),
-                    suffixIcon: IconButton(
-                      tooltip: 'Colar link',
-                      icon: const Icon(Icons.content_paste_rounded),
-                      onPressed: _colarLink,
-                    ),
-                  ),
-                  onSubmitted: _salvar,
-                ),
-                const SizedBox(height: 8),
-                TextButton.icon(
+                onSubmitted: _salvar,
+              ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
                   onPressed: () => _abrir(_url.text),
                   icon: const Icon(Icons.open_in_new_rounded),
                   label: const Text('Abrir link para conferir'),
                 ),
-                const SizedBox(height: 16),
-                OverflowBar(
-                  alignment: MainAxisAlignment.end,
-                  spacing: 8,
-                  overflowAlignment: OverflowBarAlignment.end,
-                  children: [
-                    if (widget.resultado.cifra != null)
-                      TextButton(
-                        onPressed: () => Navigator.pop(
-                          context,
-                          const DecisaoCifra(TipoDecisaoCifra.remover),
-                        ),
-                        child: const Text('Remover link'),
-                      ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
+              ),
+              const SizedBox(height: 24),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'Não tem o link?',
+                      style: TextStyle(color: CoresTocaEssa.textoSecundario),
                     ),
-                    FilledButton(
-                      onPressed: () => _salvar(_url.text),
-                      child: const Text('Confirmar cifra'),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (widget.resultado.urlSugerida case final sugestao?) ...[
+                FilledButton.icon(
+                  onPressed: () => _abrirSugestao(sugestao),
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                  label: const Text('Abrir sugestão'),
+                ),
+                const SizedBox(height: 12),
+              ],
+              OutlinedButton.icon(
+                onPressed: () => _abrir(widget.resultado.urlPesquisa),
+                icon: const Icon(Icons.search_rounded),
+                label: const Text('Pesquisar na web'),
+              ),
+              if (widget.resultado.cifra != null) ...[
+                const SizedBox(height: 32),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.pop(
+                      context,
+                      const DecisaoCifra(TipoDecisaoCifra.remover),
                     ),
-                  ],
+                    icon: const Icon(Icons.link_off_rounded),
+                    label: const Text('Remover link'),
+                  ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       );

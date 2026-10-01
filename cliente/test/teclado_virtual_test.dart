@@ -220,6 +220,21 @@ void main() {
     });
   }
 
+  testWidgets('Confirmar cifra continua acessível com o teclado aberto',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    const tela = Size(390, 664);
+    const alturaDoTeclado = 380.0;
+    final campo = await abrirEscolhaDeCifra(tester, tela: tela);
+
+    await abrirTecladoNoCampo(tester, campo, alturaDoTeclado: alturaDoTeclado);
+
+    final confirmar = find.text('Confirmar cifra');
+    expect(confirmar.hitTestable(), findsOneWidget);
+    expect(tester.getRect(confirmar).bottom,
+        lessThanOrEqualTo(tela.height - alturaDoTeclado));
+  });
+
   testWidgets('botão Colar link preenche o campo sem usar o teclado',
       (tester) async {
     addTearDown(tester.view.reset);
