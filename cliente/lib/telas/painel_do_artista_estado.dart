@@ -39,7 +39,8 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
             _FiltroApresentacoes.historico =>
               apresentacao.status == StatusApresentacao.encerrada,
           })
-      .toList();
+      .toList()
+    ..sort((a, b) => b.data.compareTo(a.data));
 
   List<Apresentacao> get _resenhas => _apresentacoes
       .where((item) => item.tipo == TipoApresentacao.resenhaEntreAmigos)

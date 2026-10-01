@@ -102,6 +102,45 @@ void main() {
     expect(find.text('Estatísticas'), findsNothing);
   });
 
+  testWidgets('lista apresentações da mais recente para a mais antiga',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+    String encerrada(String id, String nome, String data) =>
+        '{"id":"20000000-0000-0000-0000-00000000000$id","nome":"$nome","data":"$data","local":"Clube","codigo":"COD00$id","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora"},"pedidosAbertos":false,"status":"Encerrada"}';
+    final cliente = MockClient((requisicao) async {
+      if (requisicao.url.path == '/api/artista/conta') {
+        return http.Response(_contaArtistaJson, 200);
+      }
+      if (requisicao.url.path.endsWith('/perfil-artistico')) {
+        return http.Response(
+          '{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null}',
+          200,
+        );
+      }
+      return http.Response(
+        '[${encerrada('1', 'Show de agosto', '2026-08-10')},'
+        '${encerrada('2', 'Show de setembro', '2026-09-20')},'
+        '${encerrada('3', 'Show de julho', '2026-07-05')}]',
+        200,
+      );
+    });
+
+    await tester.pumpWidget(TocaEssaApp(
+      api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+    ));
+    final acessarPainel = find.text('Acessar Painel do Artista');
+    await tester.ensureVisible(acessarPainel);
+    await tester.tap(acessarPainel);
+    await tester.pumpAndSettle();
+
+    final posicoes = [
+      'Show de setembro',
+      'Show de agosto',
+      'Show de julho',
+    ].map((nome) => tester.getTopLeft(find.text(nome)).dy).toList();
+    expect(posicoes, orderedEquals([...posicoes]..sort()));
+  });
+
   testWidgets('mostra QR Code depois de criar apresentação', (tester) async {
     SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
     final cliente = MockClient((requisicao) async {
@@ -252,5 +291,4 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Encerrar Apresentação'), findsOneWidget);
   });
-
 }
