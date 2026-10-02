@@ -6,10 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 
-const _resenhaJson =
-    '{"id":"22222222-2222-2222-2222-222222222222","nome":"Resenha de sexta","data":"2026-09-03","local":"Casa da Ana","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"EmAndamento","tipo":"ResenhaEntreAmigos"}';
+String _resenhaJson({String status = 'EmAndamento', String? foto}) =>
+    '{"id":"22222222-2222-2222-2222-222222222222","nome":"Resenha de sexta","data":"2026-09-03","local":"Casa da Ana","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"$status","tipo":"ResenhaEntreAmigos","fotoRetrospectivaUrl":${foto == null ? 'null' : '"$foto"'}}';
 
-Future<void> _abrirNestaResenha(WidgetTester tester) async {
+Future<void> _montarResenha(WidgetTester tester,
+    {String status = 'EmAndamento',
+    bool revisitar = false,
+    String? foto}) async {
   SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
   final cliente = MockClient((requisicao) async {
     final caminho = requisicao.url.path;
@@ -35,15 +38,20 @@ Future<void> _abrirNestaResenha(WidgetTester tester) async {
         200,
       );
     }
-    return http.Response(_resenhaJson, 200);
+    return http.Response(_resenhaJson(status: status, foto: foto), 200);
   });
   await tester.pumpWidget(MaterialApp(
     home: AreaDoPublico(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
       codigoInicial: 'A1B2C3',
+      revisitar: revisitar,
     ),
   ));
   await tester.pumpAndSettle();
+}
+
+Future<void> _abrirNestaResenha(WidgetTester tester) async {
+  await _montarResenha(tester);
   await tester.tap(find.byTooltip('Meu perfil'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Nesta resenha'));
@@ -51,6 +59,8 @@ Future<void> _abrirNestaResenha(WidgetTester tester) async {
 }
 
 void main() {
+  _testesDeRevisita();
+
   testWidgets('perfil da resenha usa abas de texto e não repete o artista',
       (tester) async {
     await _abrirNestaResenha(tester);
@@ -73,5 +83,27 @@ void main() {
       matching: find.byWidgetPredicate((w) => w is FilledButton),
     ));
     expect(salvar.onPressed, isNull);
+  });
+}
+
+void _testesDeRevisita() {
+  testWidgets('revisitar resenha encerrada abre direto na retrospectiva',
+      (tester) async {
+    await _montarResenha(tester, status: 'Encerrada', revisitar: true);
+
+    expect(find.text('Minha retrospectiva'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+
+    await tester.tap(find.byTooltip('Voltar às abas'));
+    await tester.pumpAndSettle();
+    final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(barra.selectedIndex, 1);
+  });
+
+  testWidgets('resenha ao vivo continua abrindo nas abas', (tester) async {
+    await _montarResenha(tester);
+
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.text('Minha retrospectiva'), findsNothing);
   });
 }
