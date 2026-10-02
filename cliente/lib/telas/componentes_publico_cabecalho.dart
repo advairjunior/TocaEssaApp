@@ -73,34 +73,6 @@ class _CabecalhoCompactoPedido extends StatelessWidget {
       );
 }
 
-class _Etiqueta extends StatelessWidget {
-  const _Etiqueta({required this.texto});
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.roxo.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: const Color(0x66784DFF)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              texto,
-              style: const TextStyle(
-                color: CoresTocaEssa.roxoClaro,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-}
-
 /// Título do topo: quem está no palco e qual é o show.
 class _TituloDoShow extends StatelessWidget {
   const _TituloDoShow({required this.apresentacao});

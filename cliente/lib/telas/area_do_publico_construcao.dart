@@ -230,10 +230,14 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               const Text(
                   'Sua participação está sendo atualizada. Aguarde um instante.')
             else ...[
-              _CartaoPessoaDaResenha(
-                participante: _minhaParticipacaoNaResenha!,
-                souEu: true,
-                enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),
+              GrupoDeLinhas(
+                linhas: [
+                  _LinhaPessoaDaResenha(
+                    participante: _minhaParticipacaoNaResenha!,
+                    souEu: true,
+                    enderecoFoto: _api.enderecoArquivo(_perfilPublico!.fotoUrl),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               ..._construirRetrospectivaDoPublico(

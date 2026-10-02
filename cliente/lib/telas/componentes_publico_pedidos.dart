@@ -1,18 +1,15 @@
 part of 'area_do_publico.dart';
 
-class _CartaoMeuPedido extends StatelessWidget {
-  const _CartaoMeuPedido({
+/// Um pedido feito por quem está usando o app, com o andamento dele.
+class _LinhaMeuPedido extends StatelessWidget {
+  const _LinhaMeuPedido({
     required this.pedido,
     required this.cancelando,
-    required this.avaliando,
-    this.avaliar,
     this.cancelar,
   });
 
   final PedidoMusical pedido;
   final bool cancelando;
-  final bool avaliando;
-  final ValueChanged<int>? avaliar;
   final VoidCallback? cancelar;
 
   Color get _cor => switch (pedido.status) {
@@ -23,211 +20,87 @@ class _CartaoMeuPedido extends StatelessWidget {
       };
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 10),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: _cor.withValues(alpha: 0.13),
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: Icon(Icons.music_note_rounded, color: _cor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            pedido.tipo == TipoPedido.alo
-                                ? 'Alô para ${pedido.destinatarioAlo}'
-                                : pedido.musica,
-                            style: Theme.of(context).textTheme.titleMedium),
-                        if (pedido.artista?.isNotEmpty == true)
-                          Text(
-                            pedido.artista!,
-                            style: const TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _cor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      pedido.status.rotulo,
-                      style: TextStyle(
-                        color: _cor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (pedido.formaParticipacao !=
-                      FormaParticipacaoPedido.pedidoNormal ||
-                  pedido.tomPreferido?.isNotEmpty == true ||
-                  pedido.recado?.isNotEmpty == true) ...[
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: [
-                      if (pedido.formaParticipacao !=
-                          FormaParticipacaoPedido.pedidoNormal)
-                        _EtiquetaDoPedido(
-                          icone: Icons.mic_rounded,
-                          texto: pedido.formaParticipacao.rotulo,
-                        ),
-                      if (pedido.tomPreferido?.isNotEmpty == true)
-                        _EtiquetaDoPedido(
-                          icone: Icons.tune_rounded,
-                          texto: 'Tom ${pedido.tomPreferido}',
-                        ),
-                    ],
-                  ),
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final detalhes = [
+      if (pedido.formaParticipacao != FormaParticipacaoPedido.pedidoNormal)
+        pedido.formaParticipacao.rotulo,
+      if (pedido.tomPreferido?.isNotEmpty == true) 'Tom ${pedido.tomPreferido}',
+    ].join(' · ');
+    final naFila =
+        pedido.status == StatusPedidoMusical.aceito && pedido.posicao != null;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.medio,
+        EspacoTocaEssa.pequeno,
+        EspacoTocaEssa.medio,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 7),
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: _cor, shape: BoxShape.circle),
+            ),
+          ),
+          const SizedBox(width: EspacoTocaEssa.medio),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  pedido.tipo == TipoPedido.alo
+                      ? 'Alô para ${pedido.destinatarioAlo}'
+                      : pedido.musica,
+                  style: texto.titleMedium,
                 ),
-                if (pedido.recado?.isNotEmpty == true) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
+                if (pedido.artista?.isNotEmpty == true)
+                  Text(pedido.artista!, style: secundario),
+                const SizedBox(height: 2),
+                Text(
+                  pedido.status.rotulo,
+                  style: texto.labelLarge?.copyWith(color: _cor),
+                ),
+                if (naFila)
+                  Text(
+                    pedido.posicao == 1
+                        ? 'É a próxima da fila!'
+                        : 'Posição ${pedido.posicao} na fila · '
+                            '≈ ${pedido.posicao! * 3} min',
+                    style: texto.labelMedium
+                        ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                  ),
+                if (detalhes.isNotEmpty)
+                  Text(detalhes, style: texto.labelMedium),
+                if (pedido.recado?.isNotEmpty == true)
+                  Padding(
+                    padding: const EdgeInsets.only(top: EspacoTocaEssa.mini),
                     child: Text(
                       '“${pedido.recado}”',
-                      style: const TextStyle(
-                        color: CoresTocaEssa.textoSecundario,
-                        fontStyle: FontStyle.italic,
-                        fontSize: 12,
-                      ),
+                      style: secundario?.copyWith(fontStyle: FontStyle.italic),
                     ),
                   ),
-                ],
               ],
-              if (pedido.status == StatusPedidoMusical.aceito &&
-                  pedido.posicao != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: CoresTocaEssa.roxo.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: CoresTocaEssa.roxoClaro.withValues(alpha: 0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.queue_music_rounded,
-                          size: 15, color: CoresTocaEssa.roxoClaro),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          pedido.posicao == 1
-                              ? '🎵 Próxima na fila! Já vai!'
-                              : 'Posição ${pedido.posicao} na fila  ·  ≈ ${pedido.posicao! * 3} min de espera',
-                          style: const TextStyle(
-                            color: CoresTocaEssa.roxoClaro,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (cancelar != null || cancelando) ...[
-                const SizedBox(height: 6),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: cancelando ? null : cancelar,
-                    child: Text(cancelando ? 'Cancelando...' : 'Cancelar'),
-                  ),
-                ),
-              ],
-              if (avaliar != null) ...[
-                const SizedBox(height: 10),
-                const Divider(),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        pedido.avaliacao == null
-                            ? 'Como foi essa música?'
-                            : 'Sua avaliação',
-                        style: const TextStyle(
-                          color: CoresTocaEssa.textoSecundario,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    for (var estrela = 1; estrela <= 5; estrela++)
-                      IconButton(
-                        tooltip:
-                            '$estrela ${estrela == 1 ? 'estrela' : 'estrelas'}',
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.all(3),
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                        onPressed: avaliando ? null : () => avaliar!(estrela),
-                        icon: Icon(
-                          estrela <= (pedido.avaliacao ?? 0)
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                          color: const Color(0xFFFFC857),
-                          size: 25,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ],
+            ),
           ),
-        ),
-      );
-}
-
-class _EtiquetaDoPedido extends StatelessWidget {
-  const _EtiquetaDoPedido({required this.icone, required this.texto});
-
-  final IconData icone;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.roxo.withValues(alpha: .14),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icone, size: 14, color: CoresTocaEssa.roxoClaro),
-            const SizedBox(width: 5),
-            Text(texto, style: const TextStyle(fontSize: 11)),
-          ],
-        ),
-      );
+          if (cancelar != null || cancelando)
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: CoresTocaEssa.textoSecundario,
+              ),
+              onPressed: cancelando ? null : cancelar,
+              child: Text(cancelando ? 'Cancelando...' : 'Cancelar'),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AvisoPedidosEncerrados extends StatelessWidget {

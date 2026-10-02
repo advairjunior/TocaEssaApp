@@ -102,14 +102,16 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
             ),
           )
         else
-          for (final participante in _participantesDaResenha) ...[
-            _CartaoPessoaDaResenha(
-              participante: participante,
-              souEu: participante.publicoId == _perfilPublico?.id,
-              enderecoFoto: _api.enderecoArquivo(participante.fotoUrl),
-            ),
-            const SizedBox(height: 10),
-          ],
+          GrupoDeLinhas(
+            linhas: [
+              for (final participante in _participantesDaResenha)
+                _LinhaPessoaDaResenha(
+                  participante: participante,
+                  souEu: participante.publicoId == _perfilPublico?.id,
+                  enderecoFoto: _api.enderecoArquivo(participante.fotoUrl),
+                ),
+            ],
+          ),
       ];
 }
 

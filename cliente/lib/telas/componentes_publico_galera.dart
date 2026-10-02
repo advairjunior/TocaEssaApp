@@ -1,7 +1,8 @@
 part of 'area_do_publico.dart';
 
-class _CartaoPessoaDaResenha extends StatelessWidget {
-  const _CartaoPessoaDaResenha({
+/// Uma pessoa da resenha; tocar abre o perfil dela.
+class _LinhaPessoaDaResenha extends StatelessWidget {
+  const _LinhaPessoaDaResenha({
     required this.participante,
     required this.souEu,
     required this.enderecoFoto,
@@ -12,95 +13,91 @@ class _CartaoPessoaDaResenha extends StatelessWidget {
   final String? enderecoFoto;
 
   @override
-  Widget build(BuildContext context) => Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: souEu ? CoresTocaEssa.roxoClaro : CoresTocaEssa.borda,
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final marca = souEu
+        ? 'Você'
+        : participante.ehArtista
+            ? 'Artista'
+            : null;
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: () =>
+            abrirPerfilParticipante(context, participante, enderecoFoto),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: EspacoTocaEssa.base,
+            vertical: EspacoTocaEssa.medio,
           ),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () =>
-              abrirPerfilParticipante(context, participante, enderecoFoto),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
+          child: Row(
+            children: [
+              IgnorePointer(
+                child: FotoPerfilArtistico(
+                  enderecoFoto: enderecoFoto,
+                  tamanho: 44,
+                  iconeFallback: participante.ehArtista
+                      ? Icons.mic_rounded
+                      : Icons.person_rounded,
+                ),
+              ),
+              const SizedBox(width: EspacoTocaEssa.medio),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FotoPerfilArtistico(
-                      enderecoFoto: enderecoFoto,
-                      tamanho: 54,
-                      iconeFallback: Icons.person_rounded,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  participante.nome,
-                                  overflow: TextOverflow.ellipsis,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
-                                ),
-                              ),
-                              if (souEu) ...[
-                                const SizedBox(width: 7),
-                                const _Etiqueta(texto: 'Você'),
-                              ],
-                              if (participante.ehArtista) ...[
-                                const SizedBox(width: 7),
-                                const _Etiqueta(texto: 'Artista'),
-                              ],
-                            ],
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            participante.nome,
+                            overflow: TextOverflow.ellipsis,
+                            style: texto.titleMedium,
                           ),
-                          const SizedBox(height: 3),
+                        ),
+                        if (marca != null) ...[
+                          const SizedBox(width: EspacoTocaEssa.pequeno),
                           Text(
-                            participante.ehArtista
-                                ? 'Anfitrião da resenha'
-                                : '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
-                            style: const TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12,
-                            ),
+                            marca,
+                            style: texto.labelMedium
+                                ?.copyWith(color: CoresTocaEssa.roxoClaro),
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                    if (participante.mediaAvaliacoes != null)
+                    Text(
+                      participante.ehArtista
+                          ? 'Anfitrião da resenha'
+                          : '${participante.pedidos} pedidos · '
+                              '${participante.pedidosTocados} tocados',
+                      style: secundario,
+                    ),
+                    if (participante.musicasMaisPedidas.isNotEmpty)
                       Text(
-                        '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
-                        style: const TextStyle(
-                          color: Color(0xFFFFC857),
-                          fontWeight: FontWeight.w600,
-                        ),
+                        'Mais pedida: '
+                        '${participante.musicasMaisPedidas.first.musica}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: texto.labelMedium
+                            ?.copyWith(color: CoresTocaEssa.roxoClaro),
                       ),
                   ],
                 ),
-                if (participante.musicasMaisPedidas.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Mais pedida: ${participante.musicasMaisPedidas.first.musica}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: CoresTocaEssa.roxoClaro,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+              if (participante.mediaAvaliacoes != null)
+                Text(
+                  '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
+                  style: texto.labelLarge
+                      ?.copyWith(color: const Color(0xFFFFC857)),
+                ),
+            ],
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _AcessoPerfilPublico extends StatelessWidget {

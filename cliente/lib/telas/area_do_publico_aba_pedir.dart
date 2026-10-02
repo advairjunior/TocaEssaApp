@@ -27,19 +27,19 @@ extension _ConstrucaoAbaPedir on _AreaDoPublicoState {
             ],
           ),
           const SizedBox(height: EspacoTocaEssa.medio),
-          for (final pedido in _pedidosExibidos) ...[
-            _CartaoMeuPedido(
-              pedido: pedido,
-              cancelando: _pedidoSendoCancelado == pedido.id,
-              avaliando: _pedidoSendoAvaliado == pedido.id,
-              avaliar: null,
-              cancelar: _pedidoSendoCancelado == null &&
-                      pedido.status == StatusPedidoMusical.aguardando
-                  ? () => _cancelarPedido(pedido)
-                  : null,
-            ),
-            const SizedBox(height: 8),
-          ],
+          GrupoDeLinhas(
+            linhas: [
+              for (final pedido in _pedidosExibidos)
+                _LinhaMeuPedido(
+                  pedido: pedido,
+                  cancelando: _pedidoSendoCancelado == pedido.id,
+                  cancelar: _pedidoSendoCancelado == null &&
+                          pedido.status == StatusPedidoMusical.aguardando
+                      ? () => _cancelarPedido(pedido)
+                      : null,
+                ),
+            ],
+          ),
           if (_meusPedidos.length > 2)
             Align(
               alignment: Alignment.center,
