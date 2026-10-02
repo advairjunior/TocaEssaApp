@@ -123,14 +123,13 @@ class _CartaoMeuPedido extends StatelessWidget {
                   pedido.posicao != null) ...[
                 const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: CoresTocaEssa.roxo.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color:
-                            CoresTocaEssa.roxoClaro.withValues(alpha: 0.2)),
+                        color: CoresTocaEssa.roxoClaro.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [
@@ -267,21 +266,6 @@ class _AvisoPedidosEncerrados extends StatelessWidget {
             ),
           ],
         ),
-      );
-}
-
-class _Informacao extends StatelessWidget {
-  const _Informacao({required this.icone, required this.texto});
-  final IconData icone;
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icone, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(texto))
-        ],
       );
 }
 

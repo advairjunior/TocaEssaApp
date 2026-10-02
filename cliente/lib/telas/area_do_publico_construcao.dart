@@ -17,6 +17,12 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
           ),
           actions: [
             IconButton(
+              tooltip: 'Copiar código',
+              icon: const Icon(Icons.share_rounded),
+              onPressed: () =>
+                  _copiarCodigo(widget.codigoInicial.trim().toUpperCase()),
+            ),
+            IconButton(
                 tooltip: 'Minha conta e histórico',
                 icon: const Icon(Icons.account_circle_outlined),
                 onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
@@ -97,16 +103,6 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 4),
-                  if (_abaSelecionada != 0 &&
-                      _abaSelecionada != _indiceArtista &&
-                      _abaSelecionada != _indicePerfil)
-                    _CartaoApresentacaoPublica(
-                      apresentacao: apresentacao,
-                      enderecoFoto: _api.enderecoArquivo(
-                        apresentacao.perfilArtistico.fotoUrl,
-                      ),
-                      copiarCodigo: () => _copiarCodigo(apresentacao.codigo),
-                    ),
                   ..._construirConteudoDaAba(apresentacao, context),
                 ],
               );

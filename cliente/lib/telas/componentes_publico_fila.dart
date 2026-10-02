@@ -1,178 +1,170 @@
 part of 'area_do_publico.dart';
 
-class _TituloFilaPublica extends StatelessWidget {
-  const _TituloFilaPublica(this.texto);
-  final String texto;
-
-  @override
-  Widget build(BuildContext context) => Text(
-        texto,
-        style: Theme.of(context).textTheme.titleMedium,
-      );
+String _textoSolicitantes(List<String> nomes) {
+  if (nomes.isEmpty) return 'Pedido pelo público';
+  if (nomes.length == 1) return 'Pedido por ${nomes.first}';
+  if (nomes.length == 2) return 'Pedido por ${nomes[0]} e ${nomes[1]}';
+  return 'Pedido por ${nomes[0]}, ${nomes[1]} e mais ${nomes.length - 2}';
 }
 
-class _CartaoFilaPublica extends StatelessWidget {
-  const _CartaoFilaPublica({
+/// Destaque da música que está no palco agora.
+class _MusicaTocandoAgora extends StatelessWidget {
+  const _MusicaTocandoAgora({required this.pedido});
+  final PedidoMusical pedido;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(EspacoTocaEssa.grande - 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2E1850), CoresTocaEssa.superficie],
+        ),
+        border: Border.all(color: const Color(0xFF5A3D8C)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.graphic_eq_rounded,
+                  size: 20, color: CoresTocaEssa.rosa),
+              const SizedBox(width: EspacoTocaEssa.pequeno),
+              Text(
+                'Tocando agora',
+                style: texto.labelLarge?.copyWith(color: CoresTocaEssa.rosa),
+              ),
+            ],
+          ),
+          const SizedBox(height: EspacoTocaEssa.medio),
+          Text(pedido.musica, style: texto.headlineSmall),
+          if (pedido.artista?.isNotEmpty == true)
+            Text(
+              pedido.artista!,
+              style: texto.bodyLarge
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            ),
+          const SizedBox(height: EspacoTocaEssa.medio),
+          Text(
+            _textoSolicitantes(pedido.solicitantes),
+            style: texto.bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Uma música da fila: próxima (com posição e espera) ou já tocada
+/// (com avaliação por estrelas).
+class _LinhaFilaPublica extends StatelessWidget {
+  const _LinhaFilaPublica({
     required this.pedido,
     required this.avaliando,
     this.posicao,
-    this.icone,
-    this.destaque = false,
     this.avaliar,
   });
 
   final PedidoMusical pedido;
   final int? posicao;
-  final IconData? icone;
-  final bool destaque;
   final bool avaliando;
   final ValueChanged<int>? avaliar;
 
   @override
-  Widget build(BuildContext context) => Card(
-        color: destaque
-            ? Theme.of(context).colorScheme.primaryContainer
-            : CoresTocaEssa.superficie,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: destaque
-                        ? CoresTocaEssa.roxo
-                        : CoresTocaEssa.roxo.withValues(alpha: 0.24),
-                    foregroundColor: Colors.white,
-                    child:
-                        icone != null ? Icon(icone) : Text('${posicao ?? '-'}'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(child: _DetalhesMusicaFila(pedido)),
-                  if (pedido.quantidadeAvaliacoes > 0)
-                    Text(
-                      '${pedido.mediaAvaliacoes?.toStringAsFixed(1)} ★  '
-                      '(${pedido.quantidadeAvaliacoes})',
-                      style: const TextStyle(
-                        color: Color(0xFFFFC857),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Text(
-                      _textoSolicitantes(pedido.solicitantes),
-                      style: const TextStyle(
-                        color: CoresTocaEssa.textoSecundario,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                  if (posicao != null && posicao! > 0) ...[
-                    const SizedBox(width: 8),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.schedule_rounded,
-                            size: 12,
-                            color: CoresTocaEssa.textoSecundario),
-                        const SizedBox(width: 3),
-                        Text(
-                          posicao == 1
-                              ? '≈ 3 min'
-                              : '≈ ${posicao! * 3} min',
-                          style: const TextStyle(
-                            color: CoresTocaEssa.textoSecundario,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-              if (avaliar != null) ...[
-                const Divider(height: 18),
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text('Avalie esta música',
-                          style: TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12)),
-                    ),
-                    for (var estrela = 1; estrela <= 5; estrela++)
-                      IconButton(
-                        tooltip: '$estrela estrelas',
-                        visualDensity: VisualDensity.compact,
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: const EdgeInsets.all(2),
-                        onPressed: avaliando ? null : () => avaliar!(estrela),
-                        icon: Icon(
-                          estrela <= (pedido.minhaAvaliacao ?? 0)
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                          color: const Color(0xFFFFC857),
-                          size: 23,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-
-  String _textoSolicitantes(List<String> nomes) {
-    if (nomes.isEmpty) return 'Pedido pelo público';
-    if (nomes.length == 1) return 'Pedido por ${nomes.first}';
-    if (nomes.length == 2) return 'Pedido por ${nomes[0]} e ${nomes[1]}';
-    return 'Pedido por ${nomes[0]}, ${nomes[1]} e mais ${nomes.length - 2}';
-  }
-}
-
-class _DetalhesMusicaFila extends StatelessWidget {
-  const _DetalhesMusicaFila(this.pedido);
-  final PedidoMusical pedido;
-
-  @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final detalhes = [
+      if (pedido.artista?.isNotEmpty == true) pedido.artista!,
+      if (pedido.formaParticipacao != FormaParticipacaoPedido.pedidoNormal)
+        pedido.formaParticipacao.rotulo,
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.medio,
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.medio,
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(pedido.musica,
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          if (pedido.artista?.isNotEmpty == true) Text(pedido.artista!),
-          if (pedido.quantidadePedidos > 1) ...[
-            const SizedBox(height: 5),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: CoresTocaEssa.roxoClaro.withValues(alpha: .18),
-                borderRadius: BorderRadius.circular(999),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 28,
+                child: posicao != null
+                    ? Text(
+                        '$posicao',
+                        style: texto.titleMedium
+                            ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                      )
+                    : const Icon(Icons.check_rounded,
+                        size: 20, color: CoresTocaEssa.textoSecundario),
               ),
-              child: Text(
-                '${pedido.quantidadePedidos} pedidos',
-                style: const TextStyle(
-                  color: CoresTocaEssa.roxoClaro,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
+              const SizedBox(width: EspacoTocaEssa.pequeno),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(pedido.musica, style: texto.titleMedium),
+                    if (detalhes.isNotEmpty) Text(detalhes, style: secundario),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        _textoSolicitantes(pedido.solicitantes),
+                        if (pedido.quantidadePedidos > 1)
+                          '${pedido.quantidadePedidos} pedidos',
+                      ].join(' · '),
+                      style: texto.labelMedium
+                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-          if (pedido.formaParticipacao != FormaParticipacaoPedido.pedidoNormal)
-            Text(
-              pedido.formaParticipacao.rotulo,
-              style: const TextStyle(color: CoresTocaEssa.roxoClaro),
+              if (posicao != null && posicao! > 0)
+                Text('≈ ${posicao! * 3} min', style: secundario),
+              if (pedido.quantidadeAvaliacoes > 0)
+                Text(
+                  '${pedido.mediaAvaliacoes?.toStringAsFixed(1)} ★',
+                  style: texto.labelLarge
+                      ?.copyWith(color: const Color(0xFFFFC857)),
+                ),
+            ],
+          ),
+          if (avaliar != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 36),
+              child: Row(
+                children: [
+                  for (var estrela = 1; estrela <= 5; estrela++)
+                    IconButton(
+                      tooltip: '$estrela estrelas',
+                      visualDensity: VisualDensity.compact,
+                      constraints:
+                          const BoxConstraints(minWidth: 36, minHeight: 36),
+                      padding: EdgeInsets.zero,
+                      onPressed: avaliando ? null : () => avaliar!(estrela),
+                      icon: Icon(
+                        estrela <= (pedido.minhaAvaliacao ?? 0)
+                            ? Icons.star_rounded
+                            : Icons.star_border_rounded,
+                        color: const Color(0xFFFFC857),
+                        size: 24,
+                      ),
+                    ),
+                ],
+              ),
             ),
         ],
-      );
+      ),
+    );
+  }
 }

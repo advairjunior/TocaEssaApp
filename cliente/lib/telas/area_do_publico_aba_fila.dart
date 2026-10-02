@@ -2,9 +2,7 @@ part of 'area_do_publico.dart';
 
 extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
   List<Widget> _construirAbaFila(BuildContext context) => [
-        const SizedBox(height: 28),
-        const _CabecalhoSecaoPublica(titulo: 'Fila Musical'),
-        const SizedBox(height: 10),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
         FutureBuilder<List<PedidoMusical>>(
           future: _fila,
           builder: (context, filaSnapshot) {
@@ -12,18 +10,14 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                 !filaSnapshot.hasData) {
               return const Center(
                   child: Padding(
-                      padding: EdgeInsets.all(20),
+                      padding: EdgeInsets.all(EspacoTocaEssa.grande),
                       child: CircularProgressIndicator()));
             }
             final pedidos = filaSnapshot.data ?? [];
             if (pedidos.isEmpty) {
-              return const Card(
-                  child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                    'A fila ainda está vazia. Seu pedido pode ser o primeiro!',
-                    textAlign: TextAlign.center),
-              ));
+              return _FilaVazia(
+                pedir: () => _mudarEstado(() => _abaSelecionada = 0),
+              );
             }
             final tocando = pedidos
                 .where(
@@ -38,48 +32,41 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
                 .reversed
                 .take(widget.revisitar ? pedidos.length : 10)
                 .toList();
+            const entreSecoes = SizedBox(height: EspacoTocaEssa.enorme);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (tocando.isNotEmpty) ...[
-                  const _TituloFilaPublica('Tocando agora'),
-                  const SizedBox(height: 8),
-                  for (final pedido in tocando) ...[
-                    _CartaoFilaPublica(
-                      pedido: pedido,
-                      icone: Icons.play_arrow_rounded,
-                      destaque: true,
-                      avaliando: false,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                for (final pedido in tocando) ...[
+                  _MusicaTocandoAgora(pedido: pedido),
+                  entreSecoes,
                 ],
                 if (proximas.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const _TituloFilaPublica('Próximas músicas'),
-                  const SizedBox(height: 8),
-                  for (final pedido in proximas) ...[
-                    _CartaoFilaPublica(
-                      pedido: pedido,
-                      posicao: pedido.posicao,
-                      avaliando: false,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                  const TituloGrupo('Próximas músicas'),
+                  GrupoDeLinhas(
+                    linhas: [
+                      for (final pedido in proximas)
+                        _LinhaFilaPublica(
+                          pedido: pedido,
+                          posicao: pedido.posicao,
+                          avaliando: false,
+                        ),
+                    ],
+                  ),
+                  entreSecoes,
                 ],
                 if (tocadas.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const _TituloFilaPublica('Já tocadas'),
-                  const SizedBox(height: 8),
-                  for (final pedido in tocadas) ...[
-                    _CartaoFilaPublica(
-                      pedido: pedido,
-                      icone: Icons.check_rounded,
-                      avaliando: _pedidoSendoAvaliado == pedido.id,
-                      avaliar: (estrelas) => _avaliarPedido(pedido, estrelas),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                  const TituloGrupo('Já tocadas'),
+                  GrupoDeLinhas(
+                    linhas: [
+                      for (final pedido in tocadas)
+                        _LinhaFilaPublica(
+                          pedido: pedido,
+                          avaliando: _pedidoSendoAvaliado == pedido.id,
+                          avaliar: (estrelas) =>
+                              _avaliarPedido(pedido, estrelas),
+                        ),
+                    ],
+                  ),
                 ],
               ],
             );
@@ -88,25 +75,30 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
       ];
 
   List<Widget> _construirAbaGalera() => [
-        const SizedBox(height: 28),
-        const _CabecalhoSecaoPublica(titulo: 'Galera da resenha'),
-        const SizedBox(height: 6),
-        const Text(
-          'Veja quem está participando e as músicas que já marcaram o encontro.',
-          style: TextStyle(
-            color: CoresTocaEssa.textoSecundario,
-            fontSize: 13,
-          ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        Text(
+          'Galera da resenha',
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: EspacoTocaEssa.mini),
+        Text(
+          'Quem está participando e as músicas que marcaram o encontro.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: CoresTocaEssa.textoSecundario),
+        ),
+        const SizedBox(height: EspacoTocaEssa.base + 4),
         if (_participantesDaResenha.isEmpty)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'A galera aparecerá assim que entrar na resenha.',
-                textAlign: TextAlign.center,
-              ),
+          Padding(
+            padding: const EdgeInsets.all(EspacoTocaEssa.grande),
+            child: Text(
+              'A galera aparece aqui assim que entrar na resenha.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
             ),
           )
         else
@@ -119,4 +111,38 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
             const SizedBox(height: 10),
           ],
       ];
+}
+
+class _FilaVazia extends StatelessWidget {
+  const _FilaVazia({required this.pedir});
+  final VoidCallback pedir;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: EspacoTocaEssa.enorme),
+      child: Column(
+        children: [
+          const Icon(Icons.queue_music_rounded,
+              size: 44, color: CoresTocaEssa.roxoClaro),
+          const SizedBox(height: EspacoTocaEssa.base),
+          Text('A fila ainda está vazia', style: texto.titleLarge),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(
+            'Seu pedido pode ser o primeiro da noite.',
+            textAlign: TextAlign.center,
+            style: texto.bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          const SizedBox(height: EspacoTocaEssa.grande),
+          FilledButton.icon(
+            onPressed: pedir,
+            icon: const Icon(Icons.music_note_rounded),
+            label: const Text('Fazer um pedido'),
+          ),
+        ],
+      ),
+    );
+  }
 }
