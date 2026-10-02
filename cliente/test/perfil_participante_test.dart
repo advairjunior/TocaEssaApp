@@ -19,8 +19,11 @@ void main() {
           pedidosTocados: 1,
           mediaAvaliacoes: 5,
           estatisticasGerais: const EstatisticasDoPublico(
-            participacoes: 4, pedidos: 10, pedidosTocados: 5,
-            avaliacoesRealizadas: 5, musicasMaisPedidas: [],
+            participacoes: 4,
+            pedidos: 10,
+            pedidosTocados: 5,
+            avaliacoesRealizadas: 5,
+            musicasMaisPedidas: [],
           ),
           musicasMaisPedidas: const [
             MusicaMaisPedida(musica: 'Evidências', quantidade: 1)
@@ -59,4 +62,43 @@ void main() {
     expect(tester.takeException(),
         anyOf(isNull, isA<NetworkImageLoadException>()));
   });
+
+  testWidgets(
+      'perfil usa abas de texto, papel em destaque e conquistas em lista',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: PerfilParticipante(participante: _ana(), enderecoFoto: null),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SegmentedButton<bool>), findsNothing);
+    expect(find.byType(Chip), findsNothing);
+    expect(find.text('Galera da resenha'), findsOneWidget);
+
+    await tester.tap(find.text('Nesta resenha'));
+    await tester.pumpAndSettle();
+    // Descrições ficam visíveis na própria lista, sem abrir diálogo.
+    expect(find.text('Conquistas da resenha · 3/6'), findsOneWidget);
+    await tester.scrollUntilVisible(
+        find.text('Avaliou três músicas nesta resenha.'), 300);
+    expect(find.text('Avaliou três músicas nesta resenha.'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Trem-Bala'), 300);
+    expect(find.text('4 ★'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
+
+ParticipanteDaResenha _ana() => ParticipanteDaResenha(
+      publicoId: '1',
+      nome: 'Ana',
+      pedidos: 1,
+      pedidosTocados: 1,
+      mediaAvaliacoes: 5,
+      musicasMaisPedidas: const [
+        MusicaMaisPedida(musica: 'Evidências', quantidade: 1)
+      ],
+      avaliacoes: [
+        AvaliacaoNaResenha(
+            musica: 'Trem-Bala', estrelas: 4, avaliadoEm: DateTime(2026, 9, 9))
+      ],
+    );

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_lista.dart';
 import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';
 
@@ -13,6 +15,7 @@ void abrirPerfilParticipante(BuildContext context,
           builder: (_) => PerfilParticipante(
               participante: participante, enderecoFoto: enderecoFoto)));
 }
+
 class PerfilParticipante extends StatefulWidget {
   const PerfilParticipante(
       {super.key, required this.participante, required this.enderecoFoto});
@@ -21,328 +24,335 @@ class PerfilParticipante extends StatefulWidget {
   @override
   State<PerfilParticipante> createState() => _PerfilParticipanteState();
 }
+
 class _PerfilParticipanteState extends State<PerfilParticipante> {
+  static const _avaliacoesPorPagina = 5;
   int _pagina = 0;
   bool _nestaResenha = false;
-  Widget _seletorPerfil() => SegmentedButton<bool>(
-        segments: const [
-          ButtonSegment(value: false, label: Text('Geral')),
-          ButtonSegment(value: true, label: Text('Nesta resenha')),
-        ],
-        selected: {_nestaResenha},
-        onSelectionChanged: (valor) =>
-            setState(() => _nestaResenha = valor.single),
-      );
+
+  List<_Conquista> _conquistas(ParticipanteDaResenha pessoa) => [
+        const _Conquista(
+            'Na roda', 'Participou desta resenha.', 1, 1, Icons.groups_rounded),
+        _Conquista('Solta o som', 'Fez um pedido nesta resenha.',
+            pessoa.pedidos, 1, Icons.music_note_rounded),
+        _Conquista('Tocou a minha', 'Teve um pedido tocado nesta resenha.',
+            pessoa.pedidosTocados, 1, Icons.check_circle_outline),
+        _Conquista('Ouvido atento', 'Avaliou três músicas nesta resenha.',
+            pessoa.avaliacoes.length, 3, Icons.headphones_rounded),
+        _Conquista('VIP da noite', 'Teve cinco pedidos tocados nesta resenha.',
+            pessoa.pedidosTocados, 5, Icons.emoji_events_rounded),
+        _Conquista('Pede mais uma', 'Fez cinco pedidos nesta resenha.',
+            pessoa.pedidos, 5, Icons.queue_music_rounded),
+      ];
+
   @override
   Widget build(BuildContext context) {
     final pessoa = widget.participante;
-    final notas = pessoa.avaliacoes;
-    final conquistas = [
-      ('Na roda', 'Participou desta resenha.', 1, 1, Icons.groups_rounded),
-      (
-        'Solta o som',
-        'Fez um pedido nesta resenha.',
-        pessoa.pedidos,
-        1,
-        Icons.music_note_rounded
-      ),
-      (
-        'Tocou a minha',
-        'Teve um pedido tocado nesta resenha.',
-        pessoa.pedidosTocados,
-        1,
-        Icons.check_circle_outline
-      ),
-      (
-        'Ouvido atento',
-        'Avaliou três músicas nesta resenha.',
-        notas.length,
-        3,
-        Icons.headphones_rounded
-      ),
-      (
-        'VIP da noite',
-        'Teve cinco pedidos tocados nesta resenha.',
-        pessoa.pedidosTocados,
-        5,
-        Icons.emoji_events_rounded
-      ),
-      (
-        'Pede mais uma',
-        'Fez cinco pedidos nesta resenha.',
-        pessoa.pedidos,
-        5,
-        Icons.queue_music_rounded
-      ),
-    ];
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil do participante')),
       body: FundoTocaEssa(
         variante: VarianteFundoTocaEssa.atmosfera,
         intensidade: IntensidadeFundoTocaEssa.suave,
-        child: SafeArea(
-          child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-            child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            _SecaoPerfil(
-                child: Column(children: [
+        child: ConteudoMobile(
+          filho: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
               FotoPerfilArtistico(
-                  enderecoFoto: widget.enderecoFoto,
-                  tamanho: 104,
-                  iconeFallback: pessoa.ehArtista ? Icons.mic : Icons.person),
-              const SizedBox(height: 12),
+                enderecoFoto: widget.enderecoFoto,
+                tamanho: 112,
+                iconeFallback:
+                    pessoa.ehArtista ? Icons.mic_rounded : Icons.person_rounded,
+              ),
+              const SizedBox(height: EspacoTocaEssa.base),
               Text(pessoa.nome,
+                  textAlign: TextAlign.center, style: texto.headlineSmall),
+              const SizedBox(height: EspacoTocaEssa.mini),
+              Text(
+                pessoa.ehArtista ? 'Artista · anfitrião' : 'Galera da resenha',
+                textAlign: TextAlign.center,
+                style:
+                    texto.labelLarge?.copyWith(color: CoresTocaEssa.roxoClaro),
+              ),
+              const SizedBox(height: EspacoTocaEssa.enorme),
+              if (pessoa.ehArtista)
+                Text(
+                  'Quem faz o som acontecer. As estatísticas da apresentação '
+                  'ficam no Painel do Artista.',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Chip(
-                  label: Text(pessoa.ehArtista
-                      ? 'Artista · Anfitrião'
-                      : 'Galera da resenha')),
-              if (widget.enderecoFoto != null)
-                const Text('Toque na foto para ampliar',
-                    style: TextStyle(
-                        fontSize: 12, color: CoresTocaEssa.textoSecundario)),
-            ])),
-            const SizedBox(height: 16),
-            if (pessoa.ehArtista) ...[
-              const _SecaoPerfil(
-                  child: Text(
-                      'Quem faz o som acontecer. As estatísticas da apresentação ficam no Painel do Artista.')),
-            ] else if (!_nestaResenha) ...[
-              _seletorPerfil(),
-              const SizedBox(height: 16),
-              const Text('Trajetória em todas as apresentações'),
-              if (pessoa.estatisticasGerais != null)
-                ProgressoDoPublico(dados: pessoa.estatisticasGerais!)
-              else
-                const Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                        'O perfil geral está indisponível no momento. Você pode consultar os dados desta resenha.')),
-            ] else ...[
-              _seletorPerfil(),
-              const SizedBox(height: 16),
-              const Text('Participação neste encontro'),
-              const SizedBox(height: 12),
-              LayoutBuilder(builder: (_, limites) {
-                final colunas = limites.maxWidth >= 700 ? 4 : 2;
-                return Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      (
-                        'Pedidos',
-                        '${pessoa.pedidos}',
-                        Icons.music_note_rounded
+                  style: secundario,
+                )
+              else ...[
+                Row(
+                  children: [
+                    Flexible(
+                      child: AbaDeTexto(
+                        rotulo: 'Geral',
+                        selecionada: !_nestaResenha,
+                        tocar: () => setState(() => _nestaResenha = false),
                       ),
-                      (
-                        'Tocados',
-                        '${pessoa.pedidosTocados}',
-                        Icons.check_circle_outline
+                    ),
+                    const SizedBox(width: EspacoTocaEssa.base),
+                    Flexible(
+                      child: AbaDeTexto(
+                        rotulo: 'Nesta resenha',
+                        selecionada: _nestaResenha,
+                        tocar: () => setState(() => _nestaResenha = true),
                       ),
-                      (
-                        'Avaliações feitas',
-                        '${notas.length}',
-                        Icons.rate_review_outlined
+                    ),
+                  ],
+                ),
+                const SizedBox(height: EspacoTocaEssa.base),
+                if (!_nestaResenha)
+                  if (pessoa.estatisticasGerais != null)
+                    ProgressoDoPublico(dados: pessoa.estatisticasGerais!)
+                  else
+                    Padding(
+                      padding: const EdgeInsets.all(EspacoTocaEssa.grande),
+                      child: Text(
+                        'O perfil geral está indisponível no momento. '
+                        'Veja os dados desta resenha.',
+                        textAlign: TextAlign.center,
+                        style: secundario,
                       ),
-                      (
-                        'Nota média dada',
-                        pessoa.mediaAvaliacoes?.toStringAsFixed(1) ?? '—',
-                        Icons.star_rounded
-                      ),
-                    ]
-                        .map((item) => SizedBox(
-                            width: (limites.maxWidth - 12 * (colunas - 1)) /
-                                colunas,
-                            child: _SecaoPerfil(
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                  Icon(item.$3, color: CoresTocaEssa.roxoClaro),
-                                  const SizedBox(height: 8),
-                                  Text(item.$2,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall),
-                                  Text(item.$1),
-                                ]))))
-                        .toList());
-              }),
-              const SizedBox(height: 16),
-              _SecaoPerfil(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                    const Text('Do pedido ao palco',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 10),
-                    Text(pessoa.pedidos == 0
-                        ? 'Ainda não fez pedidos nesta resenha.'
-                        : '${(100 * pessoa.pedidosTocados / pessoa.pedidos).round()}% dos pedidos foram tocados'),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(
-                        value: pessoa.pedidos == 0
-                            ? 0
-                            : (pessoa.pedidosTocados / pessoa.pedidos)
-                                .clamp(0, 1)),
-                  ])),
-              const SizedBox(height: 16),
-              LayoutBuilder(builder: (context, limites) {
-                final medalhas = _SecaoPerfil(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                      Text(
-                          'Conquistas da resenha · ${conquistas.where((c) => c.$3 >= c.$4).length}/${conquistas.length}',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 12),
-                      LayoutBuilder(
-                          builder: (_, espaco) => Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: conquistas
-                                  .map((c) => SizedBox(
-                                      width: (espaco.maxWidth - 8) / 2,
-                                      child: _MedalhaResenha(
-                                          titulo: c.$1,
-                                          descricao: c.$2,
-                                          atual: c.$3,
-                                          meta: c.$4,
-                                          icone: c.$5)))
-                                  .toList())),
-                      const SizedBox(height: 24),
-                      Text('Mais pedidas aqui',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 12),
-                      FavoritasDoPerfil(musicas: pessoa.musicasMaisPedidas),
-                    ]));
-                final historico = _SecaoPerfil(
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                      Text('Histórico de avaliações',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 4),
-                      const Text('Notas dadas às músicas desta resenha.'),
-                      const SizedBox(height: 16),
-                      if (notas.isEmpty)
-                        const Text('Nenhuma avaliação por enquanto.'),
-                      for (final nota in notas.skip(_pagina * 5).take(5)) ...[
-                        ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.music_note_rounded,
-                                color: CoresTocaEssa.roxoClaro),
-                            title: Text(nota.musica),
-                            subtitle:
-                                Text(formatarData(nota.avaliadoEm.toLocal())),
-                            trailing: Text('${nota.estrelas} ★',
-                                style: const TextStyle(
-                                    color: Color(0xFFFFC857),
-                                    fontWeight: FontWeight.w600))),
-                        const Divider(),
-                      ],
-                      if (notas.length > 5)
-                        Row(children: [
-                          IconButton(
-                              tooltip: 'Página anterior',
-                              onPressed: _pagina == 0
-                                  ? null
-                                  : () => setState(() => _pagina--),
-                              icon: const Icon(Icons.chevron_left)),
-                          Expanded(
-                              child: Text(
-                                  '${_pagina + 1} de ${(notas.length / 5).ceil()}',
-                                  textAlign: TextAlign.center)),
-                          IconButton(
-                              tooltip: 'Próxima página',
-                              onPressed: (_pagina + 1) * 5 >= notas.length
-                                  ? null
-                                  : () => setState(() => _pagina++),
-                              icon: const Icon(Icons.chevron_right)),
-                        ]),
-                    ]));
-                if (limites.maxWidth < 700) {
-                  return Column(children: [
-                    medalhas,
-                    const SizedBox(height: 16),
-                    historico
-                  ]);
-                }
-                return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 2, child: medalhas),
-                      const SizedBox(width: 16),
-                      Expanded(flex: 3, child: historico),
-                    ]);
-              }),
+                    )
+                else
+                  ..._construirNestaResenha(context, pessoa),
+              ],
             ],
-          ]),
-        )),
-        )),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _construirNestaResenha(
+    BuildContext context,
+    ParticipanteDaResenha pessoa,
+  ) {
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final notas = pessoa.avaliacoes;
+    final conquistas = _conquistas(pessoa);
+    final conquistadas = conquistas.where((c) => c.liberada).length;
+    final totalPaginas = (notas.length / _avaliacoesPorPagina).ceil();
+    const entreSecoes = SizedBox(height: EspacoTocaEssa.enorme);
+    return [
+      Container(
+        padding: const EdgeInsets.symmetric(vertical: EspacoTocaEssa.base),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.superficie,
+          borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+          border: Border.all(color: CoresTocaEssa.borda),
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              _Numero(valor: '${pessoa.pedidos}', rotulo: 'pedidos'),
+              const VerticalDivider(width: 1),
+              _Numero(valor: '${pessoa.pedidosTocados}', rotulo: 'tocados'),
+              const VerticalDivider(width: 1),
+              _Numero(valor: '${notas.length}', rotulo: 'avaliações'),
+              const VerticalDivider(width: 1),
+              _Numero(
+                valor: pessoa.mediaAvaliacoes?.toStringAsFixed(1) ?? '—',
+                rotulo: 'nota média',
+              ),
+            ],
+          ),
+        ),
+      ),
+      entreSecoes,
+      const TituloGrupo('Do pedido ao palco'),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.mini),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              pessoa.pedidos == 0
+                  ? 'Ainda não fez pedidos nesta resenha.'
+                  : '${(100 * pessoa.pedidosTocados / pessoa.pedidos).round()}% '
+                      'dos pedidos foram tocados',
+              style: texto.bodyLarge,
+            ),
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            LinearProgressIndicator(
+              minHeight: 6,
+              borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+              value: pessoa.pedidos == 0
+                  ? 0
+                  : (pessoa.pedidosTocados / pessoa.pedidos).clamp(0, 1),
+            ),
+          ],
+        ),
+      ),
+      entreSecoes,
+      TituloGrupo('Conquistas da resenha · $conquistadas/${conquistas.length}'),
+      GrupoDeLinhas(
+        linhas: [
+          for (final conquista in conquistas) _LinhaConquista(conquista)
+        ],
+      ),
+      entreSecoes,
+      const TituloGrupo('Mais pedidas aqui'),
+      FavoritasDoPerfil(musicas: pessoa.musicasMaisPedidas),
+      entreSecoes,
+      const TituloGrupo('Histórico de avaliações'),
+      if (notas.isEmpty)
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.mini),
+          child: Text('Nenhuma avaliação por enquanto.', style: secundario),
+        )
+      else
+        GrupoDeLinhas(
+          linhas: [
+            for (final nota in notas
+                .skip(_pagina * _avaliacoesPorPagina)
+                .take(_avaliacoesPorPagina))
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: EspacoTocaEssa.base,
+                  vertical: EspacoTocaEssa.medio,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.music_note_rounded,
+                        size: 20, color: CoresTocaEssa.roxoClaro),
+                    const SizedBox(width: EspacoTocaEssa.base),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(nota.musica, style: texto.titleMedium),
+                          Text(formatarData(nota.avaliadoEm.toLocal()),
+                              style: secundario),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${nota.estrelas} ★',
+                      style: texto.labelLarge
+                          ?.copyWith(color: const Color(0xFFFFC857)),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      if (totalPaginas > 1)
+        Row(
+          children: [
+            IconButton(
+              tooltip: 'Página anterior',
+              onPressed: _pagina == 0 ? null : () => setState(() => _pagina--),
+              icon: const Icon(Icons.chevron_left_rounded),
+            ),
+            Expanded(
+              child: Text('${_pagina + 1} de $totalPaginas',
+                  textAlign: TextAlign.center, style: secundario),
+            ),
+            IconButton(
+              tooltip: 'Próxima página',
+              onPressed: _pagina + 1 >= totalPaginas
+                  ? null
+                  : () => setState(() => _pagina++),
+              icon: const Icon(Icons.chevron_right_rounded),
+            ),
+          ],
+        ),
+      const SizedBox(height: EspacoTocaEssa.base),
+    ];
+  }
+}
+
+class _Conquista {
+  const _Conquista(
+      this.titulo, this.descricao, this.atual, this.meta, this.icone);
+  final String titulo;
+  final String descricao;
+  final int atual;
+  final int meta;
+  final IconData icone;
+  bool get liberada => atual >= meta;
+}
+
+class _LinhaConquista extends StatelessWidget {
+  const _LinhaConquista(this.conquista);
+  final _Conquista conquista;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final liberada = conquista.liberada;
+    return Opacity(
+      opacity: liberada ? 1 : .6,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: EspacoTocaEssa.base,
+          vertical: EspacoTocaEssa.medio,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              liberada ? conquista.icone : Icons.lock_outline_rounded,
+              size: 20,
+              color: CoresTocaEssa.roxoClaro,
+            ),
+            const SizedBox(width: EspacoTocaEssa.base),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(conquista.titulo, style: texto.titleMedium),
+                  Text(
+                    conquista.descricao,
+                    style: texto.bodyMedium
+                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: EspacoTocaEssa.pequeno),
+            liberada
+                ? const Icon(Icons.check_circle_rounded,
+                    size: 20, color: Color(0xFF54D98C))
+                : Text(
+                    '${conquista.atual.clamp(0, conquista.meta)}/${conquista.meta}',
+                    style: texto.labelLarge
+                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  ),
+          ],
+        ),
       ),
     );
   }
 }
-class _SecaoPerfil extends StatelessWidget {
-  const _SecaoPerfil({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-            color: CoresTocaEssa.superficie,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: CoresTocaEssa.borda)),
-        child: child,
-      );
-}
-class _MedalhaResenha extends StatelessWidget {
-  const _MedalhaResenha(
-      {required this.titulo,
-      required this.descricao,
-      required this.atual,
-      required this.meta,
-      required this.icone});
-  final String titulo, descricao;
-  final int atual, meta;
-  final IconData icone;
+
+class _Numero extends StatelessWidget {
+  const _Numero({required this.valor, required this.rotulo});
+  final String valor;
+  final String rotulo;
+
   @override
   Widget build(BuildContext context) {
-    final liberada = atual >= meta;
-    return Material(
-      color: liberada ? const Color(0xFF302047) : CoresTocaEssa.fundo,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-                    title: Text(titulo),
-                    content: Text(
-                        '$descricao\n\n${liberada ? 'Conquistada nesta resenha!' : '$atual de $meta'}'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Entendi'))
-                    ])),
-        child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(children: [
-              Icon(liberada ? icone : Icons.lock_outline,
-                  color: liberada ? CoresTocaEssa.roxoClaro : Colors.grey),
-              const SizedBox(height: 8),
-              Text(titulo, textAlign: TextAlign.center),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(value: (atual / meta).clamp(0, 1)),
-            ])),
+    final texto = Theme.of(context).textTheme;
+    return Expanded(
+      child: Column(
+        children: [
+          Text(valor, style: texto.titleLarge),
+          const SizedBox(height: 2),
+          Text(
+            rotulo,
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            style: texto.labelMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        ],
       ),
     );
   }
