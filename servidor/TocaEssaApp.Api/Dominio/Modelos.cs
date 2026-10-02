@@ -256,3 +256,12 @@ public sealed record ParticipanteDaResenha(
 
 public sealed record AvaliacaoNaResenha(
     string Musica, int Estrelas, DateTimeOffset AvaliadoEm);
+
+public sealed record PessoaDoEncontro(Guid PublicoId, string Nome, string? FotoUrl);
+
+public sealed record EncontroDoPublico(
+    Apresentacao Apresentacao,
+    int Pedidos,
+    int PedidosTocados,
+    IReadOnlyCollection<MusicaMaisPedida> MinhasMusicas,
+    IReadOnlyCollection<PessoaDoEncontro> Companhia);

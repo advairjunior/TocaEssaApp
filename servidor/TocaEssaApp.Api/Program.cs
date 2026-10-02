@@ -316,6 +316,10 @@ app.MapGet("/api/publico/apresentacoes", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarApresentacoesDoPublico(ObterToken(http) ?? string.Empty)));
 
+app.MapGet("/api/publico/historico", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarHistoricoDoPublico(ObterToken(http) ?? string.Empty)));
+
 app.MapGet("/api/publico/apresentacoes/{codigo}/apoio-pix", (
     string codigo, decimal valor, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.GerarApoioPix(codigo, valor)));
