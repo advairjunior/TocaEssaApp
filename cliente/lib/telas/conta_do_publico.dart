@@ -5,6 +5,9 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import 'area_do_publico.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
+import 'componentes_lista.dart';
+import '../tema/tema_toca_essa.dart';
 import 'fundo_toca_essa.dart';
 
 part 'conta_do_publico_construcao.dart';
@@ -27,7 +30,7 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
   bool _ocupado = true;
   bool _cadastro = false;
   int _aba = 0;
-  StatusApresentacao _filtro = StatusApresentacao.emAndamento;
+  StatusApresentacao _filtro = StatusApresentacao.agendada;
   String? _erro;
 
   @override
@@ -63,10 +66,12 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
           _perfil = perfil;
           _estatisticas = estatisticas;
           _apresentacoes = apresentacoes;
-          if (!apresentacoes.any((a) => a.status == _filtro) &&
-              apresentacoes.isNotEmpty) {
-            _filtro = apresentacoes.first.status;
-          }
+          // Ao vivo aparece à parte; as abas escolhem próximas ou histórico.
+          final temProximas =
+              apresentacoes.any((a) => a.status == StatusApresentacao.agendada);
+          _filtro = temProximas
+              ? StatusApresentacao.agendada
+              : StatusApresentacao.encerrada;
         });
       }
     } catch (erro) {
