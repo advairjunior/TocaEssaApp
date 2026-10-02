@@ -195,6 +195,9 @@ void main() {
 
     final cincoEstrelas = find.byTooltip('5 estrelas');
     await tester.ensureVisible(cincoEstrelas);
+    final alvo = tester.getSize(cincoEstrelas);
+    expect(alvo.width, greaterThanOrEqualTo(44), reason: 'área de toque');
+    expect(alvo.height, greaterThanOrEqualTo(44), reason: 'área de toque');
     await tester.tap(cincoEstrelas);
     await tester.pumpAndSettle();
 

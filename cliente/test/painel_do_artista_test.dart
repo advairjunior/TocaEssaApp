@@ -214,6 +214,9 @@ void main() {
 
     expect(find.text('Ao vivo'), findsOneWidget);
     expect(find.text('Encerrar'), findsOneWidget);
+    expect(tester.getSize(find.byTooltip('Receber pedidos')).height,
+        greaterThanOrEqualTo(44),
+        reason: 'área de toque');
     await tester.tap(find.byTooltip('Receber pedidos'));
     await tester.pumpAndSettle();
     expect(pedidosAlterados, isTrue);

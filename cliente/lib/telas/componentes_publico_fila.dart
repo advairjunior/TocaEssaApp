@@ -147,9 +147,8 @@ class _LinhaFilaPublica extends StatelessWidget {
                   for (var estrela = 1; estrela <= 5; estrela++)
                     IconButton(
                       tooltip: '$estrela estrelas',
-                      visualDensity: VisualDensity.compact,
                       constraints:
-                          const BoxConstraints(minWidth: 36, minHeight: 36),
+                          const BoxConstraints(minWidth: 44, minHeight: 44),
                       padding: EdgeInsets.zero,
                       onPressed: avaliando ? null : () => avaliar!(estrela),
                       icon: Icon(

@@ -43,7 +43,6 @@ class _BarraStatusApresentacao extends StatelessWidget
           Tooltip(
             message: 'Receber pedidos',
             child: Switch(
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               value: apresentacao.pedidosAbertos,
               onChanged: salvando ? null : (_) => alterarPedidos(),
             ),
