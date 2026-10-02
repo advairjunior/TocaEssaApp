@@ -107,13 +107,13 @@ class AbaDeTexto extends StatelessWidget {
   const AbaDeTexto({
     super.key,
     required this.rotulo,
-    required this.quantidade,
+    this.quantidade,
     required this.selecionada,
     required this.tocar,
   });
 
   final String rotulo;
-  final int quantidade;
+  final int? quantidade;
   final bool selecionada;
   final VoidCallback tocar;
 
@@ -146,12 +146,14 @@ class AbaDeTexto extends StatelessWidget {
                       style: texto.titleMedium?.copyWith(color: cor),
                     ),
                   ),
-                  const SizedBox(width: EspacoTocaEssa.pequeno - 2),
-                  Text(
-                    '$quantidade',
-                    style: texto.labelLarge
-                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
-                  ),
+                  if (quantidade != null) ...[
+                    const SizedBox(width: EspacoTocaEssa.pequeno - 2),
+                    Text(
+                      '$quantidade',
+                      style: texto.labelLarge
+                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: EspacoTocaEssa.pequeno - 2),

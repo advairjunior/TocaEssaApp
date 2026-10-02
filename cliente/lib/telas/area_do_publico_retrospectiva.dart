@@ -81,31 +81,29 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
           'Minha retrospectiva',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        const SizedBox(height: 4),
-        const Text(
+        const SizedBox(height: EspacoTocaEssa.mini),
+        Text(
           'Coloque sua foto, salve e compartilhe seu momento na resenha.',
-          style: TextStyle(color: CoresTocaEssa.textoSecundario),
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: CoresTocaEssa.textoSecundario),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: EspacoTocaEssa.base),
         RepaintBoundary(
           key: _chaveRetrospectivaPublico,
           child: _CartaoRetrospectivaDoPublico(
             apresentacao: apresentacao,
             participante: participante,
             foto: _fotoRetrospectivaPublico,
+            escolherFoto: _escolherFotoDaMinhaRetrospectiva,
           ),
         ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: _escolherFotoDaMinhaRetrospectiva,
-          icon: const Icon(Icons.add_a_photo_outlined),
-          label: Text(_fotoRetrospectivaPublico == null
-              ? 'Colocar minha foto'
-              : 'Trocar minha foto'),
-        ),
-        const SizedBox(height: 8),
+        const SizedBox(height: EspacoTocaEssa.base),
+        // Sem foto não há imagem para salvar: o próprio cartão convida a
+        // colocar uma, e o botão de salvar espera.
         FilledButton.icon(
-          onPressed: _gerandoRetrospectiva
+          onPressed: _gerandoRetrospectiva || _fotoRetrospectivaPublico == null
               ? null
               : () => _baixarMinhaRetrospectiva(apresentacao),
           icon: const Icon(Icons.ios_share_rounded),
@@ -113,6 +111,12 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
               ? 'Gerando imagem...'
               : 'Salvar imagem para compartilhar'),
         ),
+        if (_fotoRetrospectivaPublico != null)
+          TextButton.icon(
+            onPressed: _escolherFotoDaMinhaRetrospectiva,
+            icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+            label: const Text('Trocar minha foto'),
+          ),
       ];
 }
 
@@ -121,11 +125,13 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
     required this.apresentacao,
     required this.participante,
     required this.foto,
+    required this.escolherFoto,
   });
 
   final Apresentacao apresentacao;
   final ParticipanteDaResenha participante;
   final Uint8List? foto;
+  final VoidCallback escolherFoto;
 
   @override
   Widget build(BuildContext context) => AspectRatio(
@@ -140,9 +146,28 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
                 if (foto != null)
                   Image.memory(foto!, fit: BoxFit.cover)
                 else
-                  const Center(
-                    child: Icon(Icons.add_a_photo_outlined,
-                        size: 72, color: CoresTocaEssa.textoSecundario),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: escolherFoto,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add_a_photo_outlined,
+                                size: 56, color: CoresTocaEssa.roxoClaro),
+                            const SizedBox(height: EspacoTocaEssa.medio),
+                            Text(
+                              'Toque para colocar sua foto',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 const DecoratedBox(
                   decoration: BoxDecoration(

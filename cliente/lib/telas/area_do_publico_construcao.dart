@@ -188,22 +188,26 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
           )
         else ...[
           if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(
-                    value: false,
-                    label: Text('Perfil geral'),
-                    icon: Icon(Icons.person_outline)),
-                ButtonSegment(
-                    value: true,
-                    label: Text('Nesta resenha'),
-                    icon: Icon(Icons.celebration_outlined)),
+            Row(
+              children: [
+                Flexible(
+                  child: AbaDeTexto(
+                    rotulo: 'Perfil geral',
+                    selecionada: !_perfilDaResenha,
+                    tocar: () => _mudarEstado(() => _perfilDaResenha = false),
+                  ),
+                ),
+                const SizedBox(width: EspacoTocaEssa.base),
+                Flexible(
+                  child: AbaDeTexto(
+                    rotulo: 'Nesta resenha',
+                    selecionada: _perfilDaResenha,
+                    tocar: () => _mudarEstado(() => _perfilDaResenha = true),
+                  ),
+                ),
               ],
-              selected: {_perfilDaResenha},
-              onSelectionChanged: (valores) =>
-                  _mudarEstado(() => _perfilDaResenha = valores.single),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: EspacoTocaEssa.grande),
           ],
           if (!_perfilDaResenha ||
               apresentacao.tipo == TipoApresentacao.publica) ...[
@@ -217,18 +221,15 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               abrirResenhas: () => Navigator.pushNamed(context, '/minha-conta'),
             ),
           ] else ...[
-            _CabecalhoCompactoPedido(
-              apresentacao: apresentacao,
-              enderecoFoto:
-                  _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
-              abrirPerfil: () => _abrirPerfilDoArtista(apresentacao),
-            ),
-            const SizedBox(height: 16),
-            const Text('Sua participação apenas neste encontro.'),
-            const SizedBox(height: 12),
+            const TituloGrupo('Sua participação'),
             if (_minhaParticipacaoNaResenha == null)
-              const Text(
-                  'Sua participação está sendo atualizada. Aguarde um instante.')
+              Text(
+                'Sua participação está sendo atualizada. Aguarde um instante.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              )
             else ...[
               GrupoDeLinhas(
                 linhas: [

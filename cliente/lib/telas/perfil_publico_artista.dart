@@ -1,28 +1,12 @@
 part of 'area_do_publico.dart';
 
 extension _PerfilPublicoDoArtista on _AreaDoPublicoState {
-  Future<void> _abrirPerfilDoArtista(Apresentacao apresentacao) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: CoresTocaEssa.superficie,
-      builder: (contextoModal) => _construirPerfilPublicoArtista(
-        apresentacao,
-        contextoModal: contextoModal,
-      ),
-    );
-  }
-
-  Widget _construirPerfilPublicoArtista(
-    Apresentacao apresentacao, {
-    BuildContext? contextoModal,
-  }) {
+  Widget _construirPerfilPublicoArtista(Apresentacao apresentacao) {
     final perfil = apresentacao.perfilArtistico;
     return PerfilPublicoArtista(
       perfil: perfil,
       enderecoFoto: _api.enderecoArquivo(perfil.fotoUrl),
-      emAba: contextoModal == null,
+      emAba: true,
       apresentacao: apresentacao,
       copiarCodigo: () => _copiarCodigo(apresentacao.codigo),
       abrirInstagram: perfil.instagram == null
@@ -33,13 +17,8 @@ extension _PerfilPublicoDoArtista on _AreaDoPublicoState {
           ? null
           : () => abrirUrlExterna(
               Uri.https('wa.me', '/${_somenteDigitos(perfil.whatsapp!)}')),
-      apoiar: perfil.apoioPixDisponivel
-          ? () {
-              if (contextoModal != null) Navigator.pop(contextoModal);
-              Future<void>.delayed(
-                  Duration.zero, () => _abrirApoioPix(apresentacao));
-            }
-          : null,
+      apoiar:
+          perfil.apoioPixDisponivel ? () => _abrirApoioPix(apresentacao) : null,
     );
   }
 

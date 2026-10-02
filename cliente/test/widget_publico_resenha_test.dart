@@ -90,7 +90,7 @@ void main() {
     await tester.tap(find.text('Nesta resenha'));
     await tester.pumpAndSettle();
     expect(find.text('Minha retrospectiva'), findsOneWidget);
-    expect(find.text('Colocar minha foto'), findsOneWidget);
+    expect(find.text('Toque para colocar sua foto'), findsOneWidget);
     expect(find.text('Conquistas'), findsNothing);
     expect(find.text('Copiar meu resumo'), findsNothing);
     await tester.tap(find.text('Perfil geral'));
