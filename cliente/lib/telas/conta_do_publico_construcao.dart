@@ -213,7 +213,29 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         const SizedBox(height: EspacoTocaEssa.grande),
       ],
       for (final ano in anos) ...[
-        TituloGrupo('$ano'),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(child: TituloGrupo('$ano')),
+            TextButton.icon(
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RetrospectivaDoAno(
+                    ano: ano,
+                    nome: _perfil!.nome,
+                    encontros: [
+                      for (final e in historico)
+                        if (e.apresentacao.data.year == ano) e
+                    ],
+                  ),
+                ),
+              ),
+              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+              label: Text('Meu $ano'),
+            ),
+          ],
+        ),
         GrupoDeLinhas(
           recuoDivisoria: 88,
           linhas: [

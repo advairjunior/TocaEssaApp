@@ -8,6 +8,7 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/componentes_lista.dart';
 import 'package:toca_essa_app/telas/conta_do_publico.dart';
+import 'package:toca_essa_app/telas/retrospectiva_do_ano.dart';
 
 void main() {
   testWidgets('conta recupera histórico sem código e separa perfil geral',
@@ -236,6 +237,27 @@ void main() {
     expect(topo('2025'), lessThan(topo('Roda antiga')));
     expect(find.text('10 de agosto · Show'), findsOneWidget);
     expect(find.text('20 de dezembro · Resenha'), findsOneWidget);
+  });
+
+  testWidgets('cada ano do histórico abre a retrospectiva daquele ano',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+    final api = apiComApresentacoes([
+      apresentacao('Show de agosto', '2026-08-10', 'Encerrada'),
+      apresentacao('Roda antiga', '2025-12-20', 'Encerrada',
+          musicas: ['Evidências']),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Meu 2026'), findsOneWidget);
+    await tester.ensureVisible(find.text('Meu 2025'));
+    await tester.tap(find.text('Meu 2025'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RetrospectivaDoAno), findsOneWidget);
+    expect(find.text('MÚSICA DO ANO'), findsOneWidget);
+    expect(find.text('Evidências'), findsOneWidget);
   });
 
   testWidgets('sem nenhuma resenha, convida a entrar com um código',

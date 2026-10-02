@@ -10,6 +10,7 @@ import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import '../tema/tema_toca_essa.dart';
 import 'fundo_toca_essa.dart';
+import 'retrospectiva_do_ano.dart';
 
 part 'conta_do_publico_construcao.dart';
 part 'conta_do_publico_resenhas.dart';
