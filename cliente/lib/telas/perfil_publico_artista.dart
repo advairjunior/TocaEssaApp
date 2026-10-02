@@ -23,6 +23,8 @@ extension _PerfilPublicoDoArtista on _AreaDoPublicoState {
       perfil: perfil,
       enderecoFoto: _api.enderecoArquivo(perfil.fotoUrl),
       emAba: contextoModal == null,
+      apresentacao: apresentacao,
+      copiarCodigo: () => _copiarCodigo(apresentacao.codigo),
       abrirInstagram: perfil.instagram == null
           ? null
           : () => abrirUrlExterna(Uri.https(
@@ -60,6 +62,8 @@ class PerfilPublicoArtista extends StatelessWidget {
     required this.abrirInstagram,
     required this.abrirWhatsapp,
     required this.apoiar,
+    this.apresentacao,
+    this.copiarCodigo,
     this.emAba = false,
   });
 
@@ -68,10 +72,17 @@ class PerfilPublicoArtista extends StatelessWidget {
   final VoidCallback? abrirInstagram;
   final VoidCallback? abrirWhatsapp;
   final VoidCallback? apoiar;
+  final Apresentacao? apresentacao;
+  final VoidCallback? copiarCodigo;
   final bool emAba;
 
   @override
   Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final secundario =
+        texto.bodyLarge?.copyWith(color: CoresTocaEssa.textoSecundario);
+    const entreSecoes = SizedBox(height: EspacoTocaEssa.enorme);
+    final instagram = perfil.instagram?.trim().replaceAll('@', '');
     final conteudo = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -82,74 +93,194 @@ class PerfilPublicoArtista extends StatelessWidget {
               height: 4,
               decoration: BoxDecoration(
                 color: CoresTocaEssa.borda,
-                borderRadius: BorderRadius.circular(99),
+                borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: EspacoTocaEssa.grande - 4),
         ],
-        FotoPerfilArtistico(
-          enderecoFoto: enderecoFoto,
-          tamanho: 104,
-        ),
-        const SizedBox(height: 14),
+        FotoPerfilArtistico(enderecoFoto: enderecoFoto, tamanho: 112),
+        const SizedBox(height: EspacoTocaEssa.base),
         Text(
           perfil.nomeArtistico,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall,
+          style: texto.headlineSmall,
         ),
-        const SizedBox(height: 22),
-        Text('Sobre o artista', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 6),
-        Text(
-          perfil.bio?.trim().isNotEmpty == true
-              ? perfil.bio!
-              : 'Este artista ainda não adicionou uma apresentação.',
-          style: const TextStyle(color: CoresTocaEssa.textoSecundario),
+        entreSecoes,
+        const TituloGrupo('Sobre o artista'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: EspacoTocaEssa.mini),
+          child: Text(
+            perfil.bio?.trim().isNotEmpty == true
+                ? perfil.bio!
+                : 'Este artista ainda não escreveu uma apresentação.',
+            style: secundario,
+          ),
         ),
+        if (apresentacao != null) ...[
+          entreSecoes,
+          const TituloGrupo('Esta apresentação'),
+          GrupoDeLinhas(
+            linhas: [
+              _LinhaDoArtista(
+                icone: Icons.calendar_today_rounded,
+                rotulo: 'Data',
+                valor: formatarData(apresentacao!.data),
+              ),
+              _LinhaDoArtista(
+                icone: Icons.location_on_outlined,
+                rotulo: 'Local',
+                valor: apresentacao!.local,
+              ),
+              _LinhaDoArtista(
+                icone: Icons.tag_rounded,
+                rotulo: 'Código',
+                valor: apresentacao!.codigo,
+                acao: Icons.copy_rounded,
+                tocar: copiarCodigo,
+              ),
+            ],
+          ),
+        ],
         if (abrirInstagram != null || abrirWhatsapp != null) ...[
-          const SizedBox(height: 22),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
+          entreSecoes,
+          const TituloGrupo('Contatos'),
+          GrupoDeLinhas(
+            linhas: [
               if (abrirInstagram != null)
-                OutlinedButton.icon(
-                  onPressed: abrirInstagram,
-                  icon: const Icon(Icons.alternate_email_rounded),
-                  label: const Text('Instagram'),
+                _LinhaDoArtista(
+                  icone: Icons.alternate_email_rounded,
+                  rotulo: 'Instagram',
+                  valor: '@$instagram',
+                  acao: Icons.open_in_new_rounded,
+                  tocar: abrirInstagram,
                 ),
               if (abrirWhatsapp != null)
-                OutlinedButton.icon(
-                  onPressed: abrirWhatsapp,
-                  icon: const Icon(Icons.chat_outlined),
-                  label: const Text('WhatsApp'),
+                _LinhaDoArtista(
+                  icone: Icons.chat_outlined,
+                  rotulo: 'WhatsApp',
+                  valor: 'Conversar',
+                  acao: Icons.open_in_new_rounded,
+                  tocar: abrirWhatsapp,
                 ),
             ],
           ),
         ],
         if (apoiar != null) ...[
-          const SizedBox(height: 24),
+          entreSecoes,
+          _ConviteApoio(apoiar: apoiar!),
+        ],
+        const SizedBox(height: EspacoTocaEssa.base),
+      ],
+    );
+    if (emAba) return conteudo;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        EspacoTocaEssa.grande,
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.grande,
+        EspacoTocaEssa.enorme,
+      ),
+      child: conteudo,
+    );
+  }
+}
+
+class _LinhaDoArtista extends StatelessWidget {
+  const _LinhaDoArtista({
+    required this.icone,
+    required this.rotulo,
+    required this.valor,
+    this.acao,
+    this.tocar,
+  });
+
+  final IconData icone;
+  final String rotulo;
+  final String valor;
+  final IconData? acao;
+  final VoidCallback? tocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Semantics(
+      button: tocar != null,
+      child: InkWell(
+        onTap: tocar,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: EspacoTocaEssa.base,
+            vertical: EspacoTocaEssa.base - 2,
+          ),
+          child: Row(
+            children: [
+              Icon(icone, size: 20, color: CoresTocaEssa.roxoClaro),
+              const SizedBox(width: EspacoTocaEssa.base),
+              Text(
+                rotulo,
+                style: texto.bodyMedium
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              ),
+              const SizedBox(width: EspacoTocaEssa.base),
+              Expanded(
+                child: Text(
+                  valor,
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: texto.bodyLarge,
+                ),
+              ),
+              if (acao != null) ...[
+                const SizedBox(width: EspacoTocaEssa.pequeno),
+                Icon(acao, size: 18, color: CoresTocaEssa.textoSecundario),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConviteApoio extends StatelessWidget {
+  const _ConviteApoio({required this.apoiar});
+  final VoidCallback apoiar;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(EspacoTocaEssa.grande - 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3A1640), CoresTocaEssa.superficie],
+        ),
+        border: Border.all(color: CoresTocaEssa.rosa.withValues(alpha: .35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Icon(Icons.favorite_rounded, color: CoresTocaEssa.rosa),
+          const SizedBox(height: EspacoTocaEssa.medio),
+          Text('Gostou do show?', style: texto.titleLarge),
+          const SizedBox(height: EspacoTocaEssa.mini),
+          Text(
+            'Mande um Pix. É voluntário e vai direto para quem está no palco.',
+            style: texto.bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          const SizedBox(height: EspacoTocaEssa.base + 4),
           FilledButton.icon(
             onPressed: apoiar,
             icon: const Icon(Icons.favorite_rounded),
             label: const Text('Apoiar o artista'),
           ),
         ],
-      ],
-    );
-    if (emAba) {
-      return Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-          child: conteudo,
-        ),
-      );
-    }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-      child: conteudo,
+      ),
     );
   }
 }

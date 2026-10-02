@@ -120,15 +120,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
     }
     if (_abaSelecionada == _indiceArtista) {
       return [
-        const SizedBox(height: 8),
-        Text('Conheça o artista',
-            style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        const Text(
-          'Acompanhe, entre em contato ou apoie quem está no palco.',
-          style: TextStyle(color: CoresTocaEssa.textoSecundario),
-        ),
-        const SizedBox(height: 14),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
         _construirPerfilPublicoArtista(apresentacao),
       ];
     }
