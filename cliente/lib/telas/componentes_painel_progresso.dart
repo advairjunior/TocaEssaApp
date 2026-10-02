@@ -16,7 +16,7 @@ class _ProgressoDoArtista extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _TituloGrupo('Sua jornada'),
+        const TituloGrupo('Sua jornada'),
         Container(
           padding: const EdgeInsets.symmetric(vertical: EspacoTocaEssa.base),
           decoration: BoxDecoration(
@@ -51,7 +51,7 @@ class _ProgressoDoArtista extends StatelessWidget {
                 ?.copyWith(color: CoresTocaEssa.textoSecundario),
           ),
         ),
-        _GrupoDeLinhas(
+        GrupoDeLinhas(
           linhas: [
             _ConquistaDoArtista(
               icone: Icons.mic_external_on_rounded,

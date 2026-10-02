@@ -88,8 +88,8 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
     Apresentacao apresentacao,
   ) =>
       [
-        const _TituloGrupo('Detalhes'),
-        _GrupoDeLinhas(
+        const TituloGrupo('Detalhes'),
+        GrupoDeLinhas(
           linhas: [
             _LinhaDetalhe(
               icone: Icons.calendar_today_rounded,

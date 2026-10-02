@@ -77,7 +77,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
         trocarFoto: _selecionarFoto,
       ),
       entreSecoes,
-      const _TituloGrupo('Identidade artística'),
+      const TituloGrupo('Identidade artística'),
       CampoTexto(
         rotulo: 'Nome artístico',
         controlador: _nomeArtistico,
@@ -94,7 +94,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
         linhas: 3,
       ),
       entreSecoes,
-      const _TituloGrupo('Contatos públicos'),
+      const TituloGrupo('Contatos públicos'),
       CampoTexto(
         rotulo: 'Instagram',
         controlador: _instagram,
@@ -119,7 +119,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
         alterar: (valor) => _mudarEstado(() => _exibirWhatsapp = valor),
       ),
       entreSecoes,
-      const _TituloGrupo('Apoio via Pix'),
+      const TituloGrupo('Apoio via Pix'),
       _InterruptorDoPerfil(
         titulo: 'Aceitar contribuições',
         descricao: 'Voluntária, sem confirmação automática.',
@@ -180,8 +180,8 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
       entreSecoes,
       _ProgressoDoArtista(apresentacoes: _apresentacoes),
       entreSecoes,
-      const _TituloGrupo('Conta'),
-      _GrupoDeLinhas(
+      const TituloGrupo('Conta'),
+      GrupoDeLinhas(
         linhas: [
           Padding(
             padding: const EdgeInsets.fromLTRB(

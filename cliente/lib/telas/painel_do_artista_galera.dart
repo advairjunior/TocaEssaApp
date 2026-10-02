@@ -2,7 +2,7 @@ part of 'painel_do_artista.dart';
 
 extension _GaleraDoPainelDoArtista on _PainelDoArtistaState {
   List<Widget> _construirGaleraDaResenha(BuildContext context) => [
-        const _TituloGrupo('Galera da resenha'),
+        const TituloGrupo('Galera da resenha'),
         if (_carregandoGalera)
           const Padding(
             padding: EdgeInsets.all(EspacoTocaEssa.grande),
@@ -20,7 +20,7 @@ extension _GaleraDoPainelDoArtista on _PainelDoArtistaState {
             ),
           )
         else
-          _GrupoDeLinhas(
+          GrupoDeLinhas(
             linhas: [
               for (final participante in _galera)
                 _LinhaGaleraDoArtista(
