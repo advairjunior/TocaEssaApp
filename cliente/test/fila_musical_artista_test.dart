@@ -28,22 +28,54 @@ void main() {
     // Incorporada no painel, o título e o status já ficam na barra superior.
     expect(find.text('Resenha de teste'), findsNothing);
     expect(find.text('Ao vivo'), findsNothing);
-    expect(find.text('Pendentes 1'), findsOneWidget);
-    expect(find.text('Fila 1'), findsOneWidget);
-    expect(find.text('Histórico 1'), findsOneWidget);
+    expect(find.byType(SegmentedButton<int>), findsNothing);
+    expect(find.text('Pendentes'), findsOneWidget);
+    expect(find.text('Fila'), findsOneWidget);
+    expect(find.text('Histórico'), findsOneWidget);
+    // O status repetido sai das seções; só o histórico precisa dele.
+    expect(find.text('Aceito'), findsNothing);
     expect(find.text('Música na fila'), findsOneWidget);
     expect(find.text('Pedido pendente'), findsNothing);
     expect(find.text('Música finalizada'), findsNothing);
 
-    await tester.tap(find.text('Pendentes 1'));
+    await tester.tap(find.text('Pendentes'));
     await tester.pumpAndSettle();
     expect(find.text('Pedido pendente'), findsOneWidget);
     expect(find.text('Música na fila'), findsNothing);
 
-    await tester.tap(find.text('Histórico 1'));
+    await tester.tap(find.text('Histórico'));
     await tester.pumpAndSettle();
     expect(find.text('Música finalizada'), findsOneWidget);
+    expect(find.text('Finalizado'), findsOneWidget);
     expect(find.text('Pedido pendente'), findsNothing);
+  });
+
+  testWidgets('abas da fila não quebram o texto em celular de 360px',
+      (tester) async {
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360, 740) * 3;
+    final api = ApiTocaEssa(
+      enderecoBase: 'https://tocaessa.test',
+      cliente: MockClient((_) async => http.Response(_pedidosJson, 200)),
+    )..definirTokenArtista('token-artista');
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: FilaMusicalArtista(
+          api: api,
+          apresentacao: _apresentacao(),
+          incorporada: true,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    // Uma linha só: antes "Pendentes 1" virava "Pendent / es 1".
+    final altura = tester.getSize(find.text('Pendentes')).height;
+    final linha = tester.getSize(find.text('Fila')).height;
+    expect(altura, linha);
   });
 }
 

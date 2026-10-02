@@ -15,12 +15,12 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
           if (!widget.incorporada)
             _ResumoApresentacao(apresentacao: widget.apresentacao),
           if (_tocando.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const _TituloSecao('Tocando agora'),
-            const SizedBox(height: 10),
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            const TituloGrupo('Tocando agora'),
             for (final pedido in _tocando)
               CartaoGrupoPedidoArtista(
                 grupo: pedido,
+                destaque: true,
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),
@@ -47,17 +47,18 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
 
   Widget _campoBusca() => TextField(
         controller: _busca,
-        decoration: InputDecoration(
-          hintText: 'Buscar música ou artista…',
+        decoration:
+            decoracaoCampoTocaEssa(dica: 'Buscar música ou artista…').copyWith(
           prefixIcon: const Icon(Icons.search_rounded, size: 20),
           suffixIcon: _textoBusca.isNotEmpty
               ? IconButton(
+                  tooltip: 'Limpar busca',
                   icon: const Icon(Icons.close_rounded, size: 18),
                   onPressed: () => _busca.clear(),
                 )
               : null,
           contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           isDense: true,
         ),
       );
@@ -96,33 +97,28 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
         ),
       );
 
-  Widget _seletorDaFila() => SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<int>(
-          showSelectedIcon: false,
-          expandedInsets: EdgeInsets.zero,
-          segments: [
-            ButtonSegment(
-              value: 0,
-              icon: const Icon(Icons.notifications_none_rounded, size: 18),
-              label: Text(
-                  'Pendentes ${_aguardando.length + _alosPendentes.length}'),
-            ),
-            ButtonSegment(
-              value: 1,
-              icon: const Icon(Icons.queue_music_rounded, size: 18),
-              label: Text('Fila ${_fila.length}'),
-            ),
-            ButtonSegment(
-              value: 2,
-              icon: const Icon(Icons.history_rounded, size: 18),
-              label: Text('Histórico ${_historico.length}'),
-            ),
-          ],
-          selected: {_visaoFila},
-          onSelectionChanged: (selecao) => _selecionarVisaoFila(selecao.first),
-        ),
-      );
+  Widget _seletorDaFila() {
+    // O espaço máximo de cada aba acompanha o tamanho do rótulo: com partes
+    // iguais, "Pendentes" era cortado mesmo sobrando espaço ao lado de "Fila".
+    Widget aba(int visao, String rotulo, int quantidade) => Flexible(
+          flex: rotulo.length + 2,
+          child: AbaDeTexto(
+            rotulo: rotulo,
+            quantidade: quantidade,
+            selecionada: _visaoFila == visao,
+            tocar: () => _selecionarVisaoFila(visao),
+          ),
+        );
+    return Row(
+      children: [
+        aba(0, 'Pendentes', _aguardando.length + _alosPendentes.length),
+        const SizedBox(width: EspacoTocaEssa.base),
+        aba(1, 'Fila', _fila.length),
+        const SizedBox(width: EspacoTocaEssa.base),
+        aba(2, 'Histórico', _historico.length),
+      ],
+    );
+  }
 
   Widget _secaoSelecionada() => switch (_visaoFila) {
         0 => _secaoPendentes(),

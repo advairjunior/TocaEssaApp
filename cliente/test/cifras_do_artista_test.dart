@@ -125,8 +125,33 @@ void main() {
       ),
     ));
 
-    expect(find.text('Abrir cifra'), findsOneWidget);
+    expect(find.byTooltip('Abrir cifra'), findsOneWidget);
     expect(find.byTooltip('Escolher ou trocar cifra'), findsOneWidget);
+  });
+
+  testWidgets('pendente: aceitar e cifra na primeira linha, recusas abaixo',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: CartaoPedidoArtista(
+          pedido: _pedido(),
+          alterar: (_) {},
+          abrirCifra: () {},
+          escolherCifra: () {},
+        ),
+      ),
+    ));
+
+    double linha(Finder alvo) => tester.getCenter(alvo).dy;
+    final aceitar = find.text('Aceitar');
+    expect(linha(find.byTooltip('Abrir cifra')), closeTo(linha(aceitar), 2));
+    expect(linha(find.byTooltip('Escolher ou trocar cifra')),
+        closeTo(linha(aceitar), 2));
+    expect(linha(find.text('Não conhecemos')), greaterThan(linha(aceitar)));
+    expect(linha(find.text('Ainda não tocamos')), greaterThan(linha(aceitar)));
+    // Rótulo inteiro numa linha, sem "Ainda não / tocamos".
+    expect(tester.getSize(find.text('Ainda não tocamos')).height,
+        tester.getSize(find.text('Não conhecemos')).height);
   });
 
   testWidgets('fila abre cifra salva diretamente sem recarregar pedidos',
@@ -156,10 +181,10 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Pendentes 1'));
+    await tester.tap(find.text('Pendentes'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Abrir cifra'));
-    await tester.tap(find.text('Abrir cifra'));
+    await tester.ensureVisible(find.byTooltip('Abrir cifra'));
+    await tester.tap(find.byTooltip('Abrir cifra'));
     await tester.pumpAndSettle();
 
     expect(aberta.toString(),
@@ -199,10 +224,10 @@ void main() {
       ),
     ));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Pendentes 1'));
+    await tester.tap(find.text('Pendentes'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Abrir cifra'));
-    await tester.tap(find.text('Abrir cifra'));
+    await tester.ensureVisible(find.byTooltip('Abrir cifra'));
+    await tester.tap(find.byTooltip('Abrir cifra'));
     await tester.pumpAndSettle();
     expect(find.text('Escolher cifra'), findsOneWidget);
     await tester.tap(find.text('Abrir sugestão'));

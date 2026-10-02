@@ -9,6 +9,8 @@ import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
+import 'componentes_lista.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'escolher_cifra.dart';
 
@@ -92,7 +94,9 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     super.initState();
     _abaSelecionada = widget.abaInicial;
     _busca.addListener(() {
-      if (mounted) setState(() => _textoBusca = _busca.text.trim().toLowerCase());
+      if (mounted) {
+        setState(() => _textoBusca = _busca.text.trim().toLowerCase());
+      }
     });
     _carregar();
     _atualizacaoAutomatica = Timer.periodic(
@@ -181,9 +185,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
 
   void _selecionarVisaoFila(int indice) => setState(() => _visaoFila = indice);
 
-  void _removerPendente(String pedidoId) => setState(() => _pedidos = _pedidos
-      .where((p) => p.pedidoRepresentativoId != pedidoId)
-      .toList());
+  void _removerPendente(String pedidoId) => setState(() => _pedidos =
+      _pedidos.where((p) => p.pedidoRepresentativoId != pedidoId).toList());
 
   @override
   Widget build(BuildContext context) {

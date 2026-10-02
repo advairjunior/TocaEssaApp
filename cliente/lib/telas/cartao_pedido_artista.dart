@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
-import 'componentes.dart';
 
 class CartaoGrupoPedidoArtista extends StatelessWidget {
   const CartaoGrupoPedidoArtista({
@@ -15,6 +14,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
     this.eoPrimeiroDaFila = false,
     this.abrirCifra,
     this.escolherCifra,
+    this.destaque = false,
   });
 
   final GrupoPedidoMusical grupo;
@@ -26,6 +26,9 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
   final VoidCallback? abrirCifra;
   final VoidCallback? escolherCifra;
 
+  /// Realça a música que está tocando agora.
+  final bool destaque;
+
   @override
   Widget build(BuildContext context) => CartaoPedidoArtista(
         pedido: grupo.comoPedidoMusical(),
@@ -36,6 +39,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
         eoPrimeiroDaFila: eoPrimeiroDaFila,
         abrirCifra: abrirCifra,
         escolherCifra: escolherCifra,
+        destaque: destaque,
       );
 }
 
@@ -50,6 +54,7 @@ class CartaoPedidoArtista extends StatelessWidget {
     this.eoPrimeiroDaFila = false,
     this.abrirCifra,
     this.escolherCifra,
+    this.destaque = false,
   });
 
   final PedidoMusical pedido;
@@ -61,22 +66,35 @@ class CartaoPedidoArtista extends StatelessWidget {
   final VoidCallback? abrirCifra;
   final VoidCallback? escolherCifra;
 
+  /// Realça a música que está tocando agora.
+  final bool destaque;
+
   @override
-  Widget build(BuildContext context) => Card(
-        margin: EdgeInsets.zero,
-        elevation: 0,
-        color: pedido.quantidadePedidos > 1
-            ? CoresTocaEssa.roxo.withValues(alpha: .09)
-            : null,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: BorderSide(
-            color: CoresTocaEssa.roxoClaro
-                .withValues(alpha: pedido.quantidadePedidos > 1 ? .52 : .16),
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+          color: destaque
+              ? null
+              : pedido.quantidadePedidos > 1
+                  ? CoresTocaEssa.roxo.withValues(alpha: .1)
+                  : CoresTocaEssa.superficie,
+          gradient: destaque
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF2E1850), CoresTocaEssa.superficie],
+                )
+              : null,
+          border: Border.all(
+            color: destaque
+                ? const Color(0xFF5A3D8C)
+                : pedido.quantidadePedidos > 1
+                    ? CoresTocaEssa.roxoClaro.withValues(alpha: .4)
+                    : CoresTocaEssa.borda,
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(EspacoTocaEssa.base),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -108,35 +126,41 @@ class CartaoPedidoArtista extends StatelessWidget {
               ],
               _cabecalho(context),
               if (_textoDosSolicitantes != null) ...[
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.person_outline_rounded,
-                        size: 15, color: CoresTocaEssa.textoSecundario),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        _textoDosSolicitantes!,
-                        style: const TextStyle(
-                          color: CoresTocaEssa.textoSecundario,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(height: EspacoTocaEssa.mini),
+                Text(
+                  _textoDosSolicitantes!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: CoresTocaEssa.textoSecundario),
                 ),
               ],
-              if (pedido.formaParticipacao !=
-                  FormaParticipacaoPedido.pedidoNormal) ...[
-                const SizedBox(height: 10),
-                _detalhesDaParticipacao(),
+              if (_detalhesDaParticipacao != null) ...[
+                const SizedBox(height: EspacoTocaEssa.mini),
+                Text(
+                  _detalhesDaParticipacao!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                ),
               ],
               if (pedido.recado?.isNotEmpty == true) ...[
-                const SizedBox(height: 10),
-                _recado(),
+                const SizedBox(height: EspacoTocaEssa.pequeno),
+                _recado(context),
               ],
-              const SizedBox(height: 8),
-              _status(),
+              // Nas seções o status já está implícito; no histórico ele diz
+              // como cada pedido terminou.
+              if (somenteLeitura) ...[
+                const SizedBox(height: EspacoTocaEssa.pequeno),
+                Text(
+                  pedido.status.rotulo,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                ),
+              ],
               if (pedido.quantidadeAvaliacoes > 0) ...[
                 const SizedBox(height: 8),
                 _avaliacao(),
@@ -166,37 +190,32 @@ class CartaoPedidoArtista extends StatelessWidget {
 
   bool get _temRodape => _temCifra || (!somenteLeitura && _acoes().isNotEmpty);
 
+  /// Ação principal e atalhos da cifra numa linha; as alternativas (recusas)
+  /// ficam abaixo, discretas.
   Widget _rodape() {
     final acoes = somenteLeitura ? <Widget>[] : _acoes();
-    if (acoes.length == 1) {
-      return Row(
-        children: [
-          Expanded(child: acoes.single),
-          if (_temCifra) ...[
-            const SizedBox(width: 8),
-            ..._atalhosDaCifra(),
-          ],
-        ],
-      );
-    }
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    final principal = acoes.isEmpty ? null : acoes.first;
+    final alternativas = acoes.skip(1).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...acoes,
-        if (_temCifra)
-          OutlinedButton.icon(
-            onPressed: abrirCifra,
-            icon: const Icon(Icons.menu_book_rounded, size: 19),
-            label: const Text('Abrir cifra'),
-          ),
-        if (_temCifra && escolherCifra != null)
-          IconButton.outlined(
-            tooltip: 'Escolher ou trocar cifra',
-            onPressed: escolherCifra,
-            icon: const Icon(Icons.link_rounded),
-          ),
+        Row(
+          children: [
+            if (principal != null)
+              Expanded(child: principal)
+            else
+              const Spacer(),
+            if (_temCifra) ...[
+              const SizedBox(width: EspacoTocaEssa.pequeno),
+              ..._atalhosDaCifra(),
+            ],
+          ],
+        ),
+        if (alternativas.isNotEmpty) ...[
+          const SizedBox(height: EspacoTocaEssa.mini),
+          // Cada rótulo fica inteiro; se não couberem lado a lado, descem.
+          Wrap(children: alternativas),
+        ],
       ],
     );
   }
@@ -217,22 +236,6 @@ class CartaoPedidoArtista extends StatelessWidget {
         ],
       ];
 
-  Widget _status() => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.roxo.withValues(alpha: .14),
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          pedido.status.rotulo,
-          style: const TextStyle(
-            color: CoresTocaEssa.roxoClaro,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      );
-
   Widget _cabecalho(BuildContext context) => Row(
         children: [
           if (inicio != null) ...[inicio!, const SizedBox(width: 10)],
@@ -244,7 +247,7 @@ class CartaoPedidoArtista extends StatelessWidget {
                     pedido.tipo == TipoPedido.alo
                         ? 'Alô para ${pedido.destinatarioAlo}'
                         : pedido.musica,
-                    style: Theme.of(context).textTheme.titleMedium),
+                    style: Theme.of(context).textTheme.titleLarge),
                 if (pedido.artista?.isNotEmpty == true)
                   Text(
                     pedido.artista!,
@@ -277,33 +280,31 @@ class CartaoPedidoArtista extends StatelessWidget {
         ],
       );
 
-  Widget _detalhesDaParticipacao() => Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          EtiquetaDetalhePedido(
-            icone: pedido.formaParticipacao == FormaParticipacaoPedido.euCanto
-                ? Icons.mic_rounded
-                : Icons.groups_rounded,
-            texto: pedido.formaParticipacao.rotulo,
-            destaque: true,
-          ),
-          if (pedido.tomPreferido?.isNotEmpty == true)
-            EtiquetaDetalhePedido(
-              icone: Icons.tune_rounded,
-              texto: 'Tom ${pedido.tomPreferido}',
-            ),
-        ],
-      );
+  /// Ex.: "Eu canto · Tom G"; nulo quando é um pedido comum.
+  String? get _detalhesDaParticipacao {
+    final partes = [
+      if (pedido.formaParticipacao != FormaParticipacaoPedido.pedidoNormal)
+        pedido.formaParticipacao.rotulo,
+      if (pedido.tomPreferido?.isNotEmpty == true) 'Tom ${pedido.tomPreferido}',
+    ];
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
 
-  Widget _recado() => Container(
+  Widget _recado(BuildContext context) => Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.roxo.withValues(alpha: .08),
-          borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.only(left: EspacoTocaEssa.medio),
+        decoration: const BoxDecoration(
+          border: Border(
+            left: BorderSide(color: CoresTocaEssa.roxoClaro, width: 2),
+          ),
         ),
-        child: Text('“${pedido.recado}”'),
+        child: Text(
+          '“${pedido.recado}”',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontStyle: FontStyle.italic),
+        ),
       );
 
   Widget _avaliacao() => Row(

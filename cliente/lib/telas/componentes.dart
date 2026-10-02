@@ -2,40 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../tema/tema_toca_essa.dart';
-
-class EtiquetaDetalhePedido extends StatelessWidget {
-  const EtiquetaDetalhePedido({
-    super.key,
-    required this.icone,
-    required this.texto,
-    this.destaque = false,
-  });
-
-  final IconData icone;
-  final String texto;
-  final bool destaque;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: destaque
-              ? CoresTocaEssa.roxo.withValues(alpha: .2)
-              : CoresTocaEssa.superficie,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: CoresTocaEssa.borda),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icone, size: 16, color: CoresTocaEssa.roxoClaro),
-            const SizedBox(width: 6),
-            Text(texto, style: const TextStyle(fontSize: 12)),
-          ],
-        ),
-      );
-}
 
 class ConteudoMobile extends StatelessWidget {
   const ConteudoMobile({super.key, required this.filho});
