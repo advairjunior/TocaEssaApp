@@ -105,6 +105,27 @@ class ApoioPix {
   final String pixCopiaECola;
   final String mensagem;
 
+  /// Chave do recebedor lida do próprio payload (campo 26, subcampo 01),
+  /// para quem prefere colar a chave no banco e digitar o valor.
+  String? get chavePix {
+    final contaPix = _campoPix(pixCopiaECola, '26');
+    return contaPix == null ? null : _campoPix(contaPix, '01');
+  }
+
+  static String? _campoPix(String texto, String id) {
+    var posicao = 0;
+    while (posicao + 4 <= texto.length) {
+      final tamanho = int.tryParse(texto.substring(posicao + 2, posicao + 4));
+      final fim = posicao + 4 + (tamanho ?? 0);
+      if (tamanho == null || fim > texto.length) return null;
+      if (texto.substring(posicao, posicao + 2) == id) {
+        return texto.substring(posicao + 4, fim);
+      }
+      posicao = fim;
+    }
+    return null;
+  }
+
   factory ApoioPix.deJson(Map<String, dynamic> json) => ApoioPix(
         valor: (json['valor'] as num).toDouble(),
         pixCopiaECola: json['pixCopiaECola'] as String,

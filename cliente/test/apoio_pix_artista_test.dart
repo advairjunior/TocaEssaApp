@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -90,6 +91,52 @@ void main() {
     semantica.dispose();
   });
 
+  testWidgets('mostra a chave pix e permite copiar só a chave',
+      (tester) async {
+    String? copiado;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (chamada) async {
+        if (chamada.method == 'Clipboard.setData') {
+          copiado = (chamada.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    await _abrirFolha(tester,
+        payload: '00020101021126360014BR.GOV.BCB.PIX0114+5562982170618'
+            '52040000530398654041.005802BR5907ARTISTA6007GOIANIA'
+            '62070503***63041234');
+
+    await tester.tap(find.text('R\$ 10'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('+5562982170618'), findsOneWidget);
+    await tester.ensureVisible(find.text('Copiar chave Pix'));
+    await tester.tap(find.text('Copiar chave Pix'));
+    await tester.pumpAndSettle();
+
+    expect(copiado, '+5562982170618');
+    expect(find.text('Chave Pix copiada.'), findsOneWidget);
+  });
+
+  test('extrai a chave do payload pix', () {
+    const apoio = ApoioPix(
+      valor: 1,
+      pixCopiaECola: '00020101021126360014BR.GOV.BCB.PIX0114+5562982170618'
+          '5204000053039865802BR6304ABCD',
+      mensagem: '',
+    );
+    const semChave = ApoioPix(
+      valor: 1,
+      pixCopiaECola: '00020101021126580014BR.GOV.BCB.PIX6304ABCD',
+      mensagem: '',
+    );
+
+    expect(apoio.chavePix, '+5562982170618');
+    expect(semChave.chavePix, isNull);
+  });
+
   testWidgets('valor inválido mostra erro na cor do tema', (tester) async {
     await _abrirFolha(tester);
 
@@ -103,13 +150,14 @@ void main() {
   });
 }
 
-Future<void> _abrirFolha(WidgetTester tester) async {
+Future<void> _abrirFolha(WidgetTester tester,
+    {String payload = '00020101021126580014BR.GOV.BCB.PIX6304ABCD'}) async {
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
       body: ApoioPixArtista(
         carregar: (valor) async => ApoioPix(
           valor: valor,
-          pixCopiaECola: '00020101021126580014BR.GOV.BCB.PIX6304ABCD',
+          pixCopiaECola: payload,
           mensagem: 'Obrigado pelo apoio',
         ),
       ),

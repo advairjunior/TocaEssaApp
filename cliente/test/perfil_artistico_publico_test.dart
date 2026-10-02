@@ -56,6 +56,8 @@ void main() {
     expect(find.text('Exibir Instagram ao público'), findsOneWidget);
     expect(find.text('Aceitar contribuições'), findsOneWidget);
     expect(find.widgetWithText(CampoTexto, 'Chave Pix'), findsOneWidget);
-    expect(find.text('Prefira uma chave aleatória'), findsOneWidget);
+    expect(
+        find.text('Prefira uma chave aleatória. Celular com +55 e DDD'),
+        findsOneWidget);
   });
 }

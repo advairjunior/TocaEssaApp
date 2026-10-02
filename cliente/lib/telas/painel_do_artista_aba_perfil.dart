@@ -138,7 +138,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
                   CampoTexto(
                     rotulo: 'Chave Pix',
                     controlador: _pixChave,
-                    ajuda: 'Prefira uma chave aleatória',
+                    ajuda: 'Prefira uma chave aleatória. Celular com +55 e DDD',
                   ),
                   entreCampos,
                   Row(

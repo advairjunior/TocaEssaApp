@@ -183,6 +183,31 @@ class _ApoioPixArtistaState extends State<ApoioPixArtista> {
                   icon: const Icon(Icons.copy_rounded),
                   label: const Text('Copiar código Pix'),
                 ),
+                if (_apoio!.chavePix case final chave?) ...[
+                  const SizedBox(height: EspacoTocaEssa.medio),
+                  const Text(
+                    'Se o código não funcionar, cole a chave no seu banco e digite o valor.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: CoresTocaEssa.textoSecundario),
+                  ),
+                  const SizedBox(height: EspacoTocaEssa.pequeno),
+                  SelectableText(chave,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: EspacoTocaEssa.pequeno),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final mensageiro = ScaffoldMessenger.of(context);
+                      await Clipboard.setData(ClipboardData(text: chave));
+                      if (mounted) {
+                        mensageiro.showSnackBar(const SnackBar(
+                            content: Text('Chave Pix copiada.')));
+                      }
+                    },
+                    icon: const Icon(Icons.key_rounded),
+                    label: const Text('Copiar chave Pix'),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 const Text(
                   'A contribuição é voluntária e não garante que um pedido seja aceito ou tocado.',
