@@ -22,9 +22,9 @@ class _MusicaTocandoAgora extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2E1850), CoresTocaEssa.superficie],
+          colors: [CoresTocaEssa.destaqueFundo, CoresTocaEssa.superficie],
         ),
-        border: Border.all(color: const Color(0xFF5A3D8C)),
+        border: Border.all(color: CoresTocaEssa.destaqueBorda),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,8 +134,7 @@ class _LinhaFilaPublica extends StatelessWidget {
               if (pedido.quantidadeAvaliacoes > 0)
                 Text(
                   '${pedido.mediaAvaliacoes?.toStringAsFixed(1)} ★',
-                  style: texto.labelLarge
-                      ?.copyWith(color: const Color(0xFFFFC857)),
+                  style: texto.labelLarge?.copyWith(color: CoresTocaEssa.ouro),
                 ),
             ],
           ),
@@ -155,7 +154,7 @@ class _LinhaFilaPublica extends StatelessWidget {
                         estrela <= (pedido.minhaAvaliacao ?? 0)
                             ? Icons.star_rounded
                             : Icons.star_border_rounded,
-                        color: const Color(0xFFFFC857),
+                        color: CoresTocaEssa.ouro,
                         size: 24,
                       ),
                     ),

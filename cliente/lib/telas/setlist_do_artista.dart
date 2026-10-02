@@ -258,7 +258,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           value: total > 0 ? _tocadas / total : 0,
           minHeight: 6,
           borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
-          color: restantes == 0 ? const Color(0xFF4ADE80) : null,
+          color: restantes == 0 ? CoresTocaEssa.sucesso : null,
         ),
       ],
     );

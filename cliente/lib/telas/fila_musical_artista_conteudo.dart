@@ -268,14 +268,14 @@ class _PendenteDeslizavel extends StatelessWidget {
         key: ValueKey('dismissivel-${pedido.pedidoRepresentativoId}'),
         background: _fundo(
           alinhamento: Alignment.centerLeft,
-          cor: const Color(0xFF4ADE80),
+          cor: CoresTocaEssa.sucesso,
           icone: Icons.check_rounded,
           texto: 'Aceitar',
           padding: const EdgeInsets.only(left: 20),
         ),
         secondaryBackground: _fundo(
           alinhamento: Alignment.centerRight,
-          cor: const Color(0xFFFB7185),
+          cor: CoresTocaEssa.perigo,
           icone: Icons.close_rounded,
           texto: 'Recusar',
           padding: const EdgeInsets.only(right: 20),

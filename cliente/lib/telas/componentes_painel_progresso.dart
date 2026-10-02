@@ -145,7 +145,7 @@ class _ConquistaDoArtista extends StatelessWidget {
             ),
             if (desbloqueada)
               const Icon(Icons.check_circle_rounded,
-                  size: 20, color: Color(0xFF54D98C)),
+                  size: 20, color: CoresTocaEssa.sucesso),
           ],
         ),
       ),

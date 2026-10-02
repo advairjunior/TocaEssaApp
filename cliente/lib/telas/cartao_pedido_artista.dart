@@ -82,12 +82,15 @@ class CartaoPedidoArtista extends StatelessWidget {
               ? const LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF2E1850), CoresTocaEssa.superficie],
+                  colors: [
+                    CoresTocaEssa.destaqueFundo,
+                    CoresTocaEssa.superficie
+                  ],
                 )
               : null,
           border: Border.all(
             color: destaque
-                ? const Color(0xFF5A3D8C)
+                ? CoresTocaEssa.destaqueBorda
                 : pedido.quantidadePedidos > 1
                     ? CoresTocaEssa.roxoClaro.withValues(alpha: .4)
                     : CoresTocaEssa.borda,
@@ -106,7 +109,7 @@ class CartaoPedidoArtista extends StatelessWidget {
                       width: 7,
                       height: 7,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF4ADE80),
+                        color: CoresTocaEssa.sucesso,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -114,7 +117,7 @@ class CartaoPedidoArtista extends StatelessWidget {
                     const Text(
                       'PRÓXIMA A TOCAR',
                       style: TextStyle(
-                        color: Color(0xFF4ADE80),
+                        color: CoresTocaEssa.sucesso,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.9,
@@ -309,7 +312,7 @@ class CartaoPedidoArtista extends StatelessWidget {
 
   Widget _avaliacao() => Row(
         children: [
-          const Icon(Icons.star_rounded, size: 20, color: Color(0xFFFFC857)),
+          const Icon(Icons.star_rounded, size: 20, color: CoresTocaEssa.ouro),
           const SizedBox(width: 8),
           Text(
             '${pedido.mediaAvaliacoes?.toStringAsFixed(1)}/5 · '

@@ -136,9 +136,9 @@ class _CartaoAoVivo extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF2E1850), CoresTocaEssa.superficie],
+              colors: [CoresTocaEssa.destaqueFundo, CoresTocaEssa.superficie],
             ),
-            border: Border.all(color: const Color(0xFF5A3D8C)),
+            border: Border.all(color: CoresTocaEssa.destaqueBorda),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x33784DFF),

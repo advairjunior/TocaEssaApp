@@ -105,7 +105,7 @@ class _EstatisticasDaApresentacaoTelaState
               Row(
                 children: [
                   const Icon(Icons.star_rounded,
-                      color: Color(0xFFFFC857), size: 36),
+                      color: CoresTocaEssa.ouro, size: 36),
                   const SizedBox(width: EspacoTocaEssa.medio),
                   Text(
                     dados.mediaAvaliacoes?.toStringAsFixed(1) ?? '—',

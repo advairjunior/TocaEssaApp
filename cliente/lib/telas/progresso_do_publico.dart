@@ -213,8 +213,6 @@ class _Medalha extends StatelessWidget {
   const _Medalha({required this.conquista});
   final ConquistaPublico conquista;
 
-  static const _ouro = Color(0xFFFFC857);
-
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
@@ -224,7 +222,9 @@ class _Medalha extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
         side: BorderSide(
-            color: ganha ? _ouro.withValues(alpha: .45) : CoresTocaEssa.borda),
+            color: ganha
+                ? CoresTocaEssa.ouro.withValues(alpha: .45)
+                : CoresTocaEssa.borda),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
@@ -251,13 +251,15 @@ class _Medalha extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: ganha
-                      ? _ouro.withValues(alpha: .14)
+                      ? CoresTocaEssa.ouro.withValues(alpha: .14)
                       : CoresTocaEssa.borda.withValues(alpha: .5),
                 ),
                 child: Icon(
                     ganha ? Icons.emoji_events_rounded : Icons.lock_outline,
                     size: 20,
-                    color: ganha ? _ouro : CoresTocaEssa.textoSecundario),
+                    color: ganha
+                        ? CoresTocaEssa.ouro
+                        : CoresTocaEssa.textoSecundario),
               ),
               const SizedBox(height: EspacoTocaEssa.pequeno),
               Text(conquista.titulo,
@@ -268,7 +270,8 @@ class _Medalha extends StatelessWidget {
               const SizedBox(height: EspacoTocaEssa.pequeno),
               if (ganha)
                 Text('Conquistada',
-                    style: texto.labelMedium?.copyWith(color: _ouro))
+                    style:
+                        texto.labelMedium?.copyWith(color: CoresTocaEssa.ouro))
               else ...[
                 LinearProgressIndicator(
                     value: conquista.fracao,

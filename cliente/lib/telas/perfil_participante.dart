@@ -235,8 +235,8 @@ class _PerfilParticipanteState extends State<PerfilParticipante> {
                     ),
                     Text(
                       '${nota.estrelas} ★',
-                      style: texto.labelLarge
-                          ?.copyWith(color: const Color(0xFFFFC857)),
+                      style:
+                          texto.labelLarge?.copyWith(color: CoresTocaEssa.ouro),
                     ),
                   ],
                 ),
@@ -319,7 +319,7 @@ class _LinhaConquista extends StatelessWidget {
             const SizedBox(width: EspacoTocaEssa.pequeno),
             liberada
                 ? const Icon(Icons.check_circle_rounded,
-                    size: 20, color: Color(0xFF54D98C))
+                    size: 20, color: CoresTocaEssa.sucesso)
                 : Text(
                     '${conquista.atual.clamp(0, conquista.meta)}/${conquista.meta}',
                     style: texto.labelLarge

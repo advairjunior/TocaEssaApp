@@ -10,6 +10,14 @@ abstract final class CoresTocaEssa {
   static const rosa = Color(0xFFFF4D9D);
   static const texto = Color(0xFFFFFFFF);
   static const textoSecundario = Color(0xFFC8C2D0);
+
+  // Cores de estado e de destaque usadas em várias telas.
+  static const sucesso = Color(0xFF4ADE80);
+  static const atencao = Color(0xFFFBBF24);
+  static const perigo = Color(0xFFFB7185);
+  static const ouro = Color(0xFFFFC857);
+  static const destaqueFundo = Color(0xFF2E1850);
+  static const destaqueBorda = Color(0xFF5A3D8C);
 }
 
 /// Escala de espaçamentos usada em todas as telas redesenhadas.

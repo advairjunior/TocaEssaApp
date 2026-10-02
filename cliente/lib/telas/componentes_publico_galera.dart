@@ -89,8 +89,7 @@ class _LinhaPessoaDaResenha extends StatelessWidget {
               if (participante.mediaAvaliacoes != null)
                 Text(
                   '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
-                  style: texto.labelLarge
-                      ?.copyWith(color: const Color(0xFFFFC857)),
+                  style: texto.labelLarge?.copyWith(color: CoresTocaEssa.ouro),
                 ),
             ],
           ),

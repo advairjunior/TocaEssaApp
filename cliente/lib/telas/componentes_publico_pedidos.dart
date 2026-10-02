@@ -13,9 +13,9 @@ class _LinhaMeuPedido extends StatelessWidget {
   final VoidCallback? cancelar;
 
   Color get _cor => switch (pedido.status) {
-        StatusPedidoMusical.tocandoAgora => const Color(0xFF4ADE80),
-        StatusPedidoMusical.aguardando => const Color(0xFFFBBF24),
-        StatusPedidoMusical.canceladoPeloPublico => const Color(0xFFFB7185),
+        StatusPedidoMusical.tocandoAgora => CoresTocaEssa.sucesso,
+        StatusPedidoMusical.aguardando => CoresTocaEssa.atencao,
+        StatusPedidoMusical.canceladoPeloPublico => CoresTocaEssa.perigo,
         _ => CoresTocaEssa.roxoClaro,
       };
 
