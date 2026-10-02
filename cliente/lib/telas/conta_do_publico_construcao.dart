@@ -3,47 +3,15 @@ part of 'conta_do_publico.dart';
 extension _ConstrucaoContaPublico on _ContaDoPublicoState {
   bool get _noPerfil => _perfil != null && _aba == 1;
 
+  // Sem conta, a tela fala a língua do início: foto do palco e marca.
+  bool get _semConta => _perfil == null && _erro == null;
+
   Widget _construirConta(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(_noPerfil ? 'Meu perfil' : 'Minhas resenhas'),
-          leading: _noPerfil
-              ? IconButton(
-                  tooltip: 'Voltar às resenhas',
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => _alterar(() => _aba = 0),
-                )
-              : null,
-          actions: [
-            if (_perfil != null && !_noPerfil) ...[
-              IconButton(
-                tooltip: 'Atualizar',
-                onPressed: _ocupado ? null : _carregar,
-                icon: const Icon(Icons.refresh_rounded),
-              ),
-              Semantics(
-                button: true,
-                child: IconButton(
-                  tooltip: 'Meu perfil',
-                  onPressed: () => _alterar(() => _aba = 1),
-                  icon: CircleAvatar(
-                    radius: 15,
-                    backgroundColor: CoresTocaEssa.roxo.withValues(alpha: .24),
-                    foregroundColor: CoresTocaEssa.roxoClaro,
-                    foregroundImage: _perfil!.fotoUrl == null
-                        ? null
-                        : NetworkImage(
-                            widget.api.enderecoArquivo(_perfil!.fotoUrl)!),
-                    child: const Icon(Icons.person_rounded, size: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(width: EspacoTocaEssa.mini),
-            ],
-          ],
-        ),
         body: FundoTocaEssa(
-          variante: VarianteFundoTocaEssa.atmosfera,
-          intensidade: _perfil == null
+          variante: _semConta && _token == null
+              ? VarianteFundoTocaEssa.palco
+              : VarianteFundoTocaEssa.atmosfera,
+          intensidade: _semConta
               ? IntensidadeFundoTocaEssa.imersiva
               : IntensidadeFundoTocaEssa.suave,
           child: _ocupado && _perfil == null
@@ -57,6 +25,8 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
                             ? _construirAcesso(context)
                             : _noPerfil
                                 ? [
+                                    _cabecalhoDoPerfil(context),
+                                    const SizedBox(height: EspacoTocaEssa.base),
                                     PerfilPublicoAtivo(
                                       perfil: _perfil!,
                                       estatisticas: _estatisticas,
@@ -73,7 +43,23 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         ),
       );
 
+  Widget _cabecalhoDoPerfil(BuildContext context) => Row(
+        children: [
+          BotaoVoltarRedondo(
+            dica: 'Voltar às resenhas',
+            tocar: () => _alterar(() => _aba = 0),
+          ),
+          const SizedBox(width: EspacoTocaEssa.medio),
+          Text('Meu perfil', style: Theme.of(context).textTheme.titleLarge),
+        ],
+      );
+
   List<Widget> _construirErro() => [
+        const Align(
+          alignment: Alignment.centerLeft,
+          child: BotaoVoltarRedondo(),
+        ),
+        const SizedBox(height: EspacoTocaEssa.enorme),
         const EstadoVazio(
           icone: Icons.wifi_off_rounded,
           titulo: 'Não foi possível carregar',
@@ -91,52 +77,87 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
 
   List<Widget> _construirAcesso(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    const entreCampos = SizedBox(height: EspacoTocaEssa.base + 4);
+    const entreCampos = SizedBox(height: EspacoTocaEssa.base);
     return [
+      const Align(
+        alignment: Alignment.centerLeft,
+        child: BotaoVoltarRedondo(),
+      ),
       const SizedBox(height: EspacoTocaEssa.base),
-      Text(
-        _cadastro ? 'Crie seu perfil' : 'Entre na sua conta',
-        style: texto.headlineSmall,
-      ),
-      const SizedBox(height: EspacoTocaEssa.mini),
-      Text(
-        'Reencontre suas resenhas, músicas e conquistas sem precisar '
-        'guardar códigos.',
-        style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario),
+      Image.asset(
+        'assets/marca/toca_essa_horizontal.png',
+        height: 64,
+        fit: BoxFit.contain,
+        semanticLabel: 'TocaEssa',
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
-      if (_cadastro) ...[
-        CampoTexto(
-          rotulo: 'Seu nome',
-          controlador: _nome,
-          capitalizacao: TextCapitalization.words,
-          acaoTeclado: TextInputAction.next,
-        ),
-        entreCampos,
-      ],
-      CampoTexto(
-        rotulo: 'E-mail',
-        controlador: _email,
-        dica: 'voce@exemplo.com',
-        teclado: TextInputType.emailAddress,
-        acaoTeclado: TextInputAction.next,
-      ),
-      entreCampos,
-      CampoTexto(
-        rotulo: 'Senha',
-        controlador: _senha,
-        oculto: true,
-        aoEnviar: (_) => _entrar(),
-      ),
-      const SizedBox(height: EspacoTocaEssa.grande),
-      FilledButton(
-        onPressed: _ocupado ? null : _entrar,
-        child: Text(_cadastro ? 'Criar conta' : 'Entrar'),
+      Text(
+        'Suas noites, guardadas.',
+        textAlign: TextAlign.center,
+        style: texto.headlineMedium?.copyWith(fontSize: 28, letterSpacing: -.4),
       ),
       const SizedBox(height: EspacoTocaEssa.pequeno),
-      TextButton(
-        onPressed: () => _alterar(() => _cadastro = !_cadastro),
-        child: Text(_cadastro ? 'Já tenho conta' : 'Criar meu perfil'),
+      Text(
+        'As músicas que você pediu, quem estava com você e a foto de cada '
+        'resenha — sem precisar guardar códigos.',
+        textAlign: TextAlign.center,
+        style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario),
+      ),
+      const SizedBox(height: EspacoTocaEssa.enorme),
+      _PainelDeVidro(
+        filho: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _cadastro ? 'Crie seu perfil' : 'Entre na sua conta',
+              style: texto.titleMedium,
+            ),
+            const SizedBox(height: EspacoTocaEssa.base),
+            if (_cadastro) ...[
+              CampoTexto(
+                rotulo: 'Seu nome',
+                controlador: _nome,
+                capitalizacao: TextCapitalization.words,
+                acaoTeclado: TextInputAction.next,
+              ),
+              entreCampos,
+            ],
+            CampoTexto(
+              rotulo: 'E-mail',
+              controlador: _email,
+              dica: 'voce@exemplo.com',
+              teclado: TextInputType.emailAddress,
+              acaoTeclado: TextInputAction.next,
+            ),
+            entreCampos,
+            CampoTexto(
+              rotulo: 'Senha',
+              controlador: _senha,
+              oculto: true,
+              aoEnviar: (_) => _entrar(),
+            ),
+            const SizedBox(height: EspacoTocaEssa.grande),
+            FilledButton(
+              onPressed: _ocupado ? null : _entrar,
+              child: Text(_cadastro ? 'Criar conta' : 'Entrar'),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: EspacoTocaEssa.base),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            _cadastro ? 'Já tem conta?' : 'Primeira vez aqui?',
+            style: texto.bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          TextButton(
+            onPressed: () => _alterar(() => _cadastro = !_cadastro),
+            child: Text(_cadastro ? 'Já tenho conta' : 'Criar meu perfil'),
+          ),
+        ],
       ),
       TextButton.icon(
         style: TextButton.styleFrom(
@@ -168,8 +189,33 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
       if (mounted) await _carregar();
     }
 
+    final cabecalho = [
+      Row(
+        children: [
+          const BotaoVoltarRedondo(),
+          const Spacer(),
+          _BotaoMeuPerfil(
+            enderecoFoto: widget.api.enderecoArquivo(_perfil!.fotoUrl),
+            tocar: () => _alterar(() => _aba = 1),
+          ),
+        ],
+      ),
+      const SizedBox(height: EspacoTocaEssa.grande),
+      const Text(
+        'Minhas resenhas',
+        style: TextStyle(
+          fontSize: 34,
+          fontWeight: FontWeight.w600,
+          height: 1.1,
+          letterSpacing: -.6,
+        ),
+      ),
+    ];
+
     if (_encontros.isEmpty) {
       return [
+        ...cabecalho,
+        const SizedBox(height: EspacoTocaEssa.enorme),
         const EstadoVazio(
           icone: Icons.queue_music_rounded,
           titulo: 'Sua primeira resenha te espera',
@@ -183,82 +229,82 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         ),
       ];
     }
+    var indiceMemoria = 0;
     return [
+      ...cabecalho,
       if (_estatisticas != null) ...[
+        const SizedBox(height: EspacoTocaEssa.medio),
         _ResumoDasResenhas(estatisticas: _estatisticas!),
-        const SizedBox(height: EspacoTocaEssa.grande),
       ],
+      const SizedBox(height: EspacoTocaEssa.enorme),
       for (final apresentacao in aoVivo) ...[
         _CartaoResenhaAoVivo(
           apresentacao: apresentacao,
+          enderecoCapa:
+              widget.api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
           abrir: () => _abrir(apresentacao),
         ),
-        const SizedBox(height: EspacoTocaEssa.grande),
+        const SizedBox(height: EspacoTocaEssa.enorme),
       ],
       if (proximas.isNotEmpty) ...[
-        const TituloGrupo('Próximas'),
-        GrupoDeLinhas(
-          recuoDivisoria: 84,
-          linhas: [
-            for (final apresentacao in proximas)
-              LinhaComData(
-                data: apresentacao.data,
-                titulo: apresentacao.nome,
-                subtitulo: '${apresentacao.perfilArtistico.nomeArtistico} · '
-                    '${apresentacao.local}',
-                tocar: () => _abrir(apresentacao),
-              ),
-          ],
-        ),
-        const SizedBox(height: EspacoTocaEssa.grande),
+        Text('Próximas', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        for (final apresentacao in proximas)
+          _LinhaProxima(
+            apresentacao: apresentacao,
+            tocar: () => _abrir(apresentacao),
+          ),
+        const SizedBox(height: EspacoTocaEssa.enorme),
       ],
       for (final ano in anos) ...[
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(child: TituloGrupo('$ano')),
-            TextButton.icon(
-              onPressed: () => Navigator.push<void>(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => RetrospectivaDoAno(
-                    ano: ano,
-                    nome: _perfil!.nome,
-                    encontros: [
-                      for (final e in historico)
-                        if (e.apresentacao.data.year == ano) e
-                    ],
-                  ),
-                ),
+        _CabecalhoDoAno(
+          ano: ano,
+          abrirRetrospectiva: () => Navigator.push<void>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RetrospectivaDoAno(
+                ano: ano,
+                nome: _perfil!.nome,
+                encontros: [
+                  for (final e in historico)
+                    if (e.apresentacao.data.year == ano) e
+                ],
               ),
-              icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-              label: Text('Meu $ano'),
             ),
-          ],
+          ),
         ),
-        GrupoDeLinhas(
-          recuoDivisoria: 88,
-          linhas: [
-            for (final encontro
-                in historico.where((e) => e.apresentacao.data.year == ano))
-              _LinhaMemoria(
-                encontro: encontro,
-                fotoNova: _temFotoNova(encontro.apresentacao),
-                enderecoCapa: widget.api.enderecoArquivo(
-                  encontro.apresentacao.fotoRetrospectivaUrl ??
-                      encontro.apresentacao.perfilArtistico.fotoUrl,
-                ),
-                enderecoFoto: widget.api.enderecoArquivo,
-                tocar: () => _abrir(encontro.apresentacao),
-              ),
-          ],
-        ),
-        const SizedBox(height: EspacoTocaEssa.grande),
+        const SizedBox(height: EspacoTocaEssa.base),
+        for (final encontro
+            in historico.where((e) => e.apresentacao.data.year == ano)) ...[
+          _CartaoMemoria(
+            key: ValueKey('memoria-${encontro.apresentacao.id}'),
+            encontro: encontro,
+            fotoNova: _temFotoNova(encontro.apresentacao),
+            enderecoCapa: widget.api.enderecoArquivo(
+              encontro.apresentacao.fotoRetrospectivaUrl ??
+                  encontro.apresentacao.perfilArtistico.fotoUrl,
+            ),
+            // Alterna os fundos de palco para que noites sem foto não
+            // fiquem todas iguais.
+            fundoAlternativo: (indiceMemoria++).isEven
+                ? 'assets/fundos/bastidores.png'
+                : 'assets/fundos/inicio_palco.png',
+            enderecoFoto: widget.api.enderecoArquivo,
+            tocar: () => _abrirMemoria(encontro),
+          ),
+          const SizedBox(height: EspacoTocaEssa.base),
+        ],
+        const SizedBox(height: EspacoTocaEssa.base),
       ],
-      OutlinedButton.icon(
-        onPressed: entrarComCodigo,
-        icon: const Icon(Icons.tag_rounded, size: 18),
-        label: const Text('Entrar com um código'),
+      Center(
+        child: TextButton.icon(
+          style: TextButton.styleFrom(
+            foregroundColor: CoresTocaEssa.textoSecundario,
+          ),
+          onPressed: entrarComCodigo,
+          icon: const Icon(Icons.tag_rounded, size: 18),
+          label: const Text('Entrar com um código'),
+        ),
       ),
     ];
   }

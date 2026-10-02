@@ -1,12 +1,9 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import '../dominio/modelos.dart';
-import '../infraestrutura/baixar_arquivo.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_memoria.dart';
 import 'fundo_toca_essa.dart';
 
 /// Números e destaques de um ano de encontros do público.
@@ -94,16 +91,8 @@ class _RetrospectivaDoAnoState extends State<RetrospectivaDoAno> {
   Future<void> _salvar() async {
     setState(() => _gerando = true);
     try {
-      await WidgetsBinding.instance.endOfFrame;
-      final limite = _chaveCartao.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (limite == null) throw StateError('Não foi possível gerar a imagem.');
-      final proporcao = (1080 / limite.size.width).clamp(1.0, 4.0).toDouble();
-      final imagem = await limite.toImage(pixelRatio: proporcao);
-      final dados = await imagem.toByteData(format: ui.ImageByteFormat.png);
-      if (dados == null) throw StateError('Não foi possível gerar a imagem.');
-      baixarArquivo(
-          dados.buffer.asUint8List(), 'tocaessa-meu-${widget.ano}.png');
+      await baixarCartaoComoImagem(
+          _chaveCartao, 'tocaessa-meu-${widget.ano}.png');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sua retrospectiva do ano foi salva.')),
@@ -119,7 +108,6 @@ class _RetrospectivaDoAnoState extends State<RetrospectivaDoAno> {
   Widget build(BuildContext context) {
     final resumo = ResumoDoAno.de(widget.encontros);
     return Scaffold(
-      appBar: AppBar(title: Text('Meu ${widget.ano}')),
       body: FundoTocaEssa(
         variante: VarianteFundoTocaEssa.atmosfera,
         intensidade: IntensidadeFundoTocaEssa.suave,
@@ -127,6 +115,11 @@ class _RetrospectivaDoAnoState extends State<RetrospectivaDoAno> {
           filho: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: BotaoVoltarRedondo(),
+              ),
+              const SizedBox(height: EspacoTocaEssa.base),
               RepaintBoundary(
                 key: _chaveCartao,
                 child: _CartaoDoAno(

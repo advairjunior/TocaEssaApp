@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,8 +10,10 @@ import 'area_do_publico.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 import '../tema/tema_toca_essa.dart';
 import 'fundo_toca_essa.dart';
+import 'memoria_da_resenha.dart';
 import 'retrospectiva_do_ano.dart';
 
 part 'conta_do_publico_construcao.dart';
@@ -155,14 +159,39 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
     return foto != null && !_fotosVistas.contains(foto);
   }
 
+  Future<void> _marcarFotoComoVista(Apresentacao apresentacao) async {
+    if (!_temFotoNova(apresentacao)) return;
+    final preferencias = await SharedPreferences.getInstance();
+    _fotosVistas = {..._fotosVistas, apresentacao.fotoRetrospectivaUrl!};
+    await preferencias.setStringList(_chaveFotosVistas, _fotosVistas.toList());
+  }
+
+  /// Noite encerrada abre como memória; dali a pessoa pode ir à resenha
+  /// completa.
+  Future<void> _abrirMemoria(EncontroDoPublico encontro) async {
+    await _marcarFotoComoVista(encontro.apresentacao);
+    if (!mounted) return;
+    await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+            builder: (contexto) => MemoriaDaResenha(
+                  encontro: encontro,
+                  nome: _perfil?.nome ?? '',
+                  enderecoArquivo: widget.api.enderecoArquivo,
+                  abrirResenha: () => Navigator.push<void>(
+                      contexto,
+                      MaterialPageRoute(
+                          builder: (_) => AreaDoPublico(
+                              api: widget.api,
+                              codigoInicial: encontro.apresentacao.codigo,
+                              revisitar: true))),
+                )));
+    if (mounted) await _carregar();
+  }
+
   Future<void> _abrir(Apresentacao apresentacao) async {
-    if (_temFotoNova(apresentacao)) {
-      final preferencias = await SharedPreferences.getInstance();
-      _fotosVistas = {..._fotosVistas, apresentacao.fotoRetrospectivaUrl!};
-      await preferencias.setStringList(
-          _chaveFotosVistas, _fotosVistas.toList());
-      if (!mounted) return;
-    }
+    await _marcarFotoComoVista(apresentacao);
+    if (!mounted) return;
     await Navigator.push<void>(
         context,
         MaterialPageRoute(

@@ -70,18 +70,6 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
         .obterApresentacaoPublica(widget.codigoInicial)
         .then((apresentacao) {
       _tipoApresentacao = apresentacao?.tipo;
-      // Resenha que já acabou é memória: abre na retrospectiva, e voltar
-      // leva à fila daquela noite.
-      if (widget.revisitar &&
-          apresentacao?.tipo == TipoApresentacao.resenhaEntreAmigos &&
-          apresentacao?.status == StatusApresentacao.encerrada &&
-          mounted) {
-        setState(() {
-          _abaAntesDoPerfil = 1;
-          _abaSelecionada = _indicePerfil;
-          _perfilDaResenha = true;
-        });
-      }
       return apresentacao;
     });
     _fila = _consulta.then((apresentacao) => apresentacao == null

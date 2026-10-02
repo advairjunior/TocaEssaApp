@@ -2,60 +2,18 @@ part of 'area_do_publico.dart';
 
 extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
   Future<void> _escolherFotoDaMinhaRetrospectiva() async {
-    final origem = await showModalBottomSheet<ImageSource>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Tirar foto agora'),
-              onTap: () => Navigator.pop(context, ImageSource.camera),
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Escolher da galeria'),
-              onTap: () => Navigator.pop(context, ImageSource.gallery),
-            ),
-          ],
-        ),
-      ),
-    );
-    if (origem == null || !mounted) return;
-    final arquivo = await ImagePicker().pickImage(
-      source: origem,
-      maxWidth: 1800,
-      maxHeight: 1800,
-      imageQuality: 86,
-    );
-    if (arquivo == null || !mounted) return;
-    final bytes = await arquivo.readAsBytes();
-    if (bytes.length > 8 * 1024 * 1024) {
-      if (mounted) mostrarErro(context, 'Escolha uma imagem de até 8 MB.');
-      return;
+    final foto = await escolherFotoDoCartao(context);
+    if (foto != null && mounted) {
+      _mudarEstado(() => _fotoRetrospectivaPublico = foto);
     }
-    if (mounted) _mudarEstado(() => _fotoRetrospectivaPublico = bytes);
   }
 
   Future<void> _baixarMinhaRetrospectiva(Apresentacao apresentacao) async {
     _mudarEstado(() => _gerandoRetrospectiva = true);
     try {
-      await WidgetsBinding.instance.endOfFrame;
-      final limite = _chaveRetrospectivaPublico.currentContext
-          ?.findRenderObject() as RenderRepaintBoundary?;
-      if (limite == null) throw StateError('Não foi possível gerar a imagem.');
-      final proporcao = (1080 / limite.size.width).clamp(1.0, 4.0).toDouble();
-      final imagem = await limite.toImage(pixelRatio: proporcao);
-      final dados = await imagem.toByteData(format: ui.ImageByteFormat.png);
-      if (dados == null) throw StateError('Não foi possível gerar a imagem.');
-      final nome = apresentacao.nome
-          .toLowerCase()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-          .replaceAll(RegExp(r'^-|-$'), '');
-      baixarArquivo(
-        dados.buffer.asUint8List(),
-        'tocaessa-${nome.isEmpty ? 'resenha' : nome}-meu-resumo.png',
+      await baixarCartaoComoImagem(
+        _chaveRetrospectivaPublico,
+        'tocaessa-${nomeDeArquivo(apresentacao.nome)}-meu-resumo.png',
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -180,12 +138,14 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
+                      // Faixa do meio transparente: a foto precisa aparecer.
                       colors: [
-                        Color(0xAA08050D),
-                        Color(0x2208050D),
-                        Color(0xEE08050D),
+                        Color(0xB308050D),
+                        Color(0x0008050D),
+                        Color(0x0008050D),
+                        Color(0xF208050D),
                       ],
-                      stops: [0, .48, 1],
+                      stops: [0, .3, .5, .92],
                     ),
                   ),
                 ),

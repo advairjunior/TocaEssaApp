@@ -8,6 +8,7 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/componentes_lista.dart';
 import 'package:toca_essa_app/telas/conta_do_publico.dart';
+import 'package:toca_essa_app/telas/memoria_da_resenha.dart';
 import 'package:toca_essa_app/telas/retrospectiva_do_ano.dart';
 
 void main() {
@@ -67,6 +68,8 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Minhas resenhas'), findsOneWidget);
+    // Cabeçalho editorial no próprio conteúdo, sem barra de app.
+    expect(find.byType(AppBar), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
     expect(find.byType(Card), findsNothing);
     // Linha do tempo única: sem abas, histórico agrupado por ano.
@@ -100,6 +103,13 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
     await tester.pumpAndSettle();
 
+    // Mesma linguagem do início: foto do palco ao fundo e sem barra de app.
+    expect(find.byType(AppBar), findsNothing);
+    expect(
+      find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+      findsOneWidget,
+    );
+    expect(find.text('Suas noites, guardadas.'), findsOneWidget);
     expect(find.text('Entre na sua conta'), findsOneWidget);
     expect(find.widgetWithText(CampoTexto, 'E-mail'), findsOneWidget);
     expect(find.widgetWithText(CampoTexto, 'Senha'), findsOneWidget);
@@ -201,9 +211,57 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Foto nova'), findsOneWidget);
-    final selo = tester.getTopLeft(find.text('Foto nova')).dy;
-    expect(selo, greaterThan(tester.getTopLeft(find.text('Roda nova')).dy));
-    expect(selo, lessThan(tester.getTopLeft(find.text('Roda vista')).dy));
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('memoria-Roda nova')),
+        matching: find.text('Foto nova'),
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('memória encerrada vira cartão com foto e abre a noite inteira',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+    final api = apiComApresentacoes([
+      apresentacao('Roda de samba', '2026-09-12', 'Encerrada',
+          tipo: 'ResenhaEntreAmigos',
+          pedidos: 3,
+          tocadas: 2,
+          musicas: ['Evidências'],
+          companhia: ['Bia', 'Caio']),
+      apresentacao('Show sem foto', '2026-08-10', 'Encerrada'),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
+    await tester.pumpAndSettle();
+
+    // A foto ocupa a largura do cartão, em vez de ser uma miniatura.
+    final cartao = find.byKey(const ValueKey('memoria-Roda de samba'));
+    final capa = find.descendant(of: cartao, matching: find.byType(Image));
+    expect(tester.getSize(capa.first).width,
+        closeTo(tester.getSize(cartao).width, 1));
+    // Sem foto, a capa usa um fundo de palco, não um ícone solto.
+    for (final memoria in ['Roda de samba', 'Show sem foto']) {
+      final cartaoSemFoto = find.byKey(ValueKey('memoria-$memoria'));
+      expect(
+        find.descendant(
+            of: cartaoSemFoto, matching: find.byIcon(Icons.mic_rounded)),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+            of: cartaoSemFoto,
+            matching: find
+                .byWidgetPredicate((w) => w is Image && w.image is AssetImage)),
+        findsOneWidget,
+      );
+    }
+
+    await tester.tap(find.text('Roda de samba'));
+    await tester.pumpAndSettle();
+    expect(find.byType(MemoriaDaResenha), findsOneWidget);
+    expect(find.text('SUA MÚSICA DA NOITE'), findsOneWidget);
+    expect(find.text('Bia'), findsOneWidget);
   });
 
   testWidgets(

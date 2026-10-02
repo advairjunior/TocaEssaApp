@@ -71,11 +71,20 @@ void main() {
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(420, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
-    await tester.pumpWidget(MaterialApp(
-      home: RetrospectivaDoAno(ano: 2026, nome: 'Ana', encontros: _encontros),
+    // Aberta por cima da lista de resenhas, como no app.
+    final navegador = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+        MaterialApp(navigatorKey: navegador, home: const Scaffold()));
+    navegador.currentState!.push(MaterialPageRoute<void>(
+      builder: (_) =>
+          RetrospectivaDoAno(ano: 2026, nome: 'Ana', encontros: _encontros),
     ));
+    await tester.pumpAndSettle();
 
     expect(find.text('Meu 2026'), findsWidgets);
+    // Tela de story: o cartão ocupa a tela, sem barra de app.
+    expect(find.byType(AppBar), findsNothing);
+    expect(find.byTooltip('Voltar'), findsOneWidget);
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('MÚSICA DO ANO'), findsOneWidget);
     expect(find.text('PARCERIA DO ANO'), findsOneWidget);

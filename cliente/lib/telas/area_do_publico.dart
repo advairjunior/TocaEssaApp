@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,13 +9,13 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
-import '../infraestrutura/baixar_arquivo.dart';
 import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/rastros_locais_do_publico.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';
 import 'perfil_participante.dart';

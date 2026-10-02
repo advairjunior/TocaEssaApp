@@ -50,8 +50,9 @@ Future<void> _montarResenha(WidgetTester tester,
   await tester.pumpAndSettle();
 }
 
-Future<void> _abrirNestaResenha(WidgetTester tester) async {
-  await _montarResenha(tester);
+Future<void> _abrirNestaResenha(WidgetTester tester,
+    {String status = 'EmAndamento', String? foto}) async {
+  await _montarResenha(tester, status: status, foto: foto);
   await tester.tap(find.byTooltip('Meu perfil'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Nesta resenha'));
@@ -86,8 +87,8 @@ void main() {
 
   testWidgets('sem foto própria, o cartão usa a foto do encontro do artista',
       (tester) async {
-    await _montarResenha(tester,
-        status: 'Encerrada', revisitar: true, foto: '/fotos/encontro.png');
+    await _abrirNestaResenha(tester,
+        status: 'Encerrada', foto: '/fotos/encontro.png');
 
     final imagens = tester
         .widgetList<Image>(find.byType(Image))
@@ -99,15 +100,13 @@ void main() {
 }
 
 void _testesDeRevisita() {
-  testWidgets('revisitar resenha encerrada abre direto na retrospectiva',
+  // A retrospectiva da noite fica na tela de memória; daqui a pessoa vem
+  // para rever a fila e a galera, sem repetir o cartão.
+  testWidgets('revisitar resenha encerrada abre na fila daquela noite',
       (tester) async {
     await _montarResenha(tester, status: 'Encerrada', revisitar: true);
 
-    expect(find.text('Minha retrospectiva'), findsOneWidget);
-    expect(find.byType(NavigationBar), findsNothing);
-
-    await tester.tap(find.byTooltip('Voltar às abas'));
-    await tester.pumpAndSettle();
+    expect(find.text('Minha retrospectiva'), findsNothing);
     final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(barra.selectedIndex, 1);
   });

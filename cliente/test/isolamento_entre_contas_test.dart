@@ -157,7 +157,9 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.widgetWithText(CampoTexto, 'E-mail'), 'bia@teste.com');
-    await tester.enterText(find.widgetWithText(CampoTexto, 'Senha'), 'senha123');
+    await tester.enterText(
+        find.widgetWithText(CampoTexto, 'Senha'), 'senha123');
+    await tester.ensureVisible(find.text('Entrar'));
     await tester.tap(find.text('Entrar'));
     await tester.pumpAndSettle();
 
