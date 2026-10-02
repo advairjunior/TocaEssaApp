@@ -10,6 +10,7 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/baixar_arquivo.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_lista.dart';
 
 part 'estatisticas_da_apresentacao_componentes.dart';
 part 'estatisticas_da_apresentacao_acoes.dart';
@@ -79,19 +80,142 @@ class _EstatisticasDaApresentacaoTelaState
             );
           }
           final dados = snapshot.data!;
+          final texto = Theme.of(context).textTheme;
+          final secundario =
+              texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+          const entreSecoes = SizedBox(height: EspacoTocaEssa.enorme);
+          final maiorPedido = dados.musicasMaisPedidas.isEmpty
+              ? 1
+              : dados.musicasMaisPedidas
+                  .map((m) => m.quantidade)
+                  .reduce((a, b) => a > b ? a : b);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 8),
-              Text(apresentacao.nome,
-                  style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 4),
-              Text(
-                '${formatarData(apresentacao.data)} · ${apresentacao.local}',
-                style: const TextStyle(color: CoresTocaEssa.textoSecundario),
+              // Dentro do painel, nome e data já estão no topo.
+              if (!widget.incorporada) ...[
+                Text(apresentacao.nome, style: texto.headlineSmall),
+                const SizedBox(height: EspacoTocaEssa.mini),
+                Text(
+                  '${formatarData(apresentacao.data)} · ${apresentacao.local}',
+                  style: secundario,
+                ),
+                const SizedBox(height: EspacoTocaEssa.grande),
+              ],
+              Row(
+                children: [
+                  const Icon(Icons.star_rounded,
+                      color: Color(0xFFFFC857), size: 36),
+                  const SizedBox(width: EspacoTocaEssa.medio),
+                  Text(
+                    dados.mediaAvaliacoes?.toStringAsFixed(1) ?? '—',
+                    style: texto.headlineMedium,
+                  ),
+                  const SizedBox(width: EspacoTocaEssa.medio),
+                  Expanded(
+                    child: Text(
+                      dados.avaliados == 0
+                          ? 'Ainda sem avaliações'
+                          : '${dados.avaliados} '
+                              '${dados.avaliados == 1 ? 'avaliação recebida' : 'avaliações recebidas'}',
+                      style: secundario,
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: EspacoTocaEssa.base),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: EspacoTocaEssa.base),
+                decoration: BoxDecoration(
+                  color: CoresTocaEssa.superficie,
+                  borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+                  border: Border.all(color: CoresTocaEssa.borda),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      _NumeroDaFaixa(
+                          valor: dados.totalPedidos, rotulo: 'pedidos'),
+                      const VerticalDivider(width: 1),
+                      _NumeroDaFaixa(valor: dados.tocados, rotulo: 'tocados'),
+                      const VerticalDivider(width: 1),
+                      _NumeroDaFaixa(
+                          valor: dados.aguardando, rotulo: 'aguardando'),
+                      const VerticalDivider(width: 1),
+                      _NumeroDaFaixa(
+                          valor: dados.recusados, rotulo: 'não atendidos'),
+                    ],
+                  ),
+                ),
+              ),
+              entreSecoes,
+              const TituloGrupo('Músicas mais pedidas'),
+              if (dados.musicasMaisPedidas.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: EspacoTocaEssa.mini),
+                  child: Text(
+                    'Os destaques aparecem quando o público começar a pedir.',
+                    style: secundario,
+                  ),
+                )
+              else
+                GrupoDeLinhas(
+                  linhas: [
+                    for (final (indice, musica)
+                        in dados.musicasMaisPedidas.indexed)
+                      _LinhaRanking(
+                        posicao: indice + 1,
+                        musica: musica,
+                        proporcao: musica.quantidade / maiorPedido,
+                      ),
+                  ],
+                ),
               if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
-                const SizedBox(height: 20),
+                entreSecoes,
+                const TituloGrupo('Galera da resenha'),
+                FutureBuilder<List<ParticipanteDaResenha>>(
+                  future: api
+                      .listarParticipantesDaResenhaDoArtista(apresentacao.id),
+                  builder: (context, participantesSnapshot) {
+                    if (!participantesSnapshot.hasData &&
+                        participantesSnapshot.connectionState !=
+                            ConnectionState.done) {
+                      return const Center(
+                          child: Padding(
+                        padding: EdgeInsets.all(EspacoTocaEssa.grande),
+                        child: CircularProgressIndicator(),
+                      ));
+                    }
+                    final participantes =
+                        participantesSnapshot.data ?? const [];
+                    if (participantes.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: EspacoTocaEssa.mini),
+                        child: Text(
+                          'A galera aparece depois dos primeiros pedidos.',
+                          style: secundario,
+                        ),
+                      );
+                    }
+                    return GrupoDeLinhas(
+                      linhas: [
+                        for (final participante in participantes)
+                          _LinhaParticipante(
+                            participante: participante,
+                            enderecoFoto:
+                                api.enderecoArquivo(participante.fotoUrl),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                // A retrospectiva é para depois do show: fica no fim, sem
+                // empurrar os números para baixo durante a apresentação.
+                entreSecoes,
+                const TituloGrupo('Retrospectiva'),
                 _RetrospectivaDaResenha(
                   chaveCartao: _chaveCartao,
                   apresentacao: apresentacao,
@@ -105,146 +229,7 @@ class _EstatisticasDaApresentacaoTelaState
                   copiar: () => _copiarRetrospectiva(context, dados),
                 ),
               ],
-              const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2B1748), CoresTocaEssa.superficie],
-                  ),
-                  border: Border.all(color: const Color(0xFF503778)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.star_rounded,
-                        color: Color(0xFFFFC857), size: 42),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            dados.mediaAvaliacoes?.toStringAsFixed(1) ?? '—',
-                            style: Theme.of(context).textTheme.headlineMedium,
-                          ),
-                          Text(
-                            dados.avaliados == 0
-                                ? 'Ainda sem avaliações'
-                                : '${dados.avaliados} ${dados.avaliados == 1 ? 'avaliação recebida' : 'avaliações recebidas'}',
-                            style: const TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              LayoutBuilder(builder: (context, limites) {
-                final largura = (limites.maxWidth - 10) / 2;
-                return Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _NumeroEstatistica(
-                        largura: largura,
-                        numero: dados.totalPedidos,
-                        rotulo: 'Pedidos'),
-                    _NumeroEstatistica(
-                        largura: largura,
-                        numero: dados.tocados,
-                        rotulo: 'Tocados'),
-                    _NumeroEstatistica(
-                        largura: largura,
-                        numero: dados.aguardando,
-                        rotulo: 'Aguardando'),
-                    _NumeroEstatistica(
-                        largura: largura,
-                        numero: dados.recusados,
-                        rotulo: 'Não atendidos'),
-                  ],
-                );
-              }),
-              const SizedBox(height: 28),
-              Text('Músicas mais pedidas',
-                  style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 10),
-              if (dados.musicasMaisPedidas.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Text(
-                      'Os destaques aparecerão quando o público começar a pedir.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                )
-              else
-                for (var indice = 0;
-                    indice < dados.musicasMaisPedidas.length;
-                    indice++) ...[
-                  _MusicaDoRanking(
-                    posicao: indice + 1,
-                    musica: dados.musicasMaisPedidas[indice],
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
-                const SizedBox(height: 24),
-                Text('Galera da resenha',
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
-                const Text(
-                  'Participantes que enviaram pedidos nesta Resenha.',
-                  style: TextStyle(
-                      color: CoresTocaEssa.textoSecundario, fontSize: 12),
-                ),
-                const SizedBox(height: 12),
-                FutureBuilder<List<ParticipanteDaResenha>>(
-                  future: api
-                      .listarParticipantesDaResenhaDoArtista(apresentacao.id),
-                  builder: (context, participantesSnapshot) {
-                    if (!participantesSnapshot.hasData &&
-                        participantesSnapshot.connectionState !=
-                            ConnectionState.done) {
-                      return const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
-                      ));
-                    }
-                    final participantes =
-                        participantesSnapshot.data ?? const [];
-                    if (participantes.isEmpty) {
-                      return const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(18),
-                          child: Text(
-                            'A galera aparecerá depois dos primeiros pedidos.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-                    return Column(
-                      children: [
-                        for (final participante in participantes) ...[
-                          _CartaoParticipante(
-                            participante: participante,
-                            enderecoFoto:
-                                api.enderecoArquivo(participante.fotoUrl),
-                          ),
-                          const SizedBox(height: 10),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ],
-              const SizedBox(height: 24),
+              const SizedBox(height: EspacoTocaEssa.grande),
             ],
           );
         },

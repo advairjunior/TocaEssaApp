@@ -194,16 +194,28 @@ class _RetrospectivaDaResenha extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        const Text(
+        const SizedBox(height: EspacoTocaEssa.medio),
+        Text(
           'Formato vertical 9:16 · Instagram Stories e Status do WhatsApp',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: CoresTocaEssa.textoSecundario,
-            fontSize: 11,
-          ),
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(color: CoresTocaEssa.textoSecundario),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: EspacoTocaEssa.base),
+        FilledButton.icon(
+          onPressed: gerandoImagem ? null : baixarImagem,
+          icon: gerandoImagem
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.image_outlined),
+          label: Text(
+              gerandoImagem ? 'Gerando imagem...' : 'Salvar cartão em PNG'),
+        ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
         OutlinedButton.icon(
           onPressed: enviandoFoto ? null : escolherFoto,
           icon: enviandoFoto
@@ -220,17 +232,7 @@ class _RetrospectivaDaResenha extends StatelessWidget {
                   ? 'Adicionar foto do encontro'
                   : 'Trocar foto do encontro'),
         ),
-        FilledButton.icon(
-          onPressed: gerandoImagem ? null : baixarImagem,
-          icon: gerandoImagem
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.image_outlined),
-          label: Text(
-              gerandoImagem ? 'Gerando imagem...' : 'Salvar cartão em PNG'),
-        ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
         TextButton.icon(
           onPressed: copiar,
           icon: const Icon(Icons.copy_rounded),

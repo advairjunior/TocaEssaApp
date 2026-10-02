@@ -124,7 +124,7 @@ void main() {
     expect(find.text('4.7'), findsWidgets);
     expect(find.text('8'), findsWidgets);
     expect(find.text('Evidências'), findsWidgets);
-    expect(find.text('3x'), findsOneWidget);
+    expect(find.text('3 pedidos'), findsOneWidget);
     expect(find.text('RETROSPECTIVA DA RESENHA'), findsOneWidget);
     expect(find.text('Galera da resenha'), findsOneWidget);
     expect(find.text('Ana Souza'), findsOneWidget);

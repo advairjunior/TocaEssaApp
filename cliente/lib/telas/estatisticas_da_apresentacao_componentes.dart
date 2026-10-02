@@ -19,62 +19,103 @@ class _DadoDaRetrospectiva extends StatelessWidget {
       );
 }
 
-class _NumeroEstatistica extends StatelessWidget {
-  const _NumeroEstatistica({
-    required this.largura,
-    required this.numero,
-    required this.rotulo,
-  });
+class _NumeroDaFaixa extends StatelessWidget {
+  const _NumeroDaFaixa({required this.valor, required this.rotulo});
 
-  final double largura;
-  final int numero;
+  final int valor;
   final String rotulo;
 
   @override
-  Widget build(BuildContext context) => Container(
-        width: largura,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.superficie,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: CoresTocaEssa.borda),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('$numero', style: Theme.of(context).textTheme.headlineSmall),
-            Text(rotulo,
-                style: const TextStyle(
-                    color: CoresTocaEssa.textoSecundario, fontSize: 12)),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Expanded(
+      child: Column(
+        children: [
+          Text('$valor', style: texto.titleLarge),
+          const SizedBox(height: 2),
+          Text(
+            rotulo,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            style: texto.labelMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _MusicaDoRanking extends StatelessWidget {
-  const _MusicaDoRanking({required this.posicao, required this.musica});
+/// Música do ranking com barra proporcional à mais pedida.
+class _LinhaRanking extends StatelessWidget {
+  const _LinhaRanking({
+    required this.posicao,
+    required this.musica,
+    required this.proporcao,
+  });
 
   final int posicao;
   final MusicaMaisPedida musica;
+  final double proporcao;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: ListTile(
-          leading: CircleAvatar(child: Text('$posicao')),
-          title: Text(musica.musica),
-          trailing: Text(
-            '${musica.quantidade}x',
-            style: const TextStyle(
-              color: CoresTocaEssa.roxoClaro,
-              fontWeight: FontWeight.w600,
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final quantidade = musica.quantidade;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: EspacoTocaEssa.base,
+        vertical: EspacoTocaEssa.medio,
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 20,
+            child: Text(
+              '$posicao',
+              style:
+                  texto.titleMedium?.copyWith(color: CoresTocaEssa.roxoClaro),
             ),
           ),
-        ),
-      );
+          const SizedBox(width: EspacoTocaEssa.base),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        musica.musica,
+                        overflow: TextOverflow.ellipsis,
+                        style: texto.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(width: EspacoTocaEssa.pequeno),
+                    Text(
+                      '$quantidade ${quantidade == 1 ? 'pedido' : 'pedidos'}',
+                      style: texto.labelLarge
+                          ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: EspacoTocaEssa.pequeno - 2),
+                LinearProgressIndicator(
+                  value: proporcao.clamp(0, 1),
+                  minHeight: 4,
+                  borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _CartaoParticipante extends StatelessWidget {
-  const _CartaoParticipante({
+class _LinhaParticipante extends StatelessWidget {
+  const _LinhaParticipante({
     required this.participante,
     required this.enderecoFoto,
   });
@@ -83,60 +124,50 @@ class _CartaoParticipante extends StatelessWidget {
   final String? enderecoFoto;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  FotoPerfilArtistico(
-                    enderecoFoto: enderecoFoto,
-                    tamanho: 54,
-                    iconeFallback: Icons.person_rounded,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(participante.nome,
-                            style: Theme.of(context).textTheme.titleMedium),
-                        Text(
-                          '${participante.pedidos} pedidos · ${participante.pedidosTocados} tocados',
-                          style: const TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (participante.mediaAvaliacoes != null)
-                    Text(
-                      '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
-                      style: const TextStyle(color: Color(0xFFFFC857)),
-                    ),
-                ],
-              ),
-              if (participante.musicasMaisPedidas.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 7,
-                  children: participante.musicasMaisPedidas
-                      .map((item) => Chip(
-                            avatar:
-                                const Icon(Icons.music_note_rounded, size: 16),
-                            label: Text(item.quantidade > 1
-                                ? '${item.musica} · ${item.quantidade}x'
-                                : item.musica),
-                          ))
-                      .toList(),
-                ),
-              ],
-            ],
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: EspacoTocaEssa.base,
+        vertical: EspacoTocaEssa.medio,
+      ),
+      child: Row(
+        children: [
+          FotoPerfilArtistico(
+            enderecoFoto: enderecoFoto,
+            tamanho: 44,
+            iconeFallback: Icons.person_rounded,
           ),
-        ),
-      );
+          const SizedBox(width: EspacoTocaEssa.medio),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(participante.nome, style: texto.titleMedium),
+                Text(
+                  '${participante.pedidos} pedidos · '
+                  '${participante.pedidosTocados} tocados',
+                  style: texto.bodyMedium
+                      ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                ),
+                if (participante.musicasMaisPedidas.isNotEmpty)
+                  Text(
+                    'Mais pedida: ${participante.musicasMaisPedidas.first.musica}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: texto.labelMedium
+                        ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                  ),
+              ],
+            ),
+          ),
+          if (participante.mediaAvaliacoes != null)
+            Text(
+              '${participante.mediaAvaliacoes!.toStringAsFixed(1)} ★',
+              style: texto.labelLarge?.copyWith(color: const Color(0xFFFFC857)),
+            ),
+        ],
+      ),
+    );
+  }
 }
