@@ -9,6 +9,7 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/componentes.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/escolher_cifra.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
@@ -237,7 +238,10 @@ void main() {
       await abrirRepertorios(tester);
       await tester.tap(find.byTooltip('Novo repertório'));
       await tester.pumpAndSettle();
-      final campo = find.widgetWithText(TextField, 'Nome do repertório');
+      final campo = find.descendant(
+        of: find.widgetWithText(CampoTexto, 'Nome do repertório'),
+        matching: find.byType(TextField),
+      );
 
       await abrirTecladoNoCampo(tester, campo,
           alturaDoTeclado: alturaDoTeclado);
@@ -249,9 +253,9 @@ void main() {
     });
 
     for (final rotulo in [
-      'Título da música',
-      'Artista (opcional)',
-      'Tom preferido (opcional)',
+      'Música',
+      'Artista',
+      'Tom preferido',
     ]) {
       testWidgets('Adicionar música: "$rotulo" e Adicionar ficam acessíveis',
           (tester) async {
@@ -261,7 +265,10 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byTooltip('Adicionar música'));
         await tester.pumpAndSettle();
-        final campo = find.widgetWithText(TextField, rotulo);
+        final campo = find.descendant(
+          of: find.widgetWithText(CampoTexto, rotulo),
+          matching: find.byType(TextField),
+        );
 
         await abrirTecladoNoCampo(tester, campo,
             alturaDoTeclado: alturaDoTeclado);

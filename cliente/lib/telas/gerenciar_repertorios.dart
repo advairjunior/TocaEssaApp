@@ -4,6 +4,8 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
+import 'componentes_lista.dart';
 
 class GerenciarRepertorios extends StatefulWidget {
   const GerenciarRepertorios({super.key, required this.api});
@@ -36,45 +38,13 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
   }
 
   Future<void> _criarRepertorio() async {
-    final nome = await _pedirNome(context, titulo: 'Novo repertório',
-        rotulo: 'Nome do repertório');
+    final nome = await _pedirNome(context,
+        titulo: 'Novo repertório', rotulo: 'Nome do repertório');
     if (nome == null || !mounted) return;
     try {
       final criado = await widget.api.criarRepertorio(nome);
       if (!mounted) return;
       _abrirDetalhe(criado); // a lista é recarregada ao voltar via _carregar()
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _excluirRepertorio(Repertorio rep) async {
-    final confirmou = await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Excluir repertório?'),
-            content: Text(
-                '"${rep.nome}" e suas ${rep.musicas.length} músicas serão removidos.'),
-            actions: [
-              TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancelar')),
-              FilledButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Excluir')),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmou || !mounted) return;
-    try {
-      await widget.api.excluirRepertorio(rep.id);
-      if (!mounted) return;
-      setState(
-          () => _repertorios = _repertorios.where((r) => r.id != rep.id).toList());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${rep.nome}" excluído.')),
-      );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -86,13 +56,15 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
       MaterialPageRoute<void>(
         builder: (_) => _DetalheRepertorio(api: widget.api, repertorio: rep),
       ),
-    ).then((_) { if (mounted) _carregar(); });
+    ).then((_) {
+      if (mounted) _carregar();
+    });
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('Meus Repertórios'),
+          title: const Text('Meus repertórios'),
           actions: [
             IconButton(
               tooltip: 'Novo repertório',
@@ -104,77 +76,82 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
         body: _carregando
             ? const Center(child: CircularProgressIndicator())
             : _repertorios.isEmpty
-                ? _construirVazio(context)
-                : _construirLista(context),
+                ? Center(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const EstadoVazio(
+                            icone: Icons.queue_music_rounded,
+                            titulo: 'Nenhum repertório ainda',
+                            descricao:
+                                'Crie um repertório com as músicas do seu show '
+                                'e importe no setlist de cada apresentação.',
+                          ),
+                          FilledButton.icon(
+                            onPressed: _criarRepertorio,
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Criar repertório'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ConteudoMobile(
+                    filho: GrupoDeLinhas(
+                      linhas: [
+                        for (final rep in _repertorios)
+                          _LinhaRepertorio(
+                            repertorio: rep,
+                            abrir: () => _abrirDetalhe(rep),
+                          ),
+                      ],
+                    ),
+                  ),
       );
+}
 
-  Widget _construirVazio(BuildContext context) => Center(
+class _LinhaRepertorio extends StatelessWidget {
+  const _LinhaRepertorio({required this.repertorio, required this.abrir});
+  final Repertorio repertorio;
+  final VoidCallback abrir;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final total = repertorio.musicas.length;
+    return Semantics(
+      button: true,
+      child: InkWell(
+        onTap: abrir,
         child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          padding: const EdgeInsets.all(EspacoTocaEssa.base),
+          child: Row(
             children: [
               const Icon(Icons.queue_music_rounded,
-                  size: 64, color: CoresTocaEssa.borda),
-              const SizedBox(height: 16),
-              Text(
-                'Nenhum repertório ainda',
-                style: Theme.of(context).textTheme.titleMedium,
+                  size: 20, color: CoresTocaEssa.roxoClaro),
+              const SizedBox(width: EspacoTocaEssa.base),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(repertorio.nome, style: texto.titleMedium),
+                    Text(
+                      '$total ${total == 1 ? 'música' : 'músicas'}',
+                      style: texto.bodyMedium
+                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Crie um repertório com as músicas do seu show.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: CoresTocaEssa.textoSecundario),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _criarRepertorio,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Criar repertório'),
-              ),
+              const Icon(Icons.chevron_right_rounded,
+                  color: CoresTocaEssa.textoSecundario),
             ],
           ),
         ),
-      );
-
-  Widget _construirLista(BuildContext context) => ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _repertorios.length,
-        itemBuilder: (context, index) {
-          final rep = _repertorios[index];
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            color: CoresTocaEssa.superficieElevada,
-            child: ListTile(
-              leading: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: CoresTocaEssa.roxo.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.queue_music_rounded,
-                    color: CoresTocaEssa.roxoClaro, size: 20),
-              ),
-              title: Text(rep.nome,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: Text(
-                '${rep.musicas.length} '
-                '${rep.musicas.length == 1 ? 'música' : 'músicas'}',
-                style: const TextStyle(color: CoresTocaEssa.textoSecundario),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete_outline_rounded,
-                    color: CoresTocaEssa.textoSecundario),
-                tooltip: 'Excluir',
-                onPressed: () => _excluirRepertorio(rep),
-              ),
-              onTap: () => _abrirDetalhe(rep),
-            ),
-          );
-        },
-      );
+      ),
+    );
+  }
 }
 
 class _DetalheRepertorio extends StatefulWidget {
@@ -249,12 +226,47 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
       await widget.api
           .removerMusicaDoRepertorio(widget.repertorio.id, musica.id);
       if (!mounted) return;
-      setState(() =>
-          _musicas = _musicas.where((m) => m.id != musica.id).toList());
+      setState(
+          () => _musicas = _musicas.where((m) => m.id != musica.id).toList());
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
       if (mounted) setState(() => _salvando = false);
+    }
+  }
+
+  Future<void> _excluirRepertorio() async {
+    final rep = widget.repertorio;
+    final confirmou = await showDialog<bool>(
+          context: context,
+          builder: (contexto) => AlertDialog(
+            title: const Text('Excluir repertório?'),
+            content: Text(
+                '"${rep.nome}" e suas ${_musicas.length} músicas serão removidos.'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(contexto, false),
+                  child: const Text('Cancelar')),
+              FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: CoresTocaEssa.rosa,
+                  ),
+                  onPressed: () => Navigator.pop(contexto, true),
+                  child: const Text('Excluir')),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmou || !mounted) return;
+    try {
+      await widget.api.excluirRepertorio(rep.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${rep.nome}" excluído.')),
+      );
+      Navigator.pop(context);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
     }
   }
 
@@ -268,101 +280,156 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
               icon: const Icon(Icons.add_rounded),
               onPressed: _salvando ? null : _adicionarMusica,
             ),
-          ],
-        ),
-        body: _musicas.isEmpty
-            ? _construirVazio(context)
-            : _construirLista(context),
-      );
-
-  Widget _construirVazio(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.music_note_rounded,
-                  size: 48, color: CoresTocaEssa.borda),
-              const SizedBox(height: 16),
-              const Text(
-                'Nenhuma música ainda',
-                style: TextStyle(color: CoresTocaEssa.textoSecundario),
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: _adicionarMusica,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Adicionar música'),
-              ),
-            ],
-          ),
-        ),
-      );
-
-  Widget _construirLista(BuildContext context) => Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _musicas.length,
-              itemBuilder: (context, index) {
-                final musica = _musicas[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: CoresTocaEssa.roxo.withValues(alpha: 0.15),
-                    foregroundColor: CoresTocaEssa.roxoClaro,
-                    radius: 18,
-                    child: Text('${index + 1}',
-                        style: const TextStyle(fontSize: 13)),
-                  ),
-                  title: Text(musica.titulo),
-                  subtitle: (musica.artista != null || musica.tom != null)
-                      ? Text(
-                          [
-                            if (musica.artista != null) musica.artista!,
-                            if (musica.tom != null) 'Tom ${musica.tom}',
-                          ].join(' · '),
-                          style: const TextStyle(
-                              color: CoresTocaEssa.textoSecundario,
-                              fontSize: 12),
-                        )
-                      : null,
-                  trailing: Row(
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'Mais opções',
+              onSelected: (acao) => acao(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _excluirRepertorio,
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined,
-                            color: CoresTocaEssa.roxoClaro, size: 20),
-                        tooltip: 'Editar',
-                        onPressed:
-                            _salvando ? null : () => _editarMusica(musica),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline_rounded,
-                            color: CoresTocaEssa.textoSecundario, size: 20),
-                        tooltip: 'Remover',
-                        onPressed:
-                            _salvando ? null : () => _removerMusica(musica),
+                      Icon(Icons.delete_outline_rounded,
+                          size: 20, color: CoresTocaEssa.rosa),
+                      SizedBox(width: EspacoTocaEssa.medio),
+                      Flexible(
+                        child: Text(
+                          'Excluir repertório',
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _salvando ? null : _adicionarMusica,
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Adicionar música'),
+          ],
+        ),
+        body: _musicas.isEmpty
+            ? Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const EstadoVazio(
+                        icone: Icons.music_note_rounded,
+                        titulo: 'Nenhuma música ainda',
+                        descricao: 'Adicione as músicas que você toca.',
+                      ),
+                      FilledButton.icon(
+                        onPressed: _adicionarMusica,
+                        icon: const Icon(Icons.add_rounded),
+                        label: const Text('Adicionar música'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : ConteudoMobile(
+                filho: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    GrupoDeLinhas(
+                      linhas: [
+                        for (final (indice, musica) in _musicas.indexed)
+                          _LinhaMusica(
+                            posicao: indice + 1,
+                            musica: musica,
+                            salvando: _salvando,
+                            editar: () => _editarMusica(musica),
+                            remover: () => _removerMusica(musica),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: EspacoTocaEssa.base),
+                    TextButton.icon(
+                      onPressed: _salvando ? null : _adicionarMusica,
+                      icon: const Icon(Icons.add_rounded),
+                      label: const Text('Adicionar música'),
+                    ),
+                  ],
+                ),
+              ),
+      );
+}
+
+class _LinhaMusica extends StatelessWidget {
+  const _LinhaMusica({
+    required this.posicao,
+    required this.musica,
+    required this.salvando,
+    required this.editar,
+    required this.remover,
+  });
+
+  final int posicao;
+  final MusicaDoRepertorio musica;
+  final bool salvando;
+  final VoidCallback editar;
+  final VoidCallback remover;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final detalhes = [
+      if (musica.artista != null) musica.artista!,
+      if (musica.tom != null) 'Tom ${musica.tom}',
+    ].join(' · ');
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            button: true,
+            child: InkWell(
+              onTap: salvando ? null : editar,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  EspacoTocaEssa.base,
+                  EspacoTocaEssa.medio,
+                  EspacoTocaEssa.pequeno,
+                  EspacoTocaEssa.medio,
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      child: Text(
+                        '$posicao',
+                        style: texto.titleMedium
+                            ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                      ),
+                    ),
+                    const SizedBox(width: EspacoTocaEssa.base),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(musica.titulo, style: texto.titleMedium),
+                          if (detalhes.isNotEmpty)
+                            Text(
+                              detalhes,
+                              style: texto.bodyMedium?.copyWith(
+                                  color: CoresTocaEssa.textoSecundario),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ],
-      );
+        ),
+        IconButton(
+          tooltip: 'Remover',
+          icon: const Icon(Icons.remove_circle_outline_rounded,
+              color: CoresTocaEssa.textoSecundario, size: 20),
+          onPressed: salvando ? null : remover,
+        ),
+        const SizedBox(width: EspacoTocaEssa.mini),
+      ],
+    );
+  }
 }
 
 Future<String?> _pedirNome(
@@ -377,6 +444,7 @@ Future<String?> _pedirNome(
     campos: [
       _CampoDoFormulario(
         rotulo: rotulo,
+        dica: 'Ex.: Barzinho, Casamento',
         obrigatorio: true,
         capitalizacao: TextCapitalization.words,
       ),
@@ -398,21 +466,22 @@ Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
     rotuloConfirmar: editando ? 'Salvar' : 'Adicionar',
     campos: [
       _CampoDoFormulario(
-        rotulo: 'Título da música',
+        rotulo: 'Música',
         inicial: tituloInicial,
+        dica: 'Nome da música',
         obrigatorio: true,
         capitalizacao: TextCapitalization.words,
       ),
       _CampoDoFormulario(
-        rotulo: 'Artista (opcional)',
+        rotulo: 'Artista',
         inicial: artistaInicial,
+        dica: 'Opcional',
         capitalizacao: TextCapitalization.words,
       ),
       _CampoDoFormulario(
-        rotulo: 'Tom preferido (opcional)',
+        rotulo: 'Tom preferido',
         inicial: tomInicial,
-        dica: 'Ex: Lá, Mi, Ré menor…',
-        icone: Icons.music_note_rounded,
+        dica: 'Opcional. Ex.: Lá, Mi, Ré menor',
         capitalizacao: TextCapitalization.sentences,
       ),
     ],
@@ -427,7 +496,6 @@ class _CampoDoFormulario {
     required this.rotulo,
     this.inicial,
     this.dica,
-    this.icone,
     this.obrigatorio = false,
     this.capitalizacao = TextCapitalization.none,
   });
@@ -435,7 +503,6 @@ class _CampoDoFormulario {
   final String rotulo;
   final String? inicial;
   final String? dica;
-  final IconData? icone;
   final bool obrigatorio;
   final TextCapitalization capitalizacao;
 }
@@ -508,7 +575,7 @@ class _FormularioEmTelaCheiaState extends State<_FormularioEmTelaCheia> {
               onPressed: _confirmar,
               child: Text(widget.rotuloConfirmar),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: EspacoTocaEssa.pequeno),
           ],
         ),
         body: ConteudoMobile(
@@ -516,24 +583,19 @@ class _FormularioEmTelaCheiaState extends State<_FormularioEmTelaCheia> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (var i = 0; i < widget.campos.length; i++) ...[
-                if (i > 0) const SizedBox(height: 12),
-                TextField(
-                  controller: _controles[i],
-                  autofocus: i == 0,
-                  textCapitalization: widget.campos[i].capitalizacao,
-                  textInputAction: i == widget.campos.length - 1
+                if (i > 0) const SizedBox(height: EspacoTocaEssa.base + 4),
+                CampoTexto(
+                  rotulo: widget.campos[i].rotulo,
+                  controlador: _controles[i],
+                  dica: widget.campos[i].dica,
+                  focoAutomatico: i == 0,
+                  capitalizacao: widget.campos[i].capitalizacao,
+                  acaoTeclado: i == widget.campos.length - 1
                       ? TextInputAction.done
                       : TextInputAction.next,
-                  onSubmitted: i == widget.campos.length - 1
+                  aoEnviar: i == widget.campos.length - 1
                       ? (_) => _confirmar()
                       : null,
-                  decoration: InputDecoration(
-                    labelText: widget.campos[i].rotulo,
-                    hintText: widget.campos[i].dica,
-                    prefixIcon: widget.campos[i].icone == null
-                        ? null
-                        : Icon(widget.campos[i].icone),
-                  ),
                 ),
               ],
             ],

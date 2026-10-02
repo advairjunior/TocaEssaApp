@@ -170,6 +170,7 @@ class CampoTexto extends StatelessWidget {
     this.linhas = 1,
     this.comprimentoMaximo,
     this.oculto = false,
+    this.focoAutomatico = false,
   });
 
   final String rotulo;
@@ -186,6 +187,9 @@ class CampoTexto extends StatelessWidget {
   /// Esconde o texto digitado, como em senhas.
   final bool oculto;
 
+  /// Abre o teclado neste campo assim que a tela aparece.
+  final bool focoAutomatico;
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -193,6 +197,7 @@ class CampoTexto extends StatelessWidget {
           RotuloCampo(rotulo),
           TextField(
             controller: controlador,
+            autofocus: focoAutomatico,
             keyboardType: teclado,
             textCapitalization: capitalizacao,
             textInputAction: acaoTeclado,
