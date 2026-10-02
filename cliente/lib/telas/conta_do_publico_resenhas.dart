@@ -203,25 +203,19 @@ class _LinhaMemoria extends StatelessWidget {
                       style: secundario,
                     ),
                     const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            '${formatarDiaEMes(apresentacao.data)} · '
-                            '${resenha ? 'Resenha' : 'Show'}',
-                            overflow: TextOverflow.ellipsis,
-                            style: texto.labelMedium?.copyWith(
-                              color: CoresTocaEssa.roxoClaro,
-                              letterSpacing: .2,
-                            ),
-                          ),
-                        ),
-                        if (fotoNova) ...[
-                          const SizedBox(width: EspacoTocaEssa.pequeno),
-                          const _SeloFotoNova(),
-                        ],
-                      ],
+                    Text(
+                      '${formatarDiaEMes(apresentacao.data)} · '
+                      '${resenha ? 'Resenha' : 'Show'}',
+                      overflow: TextOverflow.ellipsis,
+                      style: texto.labelMedium?.copyWith(
+                        color: CoresTocaEssa.roxoClaro,
+                        letterSpacing: .2,
+                      ),
                     ),
+                    if (fotoNova) ...[
+                      const SizedBox(height: EspacoTocaEssa.pequeno),
+                      const _SeloFotoNova(),
+                    ],
                     if (encontro.minhasMusicas.isNotEmpty) ...[
                       const SizedBox(height: EspacoTocaEssa.pequeno),
                       Row(
