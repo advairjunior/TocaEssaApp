@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/rastros_locais_do_publico.dart';
 import 'area_do_publico.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
@@ -97,6 +98,7 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
           : await widget.api
               .entrarContaPublica(_email.text.trim(), _senha.text);
       final preferencias = await SharedPreferences.getInstance();
+      await limparRastrosLocaisDoPublico(preferencias);
       await preferencias.setString('token_do_publico', sessao.token);
       _senha.clear();
       if (mounted) await _carregar();
@@ -115,6 +117,7 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
     }
     final preferencias = await SharedPreferences.getInstance();
     await preferencias.remove('token_do_publico');
+    await limparRastrosLocaisDoPublico(preferencias);
     if (!mounted) return;
     setState(() {
       _token = null;

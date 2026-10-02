@@ -29,6 +29,7 @@ extension _PerfilAreaDoPublico on _AreaDoPublicoState {
               _nomeCadastro.text.trim(), _email.text.trim(), _senha.text)
           : await _api.entrarContaPublica(_email.text.trim(), _senha.text);
       final preferencias = await SharedPreferences.getInstance();
+      await limparRastrosLocaisDoPublico(preferencias);
       await preferencias.setString('token_do_publico', sessao.token);
       if (!_montado) return;
       _mudarEstado(() {
@@ -88,6 +89,7 @@ extension _PerfilAreaDoPublico on _AreaDoPublicoState {
     }
     final preferencias = await SharedPreferences.getInstance();
     await preferencias.remove('token_do_publico');
+    await limparRastrosLocaisDoPublico(preferencias);
     if (!_montado) return;
     _mudarEstado(() {
       _tokenPublico = null;

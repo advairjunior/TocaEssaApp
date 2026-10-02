@@ -70,7 +70,10 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
         }
       }
 
-      if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) {
+      // Com conta, "meus pedidos" vem só do servidor: a lista guardada no
+      // aparelho pode ser de outra pessoa que o usou antes.
+      if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos ||
+          _tokenPublico != null) {
         if (_montado) {
           _mudarEstado(() {
             _meusPedidos = pedidosIdentificados;
@@ -112,6 +115,7 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
   }
 
   Future<void> _salvarDadosDoPublico(PedidoMusical pedido) async {
+    if (_tokenPublico != null) return;
     final preferencias = await SharedPreferences.getInstance();
     await preferencias.setString('nome_do_publico', _nome.text.trim());
     final ids = preferencias.getStringList(_chavePedidos) ?? <String>[];

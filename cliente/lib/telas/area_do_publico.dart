@@ -13,6 +13,7 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../infraestrutura/baixar_arquivo.dart';
 import '../infraestrutura/abrir_url_externa.dart';
+import '../infraestrutura/rastros_locais_do_publico.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
