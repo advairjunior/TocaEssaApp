@@ -35,6 +35,33 @@ public class ServicoPixTestes
             ServicoPix.Gerar("chave", "ARTISTA", "RECIFE", valor));
     }
 
+    [Theory]
+    [InlineData("62982170618", "+5562982170618")]
+    [InlineData("(62) 98217-0618", "+5562982170618")]
+    [InlineData("5562982170618", "+5562982170618")]
+    [InlineData("+55 62 98217-0618", "+5562982170618")]
+    [InlineData("529.982.247-25", "52998224725")]
+    [InlineData("52998224725", "52998224725")]
+    [InlineData("11.222.333/0001-81", "11222333000181")]
+    [InlineData(" Artista@Pix.COM ", "artista@pix.com")]
+    [InlineData("123E4567-E89B-12D3-A456-426614174000",
+        "123e4567-e89b-12d3-a456-426614174000")]
+    [InlineData("chave-livre", "chave-livre")]
+    public void NormalizaChaveConformeOTipo(string chave, string esperada)
+    {
+        Assert.Equal(esperada, ServicoPix.NormalizarChave(chave));
+    }
+
+    [Fact]
+    public void PayloadUsaCelularNoFormatoInternacional()
+    {
+        var payload = ServicoPix.Gerar(
+            "62982170618", "MATEUS OLIVEIRA MARINHO", "GOIANIA", 1m);
+
+        Assert.Contains("0114+5562982170618", payload);
+        Assert.True(ServicoPix.CrcEhValido(payload));
+    }
+
     [Fact]
     public void PayloadNaoContemMensagemDeAgradecimento()
     {

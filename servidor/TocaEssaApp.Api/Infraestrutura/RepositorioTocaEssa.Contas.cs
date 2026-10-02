@@ -134,7 +134,9 @@ public sealed partial class RepositorioTocaEssa
         {
             var instagram = Limitar(dados.Instagram, 120);
             var whatsapp = Limitar(dados.Whatsapp, 20);
-            var pixChave = Limitar(dados.PixChave, 140);
+            var pixChave = Limitar(dados.PixChave is null
+                ? null
+                : ServicoPix.NormalizarChave(dados.PixChave), 140);
             var pixNome = Limitar(dados.PixNomeBeneficiario, 25);
             var pixCidade = Limitar(dados.PixCidadeBeneficiario, 15);
             var pixMensagem = Limitar(dados.PixMensagem, 72);

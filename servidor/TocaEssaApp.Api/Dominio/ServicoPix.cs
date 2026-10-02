@@ -14,7 +14,7 @@ public static class ServicoPix
         if (valor is < 1m or > 1000m)
             throw new ValorApoioPixInvalidoException();
 
-        var chaveNormalizada = chave.Trim();
+        var chaveNormalizada = NormalizarChave(chave);
         if (chaveNormalizada.Length is 0 or > 77)
             throw new ConfiguracaoPixInvalidaException();
 
@@ -40,6 +40,47 @@ public static class ServicoPix
             throw new ConfiguracaoPixInvalidaException();
 
         return payload + CalcularCrc(payload).ToString("X4");
+    }
+
+    // O banco procura a chave exatamente como está no payload: celular sem
+    // +55 ou CPF com pontuação não são encontrados e o pagamento falha.
+    public static string NormalizarChave(string chave)
+    {
+        var texto = chave.Trim();
+        if (texto.Contains('@') || Guid.TryParse(texto, out _))
+            return texto.ToLowerInvariant();
+        if (texto.Length == 0 || !texto.All(caractere =>
+                char.IsAsciiDigit(caractere) || caractere is
+                    '+' or '.' or '-' or '/' or '(' or ')' or ' '))
+            return texto;
+
+        var digitos = new string(texto.Where(char.IsAsciiDigit).ToArray());
+        if (texto.StartsWith('+')) return $"+{digitos}";
+        if (digitos.Length == 11 && !CpfEhValido(digitos) &&
+            EhCelularComDdd(digitos))
+            return $"+55{digitos}";
+        if (digitos.Length == 13 && digitos.StartsWith("55") &&
+            EhCelularComDdd(digitos[2..]))
+            return $"+{digitos}";
+        return digitos;
+    }
+
+    private static bool EhCelularComDdd(string digitos) =>
+        digitos.Length == 11 && digitos[0] != '0' && digitos[1] != '0' &&
+        digitos[2] == '9';
+
+    private static bool CpfEhValido(string cpf)
+    {
+        if (cpf.Distinct().Count() == 1) return false;
+        for (var posicao = 9; posicao < 11; posicao++)
+        {
+            var soma = 0;
+            for (var indice = 0; indice < posicao; indice++)
+                soma += (cpf[indice] - '0') * (posicao + 1 - indice);
+            var digito = soma * 10 % 11 % 10;
+            if (cpf[posicao] - '0' != digito) return false;
+        }
+        return true;
     }
 
     public static bool CrcEhValido(string payload)

@@ -24,6 +24,18 @@ public class PerfilArtisticoPublicoTestes
     }
 
     [Fact]
+    public void ChavePixDeCelularEhSalvaNoFormatoInternacional()
+    {
+        var repositorio = new RepositorioTocaEssa();
+        repositorio.SalvarPerfil(new SalvarPerfilArtistico(
+            "Duo Aurora", null, null, false, null, false, true,
+            "(62) 98217-0618", "DUO AURORA", "GOIANIA", null));
+
+        Assert.Equal("+5562982170618",
+            repositorio.ObterConfiguracaoPerfil()!.PixChave);
+    }
+
+    [Fact]
     public void NovosDadosDoPerfilPersistemEPerfilSemContatosContinuaValido()
     {
         var arquivo = Path.Combine(
