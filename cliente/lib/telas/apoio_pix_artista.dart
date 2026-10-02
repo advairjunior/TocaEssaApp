@@ -25,6 +25,7 @@ class ApoioPixArtista extends StatefulWidget {
 class _ApoioPixArtistaState extends State<ApoioPixArtista> {
   final _outroValor = TextEditingController();
   ApoioPix? _apoio;
+  double? _valorEscolhido;
   bool _carregando = false;
   String? _erro;
 
@@ -37,6 +38,7 @@ class _ApoioPixArtistaState extends State<ApoioPixArtista> {
   Future<void> _selecionar(double valor) async {
     setState(() {
       _carregando = true;
+      _valorEscolhido = valor;
       _erro = null;
     });
     try {
@@ -86,17 +88,34 @@ class _ApoioPixArtistaState extends State<ApoioPixArtista> {
                 children: [
                   for (final valor in const [5.0, 10.0, 20.0]) ...[
                     Expanded(
-                      child: OutlinedButton(
-                        onPressed:
-                            _carregando ? null : () => _selecionar(valor),
-                        child: Text('R\$ ${valor.toInt()}'),
+                      child: ChoiceChip(
+                        selected: _valorEscolhido == valor,
+                        showCheckmark: false,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: EspacoTocaEssa.pequeno),
+                        labelStyle: Theme.of(context).textTheme.titleMedium,
+                        side: BorderSide(
+                          color: _valorEscolhido == valor
+                              ? CoresTocaEssa.roxoClaro
+                              : CoresTocaEssa.borda,
+                        ),
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            'R\$ ${valor.toInt()}',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        onSelected:
+                            _carregando ? null : (_) => _selecionar(valor),
                       ),
                     ),
-                    if (valor != 20) const SizedBox(width: 8),
+                    if (valor != 20)
+                      const SizedBox(width: EspacoTocaEssa.pequeno),
                   ],
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: EspacoTocaEssa.medio),
               Row(
                 children: [
                   Expanded(
@@ -104,13 +123,10 @@ class _ApoioPixArtistaState extends State<ApoioPixArtista> {
                       controller: _outroValor,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(
-                        labelText: 'Outro valor',
-                        prefixText: 'R\$ ',
-                      ),
+                      decoration: decoracaoCampoTocaEssa(dica: 'Outro valor'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: EspacoTocaEssa.pequeno),
                   IconButton.filled(
                     tooltip: 'Gerar Pix com outro valor',
                     onPressed: _carregando ? null : _usarOutroValor,
@@ -126,26 +142,35 @@ class _ApoioPixArtistaState extends State<ApoioPixArtista> {
                 const SizedBox(height: 12),
                 Text(_erro!,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.redAccent)),
+                    style: const TextStyle(color: CoresTocaEssa.rosa)),
               ],
               if (_apoio != null) ...[
-                const SizedBox(height: 22),
+                const SizedBox(height: EspacoTocaEssa.grande),
+                Text(
+                  'Pix de R\$ ${_apoio!.valor.toStringAsFixed(2).replaceAll('.', ',')}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: EspacoTocaEssa.medio),
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.all(12),
-                    color: Colors.white,
+                    padding: const EdgeInsets.all(EspacoTocaEssa.medio),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+                    ),
                     child: QrImageView(
                       data: _apoio!.pixCopiaECola,
                       size: 210,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: EspacoTocaEssa.medio),
                 Text(_apoio!.mensagem,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
+                    style: Theme.of(context).textTheme.bodyLarge),
+                const SizedBox(height: EspacoTocaEssa.base),
+                FilledButton.icon(
                   onPressed: () async {
                     final mensageiro = ScaffoldMessenger.of(context);
                     await Clipboard.setData(
