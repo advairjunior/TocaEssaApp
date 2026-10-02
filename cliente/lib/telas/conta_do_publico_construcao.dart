@@ -150,20 +150,25 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
   }
 
   List<Widget> _construirResenhas(BuildContext context) {
-    List<Apresentacao> comStatus(StatusApresentacao status) =>
-        _apresentacoes.where((a) => a.status == status).toList()
-          ..sort((a, b) => b.data.compareTo(a.data));
-    final aoVivo = comStatus(StatusApresentacao.emAndamento);
+    List<EncontroDoPublico> comStatus(StatusApresentacao status) =>
+        _encontros.where((e) => e.apresentacao.status == status).toList()
+          ..sort((a, b) => b.apresentacao.data.compareTo(a.apresentacao.data));
+    final aoVivo = [
+      for (final e in comStatus(StatusApresentacao.emAndamento)) e.apresentacao
+    ];
     // Próximas da mais perto para a mais distante; histórico ao contrário.
-    final proximas = comStatus(StatusApresentacao.agendada).reversed.toList();
+    final proximas = [
+      for (final e in comStatus(StatusApresentacao.agendada).reversed)
+        e.apresentacao
+    ];
     final historico = comStatus(StatusApresentacao.encerrada);
-    final anos = {for (final a in historico) a.data.year};
+    final anos = {for (final e in historico) e.apresentacao.data.year};
     Future<void> entrarComCodigo() async {
       await Navigator.pushNamed(context, '/');
       if (mounted) await _carregar();
     }
 
-    if (_apresentacoes.isEmpty) {
+    if (_encontros.isEmpty) {
       return [
         const EstadoVazio(
           icone: Icons.queue_music_rounded,
@@ -212,15 +217,17 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         GrupoDeLinhas(
           recuoDivisoria: 88,
           linhas: [
-            for (final apresentacao
-                in historico.where((a) => a.data.year == ano))
+            for (final encontro
+                in historico.where((e) => e.apresentacao.data.year == ano))
               _LinhaMemoria(
-                apresentacao: apresentacao,
+                encontro: encontro,
+                fotoNova: _temFotoNova(encontro.apresentacao),
                 enderecoCapa: widget.api.enderecoArquivo(
-                  apresentacao.fotoRetrospectivaUrl ??
-                      apresentacao.perfilArtistico.fotoUrl,
+                  encontro.apresentacao.fotoRetrospectivaUrl ??
+                      encontro.apresentacao.perfilArtistico.fotoUrl,
                 ),
-                tocar: () => _abrir(apresentacao),
+                enderecoFoto: widget.api.enderecoArquivo,
+                tocar: () => _abrir(encontro.apresentacao),
               ),
           ],
         ),

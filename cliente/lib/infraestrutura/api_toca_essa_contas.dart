@@ -168,14 +168,14 @@ mixin _ApiContas on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
-  Future<List<Apresentacao>> listarApresentacoesDoPublico(String token) async {
+  Future<List<EncontroDoPublico>> listarHistoricoDoPublico(String token) async {
     final resposta = await _cliente.get(
-      Uri.parse('$_enderecoBase/api/publico/apresentacoes'),
+      Uri.parse('$_enderecoBase/api/publico/historico'),
       headers: _cabecalhos(token: token),
     );
     _validar(resposta);
     return (jsonDecode(resposta.body) as List<dynamic>)
-        .map((item) => Apresentacao.deJson(item as Map<String, dynamic>))
+        .map((item) => EncontroDoPublico.deJson(item as Map<String, dynamic>))
         .toList();
   }
 }

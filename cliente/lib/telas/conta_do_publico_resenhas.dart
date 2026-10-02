@@ -139,22 +139,38 @@ class _CartaoResenhaAoVivo extends StatelessWidget {
 }
 
 /// Linha do histórico: capa (foto do encontro ou do artista), nome, artista
-/// e local, e a data com o tipo do encontro.
+/// e local, data e tipo, e — quando houver — minha música da noite e quem
+/// estava comigo.
 class _LinhaMemoria extends StatelessWidget {
   const _LinhaMemoria({
-    required this.apresentacao,
+    required this.encontro,
+    required this.fotoNova,
     required this.enderecoCapa,
+    required this.enderecoFoto,
     required this.tocar,
   });
 
-  final Apresentacao apresentacao;
+  final EncontroDoPublico encontro;
+  final bool fotoNova;
   final String? enderecoCapa;
+  final String? Function(String?) enderecoFoto;
   final VoidCallback tocar;
+
+  static String _textoCompanhia(List<PessoaDoEncontro> pessoas) =>
+      switch (pessoas.length) {
+        1 => 'com ${pessoas[0].nome}',
+        2 => 'com ${pessoas[0].nome} e ${pessoas[1].nome}',
+        _ => 'com ${pessoas[0].nome}, ${pessoas[1].nome} '
+            'e mais ${pessoas.length - 2}',
+      };
 
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
+    final apresentacao = encontro.apresentacao;
     final resenha = apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
     return Semantics(
       button: true,
       child: InkWell(
@@ -162,6 +178,7 @@ class _LinhaMemoria extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(EspacoTocaEssa.medio),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _CapaDaMemoria(
                 endereco: enderecoCapa,
@@ -183,27 +200,149 @@ class _LinhaMemoria extends StatelessWidget {
                       '${apresentacao.local}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: texto.bodyMedium
-                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                      style: secundario,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '${formatarDiaEMes(apresentacao.data)} · '
-                      '${resenha ? 'Resenha' : 'Show'}',
-                      style: texto.labelMedium?.copyWith(
-                        color: CoresTocaEssa.roxoClaro,
-                        letterSpacing: .2,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${formatarDiaEMes(apresentacao.data)} · '
+                            '${resenha ? 'Resenha' : 'Show'}',
+                            overflow: TextOverflow.ellipsis,
+                            style: texto.labelMedium?.copyWith(
+                              color: CoresTocaEssa.roxoClaro,
+                              letterSpacing: .2,
+                            ),
+                          ),
+                        ),
+                        if (fotoNova) ...[
+                          const SizedBox(width: EspacoTocaEssa.pequeno),
+                          const _SeloFotoNova(),
+                        ],
+                      ],
                     ),
+                    if (encontro.minhasMusicas.isNotEmpty) ...[
+                      const SizedBox(height: EspacoTocaEssa.pequeno),
+                      Row(
+                        children: [
+                          const Icon(Icons.music_note_rounded,
+                              size: 16, color: CoresTocaEssa.rosa),
+                          const SizedBox(width: EspacoTocaEssa.mini),
+                          Flexible(
+                            child: Text(
+                              encontro.minhasMusicas.first.musica,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: texto.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (encontro.companhia.isNotEmpty) ...[
+                      const SizedBox(height: EspacoTocaEssa.pequeno),
+                      Row(
+                        children: [
+                          _PilhaDeRostos(
+                            pessoas: encontro.companhia,
+                            enderecoFoto: enderecoFoto,
+                          ),
+                          const SizedBox(width: EspacoTocaEssa.pequeno),
+                          Flexible(
+                            child: Text(
+                              _textoCompanhia(encontro.companhia),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: secundario,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: EspacoTocaEssa.mini),
-              const Icon(Icons.chevron_right_rounded,
-                  color: CoresTocaEssa.textoSecundario),
+              const Padding(
+                padding: EdgeInsets.only(top: 18),
+                child: Icon(Icons.chevron_right_rounded,
+                    color: CoresTocaEssa.textoSecundario),
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SeloFotoNova extends StatelessWidget {
+  const _SeloFotoNova();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.rosa.withValues(alpha: .16),
+          borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+        ),
+        child: Text(
+          'Foto nova',
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(color: CoresTocaEssa.rosa),
+        ),
+      );
+}
+
+/// Até três rostos sobrepostos de quem estava no encontro.
+class _PilhaDeRostos extends StatelessWidget {
+  const _PilhaDeRostos({required this.pessoas, required this.enderecoFoto});
+  final List<PessoaDoEncontro> pessoas;
+  final String? Function(String?) enderecoFoto;
+
+  static const _tamanho = 24.0;
+  static const _passo = 16.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final visiveis = pessoas.take(3).toList();
+    return SizedBox(
+      width: _tamanho + _passo * (visiveis.length - 1),
+      height: _tamanho,
+      child: Stack(
+        children: [
+          for (final (indice, pessoa) in visiveis.indexed)
+            Positioned(
+              left: _passo * indice,
+              child: Container(
+                padding: const EdgeInsets.all(1.5),
+                decoration: const BoxDecoration(
+                  color: CoresTocaEssa.superficie,
+                  shape: BoxShape.circle,
+                ),
+                child: CircleAvatar(
+                  radius: _tamanho / 2 - 1.5,
+                  backgroundColor: CoresTocaEssa.destaqueFundo,
+                  foregroundImage: pessoa.fotoUrl == null
+                      ? null
+                      : NetworkImage(enderecoFoto(pessoa.fotoUrl)!),
+                  onForegroundImageError:
+                      pessoa.fotoUrl == null ? null : (_, __) {},
+                  child: Text(
+                    pessoa.nome.characters.first.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: CoresTocaEssa.roxoClaro,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

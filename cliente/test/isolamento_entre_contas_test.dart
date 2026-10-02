@@ -62,7 +62,7 @@ MockClient _servidor() => MockClient((requisicao) async {
       if (caminho == '/api/publico/estatisticas') {
         return _json(_estatisticasVazias);
       }
-      if (caminho == '/api/publico/apresentacoes') return _json([]);
+      if (caminho == '/api/publico/historico') return _json([]);
       if (caminho.endsWith('/meus-pedidos')) {
         expect(requisicao.headers['authorization'], 'Bearer TOKEN_BIA');
         return _json([_pedido(_idPedidoDaBia, 'Música da Bia', 'Bia')]);

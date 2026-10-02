@@ -28,11 +28,16 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
   String? _token;
   PerfilPublico? _perfil;
   EstatisticasDoPublico? _estatisticas;
-  List<Apresentacao> _apresentacoes = [];
+  List<EncontroDoPublico> _encontros = [];
+  Set<String> _fotosVistas = {};
   bool _ocupado = true;
   bool _cadastro = false;
   int _aba = 0;
   String? _erro;
+
+  // Fotos de encontro que a pessoa já abriu; as demais ganham o selo
+  // "Foto nova". Apagadas com os outros rastros ao trocar de conta.
+  static const _chaveFotosVistas = 'fotos_vistas_do_publico';
 
   @override
   void initState() {
@@ -52,7 +57,7 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
         if (mounted) {
           setState(() {
             _perfil = null;
-            _apresentacoes = [];
+            _encontros = [];
             _estatisticas = null;
           });
         }
@@ -60,13 +65,15 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
         final perfil = await widget.api.obterPerfilPublico(_token!);
         final estatisticas =
             await widget.api.obterEstatisticasDoPublico(_token!);
-        final apresentacoes =
-            await widget.api.listarApresentacoesDoPublico(_token!);
+        final encontros = await widget.api.listarHistoricoDoPublico(_token!);
+        final fotosVistas =
+            preferencias.getStringList(_chaveFotosVistas) ?? const [];
         if (!mounted) return;
         setState(() {
           _perfil = perfil;
           _estatisticas = estatisticas;
-          _apresentacoes = apresentacoes;
+          _encontros = encontros;
+          _fotosVistas = fotosVistas.toSet();
         });
       }
     } catch (erro) {
@@ -117,7 +124,7 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
       _token = null;
       _perfil = null;
       _estatisticas = null;
-      _apresentacoes = [];
+      _encontros = [];
       _erro = null;
       _aba = 0;
     });
@@ -142,7 +149,19 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
     }
   }
 
+  bool _temFotoNova(Apresentacao apresentacao) {
+    final foto = apresentacao.fotoRetrospectivaUrl;
+    return foto != null && !_fotosVistas.contains(foto);
+  }
+
   Future<void> _abrir(Apresentacao apresentacao) async {
+    if (_temFotoNova(apresentacao)) {
+      final preferencias = await SharedPreferences.getInstance();
+      _fotosVistas = {..._fotosVistas, apresentacao.fotoRetrospectivaUrl!};
+      await preferencias.setStringList(
+          _chaveFotosVistas, _fotosVistas.toList());
+      if (!mounted) return;
+    }
     await Navigator.push<void>(
         context,
         MaterialPageRoute(

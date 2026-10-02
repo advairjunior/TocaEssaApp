@@ -34,17 +34,23 @@ void main() {
                 'avaliacoesRealizadas': 0,
                 'musicasMaisPedidas': []
               };
-            case '/api/publico/apresentacoes':
+            case '/api/publico/historico':
               resposta = [
                 {
-                  'id': 'resenha',
-                  'nome': 'Encontro de setembro',
-                  'data': '2026-09-01',
-                  'local': 'Casa',
-                  'codigo': 'ABC123',
-                  'status': 'Encerrada',
-                  'tipo': 'ResenhaEntreAmigos',
-                  'perfilArtistico': {'id': 'artista', 'nomeArtistico': 'Duo'}
+                  'apresentacao': {
+                    'id': 'resenha',
+                    'nome': 'Encontro de setembro',
+                    'data': '2026-09-01',
+                    'local': 'Casa',
+                    'codigo': 'ABC123',
+                    'status': 'Encerrada',
+                    'tipo': 'ResenhaEntreAmigos',
+                    'perfilArtistico': {'id': 'artista', 'nomeArtistico': 'Duo'}
+                  },
+                  'pedidos': 0,
+                  'pedidosTocados': 0,
+                  'minhasMusicas': [],
+                  'companhia': []
                 }
               ];
             default:
@@ -99,7 +105,7 @@ void main() {
     expect(find.text('Entrar com um código'), findsOneWidget);
   });
 
-  ApiTocaEssa apiComApresentacoes(List<Map<String, Object?>> apresentacoes) =>
+  ApiTocaEssa apiComApresentacoes(List<Map<String, Object?>> encontros) =>
       ApiTocaEssa(
           enderecoBase: 'http://teste',
           cliente: MockClient((request) async {
@@ -111,13 +117,13 @@ void main() {
                   'criadoEm': '2025-01-01T00:00:00Z'
                 },
               '/api/publico/estatisticas' => {
-                  'participacoes': apresentacoes.length,
+                  'participacoes': encontros.length,
                   'pedidos': 7,
                   'pedidosTocados': 3,
                   'avaliacoesRealizadas': 2,
                   'musicasMaisPedidas': []
                 },
-              '/api/publico/apresentacoes' => apresentacoes,
+              '/api/publico/historico' => encontros,
               _ => throw StateError('Rota inesperada: ${request.url.path}'),
             };
             return http.Response(jsonEncode(resposta), 200,
@@ -125,17 +131,79 @@ void main() {
           }));
 
   Map<String, Object?> apresentacao(String nome, String data, String status,
-          {String tipo = 'Publica'}) =>
+          {String tipo = 'Publica',
+          String? foto,
+          int pedidos = 0,
+          int tocadas = 0,
+          List<String> musicas = const [],
+          List<String> companhia = const []}) =>
       {
-        'id': nome,
-        'nome': nome,
-        'data': data,
-        'local': 'Bar',
-        'codigo': 'C${nome.length}',
-        'status': status,
-        'tipo': tipo,
-        'perfilArtistico': {'id': 'artista', 'nomeArtistico': 'Duo'}
+        'apresentacao': {
+          'id': nome,
+          'nome': nome,
+          'data': data,
+          'local': 'Bar',
+          'codigo': 'C${nome.length}',
+          'status': status,
+          'tipo': tipo,
+          'fotoRetrospectivaUrl': foto,
+          'perfilArtistico': {'id': 'artista', 'nomeArtistico': 'Duo'}
+        },
+        'pedidos': pedidos,
+        'pedidosTocados': tocadas,
+        'minhasMusicas': [
+          for (final (indice, musica) in musicas.indexed)
+            {'musica': musica, 'quantidade': musicas.length - indice}
+        ],
+        'companhia': [
+          for (final pessoa in companhia)
+            {'publicoId': pessoa, 'nome': pessoa, 'fotoUrl': null}
+        ],
       };
+
+  testWidgets('cada memória mostra minha música da noite e quem estava comigo',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+    final api = apiComApresentacoes([
+      apresentacao('Roda de samba', '2026-09-12', 'Encerrada',
+          tipo: 'ResenhaEntreAmigos',
+          pedidos: 3,
+          tocadas: 2,
+          musicas: ['Evidências', 'Garota'],
+          companhia: ['Bia', 'Caio', 'Davi', 'Eva']),
+      apresentacao('Show de agosto', '2026-08-10', 'Encerrada'),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Evidências'), findsOneWidget);
+    expect(find.text('com Bia, Caio e mais 2'), findsOneWidget);
+    // Sem pedido nem companhia, a linha fica enxuta.
+    expect(find.textContaining(RegExp(r'^com ')), findsOneWidget);
+  });
+
+  testWidgets(
+      'foto nova do encontro ganha selo até a pessoa abrir aquela memória',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'token_do_publico': 'TOKEN',
+      'fotos_vistas_do_publico': ['/fotos/vista.png'],
+    });
+    final api = apiComApresentacoes([
+      apresentacao('Roda nova', '2026-09-12', 'Encerrada',
+          foto: '/fotos/nova.png'),
+      apresentacao('Roda vista', '2026-08-10', 'Encerrada',
+          foto: '/fotos/vista.png'),
+      apresentacao('Roda sem foto', '2026-07-10', 'Encerrada'),
+    ]);
+    await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Foto nova'), findsOneWidget);
+    final selo = tester.getTopLeft(find.text('Foto nova')).dy;
+    expect(selo, greaterThan(tester.getTopLeft(find.text('Roda nova')).dy));
+    expect(selo, lessThan(tester.getTopLeft(find.text('Roda vista')).dy));
+  });
 
   testWidgets(
       'linha do tempo destaca o ao vivo, mostra próximas e agrupa o histórico '
