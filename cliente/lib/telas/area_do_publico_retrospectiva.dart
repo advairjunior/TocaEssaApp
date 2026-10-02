@@ -39,10 +39,6 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
   }
 
   Future<void> _baixarMinhaRetrospectiva(Apresentacao apresentacao) async {
-    if (_fotoRetrospectivaPublico == null) {
-      mostrarErro(context, 'Escolha uma foto para montar sua retrospectiva.');
-      return;
-    }
     _mudarEstado(() => _gerandoRetrospectiva = true);
     try {
       await WidgetsBinding.instance.endOfFrame;
@@ -83,7 +79,8 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
         ),
         const SizedBox(height: EspacoTocaEssa.mini),
         Text(
-          'Coloque sua foto, salve e compartilhe seu momento na resenha.',
+          'Salve e compartilhe seu momento na resenha — com a sua foto, '
+          'se quiser.',
           style: Theme.of(context)
               .textTheme
               .bodyMedium
@@ -96,14 +93,15 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
             apresentacao: apresentacao,
             participante: participante,
             foto: _fotoRetrospectivaPublico,
-            escolherFoto: _escolherFotoDaMinhaRetrospectiva,
+            enderecoFotoDoEncontro:
+                _api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
           ),
         ),
         const SizedBox(height: EspacoTocaEssa.base),
-        // Sem foto não há imagem para salvar: o próprio cartão convida a
-        // colocar uma, e o botão de salvar espera.
+        // Sem foto própria o cartão usa a do encontro ou o fundo da marca,
+        // então já pode ser salvo; a foto pessoal é um extra.
         FilledButton.icon(
-          onPressed: _gerandoRetrospectiva || _fotoRetrospectivaPublico == null
+          onPressed: _gerandoRetrospectiva
               ? null
               : () => _baixarMinhaRetrospectiva(apresentacao),
           icon: const Icon(Icons.ios_share_rounded),
@@ -111,12 +109,13 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
               ? 'Gerando imagem...'
               : 'Salvar imagem para compartilhar'),
         ),
-        if (_fotoRetrospectivaPublico != null)
-          TextButton.icon(
-            onPressed: _escolherFotoDaMinhaRetrospectiva,
-            icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-            label: const Text('Trocar minha foto'),
-          ),
+        TextButton.icon(
+          onPressed: _escolherFotoDaMinhaRetrospectiva,
+          icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+          label: Text(_fotoRetrospectivaPublico == null
+              ? 'Colocar minha foto'
+              : 'Trocar minha foto'),
+        ),
       ];
 }
 
@@ -125,13 +124,36 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
     required this.apresentacao,
     required this.participante,
     required this.foto,
-    required this.escolherFoto,
+    required this.enderecoFotoDoEncontro,
   });
 
   final Apresentacao apresentacao;
   final ParticipanteDaResenha participante;
   final Uint8List? foto;
-  final VoidCallback escolherFoto;
+
+  /// Foto que o artista publicou do encontro; fundo quando não há foto própria.
+  final String? enderecoFotoDoEncontro;
+
+  // Fundo da marca para quando não há foto nenhuma.
+  static const _fundoDaMarca = DecoratedBox(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF3A1C6E),
+          CoresTocaEssa.destaqueFundo,
+          Color(0xFF100B18)
+        ],
+        stops: [0, .45, 1],
+      ),
+    ),
+    child: Align(
+      alignment: Alignment(1.6, -.2),
+      child:
+          Icon(Icons.graphic_eq_rounded, size: 260, color: Color(0x14FFFFFF)),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) => AspectRatio(
@@ -145,30 +167,14 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
               children: [
                 if (foto != null)
                   Image.memory(foto!, fit: BoxFit.cover)
+                else if (enderecoFotoDoEncontro != null)
+                  Image.network(
+                    enderecoFotoDoEncontro!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _fundoDaMarca,
+                  )
                 else
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: escolherFoto,
-                      child: Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.add_a_photo_outlined,
-                                size: 56, color: CoresTocaEssa.roxoClaro),
-                            const SizedBox(height: EspacoTocaEssa.medio),
-                            Text(
-                              'Toque para colocar sua foto',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(color: CoresTocaEssa.roxoClaro),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  _fundoDaMarca,
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

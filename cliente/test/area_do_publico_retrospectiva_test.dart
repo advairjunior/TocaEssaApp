@@ -71,18 +71,30 @@ void main() {
     expect(find.text('Minha retrospectiva'), findsOneWidget);
   });
 
-  testWidgets('sem foto, o cartão convida a tocar e salvar fica desabilitado',
+  testWidgets('sem foto, o cartão já pode ser salvo e convida a pôr uma foto',
       (tester) async {
     await _abrirNestaResenha(tester);
 
-    final placeholder = find.text('Toque para colocar sua foto');
-    await tester.ensureVisible(placeholder);
-    expect(placeholder, findsOneWidget);
+    expect(find.text('Toque para colocar sua foto'), findsNothing);
     final salvar = tester.widget<FilledButton>(find.ancestor(
       of: find.text('Salvar imagem para compartilhar'),
       matching: find.byWidgetPredicate((w) => w is FilledButton),
     ));
-    expect(salvar.onPressed, isNull);
+    expect(salvar.onPressed, isNotNull);
+    expect(find.text('Colocar minha foto'), findsOneWidget);
+  });
+
+  testWidgets('sem foto própria, o cartão usa a foto do encontro do artista',
+      (tester) async {
+    await _montarResenha(tester,
+        status: 'Encerrada', revisitar: true, foto: '/fotos/encontro.png');
+
+    final imagens = tester
+        .widgetList<Image>(find.byType(Image))
+        .map((imagem) => imagem.image)
+        .whereType<NetworkImage>()
+        .map((imagem) => imagem.url);
+    expect(imagens, contains('http://teste/fotos/encontro.png'));
   });
 }
 
