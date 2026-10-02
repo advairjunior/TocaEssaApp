@@ -124,7 +124,10 @@ void main() {
     ));
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
-    return find.widgetWithText(TextField, 'Link da cifra');
+    return find.descendant(
+      of: find.widgetWithText(CampoTexto, 'Link da cifra'),
+      matching: find.byType(TextField),
+    );
   }
 
   Future<void> abrirTecladoNoCampo(

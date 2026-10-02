@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/escolher_cifra.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
@@ -48,7 +49,14 @@ void main() {
     await _abrir(tester);
 
     final campo =
-        tester.getRect(find.widgetWithText(TextField, 'Link da cifra'));
+        tester.getRect(find.widgetWithText(CampoTexto, 'Link da cifra'));
+    expect(
+      find.descendant(
+        of: find.widgetWithText(CampoTexto, 'Link da cifra'),
+        matching: find.byTooltip('Colar link'),
+      ),
+      findsOneWidget,
+    );
     expect(
         campo.top, lessThan(tester.getRect(find.text('Abrir sugestão')).top));
     expect(

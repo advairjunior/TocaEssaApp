@@ -171,6 +171,7 @@ class CampoTexto extends StatelessWidget {
     this.comprimentoMaximo,
     this.oculto = false,
     this.focoAutomatico = false,
+    this.sufixo,
   });
 
   final String rotulo;
@@ -190,6 +191,9 @@ class CampoTexto extends StatelessWidget {
   /// Abre o teclado neste campo assim que a tela aparece.
   final bool focoAutomatico;
 
+  /// Ação ao fim do campo, como colar ou limpar.
+  final Widget? sufixo;
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -208,7 +212,8 @@ class CampoTexto extends StatelessWidget {
             autocorrect: !oculto,
             enableSuggestions: !oculto,
             maxLength: comprimentoMaximo,
-            decoration: decoracaoCampoTocaEssa(dica: dica, ajuda: ajuda),
+            decoration: decoracaoCampoTocaEssa(dica: dica, ajuda: ajuda)
+                .copyWith(suffixIcon: sufixo),
           ),
         ],
       );

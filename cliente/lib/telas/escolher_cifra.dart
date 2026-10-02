@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../dominio/modelos.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_formulario.dart';
+import 'componentes_lista.dart';
 
 enum TipoDecisaoCifra { salvar, remover }
 
@@ -121,28 +123,29 @@ class _EscolherCifraState extends State<_EscolherCifra> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(widget.musica,
-                  style: Theme.of(context).textTheme.titleMedium),
+                  style: Theme.of(context).textTheme.titleLarge),
               if (widget.artista?.isNotEmpty == true)
-                Text(widget.artista!,
-                    style:
-                        const TextStyle(color: CoresTocaEssa.textoSecundario)),
-              const SizedBox(height: 20),
-              TextField(
-                controller: _url,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  labelText: 'Link da cifra',
-                  hintText: 'https://...',
-                  prefixIcon: const Icon(Icons.link_rounded),
-                  suffixIcon: IconButton(
-                    tooltip: 'Colar link',
-                    icon: const Icon(Icons.content_paste_rounded),
-                    onPressed: _colarLink,
-                  ),
+                Text(
+                  widget.artista!,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: CoresTocaEssa.textoSecundario),
                 ),
-                onSubmitted: _salvar,
+              const SizedBox(height: EspacoTocaEssa.grande),
+              CampoTexto(
+                rotulo: 'Link da cifra',
+                controlador: _url,
+                dica: 'https://...',
+                teclado: TextInputType.url,
+                aoEnviar: _salvar,
+                sufixo: IconButton(
+                  tooltip: 'Colar link',
+                  icon: const Icon(Icons.content_paste_rounded),
+                  onPressed: _colarLink,
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: EspacoTocaEssa.mini),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
@@ -151,21 +154,9 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                   label: const Text('Abrir link para conferir'),
                 ),
               ),
-              const SizedBox(height: 24),
-              const Row(
-                children: [
-                  Expanded(child: Divider()),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'Não tem o link?',
-                      style: TextStyle(color: CoresTocaEssa.textoSecundario),
-                    ),
-                  ),
-                  Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: EspacoTocaEssa.enorme),
+              const TituloGrupo('Não tem o link?'),
+              const SizedBox(height: EspacoTocaEssa.mini),
               if (widget.resultado.urlSugerida case final sugestao?) ...[
                 FilledButton.icon(
                   onPressed: () => _abrirSugestao(sugestao),
@@ -184,6 +175,9 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: CoresTocaEssa.rosa,
+                    ),
                     onPressed: () => Navigator.pop(
                       context,
                       const DecisaoCifra(TipoDecisaoCifra.remover),
