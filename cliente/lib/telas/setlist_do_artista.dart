@@ -5,6 +5,7 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/abrir_url_externa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_lista.dart';
 import 'escolher_cifra.dart';
 
 class SetlistDoArtista extends StatefulWidget {
@@ -77,9 +78,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           .marcarItemDoSetlist(widget.apresentacao.id, item.id, tocada);
       if (!mounted) return;
       setState(() {
-        _itens = _itens
-            .map((i) => i.id == atualizado.id ? atualizado : i)
-            .toList();
+        _itens =
+            _itens.map((i) => i.id == atualizado.id ? atualizado : i).toList();
       });
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
@@ -140,7 +140,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'Nenhum repertório criado. Crie um na aba Perfil geral.'),
+              'Nenhum repertório criado. Crie um em Repertórios, no menu da sua conta.'),
         ),
       );
       return;
@@ -162,9 +162,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       if (!mounted) return;
       setState(() => _itens = novos);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Repertório "${selecionado.nome}" importado.')),
+        SnackBar(content: Text('Repertório "${selecionado.nome}" importado.')),
       );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
@@ -192,125 +190,60 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       return const Center(child: CircularProgressIndicator());
     }
     if (_itens.isEmpty) {
-      return _construirVazio(context);
+      return _construirVazio();
     }
-    return Column(
-      children: [
-        _construirBarraProgresso(),
-        Expanded(child: _construirLista()),
-        _construirRodape(context),
-      ],
-    );
-  }
-
-  Widget _construirBarraProgresso() {
-    final total = _itens.length;
-    final progresso = total > 0 ? _tocadas / total : 0.0;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Column(
+    final proxima = _proximaIndex;
+    return ConteudoMobile(
+      filho: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progresso,
-              backgroundColor: CoresTocaEssa.borda,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                progresso == 1.0
-                    ? const Color(0xFF4ADE80)
-                    : CoresTocaEssa.roxo,
-              ),
-              minHeight: 6,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Text(
-                '$_tocadas de $total tocadas',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: CoresTocaEssa.textoSecundario,
-                ),
-              ),
-              const Spacer(),
-              if (total - _tocadas > 0)
-                Text(
-                  '${total - _tocadas} restantes',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: CoresTocaEssa.textoSecundario,
-                  ),
+          _construirProgresso(context),
+          const SizedBox(height: EspacoTocaEssa.base + 4),
+          GrupoDeLinhas(
+            recuoDivisoria: 60,
+            linhas: [
+              for (final (indice, item) in _itens.indexed)
+                _LinhaSetlist(
+                  item: item,
+                  salvando: _salvando,
+                  eProxima: indice == proxima,
+                  pedidosNaFila:
+                      _pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
+                  marcar: (tocada) => _marcar(item, tocada),
+                  abrirCifra: () => _abrirCifra(item),
                 ),
             ],
           ),
+          const SizedBox(height: EspacoTocaEssa.base),
         ],
       ),
     );
   }
 
-  Widget _construirVazio(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.playlist_play_rounded,
-                  size: 64, color: CoresTocaEssa.borda),
-              const SizedBox(height: 16),
-              Text(
-                'Nenhum repertório nesta apresentação',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Importe um repertório para começar.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: CoresTocaEssa.textoSecundario),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _mostrarImportarRepertorio,
-                icon: const Icon(Icons.playlist_add_rounded),
-                label: const Text('Importar repertório'),
-              ),
-            ],
-          ),
-        ),
-      );
-
-  Widget _construirLista() {
-    final proxima = _proximaIndex;
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-      itemCount: _itens.length,
-      itemBuilder: (context, index) {
-        final item = _itens[index];
-        final chave = item.titulo.toLowerCase().trim();
-        return _CartaoItemSetlist(
-          item: item,
-          salvando: _salvando,
-          eProxima: index == proxima,
-          pedidosNaFila: _pedidosNaFila[chave] ?? 0,
-          onMarcar: (tocada) => _marcar(item, tocada),
-          onCifra: () => _abrirCifra(item),
-        );
-      },
-    );
-  }
-
-  Widget _construirRodape(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: CoresTocaEssa.borda)),
-        ),
-        child: Row(
+  Widget _construirProgresso(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final total = _itens.length;
+    final restantes = total - _tocadas;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
             Expanded(
-              child: Text(
-                '$_tocadas/${_itens.length} tocadas',
-                style: const TextStyle(color: CoresTocaEssa.textoSecundario),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$_tocadas de $total tocadas', style: texto.titleMedium),
+                  Text(
+                    restantes == 0
+                        ? 'Setlist completo!'
+                        : restantes == 1
+                            ? 'Falta 1 música'
+                            : 'Faltam $restantes músicas',
+                    style: texto.bodyMedium
+                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  ),
+                ],
               ),
             ),
             TextButton.icon(
@@ -320,136 +253,155 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
             ),
           ],
         ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        LinearProgressIndicator(
+          value: total > 0 ? _tocadas / total : 0,
+          minHeight: 6,
+          borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+          color: restantes == 0 ? const Color(0xFF4ADE80) : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _construirVazio() => Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const EstadoVazio(
+                icone: Icons.playlist_play_rounded,
+                titulo: 'Nenhum repertório nesta apresentação',
+                descricao:
+                    'Importe um repertório para acompanhar o que já tocou.',
+              ),
+              FilledButton.icon(
+                onPressed: _mostrarImportarRepertorio,
+                icon: const Icon(Icons.playlist_add_rounded),
+                label: const Text('Importar repertório'),
+              ),
+            ],
+          ),
+        ),
       );
 }
 
-class _CartaoItemSetlist extends StatelessWidget {
-  const _CartaoItemSetlist({
+/// Uma música do setlist. A linha inteira marca e desmarca como tocada,
+/// alvo grande para usar no palco.
+class _LinhaSetlist extends StatelessWidget {
+  const _LinhaSetlist({
     required this.item,
     required this.salvando,
     required this.eProxima,
     required this.pedidosNaFila,
-    required this.onMarcar,
-    required this.onCifra,
+    required this.marcar,
+    required this.abrirCifra,
   });
 
   final ItemDoSetlist item;
   final bool salvando;
   final bool eProxima;
   final int pedidosNaFila;
-  final ValueChanged<bool> onMarcar;
-  final VoidCallback onCifra;
+  final ValueChanged<bool> marcar;
+  final VoidCallback abrirCifra;
 
   @override
   Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
     final tocada = item.tocada;
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 4),
-      color: tocada
-          ? CoresTocaEssa.superficieElevada.withValues(alpha: 0.5)
-          : eProxima
-              ? CoresTocaEssa.roxo.withValues(alpha: 0.10)
-              : CoresTocaEssa.superficieElevada,
-      shape: eProxima && !tocada
-          ? RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: CoresTocaEssa.roxoClaro.withValues(alpha: 0.6),
-                width: 1.5,
-              ),
-            )
-          : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final detalhes = [
+      if (item.artista != null) item.artista!,
+      if (item.tom != null) 'Tom ${item.tom}',
+    ].join(' · ');
+    return Container(
+      color: eProxima ? CoresTocaEssa.roxo.withValues(alpha: .12) : null,
+      child: Row(
         children: [
-          if (eProxima && !tocada)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: CoresTocaEssa.roxoClaro,
-                      shape: BoxShape.circle,
-                    ),
+          Expanded(
+            child: Semantics(
+              checked: tocada,
+              button: true,
+              child: InkWell(
+                onTap: salvando ? null : () => marcar(!tocada),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    EspacoTocaEssa.base,
+                    EspacoTocaEssa.medio,
+                    EspacoTocaEssa.pequeno,
+                    EspacoTocaEssa.medio,
                   ),
-                  const SizedBox(width: 7),
-                  const Text(
-                    'PRÓXIMA',
-                    style: TextStyle(
-                      color: CoresTocaEssa.roxoClaro,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.9,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ListTile(
-            contentPadding: const EdgeInsets.fromLTRB(4, 0, 8, 0),
-            leading: Checkbox(
-              value: tocada,
-              onChanged: salvando ? null : (v) => onMarcar(v ?? false),
-              activeColor: CoresTocaEssa.roxo,
-            ),
-            title: Text(
-              item.titulo,
-              style: TextStyle(
-                decoration: tocada ? TextDecoration.lineThrough : null,
-                color: tocada ? CoresTocaEssa.textoSecundario : null,
-                fontWeight:
-                    eProxima && !tocada ? FontWeight.w600 : null,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (item.artista != null || item.tom != null)
-                  Text(
-                    [
-                      if (item.artista != null) item.artista!,
-                      if (item.tom != null) 'Tom ${item.tom}',
-                    ].join(' · '),
-                    style: const TextStyle(
-                      color: CoresTocaEssa.textoSecundario,
-                      fontSize: 12,
-                    ),
-                  ),
-                if (pedidosNaFila > 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.people_outline_rounded,
-                            size: 12,
-                            color: CoresTocaEssa.roxoClaro),
-                        const SizedBox(width: 4),
-                        Text(
-                          pedidosNaFila == 1
-                              ? '1 pedido na fila'
-                              : '$pedidosNaFila pedidos na fila',
-                          style: const TextStyle(
-                            color: CoresTocaEssa.roxoClaro,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: tocada ? CoresTocaEssa.roxo : null,
+                          border: Border.all(
+                            color: tocada
+                                ? CoresTocaEssa.roxo
+                                : CoresTocaEssa.textoSecundario,
+                            width: 2,
                           ),
                         ),
-                      ],
-                    ),
+                        child: tocada
+                            ? const Icon(Icons.check_rounded,
+                                size: 18, color: CoresTocaEssa.texto)
+                            : null,
+                      ),
+                      const SizedBox(width: EspacoTocaEssa.base),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (eProxima)
+                              Text(
+                                'Próxima',
+                                style: texto.labelMedium
+                                    ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                              ),
+                            Text(
+                              item.titulo,
+                              style: texto.titleLarge?.copyWith(
+                                color: tocada
+                                    ? CoresTocaEssa.textoSecundario
+                                    : null,
+                                decoration:
+                                    tocada ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                            if (detalhes.isNotEmpty)
+                              Text(
+                                detalhes,
+                                style: texto.bodyMedium?.copyWith(
+                                    color: CoresTocaEssa.textoSecundario),
+                              ),
+                            if (pedidosNaFila > 0)
+                              Text(
+                                pedidosNaFila == 1
+                                    ? '1 pedido na fila'
+                                    : '$pedidosNaFila pedidos na fila',
+                                style: texto.labelMedium
+                                    ?.copyWith(color: CoresTocaEssa.roxoClaro),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
-            trailing: IconButton(
-              tooltip: 'Ver cifra',
-              icon: const Icon(Icons.library_music_outlined,
-                  color: CoresTocaEssa.roxoClaro, size: 20),
-              onPressed: onCifra,
+                ),
+              ),
             ),
           ),
+          IconButton(
+            tooltip: 'Ver cifra',
+            icon: const Icon(Icons.menu_book_rounded,
+                color: CoresTocaEssa.roxoClaro),
+            onPressed: abrirCifra,
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
         ],
       ),
     );
@@ -482,8 +434,7 @@ class _SelecionarRepertorioSheet extends StatelessWidget {
                 '${rep.musicas.length == 1 ? 'música' : 'músicas'}',
                 style: const TextStyle(color: CoresTocaEssa.textoSecundario),
               ),
-              trailing:
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
               onTap: () => Navigator.pop(context, rep),
             ),
           const SizedBox(height: 16),
