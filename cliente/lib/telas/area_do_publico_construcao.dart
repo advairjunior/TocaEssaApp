@@ -7,8 +7,21 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                 _abaSelecionada == 2)
         ? IntensidadeFundoTocaEssa.cabecalho
         : IntensidadeFundoTocaEssa.suave;
+    final noPerfil = _abaSelecionada == _indicePerfil;
+    // Na resenha sem perfil não há abas para onde voltar: a seta sai da tela.
+    final podeVoltarAsAbas = noPerfil &&
+        !(_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
+            _perfilPublico == null);
     return Scaffold(
       appBar: AppBar(
+          leading: podeVoltarAsAbas
+              ? IconButton(
+                  tooltip: 'Voltar às abas',
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () =>
+                      _mudarEstado(() => _abaSelecionada = _abaAntesDoPerfil),
+                )
+              : null,
           title: FutureBuilder<Apresentacao?>(
             future: _consulta,
             builder: (context, snapshot) => snapshot.data == null
@@ -22,56 +35,72 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               onPressed: () =>
                   _copiarCodigo(widget.codigoInicial.trim().toUpperCase()),
             ),
-            IconButton(
-                tooltip: 'Minha conta e histórico',
-                icon: const Icon(Icons.account_circle_outlined),
-                onPressed: () => Navigator.pushNamed(context, '/minha-conta')),
-          ]),
-      bottomNavigationBar: OcultoComTecladoAberto(
-        child: NavigationBar(
-          selectedIndex: _abaSelecionada,
-          onDestinationSelected: (indice) {
-            if (indice != _indicePerfil &&
-                indice != _indiceArtista &&
-                _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos &&
-                _perfilPublico == null) {
-              mostrarErro(
-                  context, 'Entre no seu perfil para participar da resenha.');
-              _mudarEstado(() => _abaSelecionada = _indicePerfil);
-              return;
-            }
-            _mudarEstado(() => _abaSelecionada = indice);
-          },
-          destinations: [
-            const NavigationDestination(
-              icon: Icon(Icons.music_note_outlined),
-              selectedIcon: Icon(Icons.music_note_rounded),
-              label: 'Pedir',
-            ),
-            const NavigationDestination(
-              icon: Icon(Icons.queue_music_outlined),
-              selectedIcon: Icon(Icons.queue_music_rounded),
-              label: 'Fila',
-            ),
-            if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
-              const NavigationDestination(
-                icon: Icon(Icons.groups_outlined),
-                selectedIcon: Icon(Icons.groups_rounded),
-                label: 'Galera',
+            if (!noPerfil)
+              Semantics(
+                button: true,
+                child: IconButton(
+                  tooltip: 'Meu perfil',
+                  onPressed: () => _mudarEstado(() {
+                    _abaAntesDoPerfil = _abaSelecionada;
+                    _abaSelecionada = _indicePerfil;
+                  }),
+                  icon: CircleAvatar(
+                    radius: 15,
+                    backgroundColor: CoresTocaEssa.roxo.withValues(alpha: .24),
+                    foregroundColor: CoresTocaEssa.roxoClaro,
+                    foregroundImage: _perfilPublico?.fotoUrl == null
+                        ? null
+                        : NetworkImage(
+                            _api.enderecoArquivo(_perfilPublico!.fotoUrl)!),
+                    child: const Icon(Icons.person_rounded, size: 18),
+                  ),
+                ),
               ),
-            const NavigationDestination(
-              icon: Icon(Icons.mic_external_on_outlined),
-              selectedIcon: Icon(Icons.mic_external_on_rounded),
-              label: 'Artista',
+            const SizedBox(width: EspacoTocaEssa.mini),
+          ]),
+      bottomNavigationBar: noPerfil
+          ? null
+          : OcultoComTecladoAberto(
+              child: NavigationBar(
+                selectedIndex: _abaSelecionada,
+                onDestinationSelected: (indice) {
+                  if (indice != _indicePerfil &&
+                      indice != _indiceArtista &&
+                      _tipoApresentacao ==
+                          TipoApresentacao.resenhaEntreAmigos &&
+                      _perfilPublico == null) {
+                    mostrarErro(context,
+                        'Entre no seu perfil para participar da resenha.');
+                    _mudarEstado(() => _abaSelecionada = _indicePerfil);
+                    return;
+                  }
+                  _mudarEstado(() => _abaSelecionada = indice);
+                },
+                destinations: [
+                  const NavigationDestination(
+                    icon: Icon(Icons.music_note_outlined),
+                    selectedIcon: Icon(Icons.music_note_rounded),
+                    label: 'Pedir',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.queue_music_outlined),
+                    selectedIcon: Icon(Icons.queue_music_rounded),
+                    label: 'Fila',
+                  ),
+                  if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos)
+                    const NavigationDestination(
+                      icon: Icon(Icons.groups_outlined),
+                      selectedIcon: Icon(Icons.groups_rounded),
+                      label: 'Galera',
+                    ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.mic_external_on_outlined),
+                    selectedIcon: Icon(Icons.mic_external_on_rounded),
+                    label: 'Artista',
+                  ),
+                ],
+              ),
             ),
-            const NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded),
-              label: 'Perfil',
-            ),
-          ],
-        ),
-      ),
       body: FundoTocaEssa(
         variante: VarianteFundoTocaEssa.atmosfera,
         intensidade: intensidadeDoFundo,
@@ -132,12 +161,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
   List<Widget> _construirAbaPerfil(
           Apresentacao apresentacao, BuildContext context) =>
       [
-        const SizedBox(height: 20),
-        Text(
-          'Perfil do Público',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 12),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
         if (_carregandoSessao)
           const Center(
             child: Padding(
@@ -183,8 +207,6 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
           ],
           if (!_perfilDaResenha ||
               apresentacao.tipo == TipoApresentacao.publica) ...[
-            const Text('Sua conta e sua trajetória em todas as apresentações.'),
-            const SizedBox(height: 12),
             PerfilPublicoAtivo(
               perfil: _perfilPublico!,
               estatisticas: _estatisticasPublico,
@@ -192,6 +214,7 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
               enviandoFoto: _enviandoFotoPublico,
               trocarFoto: _selecionarFotoPublico,
               sair: _sairDoPerfilPublico,
+              abrirResenhas: () => Navigator.pushNamed(context, '/minha-conta'),
             ),
           ] else ...[
             _CabecalhoCompactoPedido(

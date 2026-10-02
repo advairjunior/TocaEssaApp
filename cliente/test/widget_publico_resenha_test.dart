@@ -7,9 +7,14 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
 
+Finder _campo(String rotulo) => find.descendant(
+      of: find.widgetWithText(CampoTexto, rotulo),
+      matching: find.byType(TextField),
+    );
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
-  testWidgets('resenha exige e cria Perfil do Público', (tester) async {
+  testWidgets('resenha exige e cria perfil do público', (tester) async {
     SharedPreferences.setMockInitialValues({});
     final cliente = MockClient((requisicao) async {
       if (requisicao.url.path.endsWith('/fila') ||
@@ -56,15 +61,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Entre na resenha'), findsOneWidget);
-    final alternarCadastro = find.text('Criar meu Perfil do Público');
+    final alternarCadastro = find.text('Criar meu perfil');
     await tester.ensureVisible(alternarCadastro);
     await tester.tap(alternarCadastro);
     await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Seu nome'), 'Ana Souza');
-    await tester.enterText(
-        find.widgetWithText(TextField, 'E-mail'), 'ana@example.com');
-    await tester.enterText(find.widgetWithText(TextField, 'Senha'), 'senha123');
+    await tester.enterText(_campo('Seu nome'), 'Ana Souza');
+    await tester.enterText(_campo('E-mail'), 'ana@example.com');
+    await tester.enterText(_campo('Senha'), 'senha123');
     final criar = find.text('Criar perfil e entrar');
     await tester.ensureVisible(criar);
     await tester.tap(criar);
@@ -76,7 +79,7 @@ void main() {
     expect(find.text('Galera da resenha'), findsOneWidget);
     expect(find.text('Ana Souza'), findsOneWidget);
     expect(find.text('Você'), findsOneWidget);
-    await tester.tap(find.text('Perfil').last);
+    await tester.tap(find.byTooltip('Meu perfil'));
     await tester.pumpAndSettle();
     expect(find.text('Músicas favoritas'), findsOneWidget);
     expect(find.text('Evidências'), findsWidgets);
@@ -125,22 +128,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(CampoTexto, 'Seu nome'), findsOneWidget);
-    expect(find.text('Perfil do Público'), findsNothing);
-    await tester.tap(find.text('Perfil').last);
+    expect(find.text('Seu perfil do público'), findsNothing);
+    await tester.tap(find.byTooltip('Meu perfil'));
     await tester.pumpAndSettle();
-    expect(find.text('Perfil do Público'), findsOneWidget);
-    expect(find.text('Use seu Perfil do Público'), findsOneWidget);
+    expect(find.text('Seu perfil do público'), findsOneWidget);
     expect(find.text('Continuar como convidado'), findsOneWidget);
 
-    final criarPerfil = find.text('Criar meu Perfil do Público');
+    final criarPerfil = find.text('Criar meu perfil');
     await tester.ensureVisible(criarPerfil);
     await tester.tap(criarPerfil);
     await tester.pumpAndSettle();
-    await tester.enterText(
-        find.widgetWithText(TextField, 'Seu nome'), 'Deborah');
-    await tester.enterText(
-        find.widgetWithText(TextField, 'E-mail'), 'deborah@gmail.com');
-    await tester.enterText(find.widgetWithText(TextField, 'Senha'), '123');
+    await tester.enterText(_campo('Seu nome'), 'Deborah');
+    await tester.enterText(_campo('E-mail'), 'deborah@gmail.com');
+    await tester.enterText(_campo('Senha'), '123');
     final criarEEntrar = find.text('Criar perfil e entrar');
     await tester.ensureVisible(criarEEntrar);
     await tester.tap(criarEEntrar);

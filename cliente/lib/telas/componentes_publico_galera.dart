@@ -127,102 +127,74 @@ class _AcessoPerfilPublico extends StatelessWidget {
   final VoidCallback? continuarComoConvidado;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: CoresTocaEssa.superficie,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFF4B3470)),
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    const entreCampos = SizedBox(height: EspacoTocaEssa.base + 4);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          obrigatorio ? 'Entre na resenha' : 'Seu perfil do público',
+          style: texto.headlineSmall,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  obrigatorio ? Icons.group_rounded : Icons.person_rounded,
-                  color: CoresTocaEssa.roxoClaro,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    obrigatorio
-                        ? 'Entre na resenha'
-                        : 'Use seu Perfil do Público',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              !obrigatorio
-                  ? 'Opcional: use sua conta e foto ou continue como convidado.'
-                  : criandoConta
-                      ? 'Crie seu Perfil do Público para guardar suas participações.'
-                      : 'Use seu Perfil do Público e continue seu histórico entre amigos.',
-              style: const TextStyle(color: CoresTocaEssa.textoSecundario),
-            ),
-            const SizedBox(height: 18),
-            if (criandoConta) ...[
-              TextField(
-                controller: nome,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Seu nome',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: email,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'E-mail',
-                prefixIcon: Icon(Icons.alternate_email_rounded),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: senha,
-              obscureText: true,
-              enableSuggestions: false,
-              onSubmitted: (_) => autenticar(),
-              decoration: const InputDecoration(
-                labelText: 'Senha',
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: autenticando ? null : autenticar,
-              icon: Icon(criandoConta
-                  ? Icons.person_add_alt_1_rounded
-                  : Icons.login_rounded),
-              label: Text(autenticando
-                  ? 'Aguarde...'
-                  : criandoConta
-                      ? 'Criar perfil e entrar'
-                      : 'Entrar'),
-            ),
-            const SizedBox(height: 6),
-            TextButton(
-              onPressed: autenticando ? null : alternarModo,
-              child: Text(criandoConta
-                  ? 'Já tenho um perfil'
-                  : 'Criar meu Perfil do Público'),
-            ),
-            if (!obrigatorio) ...[
-              const Divider(),
-              TextButton(
-                onPressed: autenticando ? null : continuarComoConvidado,
-                child: const Text('Continuar como convidado'),
-              ),
-            ],
-          ],
+        const SizedBox(height: EspacoTocaEssa.mini),
+        Text(
+          !obrigatorio
+              ? 'Opcional: guarde seus pedidos, sua foto e seu histórico.'
+              : criandoConta
+                  ? 'Crie seu perfil para guardar suas participações.'
+                  : 'Entre com seu perfil e continue seu histórico entre amigos.',
+          style:
+              texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario),
         ),
-      );
+        const SizedBox(height: EspacoTocaEssa.grande),
+        if (criandoConta) ...[
+          CampoTexto(
+            rotulo: 'Seu nome',
+            controlador: nome,
+            capitalizacao: TextCapitalization.words,
+            acaoTeclado: TextInputAction.next,
+          ),
+          entreCampos,
+        ],
+        CampoTexto(
+          rotulo: 'E-mail',
+          controlador: email,
+          dica: 'voce@exemplo.com',
+          teclado: TextInputType.emailAddress,
+          acaoTeclado: TextInputAction.next,
+        ),
+        entreCampos,
+        CampoTexto(
+          rotulo: 'Senha',
+          controlador: senha,
+          dica: criandoConta ? 'Pelo menos 6 caracteres' : null,
+          oculto: true,
+          aoEnviar: (_) => autenticar(),
+        ),
+        const SizedBox(height: EspacoTocaEssa.grande),
+        FilledButton(
+          onPressed: autenticando ? null : autenticar,
+          child: Text(autenticando
+              ? 'Aguarde...'
+              : criandoConta
+                  ? 'Criar perfil e entrar'
+                  : 'Entrar'),
+        ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        TextButton(
+          onPressed: autenticando ? null : alternarModo,
+          child: Text(criandoConta ? 'Já tenho um perfil' : 'Criar meu perfil'),
+        ),
+        if (!obrigatorio)
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: CoresTocaEssa.textoSecundario,
+            ),
+            onPressed: autenticando ? null : continuarComoConvidado,
+            child: const Text('Continuar como convidado'),
+          ),
+      ],
+    );
+  }
 }

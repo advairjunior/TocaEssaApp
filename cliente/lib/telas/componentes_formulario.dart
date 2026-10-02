@@ -169,6 +169,7 @@ class CampoTexto extends StatelessWidget {
     this.aoEnviar,
     this.linhas = 1,
     this.comprimentoMaximo,
+    this.oculto = false,
   });
 
   final String rotulo;
@@ -182,6 +183,9 @@ class CampoTexto extends StatelessWidget {
   final int linhas;
   final int? comprimentoMaximo;
 
+  /// Esconde o texto digitado, como em senhas.
+  final bool oculto;
+
   @override
   Widget build(BuildContext context) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,7 +198,10 @@ class CampoTexto extends StatelessWidget {
             textInputAction: acaoTeclado,
             onSubmitted: aoEnviar,
             minLines: 1,
-            maxLines: linhas,
+            maxLines: oculto ? 1 : linhas,
+            obscureText: oculto,
+            autocorrect: !oculto,
+            enableSuggestions: !oculto,
             maxLength: comprimentoMaximo,
             decoration: decoracaoCampoTocaEssa(dica: dica, ajuda: ajuda),
           ),

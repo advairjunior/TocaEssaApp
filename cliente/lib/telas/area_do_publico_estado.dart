@@ -27,6 +27,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
       FormaParticipacaoPedido.pedidoNormal;
   TipoPedido _tipoPedido = TipoPedido.musica;
   int _abaSelecionada = 0;
+  int _abaAntesDoPerfil = 0;
   bool _perfilDaResenha = false;
   String? _pedidoSendoCancelado;
   String? _pedidoSendoAvaliado;
