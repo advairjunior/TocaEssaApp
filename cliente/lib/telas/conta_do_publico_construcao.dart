@@ -154,74 +154,82 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         _apresentacoes.where((a) => a.status == status).toList()
           ..sort((a, b) => b.data.compareTo(a.data));
     final aoVivo = comStatus(StatusApresentacao.emAndamento);
-    final filtradas = comStatus(_filtro);
-    LinhaComData linha(Apresentacao apresentacao) => LinhaComData(
-          data: apresentacao.data,
-          titulo: apresentacao.nome,
-          subtitulo:
-              '${apresentacao.local} · ${apresentacao.perfilArtistico.nomeArtistico}',
-          tocar: () => _abrir(apresentacao),
-        );
+    // Próximas da mais perto para a mais distante; histórico ao contrário.
+    final proximas = comStatus(StatusApresentacao.agendada).reversed.toList();
+    final historico = comStatus(StatusApresentacao.encerrada);
+    final anos = {for (final a in historico) a.data.year};
+    Future<void> entrarComCodigo() async {
+      await Navigator.pushNamed(context, '/');
+      if (mounted) await _carregar();
+    }
+
+    if (_apresentacoes.isEmpty) {
+      return [
+        const EstadoVazio(
+          icone: Icons.queue_music_rounded,
+          titulo: 'Sua primeira resenha te espera',
+          descricao: 'Entre com o código do artista e o encontro fica '
+              'guardado aqui, com a fila, a galera e sua retrospectiva.',
+        ),
+        FilledButton.icon(
+          onPressed: entrarComCodigo,
+          icon: const Icon(Icons.tag_rounded),
+          label: const Text('Entrar com um código'),
+        ),
+      ];
+    }
     return [
-      if (aoVivo.isNotEmpty) ...[
-        const TituloGrupo('Acontecendo agora'),
-        GrupoDeLinhas(
-          recuoDivisoria: 84,
-          linhas: [for (final apresentacao in aoVivo) linha(apresentacao)],
+      if (_estatisticas != null) ...[
+        _ResumoDasResenhas(estatisticas: _estatisticas!),
+        const SizedBox(height: EspacoTocaEssa.grande),
+      ],
+      for (final apresentacao in aoVivo) ...[
+        _CartaoResenhaAoVivo(
+          apresentacao: apresentacao,
+          abrir: () => _abrir(apresentacao),
         ),
         const SizedBox(height: EspacoTocaEssa.grande),
       ],
-      Row(
-        children: [
-          Flexible(
-            child: AbaDeTexto(
-              rotulo: 'Próximas',
-              quantidade: comStatus(StatusApresentacao.agendada).length,
-              selecionada: _filtro == StatusApresentacao.agendada,
-              tocar: () =>
-                  _alterar(() => _filtro = StatusApresentacao.agendada),
-            ),
-          ),
-          const SizedBox(width: EspacoTocaEssa.base),
-          Flexible(
-            child: AbaDeTexto(
-              rotulo: 'Histórico',
-              quantidade: comStatus(StatusApresentacao.encerrada).length,
-              selecionada: _filtro == StatusApresentacao.encerrada,
-              tocar: () =>
-                  _alterar(() => _filtro = StatusApresentacao.encerrada),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: EspacoTocaEssa.base),
-      if (filtradas.isEmpty)
-        _filtro == StatusApresentacao.agendada
-            ? const EstadoVazio(
-                icone: Icons.event_outlined,
-                titulo: 'Nenhum encontro agendado',
-                descricao: 'Quando você entrar em uma resenha marcada, '
-                    'ela aparece aqui.',
-              )
-            : const EstadoVazio(
-                icone: Icons.history_rounded,
-                titulo: 'Histórico vazio',
-                descricao: 'Os encontros que já aconteceram ficam guardados '
-                    'aqui, com fila, galera e retrospectiva.',
-              )
-      else
+      if (proximas.isNotEmpty) ...[
+        const TituloGrupo('Próximas'),
         GrupoDeLinhas(
           recuoDivisoria: 84,
-          linhas: [for (final apresentacao in filtradas) linha(apresentacao)],
+          linhas: [
+            for (final apresentacao in proximas)
+              LinhaComData(
+                data: apresentacao.data,
+                titulo: apresentacao.nome,
+                subtitulo: '${apresentacao.perfilArtistico.nomeArtistico} · '
+                    '${apresentacao.local}',
+                tocar: () => _abrir(apresentacao),
+              ),
+          ],
         ),
-      const SizedBox(height: EspacoTocaEssa.grande),
-      TextButton.icon(
-        onPressed: () async {
-          await Navigator.pushNamed(context, '/');
-          if (mounted) await _carregar();
-        },
+        const SizedBox(height: EspacoTocaEssa.grande),
+      ],
+      for (final ano in anos) ...[
+        TituloGrupo('$ano'),
+        GrupoDeLinhas(
+          recuoDivisoria: 88,
+          linhas: [
+            for (final apresentacao
+                in historico.where((a) => a.data.year == ano))
+              _LinhaMemoria(
+                apresentacao: apresentacao,
+                enderecoCapa: widget.api.enderecoArquivo(
+                  apresentacao.fotoRetrospectivaUrl ??
+                      apresentacao.perfilArtistico.fotoUrl,
+                ),
+                tocar: () => _abrir(apresentacao),
+              ),
+          ],
+        ),
+        const SizedBox(height: EspacoTocaEssa.grande),
+      ],
+      OutlinedButton.icon(
+        onPressed: entrarComCodigo,
         icon: const Icon(Icons.tag_rounded, size: 18),
-        label: const Text('Entrar em outra apresentação'),
+        label: const Text('Entrar com um código'),
       ),
     ];
   }

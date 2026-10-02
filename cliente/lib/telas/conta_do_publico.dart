@@ -12,6 +12,7 @@ import '../tema/tema_toca_essa.dart';
 import 'fundo_toca_essa.dart';
 
 part 'conta_do_publico_construcao.dart';
+part 'conta_do_publico_resenhas.dart';
 
 class ContaDoPublico extends StatefulWidget {
   const ContaDoPublico({super.key, required this.api});
@@ -31,7 +32,6 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
   bool _ocupado = true;
   bool _cadastro = false;
   int _aba = 0;
-  StatusApresentacao _filtro = StatusApresentacao.agendada;
   String? _erro;
 
   @override
@@ -67,12 +67,6 @@ class _ContaDoPublicoState extends State<ContaDoPublico> {
           _perfil = perfil;
           _estatisticas = estatisticas;
           _apresentacoes = apresentacoes;
-          // Ao vivo aparece à parte; as abas escolhem próximas ou histórico.
-          final temProximas =
-              apresentacoes.any((a) => a.status == StatusApresentacao.agendada);
-          _filtro = temProximas
-              ? StatusApresentacao.agendada
-              : StatusApresentacao.encerrada;
         });
       }
     } catch (erro) {

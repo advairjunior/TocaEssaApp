@@ -453,6 +453,10 @@ const _diasDaSemana = [
   'domingo',
 ];
 
+/// Ex.: "05 de setembro", sem dia da semana nem ano.
+String formatarDiaEMes(DateTime data) =>
+    '${data.day.toString().padLeft(2, '0')} de ${_meses[data.month - 1]}';
+
 /// Ex.: "sábado, 5 de setembro"; o ano aparece só quando não é o atual.
 String formatarDataPorExtenso(DateTime data) {
   final ano = data.year == DateTime.now().year ? '' : ' de ${data.year}';
