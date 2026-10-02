@@ -147,8 +147,12 @@ abstract final class TemaTocaEssa {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
-      progressIndicatorTheme:
-          const ProgressIndicatorThemeData(color: CoresTocaEssa.roxoClaro),
+      // O trilho precisa contrastar com o preenchimento: sem isso, uma barra
+      // em 0% parecia cheia.
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: CoresTocaEssa.roxoClaro,
+        linearTrackColor: CoresTocaEssa.borda,
+      ),
       listTileTheme:
           const ListTileThemeData(iconColor: CoresTocaEssa.roxoClaro),
       dialogTheme: DialogThemeData(
