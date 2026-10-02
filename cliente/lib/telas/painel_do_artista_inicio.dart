@@ -66,7 +66,7 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
         const SizedBox(height: EspacoTocaEssa.grande),
       ],
       if (_apresentacoes.isEmpty)
-        const _EstadoVazioPainel(
+        const EstadoVazio(
           icone: Icons.mic_external_on_rounded,
           titulo: 'Nenhuma apresentação ainda',
           descricao:
@@ -82,12 +82,12 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
         const SizedBox(height: EspacoTocaEssa.base),
         if (_apresentacoesFiltradas.isEmpty)
           switch (_filtroApresentacoes) {
-            _FiltroApresentacoes.proximas => const _EstadoVazioPainel(
+            _FiltroApresentacoes.proximas => const EstadoVazio(
                 icone: Icons.event_outlined,
                 titulo: 'Nenhum show agendado',
                 descricao: 'Seus próximos shows aparecem aqui.',
               ),
-            _FiltroApresentacoes.historico => const _EstadoVazioPainel(
+            _FiltroApresentacoes.historico => const EstadoVazio(
                 icone: Icons.history_rounded,
                 titulo: 'Histórico vazio',
                 descricao: 'Os shows encerrados ficam guardados aqui.',
