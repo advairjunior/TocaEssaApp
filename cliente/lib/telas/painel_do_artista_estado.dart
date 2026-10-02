@@ -328,7 +328,7 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       _apresentacaoGestaoId = criada.apresentacao.id;
       _filtroApresentacoes = _FiltroApresentacoes.proximas;
     });
-    await _mostrarCodigo(criada.apresentacao);
+    await _mostrarCodigo(criada.apresentacao, recemCriada: true);
   }
 
   @override

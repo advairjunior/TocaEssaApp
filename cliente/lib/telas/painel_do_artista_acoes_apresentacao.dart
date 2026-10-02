@@ -146,12 +146,16 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
     return '$origem/#/publico/$codigo';
   }
 
-  Future<void> _mostrarCodigo(Apresentacao apresentacao) =>
+  Future<void> _mostrarCodigo(
+    Apresentacao apresentacao, {
+    bool recemCriada = false,
+  }) =>
       Navigator.push<void>(
         context,
         MaterialPageRoute<void>(
           builder: (_) => _CodigoDaApresentacao(
             apresentacao: apresentacao,
+            recemCriada: recemCriada,
             linkPublico: _linkPublico(apresentacao.codigo),
             enderecoFoto:
                 _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
