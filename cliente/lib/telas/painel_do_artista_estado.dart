@@ -27,19 +27,29 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
 
   bool get _dentroDaApresentacao => _abasDaApresentacao.contains(_aba);
 
-  List<Apresentacao> _comStatus(StatusApresentacao status) => _apresentacoes
-      .where((apresentacao) => apresentacao.status == status)
-      .toList()
-    ..sort((a, b) => b.data.compareTo(a.data));
+  List<Apresentacao> _comStatus(
+    StatusApresentacao status, {
+    bool maisProximaPrimeiro = false,
+  }) =>
+      _apresentacoes
+          .where((apresentacao) => apresentacao.status == status)
+          .toList()
+        ..sort((a, b) => maisProximaPrimeiro
+            ? a.data.compareTo(b.data)
+            : b.data.compareTo(a.data));
 
   List<Apresentacao> get _apresentacoesAoVivo =>
       _comStatus(StatusApresentacao.emAndamento);
 
   List<Apresentacao> get _apresentacoesFiltradas =>
-      _comStatus(switch (_filtroApresentacoes) {
-        _FiltroApresentacoes.proximas => StatusApresentacao.agendada,
-        _FiltroApresentacoes.historico => StatusApresentacao.encerrada,
-      });
+      switch (_filtroApresentacoes) {
+        _FiltroApresentacoes.proximas => _comStatus(
+            StatusApresentacao.agendada,
+            maisProximaPrimeiro: true,
+          ),
+        _FiltroApresentacoes.historico =>
+          _comStatus(StatusApresentacao.encerrada),
+      };
 
   _FiltroApresentacoes _filtroInicial(List<Apresentacao> apresentacoes) {
     final temProximas =

@@ -141,6 +141,61 @@ void main() {
     expect(find.text('Bar do Zé · Resenha'), findsOneWidget);
   });
 
+  testWidgets('próximas mostram primeiro a apresentação mais próxima',
+      (tester) async {
+    await _abrirPainel(
+      tester,
+      apresentacoes: '[${_apresentacao(
+        id: '1',
+        nome: 'Show de outubro',
+        data: '2026-10-10',
+      )},${_apresentacao(
+        id: '2',
+        nome: 'Show de dezembro',
+        data: '2026-12-20',
+      )},${_apresentacao(
+        id: '3',
+        nome: 'Show de setembro',
+        data: '2026-09-05',
+      )}]',
+    );
+
+    final setembro = tester.getTopLeft(find.text('Show de setembro')).dy;
+    final outubro = tester.getTopLeft(find.text('Show de outubro')).dy;
+    final dezembro = tester.getTopLeft(find.text('Show de dezembro')).dy;
+    expect(setembro, lessThan(outubro));
+    expect(outubro, lessThan(dezembro));
+  });
+
+  testWidgets('histórico mostra primeiro a apresentação mais recente',
+      (tester) async {
+    await _abrirPainel(
+      tester,
+      apresentacoes: '[${_apresentacao(
+        id: '1',
+        nome: 'Show de julho',
+        data: '2026-07-10',
+        status: 'Encerrada',
+      )},${_apresentacao(
+        id: '2',
+        nome: 'Show de setembro',
+        data: '2026-09-05',
+        status: 'Encerrada',
+      )},${_apresentacao(
+        id: '3',
+        nome: 'Show de agosto',
+        data: '2026-08-15',
+        status: 'Encerrada',
+      )}]',
+    );
+
+    final setembro = tester.getTopLeft(find.text('Show de setembro')).dy;
+    final agosto = tester.getTopLeft(find.text('Show de agosto')).dy;
+    final julho = tester.getTopLeft(find.text('Show de julho')).dy;
+    expect(setembro, lessThan(agosto));
+    expect(agosto, lessThan(julho));
+  });
+
   testWidgets('leitores de tela anunciam itens e menu da conta como botões',
       (tester) async {
     final semantica = tester.ensureSemantics();
