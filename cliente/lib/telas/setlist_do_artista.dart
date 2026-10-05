@@ -103,26 +103,51 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         return;
       }
       await finalizar(null);
-      if (!mounted) return;
-      final decisao = await mostrarEscolhaDeCifra(
-        context,
-        musica: item.titulo,
-        artista: item.artista,
-        resultado: resultado,
-        abrirUrl: widget.abrirUrl,
-      );
-      if (decisao == null || !mounted) return;
-      if (decisao.tipo == TipoDecisaoCifra.salvar) {
+      await _mostrarEscolhaDaCifra(item, resultado);
+    } catch (erro) {
+      await finalizar?.call(null);
+      if (mounted) mostrarErro(context, erro);
+    }
+  }
+
+  Future<void> _escolherCifra(ItemDoSetlist item) async {
+    try {
+      final resultado =
+          await widget.api.consultarCifra(item.titulo, item.artista);
+      await _mostrarEscolhaDaCifra(item, resultado);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    }
+  }
+
+  Future<void> _mostrarEscolhaDaCifra(
+      ItemDoSetlist item, ResultadoCifraDoArtista resultado) async {
+    if (!mounted) return;
+    final decisao = await mostrarEscolhaDeCifra(
+      context,
+      musica: item.titulo,
+      artista: item.artista,
+      resultado: resultado,
+      abrirUrl: widget.abrirUrl,
+    );
+    if (decisao == null || !mounted) return;
+    switch (decisao.tipo) {
+      case TipoDecisaoCifra.remover:
+        final cifra = resultado.cifra;
+        if (cifra == null) return;
+        await widget.api.removerCifra(cifra.id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Link da cifra removido.')),
+          );
+        }
+      case TipoDecisaoCifra.salvar:
         await widget.api.salvarCifra(item.titulo, item.artista, decisao.url!);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cifra salva.')),
           );
         }
-      }
-    } catch (erro) {
-      await finalizar?.call(null);
-      if (mounted) mostrarErro(context, erro);
     }
   }
 
@@ -211,6 +236,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
                       _pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
                   marcar: (tocada) => _marcar(item, tocada),
                   abrirCifra: () => _abrirCifra(item),
+                  escolherCifra: () => _escolherCifra(item),
                 ),
             ],
           ),
@@ -296,6 +322,7 @@ class _LinhaSetlist extends StatelessWidget {
     required this.pedidosNaFila,
     required this.marcar,
     required this.abrirCifra,
+    required this.escolherCifra,
   });
 
   final ItemDoSetlist item;
@@ -304,6 +331,7 @@ class _LinhaSetlist extends StatelessWidget {
   final int pedidosNaFila;
   final ValueChanged<bool> marcar;
   final VoidCallback abrirCifra;
+  final VoidCallback escolherCifra;
 
   @override
   Widget build(BuildContext context) {
@@ -400,6 +428,12 @@ class _LinhaSetlist extends StatelessWidget {
             icon: const Icon(Icons.menu_book_rounded,
                 color: CoresTocaEssa.roxoClaro),
             onPressed: abrirCifra,
+          ),
+          IconButton(
+            tooltip: 'Escolher ou trocar cifra',
+            icon: const Icon(Icons.link_rounded,
+                color: CoresTocaEssa.textoSecundario),
+            onPressed: escolherCifra,
           ),
           const SizedBox(width: EspacoTocaEssa.pequeno),
         ],

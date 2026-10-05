@@ -22,6 +22,19 @@ Map<String, Object?> _item(String id, String titulo, int ordem,
       'ordem': ordem,
     };
 
+Map<String, Object?> _cifra(String url) => {
+      'id': 'c1',
+      'artistaId': '22222222-2222-2222-2222-222222222222',
+      'musica': 'Velha Infância',
+      'artista': 'Banda 2',
+      'url': url,
+      'fonte': 'Manual',
+      'criadaEm': '2026-09-10T12:00:00Z',
+      'atualizadaEm': '2026-09-10T12:00:00Z',
+    };
+
+const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
+
 Future<List<http.Request>> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? itens,
@@ -68,6 +81,22 @@ Future<List<http.Request>> _abrir(
         headers: {'content-type': 'application/json; charset=utf-8'},
       );
     }
+    if (caminho.endsWith('/cifras/consulta')) {
+      return http.Response(
+        jsonEncode({
+          'cifra': _cifra(_cifraSalva),
+          'urlPesquisa': 'https://www.google.com/search?q=cifra',
+        }),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    }
+    if (caminho.endsWith('/cifras') && requisicao.method == 'PUT') {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      return http.Response(jsonEncode(_cifra(corpo['url'] as String)), 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    }
+    if (requisicao.method == 'DELETE') return http.Response('', 204);
     return http.Response('[]', 200);
   });
   await tester.pumpWidget(MaterialApp(
@@ -131,6 +160,40 @@ void main() {
       containsSemantics(hasCheckedState: true, isChecked: true),
     );
     semantica.dispose();
+  });
+
+  testWidgets('cifra já salva pode ser trocada pela setlist', (tester) async {
+    final requisicoes = await _abrir(tester);
+
+    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Escolher cifra'), findsOneWidget);
+    expect(find.text(_cifraSalva), findsOneWidget);
+
+    const nova = 'https://www.cifras.com.br/cifra/banda-2/velha-infancia';
+    await tester.enterText(find.byType(TextField), nova);
+    await tester.tap(find.text('Confirmar cifra'));
+    await tester.pumpAndSettle();
+
+    final salvamento = requisicoes.singleWhere((r) => r.method == 'PUT');
+    expect(salvamento.url.path, '/api/artista/cifras');
+    expect(salvamento.body, contains(nova));
+    expect(salvamento.body, contains('Velha Infância'));
+    expect(find.text('Cifra salva.'), findsOneWidget);
+  });
+
+  testWidgets('link da cifra pode ser removido pela setlist', (tester) async {
+    final requisicoes = await _abrir(tester);
+
+    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Remover link'));
+    await tester.pumpAndSettle();
+
+    final remocao = requisicoes.singleWhere((r) => r.method == 'DELETE');
+    expect(remocao.url.path, '/api/artista/cifras/c1');
+    expect(find.text('Link da cifra removido.'), findsOneWidget);
   });
 
   testWidgets('sem repertório, convida a importar', (tester) async {
