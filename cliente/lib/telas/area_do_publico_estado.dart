@@ -41,6 +41,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   TipoApresentacao? _tipoApresentacao;
   Timer? _atualizacaoAutomatica;
   AssinaturaTempoReal? _tempoReal;
+  AtualizacaoEspalhada? _atualizacaoPorAviso;
 
   int get _indiceArtista =>
       _tipoApresentacao == TipoApresentacao.resenhaEntreAmigos ? 3 : 2;
@@ -80,9 +81,10 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
       const Duration(seconds: 30),
       (_) => _atualizarSilenciosamente(),
     );
+    _atualizacaoPorAviso = AtualizacaoEspalhada(_atualizarSilenciosamente);
     _tempoReal = AssinaturaTempoReal(
       widget.api.enderecoTempoReal(widget.codigoInicial),
-      _atualizarSilenciosamente,
+      _atualizacaoPorAviso!.solicitar,
     );
     _restaurarDadosDoPublico();
   }
@@ -97,6 +99,7 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   void dispose() {
     _atualizacaoAutomatica?.cancel();
     _tempoReal?.encerrar();
+    _atualizacaoPorAviso?.encerrar();
     _musica.dispose();
     _artista.dispose();
     _nome.dispose();
