@@ -235,6 +235,33 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
     }
   }
 
+  Future<void> _reordenar(int indiceAntigo, int indiceNovo) async {
+    if (_salvando) return;
+    if (indiceNovo > indiceAntigo) indiceNovo -= 1;
+    if (indiceNovo == indiceAntigo) return;
+    final anteriores = _musicas;
+    final reordenadas = [..._musicas];
+    reordenadas.insert(indiceNovo, reordenadas.removeAt(indiceAntigo));
+    setState(() {
+      _musicas = reordenadas;
+      _salvando = true;
+    });
+    try {
+      final salvo = await widget.api.reordenarMusicasDoRepertorio(
+        widget.repertorio.id,
+        [for (final musica in reordenadas) musica.id],
+      );
+      if (!mounted) return;
+      setState(() => _musicas = salvo.musicas);
+    } catch (erro) {
+      if (!mounted) return;
+      setState(() => _musicas = anteriores);
+      mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
+  }
+
   Future<void> _excluirRepertorio() async {
     final rep = widget.repertorio;
     final confirmou = await showDialog<bool>(
@@ -325,44 +352,105 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
                   ),
                 ),
               )
-            : ConteudoMobile(
-                filho: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    GrupoDeLinhas(
-                      linhas: [
-                        for (final (indice, musica) in _musicas.indexed)
-                          _LinhaMusica(
-                            posicao: indice + 1,
-                            musica: musica,
-                            salvando: _salvando,
-                            editar: () => _editarMusica(musica),
-                            remover: () => _removerMusica(musica),
+            : SafeArea(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: ReorderableListView.builder(
+                      padding: const EdgeInsets.all(20),
+                      buildDefaultDragHandles: false,
+                      itemCount: _musicas.length,
+                      onReorder: _reordenar,
+                      header: Padding(
+                        padding:
+                            const EdgeInsets.only(bottom: EspacoTocaEssa.medio),
+                        child: Text(
+                          'Segure e arraste uma música para mudar a ordem.',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: CoresTocaEssa.textoSecundario),
+                        ),
+                      ),
+                      footer: Padding(
+                        padding:
+                            const EdgeInsets.only(top: EspacoTocaEssa.base),
+                        child: TextButton.icon(
+                          onPressed: _salvando ? null : _adicionarMusica,
+                          icon: const Icon(Icons.add_rounded),
+                          label: const Text('Adicionar música'),
+                        ),
+                      ),
+                      itemBuilder: (context, indice) {
+                        final musica = _musicas[indice];
+                        return ReorderableDelayedDragStartListener(
+                          key: ValueKey(musica.id),
+                          index: indice,
+                          enabled: !_salvando,
+                          child: _CelulaDoGrupo(
+                            primeira: indice == 0,
+                            ultima: indice == _musicas.length - 1,
+                            child: _LinhaMusica(
+                              indice: indice,
+                              musica: musica,
+                              salvando: _salvando,
+                              editar: () => _editarMusica(musica),
+                              remover: () => _removerMusica(musica),
+                            ),
                           ),
-                      ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: EspacoTocaEssa.base),
-                    TextButton.icon(
-                      onPressed: _salvando ? null : _adicionarMusica,
-                      icon: const Icon(Icons.add_rounded),
-                      label: const Text('Adicionar música'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
       );
 }
 
+/// Uma linha com o mesmo visual de [GrupoDeLinhas], para listas reordenáveis
+/// em que cada linha precisa ser um item independente.
+class _CelulaDoGrupo extends StatelessWidget {
+  const _CelulaDoGrupo({
+    required this.primeira,
+    required this.ultima,
+    required this.child,
+  });
+
+  final bool primeira;
+  final bool ultima;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const raio = Radius.circular(RaioTocaEssa.cartao);
+    return Material(
+      color: CoresTocaEssa.superficie,
+      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.vertical(
+        top: primeira ? raio : Radius.zero,
+        bottom: ultima ? raio : Radius.zero,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!primeira)
+            const Divider(height: 1, indent: 52, endIndent: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
 class _LinhaMusica extends StatelessWidget {
   const _LinhaMusica({
-    required this.posicao,
+    required this.indice,
     required this.musica,
     required this.salvando,
     required this.editar,
     required this.remover,
   });
 
-  final int posicao;
+  final int indice;
   final MusicaDoRepertorio musica;
   final bool salvando;
   final VoidCallback editar;
@@ -394,7 +482,7 @@ class _LinhaMusica extends StatelessWidget {
                     SizedBox(
                       width: 20,
                       child: Text(
-                        '$posicao',
+                        '${indice + 1}',
                         style: texto.titleMedium
                             ?.copyWith(color: CoresTocaEssa.roxoClaro),
                       ),
@@ -425,6 +513,21 @@ class _LinhaMusica extends StatelessWidget {
           icon: const Icon(Icons.remove_circle_outline_rounded,
               color: CoresTocaEssa.textoSecundario, size: 20),
           onPressed: salvando ? null : remover,
+        ),
+        ReorderableDragStartListener(
+          index: indice,
+          enabled: !salvando,
+          child: const Tooltip(
+            message: 'Arrastar para reordenar',
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: EspacoTocaEssa.pequeno,
+                vertical: EspacoTocaEssa.medio,
+              ),
+              child: Icon(Icons.drag_handle_rounded,
+                  color: CoresTocaEssa.textoSecundario),
+            ),
+          ),
         ),
         const SizedBox(width: EspacoTocaEssa.mini),
       ],
