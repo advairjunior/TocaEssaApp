@@ -177,24 +177,77 @@ public sealed partial class RepositorioTocaEssa
         if (!string.IsNullOrWhiteSpace(pasta)) Directory.CreateDirectory(pasta);
 
         using var banco = new BancoTocaEssa(_caminhoBanco);
-        banco.GarantirEstrutura();
-        using var transacao = banco.Database.BeginTransaction();
+        var gravados = _registrosGravados ?? LerRegistrosGravados(banco);
+        var atuais = MontarRegistrosAtuais(banco);
+        try
+        {
+            using var transacao = banco.Database.BeginTransaction();
+            foreach (var (tipo, registros) in atuais)
+                foreach (var (chave, json) in gravados[tipo])
+                    if (!registros.ContainsKey(chave))
+                        banco.Remove(JsonSerializer.Deserialize(json, tipo)!);
+            banco.SaveChanges();
 
-        banco.SessoesPublicas.RemoveRange(banco.SessoesPublicas);
-        banco.SessoesArtistas.RemoveRange(banco.SessoesArtistas);
-        banco.ParticipacoesResenha.RemoveRange(banco.ParticipacoesResenha);
-        banco.Avaliacoes.RemoveRange(banco.Avaliacoes);
-        banco.Pedidos.RemoveRange(banco.Pedidos);
-        banco.Apresentacoes.RemoveRange(banco.Apresentacoes);
-        banco.Perfis.RemoveRange(banco.Perfis);
-        banco.PerfisPublicos.RemoveRange(banco.PerfisPublicos);
-        banco.ContasArtistas.RemoveRange(banco.ContasArtistas);
-        banco.CifrasDoArtista.RemoveRange(banco.CifrasDoArtista);
-        banco.ItensDoSetlist.RemoveRange(banco.ItensDoSetlist);
-        banco.MusicasDoRepertorio.RemoveRange(banco.MusicasDoRepertorio);
-        banco.Repertorios.RemoveRange(banco.Repertorios);
-        banco.SaveChanges();
+            foreach (var (tipo, registros) in atuais)
+                foreach (var (chave, (registro, json)) in registros)
+                {
+                    if (!gravados[tipo].TryGetValue(chave, out var jsonGravado))
+                        banco.Add(registro);
+                    else if (jsonGravado != json)
+                        banco.Update(registro);
+                }
+            banco.SaveChanges();
+            transacao.Commit();
+        }
+        catch
+        {
+            _registrosGravados = null;
+            throw;
+        }
 
+        _registrosGravados = atuais.ToDictionary(
+            tabela => tabela.Key,
+            tabela => tabela.Value.ToDictionary(
+                registro => registro.Key, registro => registro.Value.Json));
+        _notificador?.Publicar(_apresentacoes.Keys);
+    }
+
+    private static readonly IReadOnlyList<(Type Tipo, Func<BancoTocaEssa, IEnumerable<object>> Ler)>
+        TabelasPersistidas =
+        [
+            (typeof(PerfilArtisticoRegistro), banco => banco.Perfis.AsNoTracking()),
+            (typeof(ApresentacaoRegistro), banco => banco.Apresentacoes.AsNoTracking()),
+            (typeof(PedidoMusicalRegistro), banco => banco.Pedidos.AsNoTracking()),
+            (typeof(AvaliacaoPedidoRegistro), banco => banco.Avaliacoes.AsNoTracking()),
+            (typeof(PerfilPublicoRegistro), banco => banco.PerfisPublicos.AsNoTracking()),
+            (typeof(ParticipacaoResenhaRegistro),
+                banco => banco.ParticipacoesResenha.AsNoTracking()),
+            (typeof(SessaoPublicoRegistro), banco => banco.SessoesPublicas.AsNoTracking()),
+            (typeof(ContaArtistaRegistro), banco => banco.ContasArtistas.AsNoTracking()),
+            (typeof(CifraDoArtistaRegistro), banco => banco.CifrasDoArtista.AsNoTracking()),
+            (typeof(RepertorioRegistro), banco => banco.Repertorios.AsNoTracking()),
+            (typeof(MusicaDoRepertorioRegistro),
+                banco => banco.MusicasDoRepertorio.AsNoTracking()),
+            (typeof(ItemDoSetlistRegistro), banco => banco.ItensDoSetlist.AsNoTracking()),
+            (typeof(SessaoArtistaRegistro), banco => banco.SessoesArtistas.AsNoTracking())
+        ];
+
+    private static Dictionary<Type, Dictionary<string, string>> LerRegistrosGravados(
+        BancoTocaEssa banco) =>
+        TabelasPersistidas.ToDictionary(
+            tabela => tabela.Tipo,
+            tabela => tabela.Ler(banco).ToDictionary(
+                registro => ObterChaveDoRegistro(banco, tabela.Tipo, registro),
+                registro => JsonSerializer.Serialize(registro, tabela.Tipo)));
+
+    private static string ObterChaveDoRegistro(BancoTocaEssa banco, Type tipo, object registro) =>
+        string.Join("|", banco.Model.FindEntityType(tipo)!.FindPrimaryKey()!.Properties
+            .Select(propriedade => propriedade.PropertyInfo!.GetValue(registro)?.ToString()));
+
+    private Dictionary<Type, Dictionary<string, (object Registro, string Json)>>
+        MontarRegistrosAtuais(BancoTocaEssa banco)
+    {
+        var perfis = new List<object>();
         var configuracoes = _configuracoesPerfis.Count > 0
             ? _configuracoesPerfis
             : _configuracaoPerfil is null
@@ -210,7 +263,7 @@ public sealed partial class RepositorioTocaEssa
         foreach (var (artistaId, configuracao) in configuracoes)
         {
             var perfil = configuracao.Perfil;
-            banco.Perfis.Add(new PerfilArtisticoRegistro
+            perfis.Add(new PerfilArtisticoRegistro
             {
                 Id = perfil.Id,
                 ArtistaId = artistaId,
@@ -229,7 +282,7 @@ public sealed partial class RepositorioTocaEssa
             });
         }
 
-        banco.Apresentacoes.AddRange(_apresentacoes.Values.Select(item =>
+        IEnumerable<object> apresentacoes = _apresentacoes.Values.Select(item =>
             new ApresentacaoRegistro
             {
                 Id = item.Id,
@@ -242,9 +295,9 @@ public sealed partial class RepositorioTocaEssa
                 Status = item.Status,
                 Tipo = item.Tipo,
                 FotoRetrospectivaUrl = item.FotoRetrospectivaUrl
-            }));
+            });
 
-        banco.Pedidos.AddRange(_pedidos.Values.Select(item =>
+        IEnumerable<object> pedidos = _pedidos.Values.Select(item =>
             new PedidoMusicalRegistro
             {
                 Id = item.Id,
@@ -262,24 +315,32 @@ public sealed partial class RepositorioTocaEssa
                 Recado = item.Recado,
                 Tipo = item.Tipo,
                 DestinatarioAlo = item.DestinatarioAlo
-            }));
+            });
 
-        banco.Avaliacoes.AddRange(_avaliacoes.Values);
-        banco.PerfisPublicos.AddRange(_perfisPublicos.Values);
-        banco.ParticipacoesResenha.AddRange(_participacoesResenha.Values);
-        banco.SessoesPublicas.AddRange(_sessoesPublicas.Values
-            .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
-        banco.ContasArtistas.AddRange(_contasArtistas.Values);
-        banco.CifrasDoArtista.AddRange(_cifrasDoArtista.Values);
-        banco.Repertorios.AddRange(_repertorios.Values);
-        banco.MusicasDoRepertorio.AddRange(_musicasDoRepertorio.Values);
-        banco.ItensDoSetlist.AddRange(_itensDoSetlist.Values);
-        banco.SessoesArtistas.AddRange(_sessoesArtistas.Values
-            .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow));
-
-        banco.SaveChanges();
-        transacao.Commit();
-        _notificador?.Publicar(_apresentacoes.Keys);
+        var agora = DateTimeOffset.UtcNow;
+        IEnumerable<object>[] registrosPorTabela =
+        [
+            perfis,
+            apresentacoes,
+            pedidos,
+            _avaliacoes.Values,
+            _perfisPublicos.Values,
+            _participacoesResenha.Values,
+            _sessoesPublicas.Values.Where(item => item.ExpiraEm > agora),
+            _contasArtistas.Values,
+            _cifrasDoArtista.Values,
+            _repertorios.Values,
+            _musicasDoRepertorio.Values,
+            _itensDoSetlist.Values,
+            _sessoesArtistas.Values.Where(item => item.ExpiraEm > agora)
+        ];
+        return TabelasPersistidas
+            .Select((tabela, indice) => (tabela.Tipo, Registros: registrosPorTabela[indice]))
+            .ToDictionary(
+                tabela => tabela.Tipo,
+                tabela => tabela.Registros.ToDictionary(
+                    registro => ObterChaveDoRegistro(banco, tabela.Tipo, registro),
+                    registro => (registro, JsonSerializer.Serialize(registro, tabela.Tipo))));
     }
 
     private SessaoDoPublico CriarSessao(PerfilPublicoRegistro registro)

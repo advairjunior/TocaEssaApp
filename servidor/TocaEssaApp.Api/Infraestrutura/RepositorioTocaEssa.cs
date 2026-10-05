@@ -32,6 +32,7 @@ public sealed partial class RepositorioTocaEssa
     private readonly string? _caminhoJsonLegado;
     private readonly bool _usaPostgres;
     private readonly NotificadorTempoReal? _notificador;
+    private Dictionary<Type, Dictionary<string, string>>? _registrosGravados;
     private PerfilArtistico? _perfil;
     private ConfiguracaoPerfilArtistico? _configuracaoPerfil;
     private static readonly PasswordHasher<PerfilPublicoRegistro> Senhas = new();
