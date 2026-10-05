@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -241,44 +243,89 @@ void main() {
     expect(find.textContaining('Praça Central'), findsOneWidget);
   });
 
-  testWidgets('artista inicia uma apresentação agendada', (tester) async {
-    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
-    final cliente = MockClient((requisicao) async {
-      if (requisicao.url.path == '/api/artista/conta') {
-        return http.Response(_contaArtistaJson, 200);
-      }
-      if (requisicao.url.path.endsWith('/perfil-artistico')) {
-        return http.Response(
-          '{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null}',
-          200,
-        );
-      }
-      const apresentacao =
-          '{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica","data":"2026-09-03","local":"Café Central","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"Agendada"}';
-      if (requisicao.method == 'GET') {
-        return http.Response('[$apresentacao]', 200);
-      }
-      return http.Response(
-        apresentacao.replaceFirst('"Agendada"', '"EmAndamento"'),
-        200,
-      );
-    });
+  testWidgets('artista inicia uma apresentação agendada após confirmar',
+      (tester) async {
+    final alteracoes =
+        await _abrirApresentacaoComStatus(tester, status: 'Agendada');
 
-    await tester.pumpWidget(
-      TocaEssaApp(
-          api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')),
-    );
-    final acessarPainel = find.text('Sou artista');
-    await tester.ensureVisible(acessarPainel);
-    await tester.tap(acessarPainel);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Noite Acústica'));
-    await tester.pumpAndSettle();
     await tester.tap(find.text('Iniciar'));
     await tester.pumpAndSettle();
+    expect(find.text('Iniciar apresentação?'), findsOneWidget);
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(alteracoes, isEmpty);
+    expect(find.text('Agendada'), findsOneWidget);
 
+    await tester.tap(find.text('Iniciar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Iniciar').last);
+    await tester.pumpAndSettle();
+
+    expect(alteracoes, ['EmAndamento']);
     expect(find.text('Ao vivo'), findsOneWidget);
     expect(find.text('Encerrar'), findsOneWidget);
     expect(find.text('Iniciar'), findsNothing);
   });
+
+  testWidgets('apresentação ao vivo pode voltar para agendada',
+      (tester) async {
+    final alteracoes =
+        await _abrirApresentacaoComStatus(tester, status: 'EmAndamento');
+    expect(find.text('Ao vivo'), findsOneWidget);
+
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+    final voltar = find.text('Voltar para agendada');
+    await tester.ensureVisible(voltar);
+    await tester.tap(voltar);
+    await tester.pumpAndSettle();
+
+    expect(alteracoes, ['Agendada']);
+    expect(find.text('Agendada'), findsWidgets);
+    expect(find.text('Iniciar'), findsOneWidget);
+    expect(find.text('Voltar para agendada'), findsNothing);
+  });
+}
+
+Future<List<String>> _abrirApresentacaoComStatus(
+  WidgetTester tester, {
+  required String status,
+}) async {
+  SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+  final alteracoes = <String>[];
+  String apresentacao(String status) =>
+      '{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica","data":"2026-09-03","local":"Café Central","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"$status"}';
+  final cliente = MockClient((requisicao) async {
+    if (requisicao.url.path == '/api/artista/conta') {
+      return http.Response(_contaArtistaJson, 200);
+    }
+    if (requisicao.url.path.endsWith('/perfil-artistico')) {
+      return http.Response(
+        '{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null}',
+        200,
+      );
+    }
+    if (requisicao.method == 'PATCH' &&
+        requisicao.url.path.endsWith('/status')) {
+      final novo = (jsonDecode(requisicao.body) as Map)['status'] as String;
+      alteracoes.add(novo);
+      return http.Response(apresentacao(novo), 200);
+    }
+    if (requisicao.url.path == '/api/apresentacoes') {
+      return http.Response('[${apresentacao(status)}]', 200);
+    }
+    return http.Response('[]', 200);
+  });
+
+  await tester.pumpWidget(
+    TocaEssaApp(
+        api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')),
+  );
+  final acessarPainel = find.text('Sou artista');
+  await tester.ensureVisible(acessarPainel);
+  await tester.tap(acessarPainel);
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Noite Acústica'));
+  await tester.pumpAndSettle();
+  return alteracoes;
 }

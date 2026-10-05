@@ -20,14 +20,26 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
     Apresentacao apresentacao,
     StatusApresentacao status,
   ) async {
-    if (status == StatusApresentacao.encerrada) {
+    final confirmacao = switch (status) {
+      StatusApresentacao.emAndamento => (
+          'Iniciar apresentação?',
+          'O público passa a ver a apresentação como ao vivo. '
+              'Se foi sem querer, dá para voltar para agendada na aba Mais.',
+          'Iniciar',
+        ),
+      StatusApresentacao.encerrada => (
+          'Encerrar apresentação?',
+          'O público deixa de enviar pedidos. A fila e o histórico continuam disponíveis.',
+          'Encerrar',
+        ),
+      StatusApresentacao.agendada => null,
+    };
+    if (confirmacao case (final titulo, final descricao, final rotulo)) {
       final confirmou = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('Encerrar apresentação?'),
-              content: const Text(
-                'O público deixa de enviar pedidos. A fila e o histórico continuam disponíveis.',
-              ),
+              title: Text(titulo),
+              content: Text(descricao),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
@@ -35,7 +47,7 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Encerrar'),
+                  child: Text(rotulo),
                 ),
               ],
             ),

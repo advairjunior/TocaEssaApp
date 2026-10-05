@@ -120,6 +120,17 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
           ..._construirGaleraDaResenha(context),
         ],
         const SizedBox(height: EspacoTocaEssa.enorme),
+        if (apresentacao.status == StatusApresentacao.emAndamento) ...[
+          OutlinedButton.icon(
+            onPressed: _salvando
+                ? null
+                : () => _alterarStatusApresentacao(
+                    apresentacao, StatusApresentacao.agendada),
+            icon: const Icon(Icons.undo_rounded),
+            label: const Text('Voltar para agendada'),
+          ),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+        ],
         OutlinedButton.icon(
           onPressed: _salvando ? null : () => _editarApresentacao(apresentacao),
           icon: const Icon(Icons.edit_outlined),

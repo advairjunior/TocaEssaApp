@@ -200,6 +200,20 @@ public class RepositorioTocaEssaTestes
     }
 
     [Fact]
+    public void ApresentacaoIniciadaPorEnganoVoltaParaAgendadaMantendoPedidos()
+    {
+        var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
+        repositorio.AlterarStatusApresentacao(apresentacao.Id, StatusApresentacao.EmAndamento);
+
+        var agendada = repositorio.AlterarStatusApresentacao(
+            apresentacao.Id, StatusApresentacao.Agendada);
+
+        Assert.Equal(StatusApresentacao.Agendada, agendada.Status);
+        Assert.True(agendada.PedidosAbertos);
+        Assert.NotNull(repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, null));
+    }
+
+    [Fact]
     public void TocarProximaMusicaFinalizaAnteriorERenumeraFila()
     {
         var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
