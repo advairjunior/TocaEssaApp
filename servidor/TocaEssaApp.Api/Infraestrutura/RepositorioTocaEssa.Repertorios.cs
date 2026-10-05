@@ -75,7 +75,9 @@ public sealed partial class RepositorioTocaEssa
                 Tom = string.IsNullOrWhiteSpace(tom) ? null : tom.Trim(),
                 Ordem = proxima
             };
+            VincularSetlistsLegados(conta.Id, repertorioId);
             _musicasDoRepertorio[registro.Id] = registro;
+            SincronizarSetlistsDoRepertorio(conta.Id, repertorioId);
             SalvarEstado();
             return ParaDominio(registro);
         }
@@ -131,8 +133,152 @@ public sealed partial class RepositorioTocaEssa
             if (!_musicasDoRepertorio.TryGetValue(musicaId, out var musica) ||
                 musica.RepertorioId != repertorioId)
                 throw new MusicaDoRepertorioNaoEncontradaException();
+            VincularSetlistsLegados(conta.Id, repertorioId);
             _musicasDoRepertorio.TryRemove(musicaId, out _);
+            var emAberto = ApresentacoesEmAberto(conta.Id);
+            foreach (var itemId in _itensDoSetlist.Values
+                         .Where(i => i.MusicaDoRepertorioId == musicaId &&
+                                     emAberto.Contains(i.ApresentacaoId))
+                         .Select(i => i.Id)
+                         .ToArray())
+                _itensDoSetlist.TryRemove(itemId, out _);
+            SincronizarSetlistsDoRepertorio(conta.Id, repertorioId);
             SalvarEstado();
+        }
+    }
+
+    public Repertorio ReordenarMusicasDoRepertorio(
+        string token, Guid repertorioId, IReadOnlyList<Guid> musicaIds)
+    {
+        var conta = ExigirRegistroArtista(token);
+        lock (_sincronizacao)
+        {
+            if (!_repertorios.TryGetValue(repertorioId, out var repertorio) ||
+                repertorio.ArtistaId != conta.Id)
+                throw new RepertorioNaoEncontradoException();
+            var musicas = _musicasDoRepertorio.Values
+                .Where(m => m.RepertorioId == repertorioId)
+                .ToDictionary(m => m.Id);
+            if (musicaIds.Count != musicas.Count ||
+                musicaIds.Distinct().Count() != musicaIds.Count ||
+                musicaIds.Any(id => !musicas.ContainsKey(id)))
+                throw new OrdemDoRepertorioInvalidaException();
+
+            VincularSetlistsLegados(conta.Id, repertorioId);
+            for (var indice = 0; indice < musicaIds.Count; indice++)
+                musicas[musicaIds[indice]].Ordem = indice + 1;
+            SincronizarSetlistsDoRepertorio(conta.Id, repertorioId);
+            SalvarEstado();
+            return ParaDominio(repertorio);
+        }
+    }
+
+    // Setlists de apresentações encerradas ficam como histórico e não acompanham o repertório.
+    private HashSet<Guid> ApresentacoesEmAberto(Guid artistaId) =>
+        _apresentacoes.Values
+            .Where(a => a.ArtistaId == artistaId && a.Status != StatusApresentacao.Encerrada)
+            .Select(a => a.Id)
+            .ToHashSet();
+
+    private ItemDoSetlistRegistro[][] SetlistsEmAberto(Guid artistaId)
+    {
+        var emAberto = ApresentacoesEmAberto(artistaId);
+        return _itensDoSetlist.Values
+            .Where(i => i.ArtistaId == artistaId && emAberto.Contains(i.ApresentacaoId))
+            .GroupBy(i => i.ApresentacaoId)
+            .Select(grupo => grupo.ToArray())
+            .ToArray();
+    }
+
+    // Setlists importados antes do vínculo por ID são associados pelo título ao
+    // repertório do artista com mais músicas em comum.
+    private void VincularSetlistsLegados(Guid artistaId, Guid repertorioId)
+    {
+        var titulosPorRepertorio = _musicasDoRepertorio.Values
+            .Where(m => m.ArtistaId == artistaId)
+            .GroupBy(m => m.RepertorioId)
+            .ToDictionary(
+                grupo => grupo.Key,
+                grupo => grupo.Select(m => NormalizarTitulo(m.Titulo)).ToHashSet());
+        if (!titulosPorRepertorio.TryGetValue(repertorioId, out var titulos)) return;
+        var musicasDoRepertorio = _musicasDoRepertorio.Values
+            .Where(m => m.RepertorioId == repertorioId)
+            .ToArray();
+        var idsDoRepertorio = musicasDoRepertorio.Select(m => m.Id).ToHashSet();
+
+        foreach (var itens in SetlistsEmAberto(artistaId))
+        {
+            var legados = itens.Where(i => i.MusicaDoRepertorioId is null).ToArray();
+            if (legados.Length == 0) continue;
+            var vinculados = itens.Where(i => i.MusicaDoRepertorioId is not null).ToArray();
+            var pertenceAoRepertorio = vinculados.Length > 0
+                ? vinculados.Any(i => idsDoRepertorio.Contains(i.MusicaDoRepertorioId!.Value))
+                : RepertorioComMaisTitulosEmComum(legados, titulosPorRepertorio) == repertorioId;
+            if (!pertenceAoRepertorio) continue;
+
+            foreach (var item in legados)
+            {
+                var musica = musicasDoRepertorio.FirstOrDefault(m =>
+                    NormalizarTitulo(m.Titulo) == NormalizarTitulo(item.Titulo) &&
+                    itens.All(i => i.MusicaDoRepertorioId != m.Id));
+                if (musica is not null) item.MusicaDoRepertorioId = musica.Id;
+            }
+        }
+    }
+
+    private static Guid? RepertorioComMaisTitulosEmComum(
+        IReadOnlyCollection<ItemDoSetlistRegistro> itens,
+        IReadOnlyDictionary<Guid, HashSet<string>> titulosPorRepertorio)
+    {
+        var contagens = titulosPorRepertorio
+            .Select(par => (RepertorioId: par.Key,
+                EmComum: itens.Count(i => par.Value.Contains(NormalizarTitulo(i.Titulo)))))
+            .Where(par => par.EmComum > 0)
+            .OrderByDescending(par => par.EmComum)
+            .ToArray();
+        if (contagens.Length == 0) return null;
+        if (contagens.Length > 1 && contagens[1].EmComum == contagens[0].EmComum) return null;
+        return contagens[0].RepertorioId;
+    }
+
+    private static string NormalizarTitulo(string titulo) => titulo.Trim().ToLowerInvariant();
+
+    // Setlists em aberto vinculados ao repertório recebem as músicas novas e seguem sua ordem.
+    private void SincronizarSetlistsDoRepertorio(Guid artistaId, Guid repertorioId)
+    {
+        var musicas = _musicasDoRepertorio.Values
+            .Where(m => m.RepertorioId == repertorioId)
+            .OrderBy(m => m.Ordem)
+            .ToArray();
+        var idsDoRepertorio = musicas.Select(m => m.Id).ToHashSet();
+
+        foreach (var itens in SetlistsEmAberto(artistaId))
+        {
+            if (!itens.Any(i => i.MusicaDoRepertorioId is { } id && idsDoRepertorio.Contains(id)))
+                continue;
+            var apresentacaoId = itens[0].ApresentacaoId;
+            foreach (var musica in musicas)
+            {
+                var item = itens.FirstOrDefault(i => i.MusicaDoRepertorioId == musica.Id);
+                if (item is not null)
+                {
+                    item.Ordem = musica.Ordem;
+                    continue;
+                }
+                var novo = new ItemDoSetlistRegistro
+                {
+                    Id = Guid.NewGuid(),
+                    ApresentacaoId = apresentacaoId,
+                    ArtistaId = artistaId,
+                    MusicaDoRepertorioId = musica.Id,
+                    Titulo = musica.Titulo,
+                    Artista = musica.Artista,
+                    Tom = musica.Tom,
+                    Tocada = false,
+                    Ordem = musica.Ordem
+                };
+                _itensDoSetlist[novo.Id] = novo;
+            }
         }
     }
 

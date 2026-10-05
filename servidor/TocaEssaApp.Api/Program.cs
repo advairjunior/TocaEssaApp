@@ -197,6 +197,12 @@ app.MapPut("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}
         requisicao.Titulo, requisicao.Artista, requisicao.Tom));
 });
 
+app.MapPut("/api/artista/repertorios/{repertorioId:guid}/musicas/ordem", (
+    Guid repertorioId, ReordenarMusicasDoRepertorio requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ReordenarMusicasDoRepertorio(
+        ObterToken(http) ?? string.Empty, repertorioId, requisicao.MusicaIds ?? [])));
+
 app.MapDelete("/api/artista/repertorios/{repertorioId:guid}/musicas/{musicaId:guid}", (
     Guid repertorioId, Guid musicaId, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

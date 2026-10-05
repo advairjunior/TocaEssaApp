@@ -107,6 +107,8 @@ public sealed class RepertorioNaoEncontradoException : Exception { }
 
 public sealed class MusicaDoRepertorioNaoEncontradaException : Exception { }
 
+public sealed class OrdemDoRepertorioInvalidaException : Exception { }
+
 public sealed class ItemDoSetlistNaoEncontradoException : Exception { }
 
 public sealed class RecursoDisponivelSomenteNaResenhaException : Exception { }
