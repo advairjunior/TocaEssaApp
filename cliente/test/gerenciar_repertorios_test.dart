@@ -76,6 +76,56 @@ void main() {
     expect(find.text('Meus repertórios'), findsOneWidget);
   });
 
+  testWidgets('menu do repertório permite renomear com o nome atual preenchido',
+      (tester) async {
+    var nomeAtual = 'Barzinho';
+    final requisicoes = <http.Request>[];
+    final cliente = MockClient((requisicao) async {
+      requisicoes.add(requisicao);
+      if (requisicao.method == 'PUT') {
+        nomeAtual = (jsonDecode(requisicao.body) as Map)['nome'] as String;
+      }
+      final json = _repertoriosJson.replaceFirst('Barzinho', nomeAtual);
+      final corpo = requisicao.method == 'PUT'
+          ? jsonEncode((jsonDecode(json) as List).single)
+          : json;
+      return http.Response(corpo, 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    });
+    await tester.pumpWidget(MaterialApp(
+      home: GerenciarRepertorios(
+        api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Barzinho'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Mais opções'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Renomear repertório'));
+    await tester.pumpAndSettle();
+    final campoNome = find.descendant(
+      of: find.widgetWithText(CampoTexto, 'Nome do repertório'),
+      matching: find.byType(TextField),
+    );
+    expect(tester.widget<TextField>(campoNome).controller!.text, 'Barzinho');
+    await tester.enterText(campoNome, 'Casamento');
+    await tester.tap(find.widgetWithText(TextButton, 'Salvar'));
+    await tester.pumpAndSettle();
+
+    final renomear = requisicoes.singleWhere((r) => r.method == 'PUT');
+    expect(renomear.url.path, '/api/artista/repertorios/r1');
+    expect(jsonDecode(renomear.body), {'nome': 'Casamento'});
+    expect(find.text('Casamento'), findsOneWidget);
+    expect(find.text('Evidências'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.text('Meus repertórios'), findsOneWidget);
+    expect(find.text('Casamento'), findsOneWidget);
+  });
+
   testWidgets('segurar e arrastar a música salva a nova ordem do repertório',
       (tester) async {
     final requisicoes = await _abrirRepertorio(tester);

@@ -258,6 +258,66 @@ public class SincroniaRepertorioSetlistTestes
         Repertorio Repertorio,
         MusicaDoRepertorio[] Musicas);
 
+    [Fact]
+    public async Task RotaDeRenomearExigeArtistaENomePreenchido()
+    {
+        var banco = Path.Combine(Path.GetTempPath(),
+            $"tocaessa-api-renomear-{Guid.NewGuid()}.db");
+        try
+        {
+            await using var fabrica = new WebApplicationFactory<Program>()
+                .WithWebHostBuilder(builder =>
+                {
+                    builder.ConfigureLogging(logging => logging.ClearProviders());
+                    builder.ConfigureAppConfiguration((_, configuracao) =>
+                        configuracao.AddInMemoryCollection(
+                            new Dictionary<string, string?>
+                            {
+                                ["ConnectionStrings:DefaultConnection"] = banco,
+                                ["Aplicacao:ArquivoBanco"] = banco,
+                                ["Aplicacao:ArquivoDados"] = $"{banco}.json"
+                            }));
+                    builder.ConfigureServices(servicos =>
+                    {
+                        servicos.RemoveAll<RepositorioTocaEssa>();
+                        servicos.AddSingleton(new RepositorioTocaEssa(
+                            banco, $"{banco}.json"));
+                    });
+                });
+            using var cliente = fabrica.CreateClient();
+            var repositorio = fabrica.Services.GetRequiredService<RepositorioTocaEssa>();
+            var token = repositorio.CriarContaArtista("Ana", "ana@teste.com", "senha123").Token;
+            var repertorio = repositorio.CriarRepertorio(token, "Casamento");
+            var rota = $"/api/artista/repertorios/{repertorio.Id}";
+
+            var semSessao = await cliente.PutAsJsonAsync(rota, new { nome = "Festa" });
+            Assert.Equal(HttpStatusCode.Unauthorized, semSessao.StatusCode);
+
+            cliente.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", token);
+            var emBranco = await cliente.PutAsJsonAsync(rota, new { nome = "   " });
+            Assert.Equal(HttpStatusCode.BadRequest, emBranco.StatusCode);
+
+            var resposta = await cliente.PutAsJsonAsync(rota, new { nome = "Festa" });
+            resposta.EnsureSuccessStatusCode();
+            var renomeado = await resposta.Content.ReadFromJsonAsync<RepertorioComNomeResposta>();
+            Assert.Equal("Festa", renomeado!.Nome);
+
+            var tokenBia = repositorio.CriarContaArtista("Bia", "bia@teste.com", "senha123").Token;
+            cliente.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", tokenBia);
+            var deOutro = await cliente.PutAsJsonAsync(rota, new { nome = "Invadido" });
+            Assert.Equal(HttpStatusCode.NotFound, deOutro.StatusCode);
+        }
+        finally
+        {
+            foreach (var caminho in new[] { banco, $"{banco}-shm", $"{banco}-wal" })
+                if (File.Exists(caminho)) File.Delete(caminho);
+        }
+    }
+
+    private sealed record RepertorioComNomeResposta(string Nome);
+
     private sealed record RepertorioResposta(List<MusicaResposta> Musicas);
 
     private sealed record MusicaResposta(string Titulo);

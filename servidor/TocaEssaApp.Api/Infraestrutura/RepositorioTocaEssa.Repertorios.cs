@@ -32,6 +32,20 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    public Repertorio RenomearRepertorio(string token, Guid id, string nome)
+    {
+        var conta = ExigirRegistroArtista(token);
+        lock (_sincronizacao)
+        {
+            if (!_repertorios.TryGetValue(id, out var registro) ||
+                registro.ArtistaId != conta.Id)
+                throw new RepertorioNaoEncontradoException();
+            registro.Nome = nome.Trim();
+            SalvarEstado();
+            return ParaDominio(registro);
+        }
+    }
+
     public void ExcluirRepertorio(string token, Guid id)
     {
         var conta = ExigirRegistroArtista(token);

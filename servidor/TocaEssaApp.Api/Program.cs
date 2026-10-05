@@ -166,6 +166,17 @@ app.MapPost("/api/artista/repertorios", (
         requisicao.Nome));
 });
 
+app.MapPut("/api/artista/repertorios/{id:guid}", (
+    Guid id, RenomearRepertorio requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+{
+    if (string.IsNullOrWhiteSpace(requisicao.Nome))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["nome"] = ["Informe o nome do repertório."] });
+    return Results.Ok(repositorio.RenomearRepertorio(
+        ObterToken(http) ?? string.Empty, id, requisicao.Nome));
+});
+
 app.MapDelete("/api/artista/repertorios/{id:guid}", (
     Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

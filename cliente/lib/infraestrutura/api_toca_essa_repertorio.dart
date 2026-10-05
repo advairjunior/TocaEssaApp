@@ -23,6 +23,17 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
+  Future<Repertorio> renomearRepertorio(String id, String nome) async {
+    final resposta = await _cliente.put(
+      Uri.parse('$_enderecoBase/api/artista/repertorios/$id'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'nome': nome}),
+    );
+    _validar(resposta);
+    return Repertorio.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
   Future<void> excluirRepertorio(String id) async {
     final resposta = await _cliente.delete(
       Uri.parse('$_enderecoBase/api/artista/repertorios/$id'),

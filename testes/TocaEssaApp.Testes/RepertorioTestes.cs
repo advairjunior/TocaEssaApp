@@ -40,6 +40,59 @@ public class RepertorioTestes
     }
 
     [Fact]
+    public void RenomearRepertorioMantemAsMusicas()
+    {
+        var repositorio = new RepositorioTocaEssa();
+        var token = repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha").Token;
+        var repertorio = repositorio.CriarRepertorio(token, "Sertanejo");
+        repositorio.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null);
+
+        var renomeado = repositorio.RenomearRepertorio(token, repertorio.Id, "  Barzinho  ");
+
+        Assert.Equal("Barzinho", renomeado.Nome);
+        var rep = Assert.Single(repositorio.ListarRepertorios(token));
+        Assert.Equal("Barzinho", rep.Nome);
+        Assert.Single(rep.Musicas);
+    }
+
+    [Fact]
+    public void ArtistaNaoPodeRenomearRepertorioDeOutroArtista()
+    {
+        var repositorio = new RepositorioTocaEssa();
+        var tokenAna = repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha").Token;
+        var tokenBia = repositorio.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        var repertorio = repositorio.CriarRepertorio(tokenAna, "Sertanejo");
+
+        Assert.Throws<RepertorioNaoEncontradoException>(() =>
+            repositorio.RenomearRepertorio(tokenBia, repertorio.Id, "Invadido"));
+        Assert.Equal("Sertanejo", Assert.Single(repositorio.ListarRepertorios(tokenAna)).Nome);
+    }
+
+    [Fact]
+    public void NomeDoRepertorioRenomeadoSobreviveAoReinicio()
+    {
+        var arquivo = Path.Combine(Path.GetTempPath(),
+            $"tocaessa-renomear-repertorio-{Guid.NewGuid()}.db");
+        try
+        {
+            var repositorio = new RepositorioTocaEssa(arquivo);
+            var token = repositorio.CriarContaArtista("Ana", "ana@artista.com", "senha").Token;
+            var repertorio = repositorio.CriarRepertorio(token, "Sertanejo");
+
+            repositorio.RenomearRepertorio(token, repertorio.Id, "Barzinho");
+            var reiniciado = new RepositorioTocaEssa(arquivo);
+
+            Assert.Equal("Barzinho", Assert.Single(reiniciado.ListarRepertorios(token)).Nome);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            foreach (var caminho in new[] { arquivo, $"{arquivo}-shm", $"{arquivo}-wal" })
+                if (File.Exists(caminho)) File.Delete(caminho);
+        }
+    }
+
+    [Fact]
     public void ExcluirRepertorioRemoveSuasMusicas()
     {
         var repositorio = new RepositorioTocaEssa();

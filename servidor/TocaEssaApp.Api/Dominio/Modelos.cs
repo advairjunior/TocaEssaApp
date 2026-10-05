@@ -113,6 +113,8 @@ public sealed record ItemDoSetlist(
 
 public sealed record CriarRepertorio(string Nome);
 
+public sealed record RenomearRepertorio(string Nome);
+
 public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
 public sealed record EditarMusicaDoRepertorio(string Titulo, string? Artista, string? Tom = null);

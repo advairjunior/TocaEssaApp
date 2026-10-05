@@ -165,12 +165,34 @@ class _DetalheRepertorio extends StatefulWidget {
 
 class _DetalheRepertorioState extends State<_DetalheRepertorio> {
   late List<MusicaDoRepertorio> _musicas;
+  late String _nome = widget.repertorio.nome;
   bool _salvando = false;
 
   @override
   void initState() {
     super.initState();
     _musicas = List.from(widget.repertorio.musicas);
+  }
+
+  Future<void> _renomearRepertorio() async {
+    final nome = await _pedirNome(
+      context,
+      titulo: 'Renomear repertório',
+      rotulo: 'Nome do repertório',
+      inicial: _nome,
+    );
+    if (nome == null || nome == _nome || !mounted) return;
+    setState(() => _salvando = true);
+    try {
+      final renomeado =
+          await widget.api.renomearRepertorio(widget.repertorio.id, nome);
+      if (!mounted) return;
+      setState(() => _nome = renomeado.nome);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _salvando = false);
+    }
   }
 
   Future<void> _adicionarMusica() async {
@@ -269,7 +291,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
           builder: (contexto) => AlertDialog(
             title: const Text('Excluir repertório?'),
             content: Text(
-                '"${rep.nome}" e suas ${_musicas.length} músicas serão removidos.'),
+                '"$_nome" e suas ${_musicas.length} músicas serão removidos.'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(contexto, false),
@@ -289,7 +311,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
       await widget.api.excluirRepertorio(rep.id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${rep.nome}" excluído.')),
+        SnackBar(content: Text('"$_nome" excluído.')),
       );
       Navigator.pop(context);
     } catch (erro) {
@@ -300,7 +322,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: Text(widget.repertorio.nome),
+          title: Text(_nome),
           actions: [
             IconButton(
               tooltip: 'Adicionar música',
@@ -311,6 +333,23 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
               tooltip: 'Mais opções',
               onSelected: (acao) => acao(),
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _renomearRepertorio,
+                  enabled: !_salvando,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.edit_outlined, size: 20),
+                      SizedBox(width: EspacoTocaEssa.medio),
+                      Flexible(
+                        child: Text(
+                          'Renomear repertório',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 PopupMenuItem(
                   value: _excluirRepertorio,
                   child: const Row(
@@ -539,14 +578,16 @@ Future<String?> _pedirNome(
   BuildContext context, {
   required String titulo,
   required String rotulo,
+  String? inicial,
 }) async {
   final valores = await _abrirFormulario(
     context,
     titulo: titulo,
-    rotuloConfirmar: 'Criar',
+    rotuloConfirmar: inicial == null ? 'Criar' : 'Salvar',
     campos: [
       _CampoDoFormulario(
         rotulo: rotulo,
+        inicial: inicial,
         dica: 'Ex.: Barzinho, Casamento',
         obrigatorio: true,
         capitalizacao: TextCapitalization.words,
