@@ -38,7 +38,7 @@ Future<void> _abrirPerfil(WidgetTester tester,
   await tester.pumpWidget(TocaEssaApp(
     api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
   ));
-  final acessarPainel = find.text('Sou artista');
+  final acessarPainel = find.textContaining('meu painel');
   await tester.ensureVisible(acessarPainel);
   await tester.tap(acessarPainel);
   await tester.pumpAndSettle();

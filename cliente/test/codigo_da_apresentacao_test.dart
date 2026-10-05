@@ -33,7 +33,7 @@ Future<void> _abrirCodigo(WidgetTester tester) async {
   await tester.pumpWidget(TocaEssaApp(
     api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
   ));
-  final acessar = find.text('Sou artista');
+  final acessar = find.textContaining('meu painel');
   await tester.ensureVisible(acessar);
   await tester.tap(acessar);
   await tester.pumpAndSettle();

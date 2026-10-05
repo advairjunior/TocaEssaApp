@@ -15,7 +15,7 @@ void main() {
   testWidgets('exibe as entradas pública e do artista', (tester) async {
     await tester.pumpWidget(const TocaEssaApp());
 
-    expect(find.text('Sou artista'), findsOneWidget);
+    expect(find.text('Acessar meu painel'), findsOneWidget);
     expect(find.text('Código da apresentação'), findsOneWidget);
     expect(find.text('Feito por Advair'), findsOneWidget);
     expect(
@@ -46,7 +46,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Sou artista');
+    final acessarPainel = find.textContaining('meu painel');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -93,7 +93,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Sou artista');
+    final acessarPainel = find.textContaining('meu painel');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -126,7 +126,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Sou artista');
+    final acessarPainel = find.textContaining('meu painel');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();
@@ -174,7 +174,7 @@ void main() {
     await tester.pumpWidget(TocaEssaApp(
       api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
     ));
-    final acessarPainel = find.text('Sou artista');
+    final acessarPainel = find.textContaining('meu painel');
     await tester.ensureVisible(acessarPainel);
     await tester.tap(acessarPainel);
     await tester.pumpAndSettle();

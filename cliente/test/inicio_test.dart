@@ -55,14 +55,27 @@ void main() {
     expect(_podeEntrar(tester), isFalse);
   });
 
-  testWidgets('início tem links discretos para artista e resenhas',
+  testWidgets('início separa a área do público do acesso do artista',
       (tester) async {
     await _abrirInicio(tester);
 
-    expect(find.text('Sou artista'), findsOneWidget);
-    expect(find.text('Ver minhas resenhas'), findsOneWidget);
+    expect(find.text('Vai curtir um show?'), findsOneWidget);
     expect(find.text('Código da apresentação'), findsOneWidget);
+    expect(find.text('Shows que eu curti'), findsOneWidget);
+    expect(find.text('É artista?'), findsOneWidget);
+    expect(find.text('Acessar meu painel'), findsOneWidget);
     expect(find.text('Feito por Advair'), findsOneWidget);
+    expect(find.text('Ver minhas resenhas'), findsNothing);
+    expect(find.text('Sou artista'), findsNothing);
+  });
+
+  testWidgets('artista com sessão salva vê continuar no painel',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_artista': 'token'});
+    await _abrirInicio(tester);
+
+    expect(find.text('Continuar no meu painel'), findsOneWidget);
+    expect(find.text('Acessar meu painel'), findsNothing);
   });
 
   testWidgets('início cabe em celular de 360px', (tester) async {

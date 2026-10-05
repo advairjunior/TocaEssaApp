@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
@@ -17,12 +18,14 @@ class Inicio extends StatefulWidget {
 class _InicioState extends State<Inicio> {
   static const _tamanhoCodigo = 6;
   final _codigo = TextEditingController();
+  bool _artistaComSessao = false;
 
   @override
   void initState() {
     super.initState();
     // Habilita "Entrar" assim que o código fica completo.
     _codigo.addListener(() => setState(() {}));
+    _verificarSessaoDoArtista();
   }
 
   @override
@@ -32,6 +35,18 @@ class _InicioState extends State<Inicio> {
   }
 
   bool get _codigoCompleto => _codigo.text.length == _tamanhoCodigo;
+
+  Future<void> _verificarSessaoDoArtista() async {
+    final preferencias = await SharedPreferences.getInstance();
+    final temSessao = preferencias.getString('token_do_artista') != null;
+    if (mounted) setState(() => _artistaComSessao = temSessao);
+  }
+
+  Future<void> _abrirPainelDoArtista() async {
+    await Navigator.pushNamed(context, '/artista');
+    // O artista pode ter entrado ou saído da conta no painel.
+    await _verificarSessaoDoArtista();
+  }
 
   void _entrar() {
     if (!_codigoCompleto) return;
@@ -50,18 +65,7 @@ class _InicioState extends State<Inicio> {
           filho: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.pushNamed(context, '/artista'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: CoresTocaEssa.textoSecundario,
-                  ),
-                  icon: const Icon(Icons.mic_rounded, size: 18),
-                  label: const Text('Sou artista'),
-                ),
-              ),
-              const SizedBox(height: EspacoTocaEssa.grande),
+              const SizedBox(height: EspacoTocaEssa.enorme),
               Image.asset(
                 'assets/marca/toca_essa_horizontal.png',
                 height: 96,
@@ -74,29 +78,53 @@ class _InicioState extends State<Inicio> {
                 textAlign: TextAlign.center,
                 style: texto.headlineSmall,
               ),
-              const SizedBox(height: EspacoTocaEssa.enorme + 8),
-              CampoCodigo(
-                controlador: _codigo,
-                tamanho: _tamanhoCodigo,
-                aoCompletar: (_) => _entrar(),
-              ),
-              const SizedBox(height: EspacoTocaEssa.pequeno),
-              Text(
-                'Peça o código ao artista ou leia o QR Code do palco.',
-                textAlign: TextAlign.center,
-                style: texto.bodyMedium
-                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              const SizedBox(height: EspacoTocaEssa.enorme),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(EspacoTocaEssa.base),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Vai curtir um show?',
+                        textAlign: TextAlign.center,
+                        style: texto.titleMedium,
+                      ),
+                      const SizedBox(height: EspacoTocaEssa.base),
+                      CampoCodigo(
+                        controlador: _codigo,
+                        tamanho: _tamanhoCodigo,
+                        aoCompletar: (_) => _entrar(),
+                      ),
+                      const SizedBox(height: EspacoTocaEssa.pequeno),
+                      Text(
+                        'Peça o código ao artista ou leia o QR Code do palco.',
+                        textAlign: TextAlign.center,
+                        style: texto.bodyMedium
+                            ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                      ),
+                      const SizedBox(height: EspacoTocaEssa.base),
+                      FilledButton(
+                        onPressed: _codigoCompleto ? _entrar : null,
+                        child: const Text('Entrar'),
+                      ),
+                      const SizedBox(height: EspacoTocaEssa.pequeno),
+                      TextButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/minha-conta'),
+                        icon: const Icon(Icons.history_rounded, size: 18),
+                        label: const Text('Shows que eu curti'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: EspacoTocaEssa.grande),
-              FilledButton(
-                onPressed: _codigoCompleto ? _entrar : null,
-                child: const Text('Entrar'),
-              ),
+              const _SeparadorOu(),
               const SizedBox(height: EspacoTocaEssa.pequeno),
-              TextButton.icon(
-                onPressed: () => Navigator.pushNamed(context, '/minha-conta'),
-                icon: const Icon(Icons.history_rounded, size: 18),
-                label: const Text('Ver minhas resenhas'),
+              _AcessoDoArtista(
+                comSessao: _artistaComSessao,
+                aoAbrir: _abrirPainelDoArtista,
               ),
               const SizedBox(height: EspacoTocaEssa.enorme + 8),
               const _AssinaturaInicio(),
@@ -107,6 +135,56 @@ class _InicioState extends State<Inicio> {
       ),
     );
   }
+}
+
+class _SeparadorOu extends StatelessWidget {
+  const _SeparadorOu();
+
+  @override
+  Widget build(BuildContext context) => const Row(
+        children: [
+          Expanded(child: Divider()),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              'ou',
+              style: TextStyle(color: CoresTocaEssa.textoSecundario),
+            ),
+          ),
+          Expanded(child: Divider()),
+        ],
+      );
+}
+
+class _AcessoDoArtista extends StatelessWidget {
+  const _AcessoDoArtista({required this.comSessao, required this.aoAbrir});
+
+  final bool comSessao;
+  final VoidCallback aoAbrir;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          const Icon(
+            Icons.mic_rounded,
+            size: 18,
+            color: CoresTocaEssa.textoSecundario,
+          ),
+          const SizedBox(width: 6),
+          const Text(
+            'É artista?',
+            style: TextStyle(color: CoresTocaEssa.textoSecundario),
+          ),
+          TextButton(
+            onPressed: aoAbrir,
+            child: Text(
+              comSessao ? 'Continuar no meu painel' : 'Acessar meu painel',
+            ),
+          ),
+        ],
+      );
 }
 
 class _AssinaturaInicio extends StatelessWidget {
