@@ -59,6 +59,9 @@ class EstatisticasDaApresentacao {
     required this.avaliados,
     required this.musicasMaisPedidas,
     this.mediaAvaliacoes,
+    this.pessoasNoEvento = 0,
+    this.pessoasQuePediram = 0,
+    this.musicasRecusadas = const [],
   });
 
   final int totalPedidos;
@@ -70,6 +73,11 @@ class EstatisticasDaApresentacao {
   final double? mediaAvaliacoes;
   final List<MusicaMaisPedida> musicasMaisPedidas;
 
+  /// Quem esteve no evento pelo app: abriu a página, entrou ou pediu.
+  final int pessoasNoEvento;
+  final int pessoasQuePediram;
+  final List<MusicaMaisPedida> musicasRecusadas;
+
   factory EstatisticasDaApresentacao.deJson(Map<String, dynamic> json) =>
       EstatisticasDaApresentacao(
         totalPedidos: json['totalPedidos'] as int,
@@ -80,6 +88,12 @@ class EstatisticasDaApresentacao {
         avaliados: json['avaliados'] as int,
         mediaAvaliacoes: (json['mediaAvaliacoes'] as num?)?.toDouble(),
         musicasMaisPedidas: (json['musicasMaisPedidas'] as List<dynamic>)
+            .map(
+                (item) => MusicaMaisPedida.deJson(item as Map<String, dynamic>))
+            .toList(),
+        pessoasNoEvento: json['pessoasNoEvento'] as int? ?? 0,
+        pessoasQuePediram: json['pessoasQuePediram'] as int? ?? 0,
+        musicasRecusadas: (json['musicasRecusadas'] as List<dynamic>? ?? [])
             .map(
                 (item) => MusicaMaisPedida.deJson(item as Map<String, dynamic>))
             .toList(),

@@ -12,6 +12,7 @@ class ParticipanteDaResenha {
     this.ehArtista = false,
     this.estatisticasGerais,
     this.avaliacoes = const [],
+    this.pedidosRecusados = 0,
   });
 
   final String publicoId;
@@ -24,6 +25,9 @@ class ParticipanteDaResenha {
   final bool ehArtista;
   final EstatisticasDoPublico? estatisticasGerais;
   final List<AvaliacaoNaResenha> avaliacoes;
+
+  /// Pedidos que o artista não conhecia ou ainda não sabia tocar.
+  final int pedidosRecusados;
 
   factory ParticipanteDaResenha.deJson(Map<String, dynamic> json) =>
       ParticipanteDaResenha(
@@ -46,6 +50,7 @@ class ParticipanteDaResenha {
             .map((item) =>
                 AvaliacaoNaResenha.deJson(item as Map<String, dynamic>))
             .toList(),
+        pedidosRecusados: json['pedidosRecusados'] as int? ?? 0,
       );
 }
 

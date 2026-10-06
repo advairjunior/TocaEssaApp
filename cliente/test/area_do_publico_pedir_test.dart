@@ -87,7 +87,9 @@ void main() {
     await tester.tap(enviar);
     await tester.pumpAndSettle();
 
-    final envio = requisicoes.where((r) => r.method == 'POST').single;
+    final envio = requisicoes
+        .where((r) => r.method == 'POST' && r.url.path.endsWith('/pedidos'))
+        .single;
     expect(envio.url.path, '/api/publico/apresentacoes/A1B2C3/pedidos');
     expect(envio.body, contains('"musica":"Evidências"'));
   });

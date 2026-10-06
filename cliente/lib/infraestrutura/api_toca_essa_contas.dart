@@ -158,6 +158,17 @@ mixin _ApiContas on _ApiTocaEssaBase {
     _validar(resposta);
   }
 
+  /// Conta este aparelho no público do evento (uma vez por aparelho).
+  Future<void> registrarAcessoAoEvento(String codigo, String visitante) async {
+    final resposta = await _cliente.post(
+      Uri.parse(
+          '$_enderecoBase/api/publico/apresentacoes/${codigo.trim().toUpperCase()}/acessos'),
+      headers: _cabecalhos(json: true),
+      body: jsonEncode({'visitante': visitante}),
+    );
+    _validar(resposta);
+  }
+
   Future<EstatisticasDoPublico> obterEstatisticasDoPublico(String token) async {
     final resposta = await _cliente.get(
       Uri.parse('$_enderecoBase/api/publico/estatisticas'),

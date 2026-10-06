@@ -23,6 +23,10 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
       if (_nome.text.isEmpty) _nome.text = nomeSalvo;
       final apresentacao = await _consulta;
       if (apresentacao == null) return;
+      // Conta o aparelho no público da noite; se falhar, o público nem nota.
+      unawaited(_api
+          .registrarAcessoAoEvento(_codigoInicial, _identificadorAvaliador)
+          .catchError((_) {}));
 
       final pedidosIdentificados = <PedidoMusical>[];
       final token = preferencias.getString('token_do_publico');
