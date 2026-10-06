@@ -95,6 +95,13 @@ class _CameraDoCartaoState extends State<CameraDoCartao>
     }
   }
 
+  // No navegador, o vídeo que saiu da tela enquanto a foto aparecia volta
+  // parado (preto); reabrir a mesma lente traz a prévia de volta.
+  void _tirarOutra() {
+    setState(() => _foto = null);
+    _abrir(_camera.lenteAtual ?? widget.lenteInicial);
+  }
+
   void _virar() =>
       _abrir(_selfie ? LenteDaCamera.traseira : LenteDaCamera.frontal);
 
@@ -225,7 +232,7 @@ class _CameraDoCartaoState extends State<CameraDoCartao>
                         )
                       else
                         _BarraDaConfirmacao(
-                          tirarOutra: () => setState(() => _foto = null),
+                          tirarOutra: _tirarOutra,
                           usar: () => Navigator.pop(
                               context, RespostaDaCamera.foto(foto)),
                         ),

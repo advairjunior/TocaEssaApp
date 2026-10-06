@@ -152,6 +152,21 @@ void main() {
     expect(find.byKey(const ValueKey('previa-falsa')), findsOneWidget);
   });
 
+  testWidgets('tirar outra reabre a câmera na mesma lente, sem tela preta',
+      (tester) async {
+    final camera = CameraFalsa();
+    await _abrir(tester, camera, lente: LenteDaCamera.traseira);
+
+    await tester.tap(find.byTooltip('Tirar foto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tirar outra'));
+    await tester.pumpAndSettle();
+
+    // No navegador, o vídeo que saiu da tela volta parado (preto); reabrir a
+    // câmera é o que faz a prévia voltar, como ao virar a câmera.
+    expect(camera.iniciadas, [LenteDaCamera.traseira, LenteDaCamera.traseira]);
+  });
+
   testWidgets('fechar não devolve foto e desliga a câmera', (tester) async {
     final camera = CameraFalsa();
     final resultado = await _abrir(tester, camera);
