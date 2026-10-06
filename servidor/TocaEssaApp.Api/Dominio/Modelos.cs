@@ -238,7 +238,8 @@ public sealed record EstatisticasDaApresentacao(
     double? MediaAvaliacoes,
     IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas,
     int PessoasNoEvento = 0,
-    int PessoasQuePediram = 0);
+    int PessoasQuePediram = 0,
+    IReadOnlyCollection<MusicaMaisPedida>? MusicasRecusadas = null);
 
 public sealed record RegistrarAcessoAoEvento(string? Visitante);
 
@@ -260,7 +261,8 @@ public sealed record ParticipanteDaResenha(
     IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas,
     bool EhArtista = false,
     IReadOnlyCollection<AvaliacaoNaResenha>? Avaliacoes = null,
-    EstatisticasDoPublico? EstatisticasGerais = null);
+    EstatisticasDoPublico? EstatisticasGerais = null,
+    int PedidosRecusados = 0);
 
 public sealed record AvaliacaoNaResenha(
     string Musica, int Estrelas, DateTimeOffset AvaliadoEm);

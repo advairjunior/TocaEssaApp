@@ -130,7 +130,10 @@ public sealed partial class RepositorioTocaEssa
             avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(), 1),
             AgruparMusicas(pedidos),
             pessoasNoEvento,
-            pessoasQuePediram);
+            pessoasQuePediram,
+            AgruparMusicas(pedidos.Where(item => item.Status is
+                StatusPedidoMusical.NaoConhecemos or
+                StatusPedidoMusical.AindaNaoSabemosTocar)));
     }
 
     public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(

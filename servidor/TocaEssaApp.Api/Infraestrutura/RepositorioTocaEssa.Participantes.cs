@@ -44,16 +44,28 @@ public sealed partial class RepositorioTocaEssa
                                not StatusPedidoMusical.CanceladoPeloPublico)
             .GroupBy(item => item.PublicoId!.Value)
             .ToDictionary(grupo => grupo.Key, grupo => grupo.ToArray());
+        var recusas = _pedidos.Values
+            .Where(item => item.ApresentacaoId == apresentacaoId &&
+                           item.Tipo == TipoPedido.Musica &&
+                           item.PublicoId.HasValue &&
+                           item.Status is StatusPedidoMusical.NaoConhecemos or
+                               StatusPedidoMusical.AindaNaoSabemosTocar)
+            .GroupBy(item => item.PublicoId!.Value)
+            .ToDictionary(grupo => grupo.Key, grupo => grupo.Count());
         var participantes = _participacoesResenha.Values
             .Where(item => item.ApresentacaoId == apresentacaoId)
             .Select(item => item.PublicoId)
             .Concat(pedidos.Keys)
+            .Concat(recusas.Keys)
             .Distinct();
 
         var resumos = participantes
             .Select(publicoId => CriarResumoDoParticipante(
                 apresentacaoId, publicoId,
-                pedidos.GetValueOrDefault(publicoId) ?? []))
+                pedidos.GetValueOrDefault(publicoId) ?? []) with
+            {
+                PedidosRecusados = recusas.GetValueOrDefault(publicoId)
+            })
             .ToList();
         var perfilArtista = _configuracoesPerfis
             .GetValueOrDefault(apresentacao.ArtistaId)?.Perfil
