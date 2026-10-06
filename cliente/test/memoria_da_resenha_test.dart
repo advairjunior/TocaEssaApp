@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
+import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
+import 'package:toca_essa_app/telas/camera_do_cartao.dart';
 import 'package:toca_essa_app/telas/memoria_da_resenha.dart';
+
+import 'apoio/camera_falsa.dart';
 
 EncontroDoPublico _encontro({
   TipoApresentacao tipo = TipoApresentacao.resenhaEntreAmigos,
@@ -106,6 +110,33 @@ void main() {
     await _montar(tester, _encontro(companhia: ['Bia', 'Caio', 'Davi']));
 
     expect(find.text('com Bia, Caio e mais 1'), findsOneWidget);
+  });
+
+  testWidgets('selfie do público é tirada já dentro do cartão', (tester) async {
+    final camera = CameraFalsa();
+    fabricaDeCamera = () => camera;
+    addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+    await _montar(tester, _encontro(musicas: ['Evidências']));
+
+    await tester.ensureVisible(find.text('Colocar minha foto'));
+    await tester.tap(find.text('Colocar minha foto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tirar uma selfie'));
+    await tester.pumpAndSettle();
+
+    expect(camera.iniciadas, [LenteDaCamera.frontal]);
+    expect(
+      find.descendant(
+          of: find.byType(CameraDoCartao), matching: find.text('Ana Souza')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Tirar foto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar foto'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CameraDoCartao), findsNothing);
+    expect(find.text('Trocar minha foto'), findsOneWidget);
   });
 
   testWidgets('show sem pedidos nem companhia não inventa seções',

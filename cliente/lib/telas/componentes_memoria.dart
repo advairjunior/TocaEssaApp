@@ -7,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/baixar_arquivo.dart';
+import '../infraestrutura/camera_do_app.dart';
 import '../tema/tema_toca_essa.dart';
+import 'camera_do_cartao.dart';
 import 'componentes.dart';
 
 /// Botão redondo e translúcido que flutua sobre fotos e fundos, no lugar da
@@ -209,45 +211,91 @@ class RotuloVersalete extends StatelessWidget {
       );
 }
 
-/// Pede uma foto da câmera ou da galeria para o cartão compartilhável.
-/// Devolve `null` quando a pessoa desiste ou a imagem passa de 8 MB.
-Future<Uint8List?> escolherFotoDoCartao(BuildContext context) async {
-  final origem = await showModalBottomSheet<ImageSource>(
+/// Como montar o cartão com outro fundo: a câmera do app usa para mostrar a
+/// prévia já dentro do cartão que vai ser salvo.
+typedef CartaoComFundo = Widget Function(BuildContext context, Widget fundo);
+
+enum _OrigemDaFoto { selfie, traseira, galeria }
+
+/// Pede uma foto para o cartão compartilhável: selfie ou câmera traseira
+/// pela câmera do app (enquadrada no [cartao]) ou uma foto da galeria.
+/// Se a câmera do app não abrir, cai na câmera do sistema. Devolve `null`
+/// quando a pessoa desiste ou a imagem passa de 8 MB.
+Future<Uint8List?> escolherFotoDoCartao(
+  BuildContext context, {
+  required CartaoComFundo cartao,
+}) async {
+  final origem = await showModalBottomSheet<_OrigemDaFoto>(
     context: context,
     builder: (context) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.photo_camera_outlined),
-            title: const Text('Tirar foto agora'),
-            onTap: () => Navigator.pop(context, ImageSource.camera),
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library_outlined),
-            title: const Text('Escolher da galeria'),
-            onTap: () => Navigator.pop(context, ImageSource.gallery),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_front_outlined),
+              title: const Text('Tirar uma selfie'),
+              subtitle: const Text('Vire de costas para o palco e registre '
+                  'a galera atrás de você.'),
+              onTap: () => Navigator.pop(context, _OrigemDaFoto.selfie),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Fotografar a galera'),
+              onTap: () => Navigator.pop(context, _OrigemDaFoto.traseira),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Escolher da galeria'),
+              onTap: () => Navigator.pop(context, _OrigemDaFoto.galeria),
+            ),
+          ],
+        ),
       ),
     ),
   );
   if (origem == null || !context.mounted) return null;
+  final lente = origem == _OrigemDaFoto.selfie
+      ? LenteDaCamera.frontal
+      : LenteDaCamera.traseira;
+  if (origem != _OrigemDaFoto.galeria) {
+    final resposta = await Navigator.push<RespostaDaCamera>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => CameraDoCartao(
+          camera: fabricaDeCamera(),
+          lenteInicial: lente,
+          cartao: cartao,
+        ),
+      ),
+    );
+    if (resposta == null || !context.mounted) return null;
+    if (!resposta.usarCameraDoSistema) {
+      return _dentroDoLimite(context, resposta.foto!);
+    }
+  }
   final arquivo = await ImagePicker().pickImage(
-    source: origem,
+    source: origem == _OrigemDaFoto.galeria
+        ? ImageSource.gallery
+        : ImageSource.camera,
+    preferredCameraDevice:
+        lente == LenteDaCamera.frontal ? CameraDevice.front : CameraDevice.rear,
     maxWidth: 1800,
     maxHeight: 1800,
     imageQuality: 86,
   );
   if (arquivo == null || !context.mounted) return null;
   final bytes = await arquivo.readAsBytes();
-  if (bytes.length > 8 * 1024 * 1024) {
-    if (context.mounted) {
-      mostrarErro(context, 'Escolha uma imagem de até 8 MB.');
-    }
-    return null;
-  }
-  return bytes;
+  if (!context.mounted) return null;
+  return _dentroDoLimite(context, bytes);
+}
+
+Uint8List? _dentroDoLimite(BuildContext context, Uint8List bytes) {
+  if (bytes.length <= 8 * 1024 * 1024) return bytes;
+  if (context.mounted) mostrarErro(context, 'Escolha uma imagem de até 8 MB.');
+  return null;
 }
 
 /// Transforma o cartão sob [chave] em PNG de ~1080px de largura e baixa.

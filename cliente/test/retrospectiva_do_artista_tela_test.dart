@@ -6,7 +6,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
+import 'package:toca_essa_app/telas/camera_do_cartao.dart';
 import 'package:toca_essa_app/telas/estatisticas_da_apresentacao.dart';
+
+import 'apoio/camera_falsa.dart';
 
 const _noiteCheia =
     '{"totalPedidos":40,"aguardando":0,"aceitos":32,"tocados":32,"recusados":3,'
@@ -41,10 +45,24 @@ Future<void> _abrir(
   TipoApresentacao tipo = TipoApresentacao.publica,
   StatusApresentacao status = StatusApresentacao.encerrada,
   String? instagram = 'duoaurora',
+  List<http.Request>? requisicoes,
 }) async {
   final cliente = MockClient((requisicao) async {
+    requisicoes?.add(requisicao);
     if (requisicao.url.path.endsWith('/participantes')) {
       return http.Response(_galera, 200);
+    }
+    if (requisicao.url.path.endsWith('/foto-retrospectiva')) {
+      return http.Response(
+        '{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica",'
+        '"data":"2026-10-03","local":"Café Central","codigo":"A1B2C3",'
+        '"perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111",'
+        '"nomeArtistico":"Duo Aurora"},"pedidosAbertos":false,'
+        '"status":"Encerrada","tipo":"${tipo.paraJson}",'
+        '"fotoRetrospectivaUrl":"/fotos/selfie.jpg"}',
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
     }
     return http.Response(estatisticas, 200);
   });
@@ -147,6 +165,64 @@ void main() {
       await tester.tapAt(const Offset(10, 10));
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets('selfie abre a câmera do app dentro do cartão e envia a foto',
+      (tester) async {
+    final camera = CameraFalsa();
+    fabricaDeCamera = () => camera;
+    addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+    final requisicoes = <http.Request>[];
+    await _abrir(tester, estatisticas: _noiteCheia, requisicoes: requisicoes);
+
+    final botao = find.text('Adicionar foto ou selfie');
+    await tester.ensureVisible(botao);
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tirar uma selfie'));
+    await tester.pumpAndSettle();
+
+    expect(camera.iniciadas, [LenteDaCamera.frontal]);
+    expect(
+      find.descendant(
+          of: find.byType(CameraDoCartao), matching: find.text('Duo Aurora')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byTooltip('Tirar foto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar foto'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CameraDoCartao), findsNothing);
+    expect(
+      requisicoes.where((r) =>
+          r.method == 'POST' && r.url.path.endsWith('/foto-retrospectiva')),
+      hasLength(1),
+    );
+    expect(find.text('Trocar foto ou selfie'), findsOneWidget);
+  });
+
+  testWidgets('fotografar a galera abre a câmera traseira', (tester) async {
+    final camera = CameraFalsa();
+    fabricaDeCamera = () => camera;
+    addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+    await _abrir(tester,
+        estatisticas: _resenha, tipo: TipoApresentacao.resenhaEntreAmigos);
+
+    final botao = find.text('Adicionar foto ou selfie');
+    await tester.ensureVisible(botao);
+    await tester.tap(botao);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Fotografar a galera'));
+    await tester.pumpAndSettle();
+
+    expect(camera.iniciadas, [LenteDaCamera.traseira]);
+    expect(
+      find.descendant(
+          of: find.byType(CameraDoCartao),
+          matching: find.text('RETROSPECTIVA DA RESENHA')),
+      findsOneWidget,
+    );
   });
 
   group('resumo em texto', () {

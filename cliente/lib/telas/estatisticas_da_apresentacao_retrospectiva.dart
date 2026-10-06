@@ -67,7 +67,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   final String? enderecoFoto;
   final bool temFotoPropria;
   final bool enviandoFoto;
-  final VoidCallback escolherFoto;
+  final void Function(CartaoComFundo cartao) escolherFoto;
   final bool gerandoImagem;
   final VoidCallback baixarImagem;
   final VoidCallback copiar;
@@ -78,6 +78,13 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   Widget build(BuildContext context) {
     final premios =
         _resenha ? premiosDaResenha(participantes, dados) : <PremioDaResenha>[];
+    final conteudo = _resenha
+        ? _ConteudoDaResenha(
+            apresentacao: apresentacao,
+            dados: dados,
+            premios: premios,
+          )
+        : _ConteudoDoShow(apresentacao: apresentacao, dados: dados);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -86,13 +93,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
           child: _MolduraDoCartao(
             key: const ValueKey('cartao-retrospectiva'),
             enderecoFoto: enderecoFoto,
-            child: _resenha
-                ? _ConteudoDaResenha(
-                    apresentacao: apresentacao,
-                    dados: dados,
-                    premios: premios,
-                  )
-                : _ConteudoDoShow(apresentacao: apresentacao, dados: dados),
+            child: conteudo,
           ),
         ),
         const SizedBox(height: EspacoTocaEssa.medio),
@@ -119,7 +120,13 @@ class _RetrospectivaDoArtista extends StatelessWidget {
         ),
         const SizedBox(height: EspacoTocaEssa.pequeno),
         OutlinedButton.icon(
-          onPressed: enviandoFoto ? null : escolherFoto,
+          onPressed: enviandoFoto
+              ? null
+              : () => escolherFoto((_, fundo) => _MolduraDoCartao(
+                    enderecoFoto: null,
+                    fundo: fundo,
+                    child: conteudo,
+                  )),
           icon: enviandoFoto
               ? const SizedBox.square(
                   dimension: 18,
@@ -158,10 +165,14 @@ class _MolduraDoCartao extends StatelessWidget {
     super.key,
     required this.enderecoFoto,
     required this.child,
+    this.fundo,
   });
 
   final String? enderecoFoto;
   final Widget child;
+
+  /// Substitui a foto, como a prévia da câmera do app.
+  final Widget? fundo;
 
   @override
   Widget build(BuildContext context) => AspectRatio(
@@ -180,7 +191,7 @@ class _MolduraDoCartao extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                CapaDaNoite(endereco: enderecoFoto),
+                fundo ?? CapaDaNoite(endereco: enderecoFoto),
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -243,13 +254,17 @@ class _RotuloDoCartao extends StatelessWidget {
           const Icon(Icons.auto_awesome_rounded,
               color: CoresTocaEssa.roxoClaro, size: 16),
           const SizedBox(width: 6),
-          Text(
-            texto,
-            style: const TextStyle(
-              color: CoresTocaEssa.roxoClaro,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              letterSpacing: .9,
+          Flexible(
+            child: Text(
+              texto,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: CoresTocaEssa.roxoClaro,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: .9,
+              ),
             ),
           ),
         ],

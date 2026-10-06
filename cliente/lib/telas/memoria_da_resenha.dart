@@ -45,7 +45,16 @@ class _MemoriaDaResenhaState extends State<MemoriaDaResenha> {
       );
 
   Future<void> _escolherFoto() async {
-    final foto = await escolherFotoDoCartao(context);
+    final foto = await escolherFotoDoCartao(
+      context,
+      cartao: (_, fundo) => _CartaoDaNoite(
+        encontro: widget.encontro,
+        nome: widget.nome,
+        minhaFoto: null,
+        enderecoFoto: null,
+        fundo: fundo,
+      ),
+    );
     if (foto != null && mounted) setState(() => _minhaFoto = foto);
   }
 
@@ -371,12 +380,16 @@ class _CartaoDaNoite extends StatelessWidget {
     required this.nome,
     required this.minhaFoto,
     required this.enderecoFoto,
+    this.fundo,
   });
 
   final EncontroDoPublico encontro;
   final String nome;
   final Uint8List? minhaFoto;
   final String? enderecoFoto;
+
+  /// Substitui a foto, como a prévia da câmera do app.
+  final Widget? fundo;
 
   @override
   Widget build(BuildContext context) {
@@ -388,7 +401,9 @@ class _CartaoDaNoite extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (minhaFoto != null)
+            if (fundo != null)
+              fundo!
+            else if (minhaFoto != null)
               Image.memory(minhaFoto!, fit: BoxFit.cover)
             else
               CapaDaNoite(endereco: enderecoFoto),

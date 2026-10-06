@@ -1,8 +1,8 @@
 part of 'area_do_publico.dart';
 
 extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
-  Future<void> _escolherFotoDaMinhaRetrospectiva() async {
-    final foto = await escolherFotoDoCartao(context);
+  Future<void> _escolherFotoDaMinhaRetrospectiva(CartaoComFundo cartao) async {
+    final foto = await escolherFotoDoCartao(context, cartao: cartao);
     if (foto != null && mounted) {
       _mudarEstado(() => _fotoRetrospectivaPublico = foto);
     }
@@ -29,62 +29,66 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
   List<Widget> _construirRetrospectivaDoPublico(
     Apresentacao apresentacao,
     ParticipanteDaResenha participante,
-  ) =>
-      [
-        Text(
-          'Minha retrospectiva',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: EspacoTocaEssa.mini),
-        Text(
-          'Salve e compartilhe seu momento na resenha — com a sua foto, '
-          'se quiser.',
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: CoresTocaEssa.textoSecundario),
-        ),
-        const SizedBox(height: EspacoTocaEssa.base),
-        RepaintBoundary(
-          key: _chaveRetrospectivaPublico,
-          child: _CartaoRetrospectivaDoPublico(
-            apresentacao: apresentacao,
-            participante: participante,
-            companhia: [
-              for (final pessoa in _participantesDaResenha)
-                if (!pessoa.ehArtista &&
-                    pessoa.publicoId != participante.publicoId)
-                  PessoaDoEncontro(
-                    publicoId: pessoa.publicoId,
-                    nome: pessoa.nome,
-                    fotoUrl: pessoa.fotoUrl,
-                  ),
-            ],
-            foto: _fotoRetrospectivaPublico,
-            enderecoFotoDoEncontro:
-                _api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
-          ),
-        ),
-        const SizedBox(height: EspacoTocaEssa.base),
-        // Sem foto própria o cartão usa a do encontro ou o fundo da marca,
-        // então já pode ser salvo; a foto pessoal é um extra.
-        FilledButton.icon(
-          onPressed: _gerandoRetrospectiva
-              ? null
-              : () => _baixarMinhaRetrospectiva(apresentacao),
-          icon: const Icon(Icons.ios_share_rounded),
-          label: Text(_gerandoRetrospectiva
-              ? 'Gerando imagem...'
-              : 'Salvar imagem para compartilhar'),
-        ),
-        TextButton.icon(
-          onPressed: _escolherFotoDaMinhaRetrospectiva,
-          icon: const Icon(Icons.add_a_photo_outlined, size: 18),
-          label: Text(_fotoRetrospectivaPublico == null
-              ? 'Colocar minha foto'
-              : 'Trocar minha foto'),
-        ),
-      ];
+  ) {
+    Widget cartao({Widget? fundo}) => _CartaoRetrospectivaDoPublico(
+          apresentacao: apresentacao,
+          participante: participante,
+          companhia: [
+            for (final pessoa in _participantesDaResenha)
+              if (!pessoa.ehArtista &&
+                  pessoa.publicoId != participante.publicoId)
+                PessoaDoEncontro(
+                  publicoId: pessoa.publicoId,
+                  nome: pessoa.nome,
+                  fotoUrl: pessoa.fotoUrl,
+                ),
+          ],
+          foto: _fotoRetrospectivaPublico,
+          enderecoFotoDoEncontro:
+              _api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
+          fundo: fundo,
+        );
+    return [
+      Text(
+        'Minha retrospectiva',
+        style: Theme.of(context).textTheme.titleLarge,
+      ),
+      const SizedBox(height: EspacoTocaEssa.mini),
+      Text(
+        'Salve e compartilhe seu momento na resenha — com a sua foto, '
+        'se quiser.',
+        style: Theme.of(context)
+            .textTheme
+            .bodyMedium
+            ?.copyWith(color: CoresTocaEssa.textoSecundario),
+      ),
+      const SizedBox(height: EspacoTocaEssa.base),
+      RepaintBoundary(
+        key: _chaveRetrospectivaPublico,
+        child: cartao(),
+      ),
+      const SizedBox(height: EspacoTocaEssa.base),
+      // Sem foto própria o cartão usa a do encontro ou o fundo da marca,
+      // então já pode ser salvo; a foto pessoal é um extra.
+      FilledButton.icon(
+        onPressed: _gerandoRetrospectiva
+            ? null
+            : () => _baixarMinhaRetrospectiva(apresentacao),
+        icon: const Icon(Icons.ios_share_rounded),
+        label: Text(_gerandoRetrospectiva
+            ? 'Gerando imagem...'
+            : 'Salvar imagem para compartilhar'),
+      ),
+      TextButton.icon(
+        onPressed: () => _escolherFotoDaMinhaRetrospectiva(
+            (_, fundo) => cartao(fundo: fundo)),
+        icon: const Icon(Icons.add_a_photo_outlined, size: 18),
+        label: Text(_fotoRetrospectivaPublico == null
+            ? 'Colocar minha foto'
+            : 'Trocar minha foto'),
+      ),
+    ];
+  }
 }
 
 class _CartaoRetrospectivaDoPublico extends StatelessWidget {
@@ -94,7 +98,11 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
     required this.companhia,
     required this.foto,
     required this.enderecoFotoDoEncontro,
+    this.fundo,
   });
+
+  /// Substitui a foto, como a prévia da câmera do app.
+  final Widget? fundo;
 
   final Apresentacao apresentacao;
   final ParticipanteDaResenha participante;
@@ -137,7 +145,9 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (foto != null)
+                if (fundo != null)
+                  fundo!
+                else if (foto != null)
                   Image.memory(foto!, fit: BoxFit.cover)
                 else if (enderecoFotoDoEncontro != null)
                   Image.network(

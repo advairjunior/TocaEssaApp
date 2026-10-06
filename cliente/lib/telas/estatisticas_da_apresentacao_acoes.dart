@@ -8,61 +8,18 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
   ApiTocaEssa get api;
   Apresentacao get apresentacao;
 
-  Future<void> _escolherFotoDoEncontro() async {
-    final origem = await showModalBottomSheet<(ImageSource, CameraDevice)>(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.camera_front_outlined),
-                title: const Text('Tirar uma selfie'),
-                subtitle: const Text('Vire de costas para o público e '
-                    'registre a galera atrás de você.'),
-                onTap: () => Navigator.pop(
-                    context, (ImageSource.camera, CameraDevice.front)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Fotografar a galera'),
-                onTap: () => Navigator.pop(
-                    context, (ImageSource.camera, CameraDevice.rear)),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Escolher da galeria'),
-                onTap: () => Navigator.pop(
-                    context, (ImageSource.gallery, CameraDevice.rear)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (origem == null || !mounted) return;
-    final arquivo = await ImagePicker().pickImage(
-      source: origem.$1,
-      preferredCameraDevice: origem.$2,
-      maxWidth: 1800,
-      maxHeight: 1800,
-      imageQuality: 86,
-    );
-    if (arquivo == null || !mounted) return;
-    final bytes = await arquivo.readAsBytes();
-    if (!mounted) return;
-    if (bytes.length > 8 * 1024 * 1024) {
-      mostrarErro(context, 'Escolha uma imagem de até 8 MB.');
-      return;
-    }
+  Future<void> _escolherFotoDoEncontro(CartaoComFundo cartao) async {
+    final bytes = await escolherFotoDoCartao(context, cartao: cartao);
+    if (bytes == null || !mounted) return;
     setState(() => _enviandoFoto = true);
     try {
       final atualizada = await api.enviarFotoRetrospectiva(
         apresentacao.id,
         bytes,
-        arquivo.name,
+        // O servidor reconhece o formato pelo conteúdo; o nome só informa.
+        bytes.first == 0x89
+            ? 'foto-retrospectiva.png'
+            : 'foto-retrospectiva.jpg',
       );
       if (!mounted) return;
       setState(() => _apresentacaoAtual = atualizada);
