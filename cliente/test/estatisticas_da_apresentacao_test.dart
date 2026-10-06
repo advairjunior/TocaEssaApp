@@ -54,7 +54,8 @@ void main() {
 
     expect(find.byType(Card), findsNothing);
     expect(find.byType(ListTile), findsNothing);
-    expect(find.text('4.7'), findsOneWidget);
+    // A nota também aparece no cartão da retrospectiva.
+    expect(find.text('4.7'), findsWidgets);
     expect(find.text('3 avaliações recebidas'), findsOneWidget);
     for (final rotulo in [
       'pedidos',
@@ -79,7 +80,7 @@ void main() {
 
   testWidgets('galera da resenha em lista agrupada, sem chips', (tester) async {
     await _abrir(tester, tipo: TipoApresentacao.resenhaEntreAmigos);
-    await tester.scrollUntilVisible(find.text('Ana Souza'), 300);
+    await tester.scrollUntilVisible(find.text('Ana Souza').first, 300);
 
     expect(find.byType(Chip), findsNothing);
     expect(find.text('5 pedidos · 3 tocados'), findsOneWidget);

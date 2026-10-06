@@ -127,8 +127,8 @@ void main() {
     expect(find.text('3 pedidos'), findsOneWidget);
     expect(find.text('RETROSPECTIVA DA RESENHA'), findsOneWidget);
     expect(find.text('Galera da resenha'), findsOneWidget);
-    expect(find.text('Ana Souza'), findsOneWidget);
-    expect(find.text('Salvar cartão em PNG'), findsOneWidget);
+    expect(find.text('Ana Souza'), findsWidgets);
+    expect(find.text('Salvar imagem para compartilhar'), findsOneWidget);
     final copiar = find.text('Copiar resumo em texto');
     await tester.ensureVisible(copiar);
     expect(copiar, findsOneWidget);

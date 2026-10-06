@@ -77,33 +77,33 @@ void main() {
     });
 
     test('pouca gente não aparece', () {
-      final destaques = destaquesDoShow(_estatisticas(
-          pessoas: 6, pediram: 4, pedidos: 5, tocados: 5));
+      final destaques = destaquesDoShow(
+          _estatisticas(pessoas: 6, pediram: 4, pedidos: 5, tocados: 5));
 
       expect(_rotulos(destaques), isNot(contains(startsWith('6 pessoas'))));
     });
 
     test('poucas músicas tocadas para o tamanho do público não aparecem', () {
-      final destaques = destaquesDoShow(_estatisticas(
-          pessoas: 100, pediram: 10, pedidos: 10, tocados: 4));
+      final destaques = destaquesDoShow(
+          _estatisticas(pessoas: 100, pediram: 10, pedidos: 10, tocados: 4));
 
       expect(_rotulos(destaques), ['100 pessoas no app']);
     });
 
     test('nota baixa ou com poucas avaliações nunca aparece', () {
       expect(
-          _rotulos(destaquesDoShow(_estatisticas(
-              pessoas: 50, avaliados: 20, media: 3.4))),
+          _rotulos(destaquesDoShow(
+              _estatisticas(pessoas: 50, avaliados: 20, media: 3.4))),
           ['50 pessoas no app']);
       expect(
-          _rotulos(destaquesDoShow(_estatisticas(
-              pessoas: 50, avaliados: 2, media: 5))),
+          _rotulos(destaquesDoShow(
+              _estatisticas(pessoas: 50, avaliados: 2, media: 5))),
           ['50 pessoas no app']);
     });
 
     test('atendimento alto aparece quando sobra espaço', () {
-      final destaques = destaquesDoShow(_estatisticas(
-          pessoas: 12, pediram: 6, pedidos: 10, tocados: 9));
+      final destaques = destaquesDoShow(
+          _estatisticas(pessoas: 12, pediram: 6, pedidos: 10, tocados: 9));
 
       expect(_rotulos(destaques), [
         '12 pessoas no app',
@@ -158,7 +158,9 @@ void main() {
       _pessoa('Fê'),
     ];
     final estatisticas = _estatisticas(
-      maisPedidas: const [MusicaMaisPedida(musica: 'Evidências', quantidade: 4)],
+      maisPedidas: const [
+        MusicaMaisPedida(musica: 'Evidências', quantidade: 4)
+      ],
       recusadas: const [MusicaMaisPedida(musica: 'Macarena', quantidade: 2)],
     );
 

@@ -6,11 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../dominio/modelos.dart';
+import '../dominio/retrospectiva_do_artista.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/baixar_arquivo.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 
 part 'estatisticas_da_apresentacao_componentes.dart';
 part 'estatisticas_da_apresentacao_acoes.dart';
@@ -43,11 +45,15 @@ class _EstatisticasDaApresentacaoTelaState
   bool _enviandoFoto = false;
   @override
   late Apresentacao _apresentacaoAtual;
+  late final Future<(EstatisticasDaApresentacao, List<ParticipanteDaResenha>)>
+      _carga = _carregar();
 
   @override
   ApiTocaEssa get api => widget.api;
   @override
   Apresentacao get apresentacao => _apresentacaoAtual;
+
+  bool get _resenha => apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos;
 
   @override
   void initState() {
@@ -55,11 +61,24 @@ class _EstatisticasDaApresentacaoTelaState
     _apresentacaoAtual = widget.apresentacao;
   }
 
+  // Números e galera chegam juntos: o cartão da resenha usa os dois. Sem a
+  // galera, os números continuam aparecendo.
+  Future<(EstatisticasDaApresentacao, List<ParticipanteDaResenha>)>
+      _carregar() async {
+    final estatisticas = api.obterEstatisticasDaApresentacao(apresentacao.id);
+    final participantes = _resenha
+        ? api
+            .listarParticipantesDaResenhaDoArtista(apresentacao.id)
+            .catchError((_) => <ParticipanteDaResenha>[])
+        : Future.value(<ParticipanteDaResenha>[]);
+    return (await estatisticas, await participantes);
+  }
+
   @override
   Widget build(BuildContext context) {
     final conteudo = ConteudoMobile(
-      filho: FutureBuilder<EstatisticasDaApresentacao>(
-        future: api.obterEstatisticasDaApresentacao(apresentacao.id),
+      filho: FutureBuilder(
+        future: _carga,
         builder: (context, snapshot) {
           if (!snapshot.hasData &&
               snapshot.connectionState != ConnectionState.done) {
@@ -79,7 +98,7 @@ class _EstatisticasDaApresentacaoTelaState
               ),
             );
           }
-          final dados = snapshot.data!;
+          final (dados, participantes) = snapshot.data!;
           final texto = Theme.of(context).textTheme;
           final secundario =
               texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
@@ -89,6 +108,27 @@ class _EstatisticasDaApresentacaoTelaState
               : dados.musicasMaisPedidas
                   .map((m) => m.quantidade)
                   .reduce((a, b) => a > b ? a : b);
+          final retrospectiva = [
+            const TituloGrupo('Retrospectiva'),
+            _RetrospectivaDoArtista(
+              chaveCartao: _chaveCartao,
+              apresentacao: apresentacao,
+              dados: dados,
+              participantes: participantes,
+              enderecoFoto: api.enderecoArquivo(
+                  apresentacao.fotoRetrospectivaUrl ??
+                      apresentacao.perfilArtistico.fotoUrl),
+              temFotoPropria: apresentacao.fotoRetrospectivaUrl != null,
+              enviandoFoto: _enviandoFoto,
+              escolherFoto: _escolherFotoDoEncontro,
+              gerandoImagem: _gerandoCartao,
+              baixarImagem: _baixarCartao,
+              copiar: () => _copiarRetrospectiva(context, dados, participantes),
+            ),
+          ];
+          // Depois do show, a retrospectiva é o que importa: vai para o topo.
+          // Durante o show, fica no fim sem empurrar os números para baixo.
+          final encerrada = apresentacao.status == StatusApresentacao.encerrada;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -102,6 +142,7 @@ class _EstatisticasDaApresentacaoTelaState
                 ),
                 const SizedBox(height: EspacoTocaEssa.grande),
               ],
+              if (encerrada) ...[...retrospectiva, entreSecoes],
               Row(
                 children: [
                   const Icon(Icons.star_rounded,
@@ -172,63 +213,31 @@ class _EstatisticasDaApresentacaoTelaState
                       ),
                   ],
                 ),
-              if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
+              if (_resenha) ...[
                 entreSecoes,
                 const TituloGrupo('Galera da resenha'),
-                FutureBuilder<List<ParticipanteDaResenha>>(
-                  future: api
-                      .listarParticipantesDaResenhaDoArtista(apresentacao.id),
-                  builder: (context, participantesSnapshot) {
-                    if (!participantesSnapshot.hasData &&
-                        participantesSnapshot.connectionState !=
-                            ConnectionState.done) {
-                      return const Center(
-                          child: Padding(
-                        padding: EdgeInsets.all(EspacoTocaEssa.grande),
-                        child: CircularProgressIndicator(),
-                      ));
-                    }
-                    final participantes =
-                        participantesSnapshot.data ?? const [];
-                    if (participantes.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: EspacoTocaEssa.mini),
-                        child: Text(
-                          'A galera aparece depois dos primeiros pedidos.',
-                          style: secundario,
+                if (participantes.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: EspacoTocaEssa.mini),
+                    child: Text(
+                      'A galera aparece depois dos primeiros pedidos.',
+                      style: secundario,
+                    ),
+                  )
+                else
+                  GrupoDeLinhas(
+                    linhas: [
+                      for (final participante in participantes)
+                        _LinhaParticipante(
+                          participante: participante,
+                          enderecoFoto:
+                              api.enderecoArquivo(participante.fotoUrl),
                         ),
-                      );
-                    }
-                    return GrupoDeLinhas(
-                      linhas: [
-                        for (final participante in participantes)
-                          _LinhaParticipante(
-                            participante: participante,
-                            enderecoFoto:
-                                api.enderecoArquivo(participante.fotoUrl),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-                // A retrospectiva é para depois do show: fica no fim, sem
-                // empurrar os números para baixo durante a apresentação.
-                entreSecoes,
-                const TituloGrupo('Retrospectiva'),
-                _RetrospectivaDaResenha(
-                  chaveCartao: _chaveCartao,
-                  apresentacao: apresentacao,
-                  dados: dados,
-                  enderecoFoto:
-                      api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
-                  enviandoFoto: _enviandoFoto,
-                  escolherFoto: _escolherFotoDoEncontro,
-                  gerandoImagem: _gerandoCartao,
-                  baixarImagem: _baixarCartao,
-                  copiar: () => _copiarRetrospectiva(context, dados),
-                ),
+                    ],
+                  ),
               ],
+              if (!encerrada) ...[entreSecoes, ...retrospectiva],
               const SizedBox(height: EspacoTocaEssa.grande),
             ],
           );

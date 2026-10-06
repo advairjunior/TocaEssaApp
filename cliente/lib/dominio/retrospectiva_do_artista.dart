@@ -99,10 +99,8 @@ List<PremioDaResenha> premiosDaResenha(
     Iterable<ParticipanteDaResenha> candidatos,
     num Function(ParticipanteDaResenha) medida,
   ) =>
-      candidatos.fold<ParticipanteDaResenha?>(
-          null,
-          (atual, p) =>
-              atual == null || medida(p) > medida(atual) ? p : atual);
+      candidatos.fold<ParticipanteDaResenha?>(null,
+          (atual, p) => atual == null || medida(p) > medida(atual) ? p : atual);
   double mediaDada(ParticipanteDaResenha p) =>
       p.avaliacoes.map((a) => a.estrelas).reduce((a, b) => a + b) /
       p.avaliacoes.length;
@@ -119,15 +117,16 @@ List<PremioDaResenha> premiosDaResenha(
       maior(galera.where((p) => pediu(p) > 0 && p.pedidosTocados == 0), pediu);
   final polemica = e.musicasRecusadas.firstOrNull;
   final avaliadores = galera.where((p) => p.avaliacoes.isNotEmpty);
-  final critico = maior(
-      avaliadores.where((p) => mediaDada(p) < _notaMinima),
+  final critico = maior(avaliadores.where((p) => mediaDada(p) < _notaMinima),
       (p) => -mediaDada(p));
   final puxaSaco = maior(
       avaliadores.where((p) =>
-          p.avaliacoes.length >= 2 && p.avaliacoes.every((a) => a.estrelas == 5)),
+          p.avaliacoes.length >= 2 &&
+          p.avaliacoes.every((a) => a.estrelas == 5)),
       (p) => p.avaliacoes.length);
   final (climao, piorNota) = _piorNota(avaliadores);
-  final calados = galera.where((p) => pediu(p) == 0).map((p) => p.nome).toList();
+  final calados =
+      galera.where((p) => pediu(p) == 0).map((p) => p.nome).toList();
 
   return [
     if (hino != null)
@@ -162,8 +161,7 @@ List<PremioDaResenha> premiosDaResenha(
           emoji: '🚫',
           titulo: 'Polêmica da noite',
           vencedor: polemica.musica,
-          detalhe:
-              'recusada ${plural(polemica.quantidade, 'vez', 'vezes')}'),
+          detalhe: 'recusada ${plural(polemica.quantidade, 'vez', 'vezes')}'),
     if (critico != null)
       PremioDaResenha(
           emoji: '🧐',

@@ -48,8 +48,8 @@ void main() {
             item.method == 'POST' && item.url.path.endsWith('/acessos'))
         .toList();
     expect(acessos, hasLength(1));
-    expect(acessos.single.url.path,
-        '/api/publico/apresentacoes/A1B2C3/acessos');
+    expect(
+        acessos.single.url.path, '/api/publico/apresentacoes/A1B2C3/acessos');
     expect(jsonDecode(acessos.single.body), {'visitante': 'aparelho-da-bia'});
   });
 
@@ -63,16 +63,15 @@ void main() {
     expect(find.text('Duo Aurora'), findsWidgets);
   });
 
-  test('estatísticas e participante leem os campos novos da retrospectiva',
-      () {
+  test('estatísticas e participante leem os campos novos da retrospectiva', () {
     final estatisticas = EstatisticasDaApresentacao.deJson(jsonDecode(
         '{"totalPedidos":8,"aguardando":0,"aceitos":5,"tocados":5,"recusados":2,'
         '"avaliados":3,"mediaAvaliacoes":4.7,"musicasMaisPedidas":[],'
         '"pessoasNoEvento":42,"pessoasQuePediram":12,'
         '"musicasRecusadas":[{"musica":"Macarena","quantidade":2}]}'));
-    final antigas = EstatisticasDaApresentacao.deJson(jsonDecode(
-        '{"totalPedidos":0,"aguardando":0,"aceitos":0,"tocados":0,'
-        '"recusados":0,"avaliados":0,"musicasMaisPedidas":[]}'));
+    final antigas = EstatisticasDaApresentacao.deJson(
+        jsonDecode('{"totalPedidos":0,"aguardando":0,"aceitos":0,"tocados":0,'
+            '"recusados":0,"avaliados":0,"musicasMaisPedidas":[]}'));
     final participante = ParticipanteDaResenha.deJson(jsonDecode(
         '{"publicoId":"p1","nome":"Bia","pedidos":0,"pedidosTocados":0,'
         '"musicasMaisPedidas":[],"pedidosRecusados":2}'));

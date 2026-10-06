@@ -9,7 +9,7 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
   Apresentacao get apresentacao;
 
   Future<void> _escolherFotoDoEncontro() async {
-    final origem = await showModalBottomSheet<ImageSource>(
+    final origem = await showModalBottomSheet<(ImageSource, CameraDevice)>(
       context: context,
       builder: (context) => SafeArea(
         child: Padding(
@@ -18,15 +18,24 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.camera_front_outlined),
+                title: const Text('Tirar uma selfie'),
+                subtitle: const Text('Vire de costas para o público e '
+                    'registre a galera atrás de você.'),
+                onTap: () => Navigator.pop(
+                    context, (ImageSource.camera, CameraDevice.front)),
+              ),
+              ListTile(
                 leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Tirar foto agora'),
-                subtitle: const Text('Abra a câmera para fotografar a galera.'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
+                title: const Text('Fotografar a galera'),
+                onTap: () => Navigator.pop(
+                    context, (ImageSource.camera, CameraDevice.rear)),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
                 title: const Text('Escolher da galeria'),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
+                onTap: () => Navigator.pop(
+                    context, (ImageSource.gallery, CameraDevice.rear)),
               ),
             ],
           ),
@@ -35,7 +44,8 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
     );
     if (origem == null || !mounted) return;
     final arquivo = await ImagePicker().pickImage(
-      source: origem,
+      source: origem.$1,
+      preferredCameraDevice: origem.$2,
       maxWidth: 1800,
       maxHeight: 1800,
       imageQuality: 86,
@@ -101,21 +111,10 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
   Future<void> _copiarRetrospectiva(
     BuildContext context,
     EstatisticasDaApresentacao dados,
+    List<ParticipanteDaResenha> participantes,
   ) async {
-    final destaque = dados.musicasMaisPedidas.isEmpty
-        ? 'A resenha já começou a construir sua história.'
-        : 'Música mais pedida: ${dados.musicasMaisPedidas.first.musica} (${dados.musicasMaisPedidas.first.quantidade}x).';
-    final avaliacao = dados.mediaAvaliacoes == null
-        ? 'Ainda sem avaliações.'
-        : 'Avaliação média: ${dados.mediaAvaliacoes!.toStringAsFixed(1)} de 5.';
-    final texto = '''🎶 Retrospectiva TocaEssa
-${apresentacao.nome} · ${formatarData(apresentacao.data)}
-${apresentacao.local}
-
-${dados.totalPedidos} pedidos musicais · ${dados.tocados} tocados
-$destaque
-$avaliacao''';
-    await Clipboard.setData(ClipboardData(text: texto));
+    await Clipboard.setData(ClipboardData(
+        text: textoDaRetrospectiva(apresentacao, dados, participantes)));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

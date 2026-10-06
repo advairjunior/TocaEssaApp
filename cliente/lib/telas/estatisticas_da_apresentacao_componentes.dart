@@ -6,15 +6,28 @@ class _DadoDaRetrospectiva extends StatelessWidget {
   final String valor;
   final String rotulo;
 
+  // Rótulo em uma linha só, encolhendo se faltar espaço: quebrar no meio
+  // da palavra ("recusado/s") estraga o cartão compartilhado.
   @override
   Widget build(BuildContext context) => Expanded(
-        child: Column(
-          children: [
-            Text(valor, style: Theme.of(context).textTheme.titleLarge),
-            Text(rotulo,
-                style: const TextStyle(
-                    color: CoresTocaEssa.textoSecundario, fontSize: 11)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Column(
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(valor,
+                    maxLines: 1, style: Theme.of(context).textTheme.titleLarge),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(rotulo,
+                    maxLines: 1,
+                    style: const TextStyle(
+                        color: CoresTocaEssa.textoSecundario, fontSize: 11)),
+              ),
+            ],
+          ),
         ),
       );
 }
