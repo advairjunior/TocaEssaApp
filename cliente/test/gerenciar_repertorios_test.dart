@@ -131,7 +131,9 @@ void main() {
     final requisicoes = await _abrirRepertorio(tester);
     expect(_titulosNaTela(tester), ['Evidências', 'Sozinho', 'Trem-Bala']);
 
-    await _segurarEArrastar(tester, find.text('Trem-Bala'),
+    await _segurarEArrastar(
+        tester,
+        find.text('Trem-Bala'),
         tester.getCenter(find.text('Evidências')) -
             tester.getCenter(find.text('Trem-Bala')) -
             const Offset(0, 20));
@@ -148,22 +150,44 @@ void main() {
       (tester) async {
     final requisicoes = await _abrirRepertorio(tester);
 
-    await tester.drag(find.byTooltip('Arrastar para reordenar').first,
+    await tester.drag(find.bySemanticsLabel('Arrastar para reordenar').first,
         const Offset(0, 300));
     await tester.pumpAndSettle();
 
     expect(_titulosNaTela(tester).last, 'Evidências');
-    expect(jsonDecode(requisicoes.singleWhere((r) => r.method == 'PUT').body),
-        {
-          'musicaIds': ['m2', 'm3', 'm1']
-        });
+    expect(jsonDecode(requisicoes.singleWhere((r) => r.method == 'PUT').body), {
+      'musicaIds': ['m2', 'm3', 'm1']
+    });
+  });
+
+  testWidgets('repertório não usa a lista reordenável que falhava no iPhone',
+      (tester) async {
+    await _abrirRepertorio(tester);
+
+    expect(find.byType(ReorderableListView), findsNothing);
+    expect(find.byTooltip('Arrastar para reordenar'), findsNothing);
+  });
+
+  testWidgets('tocar na alça e mover para o topo salva a nova ordem',
+      (tester) async {
+    final requisicoes = await _abrirRepertorio(tester);
+
+    await tester.tap(find.bySemanticsLabel('Arrastar para reordenar').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mover para o topo'));
+    await tester.pumpAndSettle();
+
+    expect(_titulosNaTela(tester), ['Trem-Bala', 'Evidências', 'Sozinho']);
+    expect(jsonDecode(requisicoes.singleWhere((r) => r.method == 'PUT').body), {
+      'musicaIds': ['m3', 'm1', 'm2']
+    });
   });
 
   testWidgets('se o servidor recusar a ordem, a lista volta como estava',
       (tester) async {
     await _abrirRepertorio(tester, falharOrdem: true);
 
-    await tester.drag(find.byTooltip('Arrastar para reordenar').first,
+    await tester.drag(find.bySemanticsLabel('Arrastar para reordenar').first,
         const Offset(0, 300));
     await tester.pumpAndSettle();
 
@@ -186,18 +210,23 @@ Future<List<http.Request>> _abrirRepertorio(WidgetTester tester,
             400,
             headers: {'content-type': 'application/json; charset=utf-8'});
       }
-      final ids = (jsonDecode(requisicao.body)['musicaIds'] as List).cast<String>();
+      final ids =
+          (jsonDecode(requisicao.body)['musicaIds'] as List).cast<String>();
       final musicas = {
-        'm1': '{"id":"m1","repertorioId":"r1","titulo":"Evidências","artista":"Chitãozinho & Xororó","tom":"A","ordem":%o}',
-        'm2': '{"id":"m2","repertorioId":"r1","titulo":"Sozinho","artista":null,"tom":null,"ordem":%o}',
-        'm3': '{"id":"m3","repertorioId":"r1","titulo":"Trem-Bala","artista":null,"tom":null,"ordem":%o}',
+        'm1':
+            '{"id":"m1","repertorioId":"r1","titulo":"Evidências","artista":"Chitãozinho & Xororó","tom":"A","ordem":%o}',
+        'm2':
+            '{"id":"m2","repertorioId":"r1","titulo":"Sozinho","artista":null,"tom":null,"ordem":%o}',
+        'm3':
+            '{"id":"m3","repertorioId":"r1","titulo":"Trem-Bala","artista":null,"tom":null,"ordem":%o}',
       };
       final corpo = [
         for (final (indice, id) in ids.indexed)
           musicas[id]!.replaceFirst('%o', '${indice + 1}')
       ].join(',');
       return http.Response(
-          '{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":[$corpo]}', 200,
+          '{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":[$corpo]}',
+          200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
     return http.Response(_repertorioComTresJson, 200,

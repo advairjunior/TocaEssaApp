@@ -12,6 +12,7 @@ import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import 'estatisticas_da_apresentacao.dart';
+import 'lista_reordenavel.dart';
 import 'publico_no_app.dart';
 import 'escolher_cifra.dart';
 
@@ -181,7 +182,6 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
 
   Future<void> _reordenar(int indiceAntigo, int indiceNovo) async {
     final fila = _fila;
-    if (indiceNovo > indiceAntigo) indiceNovo--;
     final movido = fila.removeAt(indiceAntigo);
     fila.insert(indiceNovo, movido);
     final foraDaFila = _pedidos

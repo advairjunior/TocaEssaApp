@@ -192,20 +192,18 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'Segure o ícone lateral e arraste para reorganizar.',
+          'Arraste pelo ícone lateral ou toque nele para mover.',
           style: TextStyle(color: CoresTocaEssa.textoSecundario),
         ),
         const SizedBox(height: 10),
-        ReorderableListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          buildDefaultDragHandles: false,
-          itemCount: fila.length,
-          onReorder: _reordenar,
-          itemBuilder: (context, indice) {
+        ListaReordenavel(
+          quantidade: fila.length,
+          chaveDoItem: (indice) =>
+              ValueKey(fila[indice].pedidoRepresentativoId),
+          aoReordenar: _reordenar,
+          construirItem: (context, indice, alca) {
             final pedido = fila[indice];
             return Padding(
-              key: ValueKey(pedido.pedidoRepresentativoId),
               padding: const EdgeInsets.only(bottom: 10),
               child: CartaoGrupoPedidoArtista(
                 grupo: pedido,
@@ -214,9 +212,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),
                 inicio: _PosicaoNaFila(indice + 1),
-                fim: ReorderableDragStartListener(
-                  index: indice,
-                  child: const Padding(
+                fim: alca(
+                  const Padding(
                     padding: EdgeInsets.all(8),
                     child: Icon(Icons.drag_indicator_rounded,
                         color: CoresTocaEssa.roxoClaro),
