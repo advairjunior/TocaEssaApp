@@ -522,10 +522,8 @@ app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/foto-retrospectiva", async
 {
     const long limite = 8 * 1024 * 1024;
     var token = ObterToken(http) ?? string.Empty;
-    var apresentacao = repositorio.ObterApresentacaoDoArtista(
-        token, apresentacaoId);
-    if (apresentacao.Tipo != TipoApresentacao.ResenhaEntreAmigos)
-        throw new RecursoDisponivelSomenteNaResenhaException();
+    // Show público ou resenha: a foto (ou selfie) ilustra a retrospectiva.
+    _ = repositorio.ObterApresentacaoDoArtista(token, apresentacaoId);
     if (foto.Length == 0 || foto.Length > limite)
         return Results.ValidationProblem(new Dictionary<string, string[]>
         {

@@ -99,8 +99,6 @@ public sealed partial class RepositorioTocaEssa
         lock (_sincronizacao)
         {
             var item = ObterItemApresentacao(apresentacaoId, artistaId);
-            if (item.Value.Tipo != TipoApresentacao.ResenhaEntreAmigos)
-                throw new RecursoDisponivelSomenteNaResenhaException();
             var atualizada = item.Value with { FotoRetrospectivaUrl = fotoUrl };
             _apresentacoes[item.Key] = atualizada;
             SalvarEstado();
