@@ -236,7 +236,11 @@ public sealed record EstatisticasDaApresentacao(
     int Recusados,
     int Avaliados,
     double? MediaAvaliacoes,
-    IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas);
+    IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas,
+    int PessoasNoEvento = 0,
+    int PessoasQuePediram = 0);
+
+public sealed record RegistrarAcessoAoEvento(string? Visitante);
 
 public sealed record EstatisticasDoPublico(
     int Participacoes,

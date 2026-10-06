@@ -64,6 +64,47 @@ public sealed class RetrospectivaDoArtistaApiTestes
         }
     }
 
+    [Fact]
+    public async Task AparelhoQueAbreOEventoEntraNoPublicoSemPrecisarDeConta()
+    {
+        var banco = CriarCaminhoBanco();
+        try
+        {
+            await using var fabrica = CriarFabrica(banco);
+            using var artista = await CriarClienteArtista(fabrica);
+            using var publico = fabrica.CreateClient();
+            var (id, codigo) = await CriarApresentacao(artista, "Publica");
+
+            var primeiro = await publico.PostAsJsonAsync(
+                $"/api/publico/apresentacoes/{codigo}/acessos",
+                new { visitante = "aparelho-1" });
+            var repetido = await publico.PostAsJsonAsync(
+                $"/api/publico/apresentacoes/{codigo}/acessos",
+                new { visitante = "aparelho-1" });
+            var semVisitante = await publico.PostAsJsonAsync(
+                $"/api/publico/apresentacoes/{codigo}/acessos",
+                new { visitante = " " });
+            var inexistente = await publico.PostAsJsonAsync(
+                "/api/publico/apresentacoes/NAOEXISTE/acessos",
+                new { visitante = "aparelho-1" });
+
+            Assert.Equal(HttpStatusCode.NoContent, primeiro.StatusCode);
+            Assert.Equal(HttpStatusCode.NoContent, repetido.StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, semVisitante.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, inexistente.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await publico.GetAsync(
+                $"/api/publico/apresentacoes/{codigo}")).StatusCode);
+            using var estatisticas = JsonDocument.Parse(await artista.GetStringAsync(
+                $"/api/apresentacoes/{id}/estatisticas"));
+            Assert.Equal(1, estatisticas.RootElement
+                .GetProperty("pessoasNoEvento").GetInt32());
+        }
+        finally
+        {
+            ExcluirBanco(banco);
+        }
+    }
+
     private static async Task<HttpResponseMessage> EnviarFoto(
         HttpClient cliente, Guid apresentacaoId)
     {

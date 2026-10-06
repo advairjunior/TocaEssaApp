@@ -95,6 +95,15 @@ internal sealed class ParticipacaoResenhaRegistro
     public DateTimeOffset EntrouEm { get; set; }
 }
 
+/// Um aparelho que abriu a página pública do evento; conta o público que
+/// passou pelo app mesmo sem fazer pedido.
+internal sealed class AcessoAoEventoRegistro
+{
+    public Guid ApresentacaoId { get; set; }
+    public string Visitante { get; set; } = string.Empty;
+    public DateTimeOffset AcessouEm { get; set; }
+}
+
 internal sealed class ContaArtistaRegistro
 {
     public Guid Id { get; set; }

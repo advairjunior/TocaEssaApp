@@ -17,6 +17,8 @@ public sealed partial class RepositorioTocaEssa
     private readonly ConcurrentDictionary<Guid, PerfilPublicoRegistro> _perfisPublicos = new();
     private readonly ConcurrentDictionary<(Guid ApresentacaoId, Guid PublicoId),
         ParticipacaoResenhaRegistro> _participacoesResenha = new();
+    private readonly ConcurrentDictionary<(Guid ApresentacaoId, string Visitante),
+        AcessoAoEventoRegistro> _acessosAoEvento = new();
     private readonly ConcurrentDictionary<string, SessaoPublicoRegistro> _sessoesPublicas = new();
     private readonly ConcurrentDictionary<Guid, ContaArtistaRegistro> _contasArtistas = new();
     private readonly ConcurrentDictionary<string, SessaoArtistaRegistro> _sessoesArtistas = new();

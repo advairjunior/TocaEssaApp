@@ -168,6 +168,10 @@ public sealed partial class RepositorioTocaEssa
                          .Where(chave => chave.ApresentacaoId == apresentacaoId)
                          .ToArray())
                 _participacoesResenha.TryRemove(participacao, out _);
+            foreach (var acesso in _acessosAoEvento.Keys
+                         .Where(chave => chave.ApresentacaoId == apresentacaoId)
+                         .ToArray())
+                _acessosAoEvento.TryRemove(acesso, out _);
             SalvarEstado();
             _notificador?.Publicar(item.Key);
         }

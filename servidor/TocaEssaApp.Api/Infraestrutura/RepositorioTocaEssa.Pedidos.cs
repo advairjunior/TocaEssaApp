@@ -117,6 +117,7 @@ public sealed partial class RepositorioTocaEssa
             .Where(item => idsPedidos.Contains(item.PedidoId))
             .Select(item => item.Estrelas)
             .ToArray();
+        var (pessoasNoEvento, pessoasQuePediram) = ContarPublicoDoEvento(apresentacaoId);
         return new EstatisticasDaApresentacao(
             pedidos.Length,
             pedidos.Count(item => item.Status == StatusPedidoMusical.Aguardando),
@@ -127,7 +128,9 @@ public sealed partial class RepositorioTocaEssa
                 StatusPedidoMusical.AindaNaoSabemosTocar),
             avaliacoes.Length,
             avaliacoes.Length == 0 ? null : Math.Round(avaliacoes.Average(), 1),
-            AgruparMusicas(pedidos));
+            AgruparMusicas(pedidos),
+            pessoasNoEvento,
+            pessoasQuePediram);
     }
 
     public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(

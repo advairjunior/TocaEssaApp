@@ -17,6 +17,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<PerfilPublicoRegistro> PerfisPublicos => Set<PerfilPublicoRegistro>();
     internal DbSet<ParticipacaoResenhaRegistro> ParticipacoesResenha =>
         Set<ParticipacaoResenhaRegistro>();
+    internal DbSet<AcessoAoEventoRegistro> AcessosAoEvento => Set<AcessoAoEventoRegistro>();
     internal DbSet<SessaoPublicoRegistro> SessoesPublicas => Set<SessaoPublicoRegistro>();
     internal DbSet<ContaArtistaRegistro> ContasArtistas => Set<ContaArtistaRegistro>();
     internal DbSet<SessaoArtistaRegistro> SessoesArtistas => Set<SessaoArtistaRegistro>();
@@ -133,6 +134,13 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasIndex(item => item.PublicoId);
         });
 
+        modelo.Entity<AcessoAoEventoRegistro>(entidade =>
+        {
+            entidade.ToTable("AcessosAoEvento");
+            entidade.HasKey(item => new { item.ApresentacaoId, item.Visitante });
+            entidade.Property(item => item.Visitante).HasMaxLength(160);
+        });
+
         modelo.Entity<ContaArtistaRegistro>(entidade =>
         {
             entidade.ToTable("ContasArtistas");
@@ -222,6 +230,13 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 );
                 CREATE INDEX IF NOT EXISTS "IX_ParticipacoesResenha_PublicoId"
                     ON "ParticipacoesResenha" ("PublicoId");
+                CREATE TABLE IF NOT EXISTS "AcessosAoEvento" (
+                    "ApresentacaoId" uuid NOT NULL,
+                    "Visitante" character varying(160) NOT NULL,
+                    "AcessouEm" timestamp with time zone NOT NULL,
+                    CONSTRAINT "PK_AcessosAoEvento"
+                        PRIMARY KEY ("ApresentacaoId", "Visitante")
+                );
                 ALTER TABLE "PedidosMusicais"
                     ADD COLUMN IF NOT EXISTS "FormaParticipacao" integer NOT NULL DEFAULT 0;
                 ALTER TABLE "PedidosMusicais"
@@ -356,6 +371,13 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             );
             CREATE INDEX IF NOT EXISTS "IX_ParticipacoesResenha_PublicoId"
                 ON "ParticipacoesResenha" ("PublicoId");
+            CREATE TABLE IF NOT EXISTS "AcessosAoEvento" (
+                "ApresentacaoId" TEXT NOT NULL,
+                "Visitante" TEXT NOT NULL,
+                "AcessouEm" TEXT NOT NULL,
+                CONSTRAINT "PK_AcessosAoEvento"
+                    PRIMARY KEY ("ApresentacaoId", "Visitante")
+            );
             CREATE TABLE IF NOT EXISTS "ContasArtistas" (
                 "Id" TEXT NOT NULL CONSTRAINT "PK_ContasArtistas" PRIMARY KEY,
                 "Nome" TEXT NOT NULL,

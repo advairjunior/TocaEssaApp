@@ -472,6 +472,19 @@ app.MapPost("/api/publico/apresentacoes/{codigo}/participacoes", (
     return Results.NoContent();
 });
 
+app.MapPost("/api/publico/apresentacoes/{codigo}/acessos", (
+    string codigo, RegistrarAcessoAoEvento requisicao, RepositorioTocaEssa repositorio) =>
+{
+    var visitante = requisicao.Visitante?.Trim();
+    if (string.IsNullOrEmpty(visitante) || visitante.Length > 160)
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["visitante"] = ["Informe o identificador do aparelho."]
+        });
+    repositorio.RegistrarAcessoAoEvento(codigo, visitante);
+    return Results.NoContent();
+});
+
 app.MapGet("/api/publico/apresentacoes/{codigo}/pedidos/{pedidoId:guid}", (
     string codigo, Guid pedidoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
     repositorio.ObterPedidoPublico(codigo, pedidoId, ObterToken(http)) is { } pedido

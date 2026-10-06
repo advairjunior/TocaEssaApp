@@ -123,6 +123,8 @@ public sealed partial class RepositorioTocaEssa
         foreach (var participacao in banco.ParticipacoesResenha.AsNoTracking())
             _participacoesResenha[(participacao.ApresentacaoId,
                 participacao.PublicoId)] = participacao;
+        foreach (var acesso in banco.AcessosAoEvento.AsNoTracking())
+            _acessosAoEvento[(acesso.ApresentacaoId, acesso.Visitante)] = acesso;
         foreach (var sessao in banco.SessoesPublicas.AsNoTracking().AsEnumerable()
                      .Where(item => item.ExpiraEm > DateTimeOffset.UtcNow))
             _sessoesPublicas[sessao.TokenHash] = sessao;
@@ -229,7 +231,8 @@ public sealed partial class RepositorioTocaEssa
             (typeof(MusicaDoRepertorioRegistro),
                 banco => banco.MusicasDoRepertorio.AsNoTracking()),
             (typeof(ItemDoSetlistRegistro), banco => banco.ItensDoSetlist.AsNoTracking()),
-            (typeof(SessaoArtistaRegistro), banco => banco.SessoesArtistas.AsNoTracking())
+            (typeof(SessaoArtistaRegistro), banco => banco.SessoesArtistas.AsNoTracking()),
+            (typeof(AcessoAoEventoRegistro), banco => banco.AcessosAoEvento.AsNoTracking())
         ];
 
     private static Dictionary<Type, Dictionary<string, string>> LerRegistrosGravados(
@@ -332,7 +335,8 @@ public sealed partial class RepositorioTocaEssa
             _repertorios.Values,
             _musicasDoRepertorio.Values,
             _itensDoSetlist.Values,
-            _sessoesArtistas.Values.Where(item => item.ExpiraEm > agora)
+            _sessoesArtistas.Values.Where(item => item.ExpiraEm > agora),
+            _acessosAoEvento.Values
         ];
         return TabelasPersistidas
             .Select((tabela, indice) => (tabela.Tipo, Registros: registrosPorTabela[indice]))
