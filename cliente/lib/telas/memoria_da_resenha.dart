@@ -437,6 +437,14 @@ class _CartaoDaNoite extends StatelessWidget {
                       height: 1.15,
                     ),
                   ),
+                  if (encontro.companhia.isNotEmpty)
+                    Text(
+                      textoDaCompanhia(encontro.companhia),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontSize: 13, color: Color(0xFFD8CFDF)),
+                    ),
                   if (encontro.minhasMusicas.isNotEmpty) ...[
                     const SizedBox(height: 18),
                     const RotuloVersalete('MINHA MÚSICA'),

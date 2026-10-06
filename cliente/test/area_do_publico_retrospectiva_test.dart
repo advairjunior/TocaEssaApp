@@ -12,7 +12,8 @@ String _resenhaJson({String status = 'EmAndamento', String? foto}) =>
 Future<void> _montarResenha(WidgetTester tester,
     {String status = 'EmAndamento',
     bool revisitar = false,
-    String? foto}) async {
+    String? foto,
+    List<String> amigos = const []}) async {
   SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
   final cliente = MockClient((requisicao) async {
     final caminho = requisicao.url.path;
@@ -34,7 +35,9 @@ Future<void> _montarResenha(WidgetTester tester,
     }
     if (caminho.endsWith('/participantes')) {
       return http.Response(
-        '[{"publicoId":"44444444-4444-4444-4444-444444444444","nome":"Ana Souza","fotoUrl":null,"pedidos":2,"pedidosTocados":1,"mediaAvaliacoes":null,"musicasMaisPedidas":[{"musica":"Evidências","quantidade":2}]}]',
+        '[{"publicoId":"44444444-4444-4444-4444-444444444444","nome":"Ana Souza","fotoUrl":null,"pedidos":2,"pedidosTocados":1,"mediaAvaliacoes":null,"musicasMaisPedidas":[{"musica":"Evidências","quantidade":2}]}'
+        '${amigos.map((nome) => ',{"publicoId":"$nome","nome":"$nome","pedidos":0,"pedidosTocados":0,"musicasMaisPedidas":[]}').join()}'
+        ',{"publicoId":"artista","nome":"Duo Aurora","pedidos":0,"pedidosTocados":0,"musicasMaisPedidas":[],"ehArtista":true}]',
         200,
       );
     }
@@ -51,8 +54,10 @@ Future<void> _montarResenha(WidgetTester tester,
 }
 
 Future<void> _abrirNestaResenha(WidgetTester tester,
-    {String status = 'EmAndamento', String? foto}) async {
-  await _montarResenha(tester, status: status, foto: foto);
+    {String status = 'EmAndamento',
+    String? foto,
+    List<String> amigos = const []}) async {
+  await _montarResenha(tester, status: status, foto: foto, amigos: amigos);
   await tester.tap(find.byTooltip('Meu perfil'));
   await tester.pumpAndSettle();
   await tester.tap(find.text('Nesta resenha'));
@@ -83,6 +88,21 @@ void main() {
     ));
     expect(salvar.onPressed, isNotNull);
     expect(find.text('Colocar minha foto'), findsOneWidget);
+  });
+
+  testWidgets('cartão diz com quem a pessoa estava, sem contar o artista',
+      (tester) async {
+    await _abrirNestaResenha(tester, amigos: ['Bia', 'Caio', 'Davi', 'Edu']);
+    await tester.ensureVisible(find.text('Minha retrospectiva'));
+
+    expect(find.text('com Bia, Caio e mais 2'), findsOneWidget);
+  });
+
+  testWidgets('sozinho na resenha, o cartão não inventa companhia',
+      (tester) async {
+    await _abrirNestaResenha(tester);
+
+    expect(find.textContaining('com Duo Aurora'), findsNothing);
   });
 
   testWidgets('sem foto própria, o cartão usa a foto do encontro do artista',

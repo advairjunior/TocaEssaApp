@@ -101,6 +101,13 @@ void main() {
     expect(find.text('pedidos'), findsWidgets);
   });
 
+  testWidgets('cartão para compartilhar diz com quem a pessoa estava',
+      (tester) async {
+    await _montar(tester, _encontro(companhia: ['Bia', 'Caio', 'Davi']));
+
+    expect(find.text('com Bia, Caio e mais 1'), findsOneWidget);
+  });
+
   testWidgets('show sem pedidos nem companhia não inventa seções',
       (tester) async {
     await _montar(tester,

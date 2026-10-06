@@ -50,6 +50,16 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
           child: _CartaoRetrospectivaDoPublico(
             apresentacao: apresentacao,
             participante: participante,
+            companhia: [
+              for (final pessoa in _participantesDaResenha)
+                if (!pessoa.ehArtista &&
+                    pessoa.publicoId != participante.publicoId)
+                  PessoaDoEncontro(
+                    publicoId: pessoa.publicoId,
+                    nome: pessoa.nome,
+                    fotoUrl: pessoa.fotoUrl,
+                  ),
+            ],
             foto: _fotoRetrospectivaPublico,
             enderecoFotoDoEncontro:
                 _api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
@@ -81,12 +91,16 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
   const _CartaoRetrospectivaDoPublico({
     required this.apresentacao,
     required this.participante,
+    required this.companhia,
     required this.foto,
     required this.enderecoFotoDoEncontro,
   });
 
   final Apresentacao apresentacao;
   final ParticipanteDaResenha participante;
+
+  /// Quem mais estava na resenha, sem o artista e sem a própria pessoa.
+  final List<PessoaDoEncontro> companhia;
   final Uint8List? foto;
 
   /// Foto que o artista publicou do encontro; fundo quando não há foto própria.
@@ -172,6 +186,14 @@ class _CartaoRetrospectivaDoPublico extends StatelessWidget {
                         '${apresentacao.nome} · ${formatarData(apresentacao.data)}',
                         style: const TextStyle(color: Color(0xFFD8CFDF)),
                       ),
+                      if (companhia.isNotEmpty)
+                        Text(
+                          textoDaCompanhia(companhia),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 13, color: CoresTocaEssa.roxoClaro),
+                        ),
                       const Spacer(),
                       if (participante.musicasMaisPedidas.isNotEmpty) ...[
                         const Text('MINHA MÚSICA DA RESENHA',
