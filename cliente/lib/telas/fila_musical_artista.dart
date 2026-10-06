@@ -12,6 +12,7 @@ import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import 'estatisticas_da_apresentacao.dart';
+import 'publico_no_app.dart';
 import 'escolher_cifra.dart';
 
 part 'fila_musical_artista_cifras.dart';
@@ -41,6 +42,9 @@ class FilaMusicalArtista extends StatefulWidget {
 
 class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   List<GrupoPedidoMusical> _pedidos = [];
+
+  /// Quem está no evento pelo app; some se não der para buscar.
+  EstatisticasDaApresentacao? _publico;
   bool _carregando = true;
   bool _atualizando = false;
   late int _abaSelecionada;
@@ -117,9 +121,23 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     super.dispose();
   }
 
+  // Vai junto com a fila, inclusive nos avisos em tempo real: quem abre o
+  // evento faz o número subir enquanto o artista toca.
+  Future<void> _atualizarPublico() async {
+    if (widget.apresentacao.status == StatusApresentacao.encerrada) return;
+    try {
+      final publico = await widget.api
+          .obterEstatisticasDaApresentacao(widget.apresentacao.id);
+      if (mounted) setState(() => _publico = publico);
+    } catch (_) {
+      // Sem o número, a fila continua funcionando normalmente.
+    }
+  }
+
   Future<void> _carregarSilenciosamente() async {
     if (_atualizando || !mounted) return;
     _atualizando = true;
+    unawaited(_atualizarPublico());
     try {
       final pedidos = await widget.api
           .listarGruposDePedidosDoArtista(widget.apresentacao.id);
@@ -132,6 +150,7 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   }
 
   Future<void> _carregar() async {
+    unawaited(_atualizarPublico());
     try {
       final pedidos = await widget.api
           .listarGruposDePedidosDoArtista(widget.apresentacao.id);

@@ -12,6 +12,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'componentes_memoria.dart';
+import 'publico_no_app.dart';
 
 part 'estatisticas_da_apresentacao_componentes.dart';
 part 'estatisticas_da_apresentacao_acoes.dart';
@@ -163,6 +164,14 @@ class _EstatisticasDaApresentacaoTelaState
                   ),
                 ],
               ),
+              if (dados.pessoasNoEvento > 0) ...[
+                const SizedBox(height: EspacoTocaEssa.pequeno),
+                PublicoNoApp(
+                  pessoas: dados.pessoasNoEvento,
+                  pediram: dados.pessoasQuePediram,
+                  mostrarDica: false,
+                ),
+              ],
               const SizedBox(height: EspacoTocaEssa.base),
               Container(
                 padding:

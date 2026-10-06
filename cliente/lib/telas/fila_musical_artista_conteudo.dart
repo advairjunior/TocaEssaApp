@@ -14,6 +14,13 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
         children: [
           if (!widget.incorporada)
             _ResumoApresentacao(apresentacao: widget.apresentacao),
+          if (_publico case final publico?) ...[
+            const SizedBox(height: EspacoTocaEssa.mini),
+            PublicoNoApp(
+              pessoas: publico.pessoasNoEvento,
+              pediram: publico.pessoasQuePediram,
+            ),
+          ],
           if (_tocando.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.pequeno),
             const TituloGrupo('Tocando agora'),
