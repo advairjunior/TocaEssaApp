@@ -59,6 +59,15 @@ arquivo.
   - aviso "X músicas sem cifra" com Resolver em sequência (Pesquisar na web e
     Colar e próxima); ícone de cifra em amarelo quando falta;
   - uma única aba de cifra: cada cifra nova fecha a anterior.
+- Tocar a seguir: na fila, o pedido aceito pode ser marcado para entrar
+  antes do setlist na barra Próxima. A marcação fica no aparelho
+  (`PedidosASeguir`, `shared_preferences`), por apresentação. Tocar um
+  pedido o coloca em Tocando agora e encerra o que estava tocando.
+- Modo palco (botão no topo da setlist): tela única com a música atual em
+  letra grande, a barra Próxima, alôs, pedidos novos (aceitar/recusar) e
+  aceitos (tocar a seguir); tempo real e tela sempre acesa (Wake Lock).
+- Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
+  `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
   as fotos dos cartões.
 
@@ -70,6 +79,8 @@ O proprietário testa e usa no iPhone. Testes de widget não pegam:
 - Área de transferência só é lida com o app em primeiro plano e pode pedir
   confirmação ("Colar").
 - Gestos de arrastar precisaram de ajuste específico para o iPhone.
+- Manter a tela acesa (Wake Lock) é solto quando a aba fica escondida e
+  precisa ser pedido de novo ao voltar (`tela_acesa_web.dart`).
 
 ### Investigações registradas
 
