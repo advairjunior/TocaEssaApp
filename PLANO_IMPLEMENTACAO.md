@@ -81,3 +81,23 @@ cada uma começa por uma investigação antes de virar plano.
   - Como fica no iPhone, tanto no Safari quanto com o app instalado na tela
     inicial.
 - **Registrada em:** 2026-10-08.
+
+### Busca automática do link da cifra
+
+- **Problema:** cadastrar a cifra de um repertório grande, música por música,
+  toma tempo, mesmo com o Colar e próxima.
+- **Ideia:** um botão "Buscar automaticamente" no aviso de músicas sem cifra,
+  que encontra e salva o link de todas de uma vez, marcadas para conferir.
+- **Já investigado (2026-10-08):**
+  - O Cifra Club bloqueia qualquer acesso automático (proteção anti-robô da
+    Akamai, resposta 403 até no `robots.txt`). Montar o link e conferir se a
+    página existe não é viável, e contornar o bloqueio está fora de questão.
+  - Ler os resultados do Google pelo servidor ou pelo navegador também não é
+    possível: o Google bloqueia leitura automática e o navegador impede um
+    site de ler outro.
+  - Caminho viável: uma API de busca, como a Brave Search API. Exige conta,
+    chave guardada como variável de ambiente no Render (fora do repositório)
+    e provavelmente cartão. Preço em 2026, a confirmar na página oficial:
+    cerca de US$ 5 por 1.000 buscas com US$ 5 de crédito mensal. Cada música
+    é buscada uma única vez.
+- **Registrada em:** 2026-10-08.
