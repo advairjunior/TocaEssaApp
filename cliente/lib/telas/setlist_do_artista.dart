@@ -184,12 +184,14 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     return Column(
       children: [
         Expanded(child: _construirLista(context, proxima?.item)),
-        if (proxima != null)
+        if (proxima != null || ultimaComecada != null)
           BarraProximaMusica(
-            titulo: proxima.titulo,
+            titulo: proxima?.titulo,
             detalhe: _sequencia.detalheDaProxima,
             salvando: _sequencia.salvando,
             tocar: tocarProxima,
+            comecou: ultimaComecada?.titulo,
+            desfazer: desfazerUltima,
           ),
       ],
     );

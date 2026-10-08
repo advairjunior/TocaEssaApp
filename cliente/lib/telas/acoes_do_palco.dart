@@ -37,20 +37,29 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
       return;
     }
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(musica.pedido != null
-            ? '${musica.titulo} tocando agora.'
-            : '${musica.titulo} marcada como tocada.'),
-        action: SnackBarAction(
-          label: 'Desfazer',
-          onPressed: () => executar(desfazer),
-        ),
-      ));
+    // O desfazer fica na própria barra: um aviso no rodapé cobriria a
+    // próxima música justamente quando o artista precisa vê-la.
+    setState(() {
+      ultimaComecada = musica;
+      _desfazerUltima = desfazer;
+    });
     if (url == null && preBuscada != null) {
       await mostrarEscolhaDaCifra(musica, preBuscada);
     }
+  }
+
+  /// Última música começada pelo Tocar, enquanto ainda dá para desfazer.
+  MusicaDoPalco? ultimaComecada;
+  Future<void> Function()? _desfazerUltima;
+
+  Future<void> desfazerUltima() async {
+    final desfazer = _desfazerUltima;
+    if (desfazer == null) return;
+    setState(() {
+      ultimaComecada = null;
+      _desfazerUltima = null;
+    });
+    await executar(desfazer);
   }
 
   Future<void> executar(Future<void> Function() acao) async {

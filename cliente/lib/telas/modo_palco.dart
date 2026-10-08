@@ -114,12 +114,14 @@ class _ModoPalcoState extends State<ModoPalco> with AcoesDoPalco<ModoPalco> {
           : Column(
               children: [
                 Expanded(child: _construirConteudo(context)),
-                if (proxima != null)
+                if (proxima != null || ultimaComecada != null)
                   BarraProximaMusica(
-                    titulo: proxima.titulo,
+                    titulo: proxima?.titulo,
                     detalhe: _sequencia.detalheDaProxima,
                     salvando: _sequencia.salvando,
                     tocar: tocarProxima,
+                    comecou: ultimaComecada?.titulo,
+                    desfazer: desfazerUltima,
                   ),
               ],
             ),

@@ -182,6 +182,26 @@ void main() {
     expect(find.text('Próxima: Evidências'), findsOneWidget);
   });
 
+  testWidgets('depois de tocar, a próxima continua visível e dá para desfazer',
+      (tester) async {
+    final palco = await _abrir(tester);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('Próxima: Evidências').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('Desfazer'));
+    await tester.pumpAndSettle();
+
+    final desmarcacao =
+        palco.requisicoes.where((r) => r.url.path.endsWith('/tocada')).last;
+    expect(desmarcacao.body, contains('"tocada":false'));
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+    expect(find.text('Desfazer'), findsNothing);
+  });
+
   testWidgets('pedido que já está tocando aparece ao abrir', (tester) async {
     await _abrir(tester, grupos: [_grupo('p9', 'Asa Branca', 'TocandoAgora')]);
 

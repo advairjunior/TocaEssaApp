@@ -435,6 +435,19 @@ void main() {
     expect(find.text('Próxima: Evidências'), findsOneWidget);
   });
 
+  testWidgets('depois de tocar, o desfazer fica na barra sem cobrir a próxima',
+      (tester) async {
+    await _abrir(tester, abertas: []);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('Começou: Velha Infância'), findsOneWidget);
+    expect(find.text('Próxima: Evidências').hitTestable(), findsOneWidget);
+    expect(find.text('Desfazer').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('desfazer volta a música para a próxima', (tester) async {
     final requisicoes = await _abrir(tester, abertas: []);
 
@@ -495,7 +508,7 @@ void main() {
         r.url.path == '/api/apresentacoes/$_id/grupos-pedidos/p1/status');
     expect(status.body, contains('"status":"TocandoAgora"'));
     expect(await PedidosASeguir.ler(_id), isEmpty);
-    expect(find.text('Evidências tocando agora.'), findsOneWidget);
+    expect(find.text('Começou: Evidências'), findsOneWidget);
     expect(find.text('Próxima: Velha Infância'), findsOneWidget);
   });
 
