@@ -40,8 +40,10 @@ Future<List<http.Request>> _abrir(
   List<Map<String, Object?>>? itens,
   List<Uri>? abertas,
   bool comCifraSalva = true,
+  Set<String> musicasSemCifra = const {},
 }) async {
   final requisicoes = <http.Request>[];
+  final salvas = <String>{};
   final lista = itens ??
       [
         _item('1', 'Garota de Ipanema', 1, tocada: true),
@@ -84,9 +86,12 @@ Future<List<http.Request>> _abrir(
       );
     }
     if (caminho.endsWith('/cifras/consulta')) {
+      final musica = requisicao.url.queryParameters['musica'];
+      final temCifra = salvas.contains(musica) ||
+          (comCifraSalva && !musicasSemCifra.contains(musica));
       return http.Response(
         jsonEncode({
-          'cifra': comCifraSalva ? _cifra(_cifraSalva) : null,
+          'cifra': temCifra ? _cifra(_cifraSalva) : null,
           'urlPesquisa': 'https://www.google.com/search?q=cifra',
         }),
         200,
@@ -95,6 +100,7 @@ Future<List<http.Request>> _abrir(
     }
     if (caminho.endsWith('/cifras') && requisicao.method == 'PUT') {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      salvas.add(corpo['musica'] as String);
       return http.Response(jsonEncode(_cifra(corpo['url'] as String)), 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
@@ -209,13 +215,89 @@ void main() {
     expect(find.text('Tocar'), findsOneWidget);
   });
 
-  testWidgets('cifra da próxima música é buscada antes do toque',
-      (tester) async {
+  testWidgets('cifras do setlist são buscadas antes do toque', (tester) async {
     final requisicoes = await _abrir(tester);
 
-    final consultas =
-        requisicoes.where((r) => r.url.path.endsWith('/cifras/consulta'));
-    expect(consultas.single.url.queryParameters['musica'], 'Velha Infância');
+    final consultadas = requisicoes
+        .where((r) => r.url.path.endsWith('/cifras/consulta'))
+        .map((r) => r.url.queryParameters['musica'])
+        .toSet();
+    expect(consultadas, {'Garota de Ipanema', 'Velha Infância', 'Evidências'});
+  });
+
+  testWidgets('avisa quantas músicas que faltam tocar estão sem cifra',
+      (tester) async {
+    await _abrir(tester, musicasSemCifra: {
+      'Garota de Ipanema',
+      'Velha Infância',
+      'Evidências',
+    });
+
+    expect(find.text('2 músicas sem cifra'), findsOneWidget);
+    expect(find.text('Resolver'), findsOneWidget);
+  });
+
+  testWidgets('com todas as cifras salvas, não mostra o aviso', (tester) async {
+    await _abrir(tester);
+
+    expect(find.textContaining('sem cifra'), findsNothing);
+  });
+
+  testWidgets('resolver pede a cifra de cada música sem cifra, em sequência',
+      (tester) async {
+    final requisicoes =
+        await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
+
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+    expect(find.text('Escolher cifra'), findsOneWidget);
+    await tester.enterText(
+        find.byType(TextField), 'https://www.cifraclub.com.br/a/velha/');
+    await tester.tap(find.text('Confirmar cifra'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Escolher cifra'), findsOneWidget);
+    await tester.enterText(
+        find.byType(TextField), 'https://www.cifraclub.com.br/a/evidencias/');
+    await tester.tap(find.text('Confirmar cifra'));
+    await tester.pumpAndSettle();
+
+    final salvas = requisicoes
+        .where((r) => r.method == 'PUT')
+        .map((r) => (jsonDecode(r.body) as Map)['musica']);
+    expect(salvas, ['Velha Infância', 'Evidências']);
+    expect(find.text('Escolher cifra'), findsNothing);
+    expect(find.textContaining('sem cifra'), findsNothing);
+  });
+
+  testWidgets('fechar a escolha interrompe o resolver', (tester) async {
+    await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
+
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Fechar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Escolher cifra'), findsNothing);
+    expect(find.text('2 músicas sem cifra'), findsOneWidget);
+  });
+
+  testWidgets('barra mostra o tom da próxima e a música seguinte',
+      (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('Tom G · Depois: Evidências'), findsOneWidget);
+  });
+
+  testWidgets('na última música, a barra não mostra a seguinte',
+      (tester) async {
+    await _abrir(tester, itens: [
+      _item('1', 'Garota de Ipanema', 1, tocada: true),
+      _item('2', 'Velha Infância', 2),
+    ]);
+
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+    expect(find.textContaining('Depois:'), findsNothing);
   });
 
   testWidgets('tocar abre a cifra da próxima e marca como tocada',
