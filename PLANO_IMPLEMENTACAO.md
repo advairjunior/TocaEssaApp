@@ -33,9 +33,9 @@ Fluxo identificado, pensado para encontros recorrentes de um grupo.
 
 ## Ordem de implementação
 
-1. Adicionar `Pública` e `Resenha entre Amigos` na criação e edição da Apresentação. Apresentações existentes serão consideradas públicas.
-2. Ajustar os textos e a Área do Público conforme o tipo, mantendo o fluxo atual intacto para apresentações públicas.
-3. Adicionar foto ao Perfil Artístico e criar a base de armazenamento de imagens.
+1. ✅ Adicionar `Pública` e `Resenha entre Amigos` na criação e edição da Apresentação. Apresentações existentes serão consideradas públicas.
+2. ✅ Ajustar os textos e a Área do Público conforme o tipo, mantendo o fluxo atual intacto para apresentações públicas.
+3. ✅ Adicionar foto ao Perfil Artístico e criar a base de armazenamento de imagens.
 4. ✅ Migrar os dados locais em JSON para SQLite, com importação automática dos dados existentes.
 5. ✅ Implementar autenticação por e-mail e senha, sessão persistente e Perfil do Público com foto somente para Resenha entre Amigos.
 6. ✅ Registrar avaliações de 1 a 5 estrelas depois que uma música for tocada e exibi-las ao artista.
@@ -44,7 +44,7 @@ Fluxo identificado, pensado para encontros recorrentes de um grupo.
 9. ✅ Criar conta do artista, sessão persistente e proteger o Painel do Artista.
 10. ✅ Detalhar participantes e estatísticas coletivas da Resenha entre Amigos.
 11. ✅ Evoluir o compartilhamento para imagens com estatísticas e foto opcional do encontro, prontas para redes sociais.
-12. Substituir a atualização periódica por comunicação em tempo real.
+12. ✅ Substituir a atualização periódica por comunicação em tempo real.
 
 ## Regras para manter o produto simples
 
@@ -101,3 +101,31 @@ cada uma começa por uma investigação antes de virar plano.
     cerca de US$ 5 por 1.000 buscas com US$ 5 de crédito mensal. Cada música
     é buscada uma única vez.
 - **Registrada em:** 2026-10-08.
+
+### No palco
+
+- **Tom, capotraste e observação por música no repertório:** salvar uma vez
+  ("Tom G, capo 2, começa só voz") e mostrar na barra da próxima música.
+- **Cronômetro do show:** tempo tocado e restante do contrato, com estimativa
+  de quantas músicas ainda cabem.
+- **Modo sem internet:** guardar setlist e links das cifras no aparelho para a
+  área do artista seguir funcionando se a rede do bar cair.
+
+### Para o público
+
+- **Tocando agora e posição na fila:** o público vê a música atual e em que
+  posição está o próprio pedido.
+- **Gorjeta ligada ao pedido:** selo de "pedido com apoio" ou prioridade na
+  fila. Mexe com dinheiro e com a percepção do público; decidir com cuidado.
+- **Dedicatória no pedido:** "Pra Ana, aniversariante", para o artista ler ao
+  microfone.
+- **Seguir o artista:** deixar contato para saber da próxima apresentação.
+
+### Carreira e negócio do artista
+
+- **Músicas que mais funcionam:** mais pedidas e ainda fora do repertório,
+  mais bem avaliadas, a partir de pedidos, avaliações e setlists.
+- **Agenda pública do artista:** página com as próximas apresentações.
+- **Avisar seguidores do próximo show:** depende de Seguir o artista.
+- **Relatório do show para o contratante:** público pelo app, pedidos e
+  avaliação média, como argumento para negociar cachê.

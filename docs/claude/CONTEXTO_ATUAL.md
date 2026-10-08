@@ -1,6 +1,6 @@
 # TocaEssaApp — Contexto atual
 
-> Atualizado em: 2026-10-01
+> Atualizado em: 2026-10-08
 
 ## Arquitetura
 
@@ -18,8 +18,10 @@
 ContaArtista
 ├── PerfilArtistico (1:1, isolado por ArtistaId)
 ├── CifrasDoArtista (1:N, isoladas por ArtistaId)
+├── Repertorios (1:N, isolados por ArtistaId)
 └── Apresentacoes (1:N, isoladas por ArtistaId)
     ├── Pedidos e fila
+    ├── Setlist
     ├── ParticipacoesResenha
     ├── Avaliacoes
     ├── Fotos
@@ -30,39 +32,49 @@ ContaArtista
 Rotas públicas (por código de apresentação) continuam acessíveis sem token.
 Operações privadas sempre extraem a conta do token — nunca aceitam `ArtistaId` do cliente.
 
-## Estado atual (2026-10-01)
+## Estado atual (2026-10-08)
 
-- Branch `main` com 1 commit à frente da `origin/main` (não publicado).
-- `.vs/` untracked localmente (normal, Visual Studio).
-- Implementação multiartista completa (Tasks 1–7 entregues).
+O roadmap do `PLANO_IMPLEMENTACAO.md` está todo entregue. Novas ideias ficam na
+seção **Banco de ideias** do mesmo arquivo. O estado do Git muda a cada sessão:
+confira com `git status` e `git log --oneline -15` em vez de confiar neste
+arquivo.
 
-### Commits recentes
+### O que o app faz hoje
 
-```
-d1620ee docs: definir transicao para claude code
-7d5adc8 docs: registrar deploy multiartista
-10a5e03 refactor: restringir apis legadas sem token
-daddd4e test: validar primeira experiencia multiartista
-2da47f7 feat: aplicar isolamento multiartista na api
-```
+**Público (sem conta, pelo código ou QR Code)**
+- Entra no evento, faz Pedido Musical, acompanha a fila e avalia músicas tocadas.
+- Pix do artista (copia e cola ou chave), contagem de quem abriu o evento.
+- Resenha entre Amigos: conta com foto, histórico em linha do tempo,
+  retrospectiva do ano e cartões compartilháveis com foto do encontro.
 
-### Status da implementação (`PLANO_IMPLEMENTACAO.md`)
+**Artista (conta própria, isolado por `ArtistaId`)**
+- Perfil artístico com foto e perfil público; apresentações Pública ou Resenha.
+- Fila musical em tempo real (SSE em `/api/tempo-real/{codigo}`, com
+  atualização periódica como reserva).
+- Repertórios ordenáveis; setlist da apresentação segue o repertório.
+- Cifras por música (link salvo por conta). Na setlist:
+  - todas as cifras são buscadas ao abrir, para abrir na hora no palco;
+  - barra fixa "Próxima" com Tocar (abre a cifra e marca como tocada), tom e
+    a música seguinte;
+  - aviso "X músicas sem cifra" com Resolver em sequência (Pesquisar na web e
+    Colar e próxima); ícone de cifra em amarelo quando falta;
+  - uma única aba de cifra: cada cifra nova fecha a anterior.
+- Estatísticas da apresentação e retrospectiva do artista; câmera no app para
+  as fotos dos cartões.
 
-Concluídos:
-- Migração JSON → SQLite
-- Autenticação por e-mail e senha, sessão persistente
-- Avaliações de 1 a 5 estrelas
-- Estatísticas privadas e histórico pessoal
-- Retrospectivas e cartões compartilháveis
-- Conta do artista e proteção do painel
-- Detalhes de participantes e estatísticas coletivas
-- Compartilhamento com imagens e foto do encontro
-- **Multiartista: isolamento completo por conta artística**
+### Lições do iPhone/Safari
 
-Pendentes:
-- Foto no Perfil Artístico (base de armazenamento de imagens)
-- Dois tipos de Apresentação: Pública e Resenha entre Amigos
-- Comunicação em tempo real (substituir polling)
+O proprietário testa e usa no iPhone. Testes de widget não pegam:
+- Safari só abre aba nova como resposta direta a um toque: abrir a aba antes
+  de qualquer `await` (`prepararAbertura`).
+- Área de transferência só é lida com o app em primeiro plano e pode pedir
+  confirmação ("Colar").
+- Gestos de arrastar precisaram de ajuste específico para o iPhone.
+
+### Investigações registradas
+
+- Cifra Club bloqueia acesso automático (Akamai, 403). Ler resultados do
+  Google também não é viável. Detalhes no Banco de ideias.
 
 ## Decisões de arquitetura registradas
 

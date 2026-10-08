@@ -25,11 +25,10 @@ Se algum item falhar, peça: `Releia docs/claude/CONTEXTO_ATUAL.md e CLAUDE.md`.
 
 ## Contexto de cada área de trabalho
 
-### Próximas features planejadas (ver `PLANO_IMPLEMENTACAO.md`)
+### Próximas features
 
-1. Foto no Perfil Artístico — base de armazenamento de imagens.
-2. Dois tipos de Apresentação: Pública e Resenha entre Amigos.
-3. Comunicação em tempo real (substituir polling).
+O roadmap original está entregue. As ideias futuras, com o que já foi
+investigado, ficam na seção **Banco de ideias** do `PLANO_IMPLEMENTACAO.md`.
 
 ### Verificação rápida do estado do projeto
 
