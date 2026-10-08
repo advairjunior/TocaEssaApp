@@ -281,13 +281,11 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
 
   int get _tocadas => _itens.where((i) => i.tocada).length;
   int get _proximaIndex => _itens.indexWhere((i) => !i.tocada);
-  List<ItemDoSetlist> get _semCifra => [
-        for (final item in _itens)
-          if (!item.tocada &&
-              _cifras[item.id] != null &&
-              _cifras[item.id]!.cifra == null)
-            item,
-      ];
+  // Só conta como sem cifra depois de consultada, para não acusar falha de rede.
+  bool _estaSemCifra(ItemDoSetlist item) =>
+      _cifras.containsKey(item.id) && _cifras[item.id]!.cifra == null;
+  List<ItemDoSetlist> get _semCifra =>
+      _itens.where((i) => !i.tocada && _estaSemCifra(i)).toList();
 
   /// Tom da próxima e a música que vem depois dela, para já se preparar.
   String? _detalheDaProxima(int proxima) {
@@ -355,6 +353,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
                   item: item,
                   salvando: _salvando,
                   eProxima: indice == proxima,
+                  semCifra: _estaSemCifra(item),
                   pedidosNaFila:
                       _pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
                   marcar: (tocada) => _marcar(item, tocada),
@@ -559,6 +558,7 @@ class _LinhaSetlist extends StatelessWidget {
     required this.item,
     required this.salvando,
     required this.eProxima,
+    required this.semCifra,
     required this.pedidosNaFila,
     required this.marcar,
     required this.abrirCifra,
@@ -568,6 +568,8 @@ class _LinhaSetlist extends StatelessWidget {
   final ItemDoSetlist item;
   final bool salvando;
   final bool eProxima;
+  // Cifra já consultada e sem link salvo: o ícone fica em destaque.
+  final bool semCifra;
   final int pedidosNaFila;
   final ValueChanged<bool> marcar;
   final VoidCallback abrirCifra;
@@ -664,9 +666,10 @@ class _LinhaSetlist extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Ver cifra',
-            icon: const Icon(Icons.menu_book_rounded,
-                color: CoresTocaEssa.roxoClaro),
+            tooltip: semCifra ? 'Música sem cifra' : 'Ver cifra',
+            icon: Icon(Icons.menu_book_rounded,
+                color:
+                    semCifra ? CoresTocaEssa.atencao : CoresTocaEssa.roxoClaro),
             onPressed: abrirCifra,
           ),
           IconButton(

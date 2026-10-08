@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 import 'package:toca_essa_app/telas/setlist_do_artista.dart';
 
 const _id = '33333333-3333-3333-3333-333333333333';
@@ -235,6 +236,22 @@ void main() {
 
     expect(find.text('2 músicas sem cifra'), findsOneWidget);
     expect(find.text('Resolver'), findsOneWidget);
+  });
+
+  testWidgets('música sem cifra mostra o ícone da cifra em amarelo',
+      (tester) async {
+    await _abrir(tester, musicasSemCifra: {'Evidências'});
+
+    final icones = tester
+        .widgetList<Icon>(find.byIcon(Icons.menu_book_rounded))
+        .map((icone) => icone.color)
+        .toList();
+    expect(icones, [
+      CoresTocaEssa.roxoClaro,
+      CoresTocaEssa.roxoClaro,
+      CoresTocaEssa.atencao,
+    ]);
+    expect(find.byTooltip('Música sem cifra'), findsOneWidget);
   });
 
   testWidgets('com todas as cifras salvas, não mostra o aviso', (tester) async {
