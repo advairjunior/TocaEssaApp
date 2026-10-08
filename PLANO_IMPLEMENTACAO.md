@@ -59,3 +59,25 @@ Fluxo identificado, pensado para encontros recorrentes de um grupo.
 - Método de login da Resenha: e-mail e senha, código por e-mail ou provedor social.
 - Armazenamento definitivo das fotos quando o aplicativo for publicado.
 - Quais estatísticas e cartões poderão ser compartilhados fora do grupo.
+
+## Banco de ideias
+
+Ideias registradas para avaliar no futuro. Nenhuma tem compromisso de entrega;
+cada uma começa por uma investigação antes de virar plano.
+
+### Cifra dentro do próprio app
+
+- **Problema:** no palco, cada música abre a cifra numa aba do navegador e o
+  artista precisa alternar entre o app e a cifra. Mesmo com uma única aba de
+  cifra, essa troca gera silêncio entre uma música e outra.
+- **Ideia:** mostrar a cifra dentro do TocaEssa, sem sair do app.
+- **Investigar antes:**
+  - Se o Cifra Club (e outros sites salvos pelos artistas) permite ser exibido
+    numa janela dentro do app ou bloqueia isso.
+  - Se é possível trazer o conteúdo pelo servidor e mostrá-lo no app, e se os
+    termos de uso dos sites permitem.
+  - Alternativa: o artista colar ou digitar a cifra no próprio app, guardada
+    junto com a música.
+  - Como fica no iPhone, tanto no Safari quanto com o app instalado na tela
+    inicial.
+- **Registrada em:** 2026-10-08.
