@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../dominio/modelos.dart';
+import '../infraestrutura/url_externa_validacao.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
@@ -18,12 +19,16 @@ class DecisaoCifra {
 
 /// Abre a escolha de cifra em tela cheia: o link fica no topo e o botão de
 /// confirmar fica na barra superior, onde o teclado virtual nunca o cobre.
+///
+/// Com [rotuloColarEProxima], a escolha faz parte de uma sequência: em cima
+/// ficam Pesquisar na web e um botão que cola o link copiado e já confirma.
 Future<DecisaoCifra?> mostrarEscolhaDeCifra(
   BuildContext context, {
   required String musica,
   required String? artista,
   required ResultadoCifraDoArtista resultado,
   required Future<void> Function(Uri url) abrirUrl,
+  String? rotuloColarEProxima,
 }) =>
     Navigator.of(context).push<DecisaoCifra>(MaterialPageRoute(
       fullscreenDialog: true,
@@ -32,6 +37,7 @@ Future<DecisaoCifra?> mostrarEscolhaDeCifra(
         artista: artista,
         resultado: resultado,
         abrirUrl: abrirUrl,
+        rotuloColarEProxima: rotuloColarEProxima,
       ),
     ));
 
@@ -41,12 +47,14 @@ class _EscolherCifra extends StatefulWidget {
     required this.artista,
     required this.resultado,
     required this.abrirUrl,
+    required this.rotuloColarEProxima,
   });
 
   final String musica;
   final String? artista;
   final ResultadoCifraDoArtista resultado;
   final Future<void> Function(Uri url) abrirUrl;
+  final String? rotuloColarEProxima;
 
   @override
   State<_EscolherCifra> createState() => _EscolherCifraState();
@@ -101,6 +109,21 @@ class _EscolherCifraState extends State<_EscolherCifra> {
     _url.text = texto;
   }
 
+  /// Cola o link copiado da pesquisa e já confirma, num único toque.
+  Future<void> _colarEConfirmar() async {
+    final dados = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return;
+    final texto = dados?.text?.trim() ?? '';
+    final endereco = Uri.tryParse(texto);
+    if (endereco == null || !urlExternaPermitida(endereco)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Copie o link da cifra antes de colar.')),
+      );
+      return;
+    }
+    _salvar(texto);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
@@ -132,6 +155,20 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                       .bodyLarge
                       ?.copyWith(color: CoresTocaEssa.textoSecundario),
                 ),
+              if (widget.rotuloColarEProxima case final rotulo?) ...[
+                const SizedBox(height: EspacoTocaEssa.grande),
+                OutlinedButton.icon(
+                  onPressed: () => _abrir(widget.resultado.urlPesquisa),
+                  icon: const Icon(Icons.search_rounded),
+                  label: const Text('Pesquisar na web'),
+                ),
+                const SizedBox(height: EspacoTocaEssa.medio),
+                FilledButton.icon(
+                  onPressed: _colarEConfirmar,
+                  icon: const Icon(Icons.content_paste_go_rounded),
+                  label: Text(rotulo),
+                ),
+              ],
               const SizedBox(height: EspacoTocaEssa.grande),
               CampoTexto(
                 rotulo: 'Link da cifra',
@@ -154,9 +191,12 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                   label: const Text('Abrir link para conferir'),
                 ),
               ),
-              const SizedBox(height: EspacoTocaEssa.enorme),
-              const TituloGrupo('Não tem o link?'),
-              const SizedBox(height: EspacoTocaEssa.mini),
+              if (widget.rotuloColarEProxima == null ||
+                  widget.resultado.urlSugerida != null) ...[
+                const SizedBox(height: EspacoTocaEssa.enorme),
+                const TituloGrupo('Não tem o link?'),
+                const SizedBox(height: EspacoTocaEssa.mini),
+              ],
               if (widget.resultado.urlSugerida case final sugestao?) ...[
                 FilledButton.icon(
                   onPressed: () => _abrirSugestao(sugestao),
@@ -165,11 +205,12 @@ class _EscolherCifraState extends State<_EscolherCifra> {
                 ),
                 const SizedBox(height: 12),
               ],
-              OutlinedButton.icon(
-                onPressed: () => _abrir(widget.resultado.urlPesquisa),
-                icon: const Icon(Icons.search_rounded),
-                label: const Text('Pesquisar na web'),
-              ),
+              if (widget.rotuloColarEProxima == null)
+                OutlinedButton.icon(
+                  onPressed: () => _abrir(widget.resultado.urlPesquisa),
+                  icon: const Icon(Icons.search_rounded),
+                  label: const Text('Pesquisar na web'),
+                ),
               if (widget.resultado.cifra != null) ...[
                 const SizedBox(height: 32),
                 Align(

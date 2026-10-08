@@ -186,7 +186,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
 
   /// Responde se o artista decidiu algo; falso quando fechou sem escolher.
   Future<bool> _mostrarEscolhaDaCifra(
-      ItemDoSetlist item, ResultadoCifraDoArtista resultado) async {
+      ItemDoSetlist item, ResultadoCifraDoArtista resultado,
+      {String? rotuloColarEProxima}) async {
     if (!mounted) return false;
     final decisao = await mostrarEscolhaDeCifra(
       context,
@@ -194,6 +195,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       artista: item.artista,
       resultado: resultado,
       abrirUrl: widget.abrirUrl,
+      rotuloColarEProxima: rotuloColarEProxima,
     );
     if (decisao == null || !mounted) return false;
     switch (decisao.tipo) {
@@ -221,11 +223,17 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   /// Pede, uma a uma, a cifra das músicas que faltam tocar e estão sem cifra,
   /// para resolver tudo antes de subir no palco. Fechar a escolha interrompe.
   Future<void> _resolverSemCifra() async {
-    for (final item in _semCifra) {
+    final pendentes = _semCifra;
+    for (final (indice, item) in pendentes.indexed) {
       final resultado = _cifras[item.id];
       if (resultado == null || !mounted) return;
+      final ultima = indice == pendentes.length - 1;
       try {
-        if (!await _mostrarEscolhaDaCifra(item, resultado)) return;
+        if (!await _mostrarEscolhaDaCifra(item, resultado,
+            rotuloColarEProxima:
+                ultima ? 'Colar e concluir' : 'Colar e próxima')) {
+          return;
+        }
       } catch (erro) {
         if (mounted) mostrarErro(context, erro);
         return;

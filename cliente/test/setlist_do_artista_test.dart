@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -33,6 +34,17 @@ Map<String, Object?> _cifra(String url) => {
       'criadaEm': '2026-09-10T12:00:00Z',
       'atualizadaEm': '2026-09-10T12:00:00Z',
     };
+
+void _simularAreaDeTransferencia(
+    WidgetTester tester, String Function() conteudo) {
+  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+    SystemChannels.platform,
+    (chamada) async =>
+        chamada.method == 'Clipboard.getData' ? {'text': conteudo()} : null,
+  );
+  addTearDown(() => tester.binding.defaultBinaryMessenger
+      .setMockMethodCallHandler(SystemChannels.platform, null));
+}
 
 const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 
@@ -285,6 +297,78 @@ void main() {
     expect(salvas, ['Velha Infância', 'Evidências']);
     expect(find.text('Escolher cifra'), findsNothing);
     expect(find.textContaining('sem cifra'), findsNothing);
+  });
+
+  testWidgets('resolver pesquisa a música na web pela aba da cifra',
+      (tester) async {
+    final abertas = <Uri>[];
+    await _abrir(tester,
+        abertas: abertas, musicasSemCifra: {'Velha Infância', 'Evidências'});
+
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pesquisar na web'));
+    await tester.pumpAndSettle();
+
+    expect(abertas, [Uri.parse('https://www.google.com/search?q=cifra')]);
+  });
+
+  testWidgets('colar e próxima salva o link copiado e segue para a próxima',
+      (tester) async {
+    var copiado = 'https://www.cifraclub.com.br/a/velha/';
+    _simularAreaDeTransferencia(tester, () => copiado);
+    final requisicoes =
+        await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
+
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+    expect(find.text('Colar e próxima'), findsOneWidget);
+    await tester.tap(find.text('Colar e próxima'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Escolher cifra'), findsOneWidget);
+    expect(find.text('Colar e concluir'), findsOneWidget);
+    copiado = 'https://www.cifraclub.com.br/a/evidencias/';
+    await tester.tap(find.text('Colar e concluir'));
+    await tester.pumpAndSettle();
+
+    final salvas = requisicoes
+        .where((r) => r.method == 'PUT')
+        .map((r) => jsonDecode(r.body) as Map)
+        .map((corpo) => (corpo['musica'], corpo['url']));
+    expect(salvas, [
+      ('Velha Infância', 'https://www.cifraclub.com.br/a/velha/'),
+      ('Evidências', 'https://www.cifraclub.com.br/a/evidencias/'),
+    ]);
+    expect(find.text('Escolher cifra'), findsNothing);
+    expect(find.textContaining('sem cifra'), findsNothing);
+  });
+
+  testWidgets('colar e próxima sem link copiado avisa e não salva',
+      (tester) async {
+    _simularAreaDeTransferencia(tester, () => 'Velha Infância');
+    final requisicoes =
+        await _abrir(tester, musicasSemCifra: {'Velha Infância'});
+
+    await tester.tap(find.text('Resolver'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Colar e concluir'));
+    await tester.pumpAndSettle();
+
+    expect(requisicoes.where((r) => r.method == 'PUT'), isEmpty);
+    expect(find.text('Escolher cifra'), findsOneWidget);
+    expect(find.text('Copie o link da cifra antes de colar.'), findsOneWidget);
+  });
+
+  testWidgets('trocar cifra de uma música não mostra colar e próxima',
+      (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Colar e próxima'), findsNothing);
+    expect(find.text('Colar e concluir'), findsNothing);
   });
 
   testWidgets('fechar a escolha interrompe o resolver', (tester) async {
