@@ -7,6 +7,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'escolher_cifra.dart';
+import 'sequencia_do_palco.dart';
 
 class SetlistDoArtista extends StatefulWidget {
   const SetlistDoArtista({
@@ -29,14 +30,11 @@ class SetlistDoArtista extends StatefulWidget {
 }
 
 class _SetlistDoArtistaState extends State<SetlistDoArtista> {
-  List<ItemDoSetlist> _itens = [];
-  // título normalizado → quantidade de pedidos na fila
-  Map<String, int> _pedidosNaFila = {};
+  late final SequenciaDoPalco _sequencia = SequenciaDoPalco(
+    api: widget.api,
+    apresentacaoId: widget.apresentacao.id,
+  )..addListener(_redesenhar);
   bool _carregando = true;
-  bool _salvando = false;
-  // id do item → cifra buscada antes do show, para abrir na hora no palco e
-  // avisar quais músicas ainda estão sem cifra.
-  Map<String, ResultadoCifraDoArtista> _cifras = {};
 
   @override
   void initState() {
@@ -44,30 +42,19 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     _carregar();
   }
 
+  @override
+  void dispose() {
+    _sequencia.dispose();
+    super.dispose();
+  }
+
+  void _redesenhar() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _carregar() async {
     try {
-      final resultados = await Future.wait([
-        widget.api.obterSetlist(widget.apresentacao.id),
-        widget.api
-            .listarGruposDePedidosDoArtista(widget.apresentacao.id)
-            .catchError((_) => <GrupoPedidoMusical>[]),
-      ]);
-      if (!mounted) return;
-      final itens = resultados[0] as List<ItemDoSetlist>;
-      final grupos = resultados[1] as List<GrupoPedidoMusical>;
-      final mapa = <String, int>{};
-      for (final g in grupos) {
-        if (g.status == StatusPedidoMusical.aguardando ||
-            g.status == StatusPedidoMusical.aceito) {
-          final chave = g.musica.toLowerCase().trim();
-          mapa[chave] = (mapa[chave] ?? 0) + g.quantidadePedidos;
-        }
-      }
-      setState(() {
-        _itens = itens;
-        _pedidosNaFila = mapa;
-      });
-      _buscarCifras();
+      await _sequencia.carregar();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
@@ -76,67 +63,30 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   }
 
   Future<void> _marcar(ItemDoSetlist item, bool tocada) async {
-    setState(() => _salvando = true);
     try {
-      final atualizado = await widget.api
-          .marcarItemDoSetlist(widget.apresentacao.id, item.id, tocada);
-      if (!mounted) return;
-      setState(() {
-        _itens =
-            _itens.map((i) => i.id == atualizado.id ? atualizado : i).toList();
-      });
+      await _sequencia.marcar(item, tocada);
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
-    } finally {
-      if (mounted) setState(() => _salvando = false);
-    }
-  }
-
-  Future<void> _buscarCifras() async {
-    final itens = _itens;
-    final resultados = await Future.wait(itens.map(_consultarCifraSemErro));
-    if (!mounted) return;
-    setState(() {
-      _cifras = {
-        for (final (indice, item) in itens.indexed)
-          if (resultados[indice] case final resultado?) item.id: resultado,
-      };
-    });
-  }
-
-  Future<void> _atualizarCifra(ItemDoSetlist item) async {
-    final resultado = await _consultarCifraSemErro(item);
-    if (!mounted || resultado == null) return;
-    setState(() => _cifras = {..._cifras, item.id: resultado});
-  }
-
-  Future<ResultadoCifraDoArtista?> _consultarCifraSemErro(
-      ItemDoSetlist item) async {
-    try {
-      return await widget.api.consultarCifra(item.titulo, item.artista);
-    } catch (_) {
-      // Sem a busca antecipada, o toque em Tocar busca a cifra na hora.
-      return null;
     }
   }
 
   /// Abre a cifra da próxima música e a marca como tocada num único toque.
   /// A cifra abre antes de qualquer espera para o Safari aceitar a nova aba.
   Future<void> _tocarProxima() async {
-    final indice = _proximaIndex;
-    if (indice < 0) return;
-    final item = _itens[indice];
-    final preBuscada = _cifras[item.id];
+    final musica = _sequencia.proxima;
+    final item = musica?.item;
+    if (musica == null || item == null) return;
+    final preBuscada = _sequencia.cifraDe(musica);
     final url = preBuscada?.cifra?.url;
     if (url != null) {
       widget.abrirUrl(Uri.parse(url)).catchError((Object erro) {
         if (mounted) mostrarErro(context, erro);
       });
     } else if (preBuscada == null) {
-      _abrirCifra(item);
+      _abrirCifra(musica);
     }
     await _marcar(item, true);
-    final marcada = _itens.any((i) => i.id == item.id && i.tocada);
+    final marcada = _sequencia.itens.any((i) => i.id == item.id && i.tocada);
     if (!mounted || !marcada) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -148,16 +98,16 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         ),
       ));
     if (url == null && preBuscada != null) {
-      await _mostrarEscolhaDaCifra(item, preBuscada);
+      await _mostrarEscolhaDaCifra(musica, preBuscada);
     }
   }
 
-  Future<void> _abrirCifra(ItemDoSetlist item) async {
+  Future<void> _abrirCifra(MusicaDoPalco musica) async {
     FinalizarAberturaExterna? finalizar;
     try {
       finalizar = widget.prepararAbertura();
       final resultado =
-          await widget.api.consultarCifra(item.titulo, item.artista);
+          await widget.api.consultarCifra(musica.titulo, musica.artista);
       if (!mounted) {
         await finalizar(null);
         return;
@@ -167,18 +117,18 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         return;
       }
       await finalizar(null);
-      await _mostrarEscolhaDaCifra(item, resultado);
+      await _mostrarEscolhaDaCifra(musica, resultado);
     } catch (erro) {
       await finalizar?.call(null);
       if (mounted) mostrarErro(context, erro);
     }
   }
 
-  Future<void> _escolherCifra(ItemDoSetlist item) async {
+  Future<void> _escolherCifra(MusicaDoPalco musica) async {
     try {
       final resultado =
-          await widget.api.consultarCifra(item.titulo, item.artista);
-      await _mostrarEscolhaDaCifra(item, resultado);
+          await widget.api.consultarCifra(musica.titulo, musica.artista);
+      await _mostrarEscolhaDaCifra(musica, resultado);
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -186,13 +136,13 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
 
   /// Responde se o artista decidiu algo; falso quando fechou sem escolher.
   Future<bool> _mostrarEscolhaDaCifra(
-      ItemDoSetlist item, ResultadoCifraDoArtista resultado,
+      MusicaDoPalco musica, ResultadoCifraDoArtista resultado,
       {String? rotuloColarEProxima}) async {
     if (!mounted) return false;
     final decisao = await mostrarEscolhaDeCifra(
       context,
-      musica: item.titulo,
-      artista: item.artista,
+      musica: musica.titulo,
+      artista: musica.artista,
       resultado: resultado,
       abrirUrl: widget.abrirUrl,
       rotuloColarEProxima: rotuloColarEProxima,
@@ -209,27 +159,28 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           );
         }
       case TipoDecisaoCifra.salvar:
-        await widget.api.salvarCifra(item.titulo, item.artista, decisao.url!);
+        await widget.api
+            .salvarCifra(musica.titulo, musica.artista, decisao.url!);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Cifra salva.')),
           );
         }
     }
-    await _atualizarCifra(item);
+    await _sequencia.atualizarCifra(musica);
     return true;
   }
 
   /// Pede, uma a uma, a cifra das músicas que faltam tocar e estão sem cifra,
   /// para resolver tudo antes de subir no palco. Fechar a escolha interrompe.
   Future<void> _resolverSemCifra() async {
-    final pendentes = _semCifra;
-    for (final (indice, item) in pendentes.indexed) {
-      final resultado = _cifras[item.id];
+    final pendentes = _sequencia.semCifra.map(MusicaDoPalco.doSetlist).toList();
+    for (final (indice, musica) in pendentes.indexed) {
+      final resultado = _sequencia.cifraDe(musica);
       if (resultado == null || !mounted) return;
       final ultima = indice == pendentes.length - 1;
       try {
-        if (!await _mostrarEscolhaDaCifra(item, resultado,
+        if (!await _mostrarEscolhaDaCifra(musica, resultado,
             rotuloColarEProxima:
                 ultima ? 'Colar e concluir' : 'Colar e próxima')) {
           return;
@@ -275,8 +226,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       final novos = await widget.api.importarRepertorioParaSetlist(
           widget.apresentacao.id, selecionado.id);
       if (!mounted) return;
-      setState(() => _itens = novos);
-      _buscarCifras();
+      _sequencia.substituirItens(novos);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Repertório "${selecionado.nome}" importado.')),
       );
@@ -285,25 +235,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     } finally {
       if (mounted) setState(() => _carregando = false);
     }
-  }
-
-  int get _tocadas => _itens.where((i) => i.tocada).length;
-  int get _proximaIndex => _itens.indexWhere((i) => !i.tocada);
-  // Só conta como sem cifra depois de consultada, para não acusar falha de rede.
-  bool _estaSemCifra(ItemDoSetlist item) =>
-      _cifras.containsKey(item.id) && _cifras[item.id]!.cifra == null;
-  List<ItemDoSetlist> get _semCifra =>
-      _itens.where((i) => !i.tocada && _estaSemCifra(i)).toList();
-
-  /// Tom da próxima e a música que vem depois dela, para já se preparar.
-  String? _detalheDaProxima(int proxima) {
-    final item = _itens[proxima];
-    final seguinte = _itens.skip(proxima + 1).where((i) => !i.tocada);
-    final partes = [
-      if (item.tom != null) 'Tom ${item.tom}',
-      if (seguinte.isNotEmpty) 'Depois: ${seguinte.first.titulo}',
-    ];
-    return partes.isEmpty ? null : partes.join(' · ');
   }
 
   @override
@@ -321,18 +252,18 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     if (_carregando) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_itens.isEmpty) {
+    if (_sequencia.itens.isEmpty) {
       return _construirVazio();
     }
-    final proxima = _proximaIndex;
+    final proxima = _sequencia.proximaIndex;
     return Column(
       children: [
         Expanded(child: _construirLista(context, proxima)),
         if (proxima >= 0)
           _BarraProxima(
-            titulo: _itens[proxima].titulo,
-            detalhe: _detalheDaProxima(proxima),
-            salvando: _salvando,
+            titulo: _sequencia.itens[proxima].titulo,
+            detalhe: _sequencia.detalheDaProxima,
+            salvando: _sequencia.salvando,
             tocar: _tocarProxima,
           ),
       ],
@@ -340,15 +271,16 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   }
 
   Widget _construirLista(BuildContext context, int proxima) {
+    final pedidosNaFila = _sequencia.pedidosNaFila;
     return ConteudoMobile(
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _construirProgresso(context),
-          if (_semCifra.isNotEmpty) ...[
+          if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
             _AvisoSemCifra(
-              quantidade: _semCifra.length,
+              quantidade: _sequencia.semCifra.length,
               resolver: _resolverSemCifra,
             ),
           ],
@@ -356,17 +288,19 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           GrupoDeLinhas(
             recuoDivisoria: 60,
             linhas: [
-              for (final (indice, item) in _itens.indexed)
+              for (final (indice, item) in _sequencia.itens.indexed)
                 _LinhaSetlist(
                   item: item,
-                  salvando: _salvando,
+                  salvando: _sequencia.salvando,
                   eProxima: indice == proxima,
-                  semCifra: _estaSemCifra(item),
+                  semCifra:
+                      _sequencia.estaSemCifra(MusicaDoPalco.doSetlist(item)),
                   pedidosNaFila:
-                      _pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
+                      pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
                   marcar: (tocada) => _marcar(item, tocada),
-                  abrirCifra: () => _abrirCifra(item),
-                  escolherCifra: () => _escolherCifra(item),
+                  abrirCifra: () => _abrirCifra(MusicaDoPalco.doSetlist(item)),
+                  escolherCifra: () =>
+                      _escolherCifra(MusicaDoPalco.doSetlist(item)),
                 ),
             ],
           ),
@@ -378,8 +312,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
 
   Widget _construirProgresso(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final total = _itens.length;
-    final restantes = total - _tocadas;
+    final total = _sequencia.itens.length;
+    final restantes = total - _sequencia.tocadas;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -389,7 +323,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('$_tocadas de $total tocadas', style: texto.titleMedium),
+                  Text('${_sequencia.tocadas} de $total tocadas',
+                      style: texto.titleMedium),
                   Text(
                     restantes == 0
                         ? 'Setlist completo!'
@@ -411,7 +346,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         ),
         const SizedBox(height: EspacoTocaEssa.pequeno),
         LinearProgressIndicator(
-          value: total > 0 ? _tocadas / total : 0,
+          value: total > 0 ? _sequencia.tocadas / total : 0,
           minHeight: 6,
           borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
           color: restantes == 0 ? CoresTocaEssa.sucesso : null,
