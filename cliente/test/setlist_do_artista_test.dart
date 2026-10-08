@@ -544,6 +544,15 @@ void main() {
     expect(status.body, contains('"status":"Finalizado"'));
   });
 
+  testWidgets('setlist abre o modo palco', (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.text('Modo palco'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Sair do modo palco'), findsOneWidget);
+  });
+
   testWidgets('setlist completa não mostra a barra de próxima', (tester) async {
     await _abrir(tester, itens: [
       _item('1', 'Garota de Ipanema', 1, tocada: true),

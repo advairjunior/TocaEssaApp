@@ -6,6 +6,8 @@ import '../infraestrutura/abrir_url_externa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_palco.dart';
+import 'modo_palco.dart';
 import 'acoes_do_palco.dart';
 import 'sequencia_do_palco.dart';
 
@@ -102,6 +104,19 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     }
   }
 
+  /// Ao voltar do modo palco, o setlist e os pedidos podem ter mudado.
+  Future<void> _abrirModoPalco() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ModoPalco(
+        api: widget.api,
+        apresentacao: widget.apresentacao,
+        abrirUrl: widget.abrirUrl,
+        prepararAbertura: widget.prepararAbertura,
+      ),
+    ));
+    if (mounted) await _carregar();
+  }
+
   Future<void> _mostrarImportarRepertorio() async {
     List<Repertorio>? repertorios;
     try {
@@ -170,7 +185,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       children: [
         Expanded(child: _construirLista(context, proxima?.item)),
         if (proxima != null)
-          _BarraProxima(
+          BarraProximaMusica(
             titulo: proxima.titulo,
             detalhe: _sequencia.detalheDaProxima,
             salvando: _sequencia.salvando,
@@ -186,6 +201,12 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          FilledButton.tonalIcon(
+            onPressed: _abrirModoPalco,
+            icon: const Icon(Icons.mic_rounded),
+            label: const Text('Modo palco'),
+          ),
+          const SizedBox(height: EspacoTocaEssa.base),
           _construirProgresso(context),
           if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
@@ -285,83 +306,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           ),
         ),
       );
-}
-
-/// Barra fixa no rodapé: um toque abre a cifra da próxima música, para não
-/// haver silêncio entre uma música e outra no palco.
-class _BarraProxima extends StatelessWidget {
-  const _BarraProxima({
-    required this.titulo,
-    required this.detalhe,
-    required this.salvando,
-    required this.tocar,
-  });
-
-  final String titulo;
-  final String? detalhe;
-  final bool salvando;
-  final VoidCallback tocar;
-
-  @override
-  Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-    return Material(
-      color: CoresTocaEssa.superficie,
-      child: SafeArea(
-        top: false,
-        child: Align(
-          alignment: Alignment.topCenter,
-          heightFactor: 1,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                EspacoTocaEssa.medio,
-                20,
-                EspacoTocaEssa.medio,
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.skip_next_rounded,
-                      color: CoresTocaEssa.roxoClaro),
-                  const SizedBox(width: EspacoTocaEssa.pequeno),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Próxima: $titulo',
-                          style: texto.titleMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (detalhe != null)
-                          Text(
-                            detalhe!,
-                            style: texto.bodyMedium?.copyWith(
-                                color: CoresTocaEssa.textoSecundario),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: EspacoTocaEssa.pequeno),
-                  FilledButton.icon(
-                    onPressed: salvando ? null : tocar,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: const Text('Tocar'),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Avisa, antes do show, quantas músicas que faltam tocar estão sem cifra,

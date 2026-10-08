@@ -97,6 +97,44 @@ class SequenciaDoPalco extends ChangeNotifier {
               p.status == StatusPedidoMusical.aceito),
       ];
 
+  List<GrupoPedidoMusical> get pedidosNovos => pedidos
+      .where((p) =>
+          p.tipo == TipoPedido.musica &&
+          p.status == StatusPedidoMusical.aguardando)
+      .toList();
+
+  List<GrupoPedidoMusical> get pedidosAceitos => pedidos
+      .where((p) =>
+          p.tipo == TipoPedido.musica && p.status == StatusPedidoMusical.aceito)
+      .toList();
+
+  List<GrupoPedidoMusical> get alosPendentes => pedidos
+      .where((p) =>
+          p.tipo == TipoPedido.alo &&
+          (p.status == StatusPedidoMusical.aguardando ||
+              p.status == StatusPedidoMusical.aceito))
+      .toList();
+
+  /// Marca o pedido para tocar a seguir, ou desmarca, já buscando a cifra.
+  Future<void> alternarASeguir(GrupoPedidoMusical pedido) async {
+    aSeguir = await PedidosASeguir.alternar(
+        apresentacaoId, pedido.pedidoRepresentativoId);
+    _avisar();
+    if (aSeguir.contains(pedido.pedidoRepresentativoId)) {
+      await atualizarCifra(MusicaDoPalco.doPedido(pedido));
+    }
+  }
+
+  /// Atualiza os pedidos sem interromper o show; falhas ficam para a próxima.
+  Future<void> recarregarPedidos() async {
+    try {
+      pedidos = await api.listarGruposDePedidosDoArtista(apresentacaoId);
+      _avisar();
+    } catch (_) {
+      // A próxima atualização tenta novamente.
+    }
+  }
+
   List<GrupoPedidoMusical> get tocandoAgora => pedidos
       .where((p) =>
           p.tipo == TipoPedido.musica &&
