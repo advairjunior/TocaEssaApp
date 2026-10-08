@@ -9,3 +9,8 @@ typedef FinalizarAberturaExterna = Future<void> Function(Uri? url);
 FinalizarAberturaExterna prepararAberturaExterna() => (url) async {
       if (url != null) await abrirUrlExterna(url);
     };
+
+Future<void> abrirNaAbaDaCifra(Uri url) => abrirUrlExterna(url);
+
+FinalizarAberturaExterna prepararAberturaNaAbaDaCifra() =>
+    prepararAberturaExterna();
