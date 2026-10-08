@@ -34,6 +34,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   Map<String, int> _pedidosNaFila = {};
   bool _carregando = true;
   bool _salvando = false;
+  // Cifra da próxima música buscada antes do toque, para abrir na hora no palco.
+  ({String itemId, ResultadoCifraDoArtista resultado})? _cifraPreBuscada;
 
   @override
   void initState() {
@@ -64,6 +66,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         _itens = itens;
         _pedidosNaFila = mapa;
       });
+      _preBuscarCifraDaProxima();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
@@ -81,10 +84,59 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
         _itens =
             _itens.map((i) => i.id == atualizado.id ? atualizado : i).toList();
       });
+      _preBuscarCifraDaProxima();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
       if (mounted) setState(() => _salvando = false);
+    }
+  }
+
+  Future<void> _preBuscarCifraDaProxima({bool forcar = false}) async {
+    final indice = _proximaIndex;
+    if (indice < 0) return;
+    final item = _itens[indice];
+    if (!forcar && _cifraPreBuscada?.itemId == item.id) return;
+    try {
+      final resultado =
+          await widget.api.consultarCifra(item.titulo, item.artista);
+      if (mounted) _cifraPreBuscada = (itemId: item.id, resultado: resultado);
+    } catch (_) {
+      // Sem pré-busca, o toque em Tocar busca a cifra na hora.
+    }
+  }
+
+  /// Abre a cifra da próxima música e a marca como tocada num único toque.
+  /// A cifra abre antes de qualquer espera para o Safari aceitar a nova aba.
+  Future<void> _tocarProxima() async {
+    final indice = _proximaIndex;
+    if (indice < 0) return;
+    final item = _itens[indice];
+    final preBuscada = _cifraPreBuscada?.itemId == item.id
+        ? _cifraPreBuscada!.resultado
+        : null;
+    final url = preBuscada?.cifra?.url;
+    if (url != null) {
+      widget.abrirUrl(Uri.parse(url)).catchError((Object erro) {
+        if (mounted) mostrarErro(context, erro);
+      });
+    } else if (preBuscada == null) {
+      _abrirCifra(item);
+    }
+    await _marcar(item, true);
+    final marcada = _itens.any((i) => i.id == item.id && i.tocada);
+    if (!mounted || !marcada) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('${item.titulo} marcada como tocada.'),
+        action: SnackBarAction(
+          label: 'Desfazer',
+          onPressed: () => _marcar(item, false),
+        ),
+      ));
+    if (url == null && preBuscada != null) {
+      await _mostrarEscolhaDaCifra(item, preBuscada);
     }
   }
 
@@ -149,6 +201,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           );
         }
     }
+    _preBuscarCifraDaProxima(forcar: true);
   }
 
   Future<void> _mostrarImportarRepertorio() async {
@@ -218,6 +271,20 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       return _construirVazio();
     }
     final proxima = _proximaIndex;
+    return Column(
+      children: [
+        Expanded(child: _construirLista(context, proxima)),
+        if (proxima >= 0)
+          _BarraProxima(
+            titulo: _itens[proxima].titulo,
+            salvando: _salvando,
+            tocar: _tocarProxima,
+          ),
+      ],
+    );
+  }
+
+  Widget _construirLista(BuildContext context, int proxima) {
     return ConteudoMobile(
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -310,6 +377,67 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           ),
         ),
       );
+}
+
+/// Barra fixa no rodapé: um toque abre a cifra da próxima música, para não
+/// haver silêncio entre uma música e outra no palco.
+class _BarraProxima extends StatelessWidget {
+  const _BarraProxima({
+    required this.titulo,
+    required this.salvando,
+    required this.tocar,
+  });
+
+  final String titulo;
+  final bool salvando;
+  final VoidCallback tocar;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Material(
+      color: CoresTocaEssa.superficie,
+      child: SafeArea(
+        top: false,
+        child: Align(
+          alignment: Alignment.topCenter,
+          heightFactor: 1,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 560),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                20,
+                EspacoTocaEssa.medio,
+                20,
+                EspacoTocaEssa.medio,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.skip_next_rounded,
+                      color: CoresTocaEssa.roxoClaro),
+                  const SizedBox(width: EspacoTocaEssa.pequeno),
+                  Expanded(
+                    child: Text(
+                      'Próxima: $titulo',
+                      style: texto.titleMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: EspacoTocaEssa.pequeno),
+                  FilledButton.icon(
+                    onPressed: salvando ? null : tocar,
+                    icon: const Icon(Icons.play_arrow_rounded),
+                    label: const Text('Tocar'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Uma música do setlist. A linha inteira marca e desmarca como tocada,

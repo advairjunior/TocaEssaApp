@@ -38,6 +38,8 @@ const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 Future<List<http.Request>> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? itens,
+  List<Uri>? abertas,
+  bool comCifraSalva = true,
 }) async {
   final requisicoes = <http.Request>[];
   final lista = itens ??
@@ -84,7 +86,7 @@ Future<List<http.Request>> _abrir(
     if (caminho.endsWith('/cifras/consulta')) {
       return http.Response(
         jsonEncode({
-          'cifra': _cifra(_cifraSalva),
+          'cifra': comCifraSalva ? _cifra(_cifraSalva) : null,
           'urlPesquisa': 'https://www.google.com/search?q=cifra',
         }),
         200,
@@ -118,6 +120,10 @@ Future<List<http.Request>> _abrir(
           tipo: TipoApresentacao.publica,
         ),
         incorporada: true,
+        abrirUrl: (url) async => abertas?.add(url),
+        prepararAbertura: () => (url) async {
+          if (url != null) abertas?.add(url);
+        },
       ),
     ),
   ));
@@ -194,6 +200,75 @@ void main() {
     final remocao = requisicoes.singleWhere((r) => r.method == 'DELETE');
     expect(remocao.url.path, '/api/artista/cifras/c1');
     expect(find.text('Link da cifra removido.'), findsOneWidget);
+  });
+
+  testWidgets('barra fixa mostra a próxima música para tocar', (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+    expect(find.text('Tocar'), findsOneWidget);
+  });
+
+  testWidgets('cifra da próxima música é buscada antes do toque',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+
+    final consultas =
+        requisicoes.where((r) => r.url.path.endsWith('/cifras/consulta'));
+    expect(consultas.single.url.queryParameters['musica'], 'Velha Infância');
+  });
+
+  testWidgets('tocar abre a cifra da próxima e marca como tocada',
+      (tester) async {
+    final abertas = <Uri>[];
+    final requisicoes = await _abrir(tester, abertas: abertas);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(abertas, [Uri.parse(_cifraSalva)]);
+    final marcacao = requisicoes.singleWhere((r) => r.method == 'PATCH');
+    expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
+    expect(marcacao.body, contains('"tocada":true'));
+    expect(find.text('2 de 3 tocadas'), findsOneWidget);
+    expect(find.text('Próxima: Evidências'), findsOneWidget);
+  });
+
+  testWidgets('desfazer volta a música para a próxima', (tester) async {
+    final requisicoes = await _abrir(tester, abertas: []);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Desfazer'));
+    await tester.pumpAndSettle();
+
+    final desmarcacao = requisicoes.where((r) => r.method == 'PATCH').last;
+    expect(desmarcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
+    expect(desmarcacao.body, contains('"tocada":false'));
+    expect(find.text('1 de 3 tocadas'), findsOneWidget);
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+  });
+
+  testWidgets('próxima sem cifra salva marca e oferece escolher a cifra',
+      (tester) async {
+    final abertas = <Uri>[];
+    final requisicoes =
+        await _abrir(tester, abertas: abertas, comCifraSalva: false);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(abertas, isEmpty);
+    expect(requisicoes.where((r) => r.method == 'PATCH'), hasLength(1));
+    expect(find.text('Escolher cifra'), findsOneWidget);
+  });
+
+  testWidgets('setlist completa não mostra a barra de próxima', (tester) async {
+    await _abrir(tester, itens: [
+      _item('1', 'Garota de Ipanema', 1, tocada: true),
+    ]);
+
+    expect(find.text('Tocar'), findsNothing);
   });
 
   testWidgets('sem repertório, convida a importar', (tester) async {
