@@ -113,18 +113,15 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### Para o público
 
-- **Tocando agora e posição na fila:** o público vê a música atual e em que
-  posição está o próprio pedido.
 - **Gorjeta ligada ao pedido:** selo de "pedido com apoio" ou prioridade na
   fila. Mexe com dinheiro e com a percepção do público; decidir com cuidado.
-- **Dedicatória no pedido:** "Pra Ana, aniversariante", para o artista ler ao
-  microfone.
 - **Seguir o artista:** deixar contato para saber da próxima apresentação.
 
 ### Carreira e negócio do artista
 
-- **Músicas que mais funcionam:** mais pedidas e ainda fora do repertório,
-  mais bem avaliadas, a partir de pedidos, avaliações e setlists.
+- **Músicas que mais funcionam:** juntar todas as apresentações (hoje o
+  ranking de mais pedidas é por apresentação) e cruzar com o repertório:
+  mais pedidas e ainda fora do repertório, mais bem avaliadas.
 - **Agenda pública do artista:** página com as próximas apresentações.
 - **Avisar seguidores do próximo show:** depende de Seguir o artista.
 - **Relatório do show para o contratante:** público pelo app, pedidos e
