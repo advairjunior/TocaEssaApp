@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/pedidos_a_seguir.dart';
 import 'package:toca_essa_app/telas/fila_musical_artista.dart';
 
 void main() {
@@ -48,6 +50,38 @@ void main() {
     expect(find.text('Música finalizada'), findsOneWidget);
     expect(find.text('Finalizado'), findsOneWidget);
     expect(find.text('Pedido pendente'), findsNothing);
+  });
+
+  testWidgets('pedido aceito pode ser marcado para tocar a seguir',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final api = ApiTocaEssa(
+      enderecoBase: 'https://tocaessa.test',
+      cliente: MockClient((_) async => http.Response(_pedidosJson, 200)),
+    )..definirTokenArtista('token-artista');
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: FilaMusicalArtista(
+          api: api,
+          apresentacao: _apresentacao(),
+          incorporada: true,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tocar a seguir'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tirar da sequência'), findsOneWidget);
+    expect(await PedidosASeguir.ler(_apresentacao().id),
+        ['10000000-0000-0000-0000-000000000002']);
+
+    await tester.tap(find.text('Tirar da sequência'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tocar a seguir'), findsOneWidget);
+    expect(await PedidosASeguir.ler(_apresentacao().id), isEmpty);
   });
 
   testWidgets('abas da fila não quebram o texto em celular de 360px',

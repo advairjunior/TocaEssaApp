@@ -208,6 +208,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
               child: CartaoGrupoPedidoArtista(
                 grupo: pedido,
                 eoPrimeiroDaFila: indice == 0,
+                aSeguir: _aSeguir.contains(pedido.pedidoRepresentativoId),
+                alternarASeguir: () => _alternarASeguir(pedido),
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
                 alterar: (status) => _alterar(pedido, status),

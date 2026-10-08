@@ -15,6 +15,8 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
     this.abrirCifra,
     this.escolherCifra,
     this.destaque = false,
+    this.aSeguir = false,
+    this.alternarASeguir,
   });
 
   final GrupoPedidoMusical grupo;
@@ -29,6 +31,10 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
   /// Realça a música que está tocando agora.
   final bool destaque;
 
+  /// Marcado para entrar na barra Próxima da setlist e do modo palco.
+  final bool aSeguir;
+  final VoidCallback? alternarASeguir;
+
   @override
   Widget build(BuildContext context) => CartaoPedidoArtista(
         pedido: grupo.comoPedidoMusical(),
@@ -40,6 +46,8 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
         abrirCifra: abrirCifra,
         escolherCifra: escolherCifra,
         destaque: destaque,
+        aSeguir: aSeguir,
+        alternarASeguir: alternarASeguir,
       );
 }
 
@@ -55,6 +63,8 @@ class CartaoPedidoArtista extends StatelessWidget {
     this.abrirCifra,
     this.escolherCifra,
     this.destaque = false,
+    this.aSeguir = false,
+    this.alternarASeguir,
   });
 
   final PedidoMusical pedido;
@@ -68,6 +78,10 @@ class CartaoPedidoArtista extends StatelessWidget {
 
   /// Realça a música que está tocando agora.
   final bool destaque;
+
+  /// Marcado para entrar na barra Próxima da setlist e do modo palco.
+  final bool aSeguir;
+  final VoidCallback? alternarASeguir;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -355,6 +369,14 @@ class CartaoPedidoArtista extends StatelessWidget {
                   ? 'Marcar Alô como enviado'
                   : 'Tocar agora'),
             ),
+            if (pedido.tipo == TipoPedido.musica && alternarASeguir != null)
+              TextButton.icon(
+                onPressed: alternarASeguir,
+                icon: Icon(aSeguir
+                    ? Icons.remove_circle_outline_rounded
+                    : Icons.playlist_add_rounded),
+                label: Text(aSeguir ? 'Tirar da sequência' : 'Tocar a seguir'),
+              ),
           ],
         StatusPedidoMusical.tocandoAgora => [
             FilledButton(

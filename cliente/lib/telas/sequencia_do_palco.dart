@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/pedidos_a_seguir.dart';
 
 /// Uma música que pode tocar no show: item do setlist ou pedido do público.
 class MusicaDoPalco {
@@ -12,8 +13,8 @@ class MusicaDoPalco {
   final GrupoPedidoMusical? pedido;
 
   String get titulo => item?.titulo ?? pedido!.musica;
-  String? get artista => item?.artista ?? pedido!.artista;
-  String? get tom => item?.tom ?? pedido!.tomPreferido;
+  String? get artista => item != null ? item!.artista : pedido!.artista;
+  String? get tom => item != null ? item!.tom : pedido!.tomPreferido;
 }
 
 /// Sequência de músicas do show: setlist, pedidos do público e a cifra de cada
@@ -27,6 +28,8 @@ class SequenciaDoPalco extends ChangeNotifier {
 
   List<ItemDoSetlist> itens = const [];
   List<GrupoPedidoMusical> pedidos = const [];
+  // ids dos pedidos marcados para tocar a seguir, em ordem
+  List<String> aSeguir = const [];
   bool salvando = false;
   // título e artista normalizados → cifra consultada
   Map<String, ResultadoCifraDoArtista> _cifras = {};
@@ -45,6 +48,7 @@ class SequenciaDoPalco extends ChangeNotifier {
     ]);
     itens = resultados[0] as List<ItemDoSetlist>;
     pedidos = resultados[1] as List<GrupoPedidoMusical>;
+    aSeguir = await PedidosASeguir.ler(apresentacaoId);
     _avisar();
     buscarCifras();
   }
@@ -84,22 +88,96 @@ class SequenciaDoPalco extends ChangeNotifier {
   int get tocadas => itens.where((i) => i.tocada).length;
   int get proximaIndex => itens.indexWhere((i) => !i.tocada);
 
-  MusicaDoPalco? get proxima {
-    final indice = proximaIndex;
-    return indice < 0 ? null : MusicaDoPalco.doSetlist(itens[indice]);
-  }
+  /// Pedidos marcados para tocar a seguir que continuam aceitos, em ordem.
+  List<GrupoPedidoMusical> get pedidosASeguir => [
+        for (final id in aSeguir)
+          ...pedidos.where((p) =>
+              p.pedidoRepresentativoId == id &&
+              p.tipo == TipoPedido.musica &&
+              p.status == StatusPedidoMusical.aceito),
+      ];
+
+  List<GrupoPedidoMusical> get tocandoAgora => pedidos
+      .where((p) =>
+          p.tipo == TipoPedido.musica &&
+          p.status == StatusPedidoMusical.tocandoAgora)
+      .toList();
+
+  /// Pedidos marcados para tocar a seguir vêm antes do setlist.
+  MusicaDoPalco? get proxima => _sequenciaRestante().firstOrNull;
+
+  List<MusicaDoPalco> _sequenciaRestante() => [
+        ...pedidosASeguir.map(MusicaDoPalco.doPedido),
+        ...itens.where((i) => !i.tocada).map(MusicaDoPalco.doSetlist),
+      ];
 
   /// Tom da próxima e a música que vem depois dela, para já se preparar.
   String? get detalheDaProxima {
-    final indice = proximaIndex;
-    if (indice < 0) return null;
-    final item = itens[indice];
-    final seguinte = itens.skip(indice + 1).where((i) => !i.tocada);
+    final restante = _sequenciaRestante();
+    if (restante.isEmpty) return null;
+    final musica = restante.first;
+    final quantidade = musica.pedido?.quantidadePedidos;
     final partes = [
-      if (item.tom != null) 'Tom ${item.tom}',
-      if (seguinte.isNotEmpty) 'Depois: ${seguinte.first.titulo}',
+      if (quantidade != null)
+        quantidade == 1 ? 'Pedido' : '$quantidade pedidos',
+      if (musica.tom?.isNotEmpty == true) 'Tom ${musica.tom}',
+      if (restante.length > 1) 'Depois: ${restante[1].titulo}',
     ];
     return partes.isEmpty ? null : partes.join(' · ');
+  }
+
+  /// Coloca o pedido em Tocando agora, tira da sequência e marca a mesma
+  /// música no setlist. Responde o item marcado, para poder desfazer.
+  Future<ItemDoSetlist?> tocarPedido(GrupoPedidoMusical pedido) async {
+    await _alterarStatus(pedido, StatusPedidoMusical.tocandoAgora);
+    aSeguir =
+        aSeguir.where((id) => id != pedido.pedidoRepresentativoId).toList();
+    _avisar();
+    await PedidosASeguir.remover(apresentacaoId, pedido.pedidoRepresentativoId);
+    final titulo = pedido.musica.trim().toLowerCase();
+    final noSetlist = itens
+        .where((i) => !i.tocada && i.titulo.trim().toLowerCase() == titulo)
+        .firstOrNull;
+    if (noSetlist != null) await marcar(noSetlist, true);
+    return noSetlist;
+  }
+
+  Future<void> desfazerPedido(
+      GrupoPedidoMusical pedido, ItemDoSetlist? marcado) async {
+    await _alterarStatus(pedido, StatusPedidoMusical.aceito);
+    aSeguir = [
+      pedido.pedidoRepresentativoId,
+      ...aSeguir.where((id) => id != pedido.pedidoRepresentativoId),
+    ];
+    _avisar();
+    await PedidosASeguir.adicionarNoInicio(
+        apresentacaoId, pedido.pedidoRepresentativoId);
+    if (marcado != null) await marcar(marcado, false);
+  }
+
+  /// Começar a próxima música encerra o pedido que estava tocando.
+  Future<void> finalizarTocando() async {
+    for (final pedido in tocandoAgora) {
+      await _alterarStatus(pedido, StatusPedidoMusical.finalizado);
+    }
+  }
+
+  Future<void> _alterarStatus(
+      GrupoPedidoMusical pedido, StatusPedidoMusical status) async {
+    salvando = true;
+    _avisar();
+    try {
+      final atualizado = await api.alterarStatusDoGrupo(
+          apresentacaoId, pedido.pedidoRepresentativoId, status);
+      pedidos = pedidos
+          .map((p) => p.pedidoRepresentativoId == pedido.pedidoRepresentativoId
+              ? atualizado
+              : p)
+          .toList();
+    } finally {
+      salvando = false;
+      _avisar();
+    }
   }
 
   ResultadoCifraDoArtista? cifraDe(MusicaDoPalco musica) =>
@@ -116,7 +194,10 @@ class SequenciaDoPalco extends ChangeNotifier {
       .toList();
 
   Future<void> buscarCifras() async {
-    final musicas = itens.map(MusicaDoPalco.doSetlist).toList();
+    final musicas = [
+      ...itens.map(MusicaDoPalco.doSetlist),
+      ...pedidosASeguir.map(MusicaDoPalco.doPedido),
+    ];
     final resultados = await Future.wait(musicas.map(_consultarCifraSemErro));
     _cifras = {
       for (final (indice, musica) in musicas.indexed)

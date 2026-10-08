@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/pedidos_a_seguir.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 import 'package:toca_essa_app/telas/setlist_do_artista.dart';
 
@@ -22,6 +24,20 @@ Map<String, Object?> _item(String id, String titulo, int ordem,
       'tom': tom,
       'tocada': tocada,
       'ordem': ordem,
+    };
+
+Map<String, Object?> _grupo(String id, String musica, String status,
+        {int quantidade = 1}) =>
+    {
+      'pedidoRepresentativoId': id,
+      'pedidoIds': [id],
+      'apresentacaoId': _id,
+      'musica': musica,
+      'solicitantes': ['Ana'],
+      'quantidadePedidos': quantidade,
+      'status': status,
+      'criadoEm': '2026-09-10T12:00:00Z',
+      'tipo': 'Musica',
     };
 
 Map<String, Object?> _cifra(String url) => {
@@ -54,9 +70,15 @@ Future<List<http.Request>> _abrir(
   List<Uri>? abertas,
   bool comCifraSalva = true,
   Set<String> musicasSemCifra = const {},
+  List<Map<String, Object?>>? grupos,
+  List<String> pedidosASeguir = const [],
 }) async {
+  SharedPreferences.setMockInitialValues(
+      {'pedidosASeguir:$_id': pedidosASeguir});
   final requisicoes = <http.Request>[];
   final salvas = <String>{};
+  final listaDeGrupos =
+      grupos ?? [_grupo('p1', 'Evidências', 'Aceito', quantidade: 2)];
   final lista = itens ??
       [
         _item('1', 'Garota de Ipanema', 1, tocada: true),
@@ -71,23 +93,19 @@ Future<List<http.Request>> _abrir(
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
     if (caminho.endsWith('/grupos-pedidos')) {
-      return http.Response(
-        jsonEncode([
-          {
-            'pedidoRepresentativoId': 'p1',
-            'pedidoIds': ['p1', 'p2'],
-            'apresentacaoId': _id,
-            'musica': 'Evidências',
-            'solicitantes': ['Ana', 'Beto'],
-            'quantidadePedidos': 2,
-            'status': 'Aceito',
-            'criadoEm': '2026-09-10T12:00:00Z',
-            'tipo': 'Musica',
-          }
-        ]),
-        200,
-        headers: {'content-type': 'application/json; charset=utf-8'},
-      );
+      return http.Response(jsonEncode(listaDeGrupos), 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    }
+    if (caminho.contains('/grupos-pedidos/') && caminho.endsWith('/status')) {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      final indice = listaDeGrupos.indexWhere(
+          (g) => caminho.contains('/${g['pedidoRepresentativoId']}/'));
+      listaDeGrupos[indice] = {
+        ...listaDeGrupos[indice],
+        'status': corpo['status'],
+      };
+      return http.Response(jsonEncode(listaDeGrupos[indice]), 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
     }
     if (caminho.endsWith('/tocada')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
@@ -444,6 +462,86 @@ void main() {
     expect(abertas, isEmpty);
     expect(requisicoes.where((r) => r.method == 'PATCH'), hasLength(1));
     expect(find.text('Escolher cifra'), findsOneWidget);
+  });
+
+  testWidgets('pedido marcado para tocar a seguir vira a próxima',
+      (tester) async {
+    await _abrir(tester, pedidosASeguir: ['p1']);
+
+    expect(find.text('Próxima: Evidências'), findsOneWidget);
+    expect(find.text('2 pedidos · Depois: Velha Infância'), findsOneWidget);
+  });
+
+  testWidgets('pedido marcado que já não está aceito é ignorado',
+      (tester) async {
+    await _abrir(tester,
+        pedidosASeguir: ['p1'],
+        grupos: [_grupo('p1', 'Evidências', 'Finalizado')]);
+
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+  });
+
+  testWidgets('tocar o pedido abre a cifra e coloca tocando agora',
+      (tester) async {
+    final abertas = <Uri>[];
+    final requisicoes =
+        await _abrir(tester, abertas: abertas, pedidosASeguir: ['p1']);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(abertas, [Uri.parse(_cifraSalva)]);
+    final status = requisicoes.singleWhere((r) =>
+        r.url.path == '/api/apresentacoes/$_id/grupos-pedidos/p1/status');
+    expect(status.body, contains('"status":"TocandoAgora"'));
+    expect(await PedidosASeguir.ler(_id), isEmpty);
+    expect(find.text('Evidências tocando agora.'), findsOneWidget);
+    expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+  });
+
+  testWidgets('pedido tocado também marca a mesma música no setlist',
+      (tester) async {
+    final requisicoes = await _abrir(tester, pedidosASeguir: ['p1']);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    final marcacao = requisicoes.singleWhere(
+        (r) => r.method == 'PATCH' && r.url.path.endsWith('/tocada'));
+    expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/3/tocada');
+    expect(find.text('2 de 3 tocadas'), findsOneWidget);
+  });
+
+  testWidgets('desfazer devolve o pedido para a sequência', (tester) async {
+    final requisicoes =
+        await _abrir(tester, abertas: [], pedidosASeguir: ['p1']);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Desfazer'));
+    await tester.pumpAndSettle();
+
+    final status = requisicoes
+        .where((r) => r.url.path.endsWith('/grupos-pedidos/p1/status'))
+        .last;
+    expect(status.body, contains('"status":"Aceito"'));
+    expect(await PedidosASeguir.ler(_id), ['p1']);
+    expect(find.text('Próxima: Evidências'), findsOneWidget);
+    expect(find.text('1 de 3 tocadas'), findsOneWidget);
+  });
+
+  testWidgets('tocar a próxima finaliza o pedido que estava tocando',
+      (tester) async {
+    final requisicoes = await _abrir(tester, abertas: [], grupos: [
+      _grupo('p9', 'Asa Branca', 'TocandoAgora'),
+    ]);
+
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+
+    final status = requisicoes
+        .singleWhere((r) => r.url.path.endsWith('/grupos-pedidos/p9/status'));
+    expect(status.body, contains('"status":"Finalizado"'));
   });
 
   testWidgets('setlist completa não mostra a barra de próxima', (tester) async {

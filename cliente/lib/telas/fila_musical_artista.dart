@@ -6,6 +6,7 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
+import '../infraestrutura/pedidos_a_seguir.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
@@ -54,6 +55,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   AssinaturaTempoReal? _tempoReal;
   final _busca = TextEditingController();
   String _textoBusca = '';
+  // Pedidos marcados para tocar a seguir na barra Próxima da setlist.
+  List<String> _aSeguir = [];
 
   bool _correspondeAoBusca(GrupoPedidoMusical p) =>
       _textoBusca.isEmpty ||
@@ -104,6 +107,7 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
       }
     });
     _carregar();
+    _lerASeguir();
     _atualizacaoAutomatica = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _carregarSilenciosamente(),
@@ -167,6 +171,17 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
         mostrarErro(context, erro);
       }
     }
+  }
+
+  Future<void> _lerASeguir() async {
+    final ids = await PedidosASeguir.ler(widget.apresentacao.id);
+    if (mounted) setState(() => _aSeguir = ids);
+  }
+
+  Future<void> _alternarASeguir(GrupoPedidoMusical pedido) async {
+    final ids = await PedidosASeguir.alternar(
+        widget.apresentacao.id, pedido.pedidoRepresentativoId);
+    if (mounted) setState(() => _aSeguir = ids);
   }
 
   Future<void> _alterar(

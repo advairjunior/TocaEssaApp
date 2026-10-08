@@ -74,8 +74,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
   /// A cifra abre antes de qualquer espera para o Safari aceitar a nova aba.
   Future<void> _tocarProxima() async {
     final musica = _sequencia.proxima;
-    final item = musica?.item;
-    if (musica == null || item == null) return;
+    if (musica == null) return;
     final preBuscada = _sequencia.cifraDe(musica);
     final url = preBuscada?.cifra?.url;
     if (url != null) {
@@ -85,20 +84,45 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     } else if (preBuscada == null) {
       _abrirCifra(musica);
     }
-    await _marcar(item, true);
-    final marcada = _sequencia.itens.any((i) => i.id == item.id && i.tocada);
-    if (!mounted || !marcada) return;
+    final desfazer = await _comecar(musica);
+    if (!mounted || desfazer == null) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
-        content: Text('${item.titulo} marcada como tocada.'),
-        action: SnackBarAction(
-          label: 'Desfazer',
-          onPressed: () => _marcar(item, false),
-        ),
+        content: Text(musica.pedido != null
+            ? '${musica.titulo} tocando agora.'
+            : '${musica.titulo} marcada como tocada.'),
+        action: SnackBarAction(label: 'Desfazer', onPressed: desfazer),
       ));
     if (url == null && preBuscada != null) {
       await _mostrarEscolhaDaCifra(musica, preBuscada);
+    }
+  }
+
+  /// Encerra o pedido que estava tocando e começa a música. Responde como
+  /// desfazer, ou nulo se não deu certo.
+  Future<VoidCallback?> _comecar(MusicaDoPalco musica) async {
+    try {
+      await _sequencia.finalizarTocando();
+      if (musica.pedido case final pedido?) {
+        final marcado = await _sequencia.tocarPedido(pedido);
+        return () =>
+            _executar(() => _sequencia.desfazerPedido(pedido, marcado));
+      }
+      final item = musica.item!;
+      await _sequencia.marcar(item, true);
+      return () => _marcar(item, false);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+      return null;
+    }
+  }
+
+  Future<void> _executar(Future<void> Function() acao) async {
+    try {
+      await acao();
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
     }
   }
 
@@ -255,13 +279,13 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     if (_sequencia.itens.isEmpty) {
       return _construirVazio();
     }
-    final proxima = _sequencia.proximaIndex;
+    final proxima = _sequencia.proxima;
     return Column(
       children: [
-        Expanded(child: _construirLista(context, proxima)),
-        if (proxima >= 0)
+        Expanded(child: _construirLista(context, proxima?.item)),
+        if (proxima != null)
           _BarraProxima(
-            titulo: _sequencia.itens[proxima].titulo,
+            titulo: proxima.titulo,
             detalhe: _sequencia.detalheDaProxima,
             salvando: _sequencia.salvando,
             tocar: _tocarProxima,
@@ -270,7 +294,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     );
   }
 
-  Widget _construirLista(BuildContext context, int proxima) {
+  Widget _construirLista(BuildContext context, ItemDoSetlist? proxima) {
     final pedidosNaFila = _sequencia.pedidosNaFila;
     return ConteudoMobile(
       filho: Column(
@@ -288,11 +312,11 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
           GrupoDeLinhas(
             recuoDivisoria: 60,
             linhas: [
-              for (final (indice, item) in _sequencia.itens.indexed)
+              for (final item in _sequencia.itens)
                 _LinhaSetlist(
                   item: item,
                   salvando: _sequencia.salvando,
-                  eProxima: indice == proxima,
+                  eProxima: item.id == proxima?.id,
                   semCifra:
                       _sequencia.estaSemCifra(MusicaDoPalco.doSetlist(item)),
                   pedidosNaFila:
