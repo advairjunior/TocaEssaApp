@@ -6,7 +6,7 @@ import '../infraestrutura/abrir_url_externa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
-import 'escolher_cifra.dart';
+import 'acoes_do_palco.dart';
 import 'sequencia_do_palco.dart';
 
 class SetlistDoArtista extends StatefulWidget {
@@ -29,7 +29,18 @@ class SetlistDoArtista extends StatefulWidget {
   State<SetlistDoArtista> createState() => _SetlistDoArtistaState();
 }
 
-class _SetlistDoArtistaState extends State<SetlistDoArtista> {
+class _SetlistDoArtistaState extends State<SetlistDoArtista>
+    with AcoesDoPalco<SetlistDoArtista> {
+  @override
+  SequenciaDoPalco get sequencia => _sequencia;
+  @override
+  ApiTocaEssa get api => widget.api;
+  @override
+  Future<void> Function(Uri url) get abrirUrl => widget.abrirUrl;
+  @override
+  FinalizarAberturaExterna Function() get prepararAbertura =>
+      widget.prepararAbertura;
+
   late final SequenciaDoPalco _sequencia = SequenciaDoPalco(
     api: widget.api,
     apresentacaoId: widget.apresentacao.id,
@@ -70,131 +81,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
     }
   }
 
-  /// Abre a cifra da próxima música e a marca como tocada num único toque.
-  /// A cifra abre antes de qualquer espera para o Safari aceitar a nova aba.
-  Future<void> _tocarProxima() async {
-    final musica = _sequencia.proxima;
-    if (musica == null) return;
-    final preBuscada = _sequencia.cifraDe(musica);
-    final url = preBuscada?.cifra?.url;
-    if (url != null) {
-      widget.abrirUrl(Uri.parse(url)).catchError((Object erro) {
-        if (mounted) mostrarErro(context, erro);
-      });
-    } else if (preBuscada == null) {
-      _abrirCifra(musica);
-    }
-    final desfazer = await _comecar(musica);
-    if (!mounted || desfazer == null) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        content: Text(musica.pedido != null
-            ? '${musica.titulo} tocando agora.'
-            : '${musica.titulo} marcada como tocada.'),
-        action: SnackBarAction(label: 'Desfazer', onPressed: desfazer),
-      ));
-    if (url == null && preBuscada != null) {
-      await _mostrarEscolhaDaCifra(musica, preBuscada);
-    }
-  }
-
-  /// Encerra o pedido que estava tocando e começa a música. Responde como
-  /// desfazer, ou nulo se não deu certo.
-  Future<VoidCallback?> _comecar(MusicaDoPalco musica) async {
-    try {
-      await _sequencia.finalizarTocando();
-      if (musica.pedido case final pedido?) {
-        final marcado = await _sequencia.tocarPedido(pedido);
-        return () =>
-            _executar(() => _sequencia.desfazerPedido(pedido, marcado));
-      }
-      final item = musica.item!;
-      await _sequencia.marcar(item, true);
-      return () => _marcar(item, false);
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-      return null;
-    }
-  }
-
-  Future<void> _executar(Future<void> Function() acao) async {
-    try {
-      await acao();
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _abrirCifra(MusicaDoPalco musica) async {
-    FinalizarAberturaExterna? finalizar;
-    try {
-      finalizar = widget.prepararAbertura();
-      final resultado =
-          await widget.api.consultarCifra(musica.titulo, musica.artista);
-      if (!mounted) {
-        await finalizar(null);
-        return;
-      }
-      if (resultado.cifra != null) {
-        await finalizar(Uri.parse(resultado.cifra!.url));
-        return;
-      }
-      await finalizar(null);
-      await _mostrarEscolhaDaCifra(musica, resultado);
-    } catch (erro) {
-      await finalizar?.call(null);
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _escolherCifra(MusicaDoPalco musica) async {
-    try {
-      final resultado =
-          await widget.api.consultarCifra(musica.titulo, musica.artista);
-      await _mostrarEscolhaDaCifra(musica, resultado);
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  /// Responde se o artista decidiu algo; falso quando fechou sem escolher.
-  Future<bool> _mostrarEscolhaDaCifra(
-      MusicaDoPalco musica, ResultadoCifraDoArtista resultado,
-      {String? rotuloColarEProxima}) async {
-    if (!mounted) return false;
-    final decisao = await mostrarEscolhaDeCifra(
-      context,
-      musica: musica.titulo,
-      artista: musica.artista,
-      resultado: resultado,
-      abrirUrl: widget.abrirUrl,
-      rotuloColarEProxima: rotuloColarEProxima,
-    );
-    if (decisao == null || !mounted) return false;
-    switch (decisao.tipo) {
-      case TipoDecisaoCifra.remover:
-        final cifra = resultado.cifra;
-        if (cifra == null) return false;
-        await widget.api.removerCifra(cifra.id);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Link da cifra removido.')),
-          );
-        }
-      case TipoDecisaoCifra.salvar:
-        await widget.api
-            .salvarCifra(musica.titulo, musica.artista, decisao.url!);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cifra salva.')),
-          );
-        }
-    }
-    await _sequencia.atualizarCifra(musica);
-    return true;
-  }
-
   /// Pede, uma a uma, a cifra das músicas que faltam tocar e estão sem cifra,
   /// para resolver tudo antes de subir no palco. Fechar a escolha interrompe.
   Future<void> _resolverSemCifra() async {
@@ -204,7 +90,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
       if (resultado == null || !mounted) return;
       final ultima = indice == pendentes.length - 1;
       try {
-        if (!await _mostrarEscolhaDaCifra(musica, resultado,
+        if (!await mostrarEscolhaDaCifra(musica, resultado,
             rotuloColarEProxima:
                 ultima ? 'Colar e concluir' : 'Colar e próxima')) {
           return;
@@ -288,7 +174,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
             titulo: proxima.titulo,
             detalhe: _sequencia.detalheDaProxima,
             salvando: _sequencia.salvando,
-            tocar: _tocarProxima,
+            tocar: tocarProxima,
           ),
       ],
     );
@@ -322,9 +208,9 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista> {
                   pedidosNaFila:
                       pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
                   marcar: (tocada) => _marcar(item, tocada),
-                  abrirCifra: () => _abrirCifra(MusicaDoPalco.doSetlist(item)),
+                  abrirCifra: () => abrirCifra(MusicaDoPalco.doSetlist(item)),
                   escolherCifra: () =>
-                      _escolherCifra(MusicaDoPalco.doSetlist(item)),
+                      escolherCifra(MusicaDoPalco.doSetlist(item)),
                 ),
             ],
           ),

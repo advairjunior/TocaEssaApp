@@ -126,10 +126,45 @@ class SequenciaDoPalco extends ChangeNotifier {
     return partes.isEmpty ? null : partes.join(' · ');
   }
 
+  MusicaDoPalco? _atual;
+
+  /// Música começada neste aparelho ou, ao abrir, o pedido tocando agora.
+  MusicaDoPalco? get atual =>
+      _atual ??
+      (tocandoAgora.isEmpty
+          ? null
+          : MusicaDoPalco.doPedido(tocandoAgora.first));
+
+  /// Encerra o pedido que estava tocando e começa a música. Responde como
+  /// desfazer o começo.
+  Future<Future<void> Function()> comecar(MusicaDoPalco musica) async {
+    final anterior = _atual;
+    await finalizarTocando();
+    if (musica.pedido case final pedido?) {
+      final marcado = await tocarPedido(pedido);
+      _atual = musica;
+      _avisar();
+      return () async {
+        await desfazerPedido(pedido, marcado);
+        _atual = anterior;
+        _avisar();
+      };
+    }
+    final item = musica.item!;
+    await marcar(item, true);
+    _atual = musica;
+    _avisar();
+    return () async {
+      await marcar(item, false);
+      _atual = anterior;
+      _avisar();
+    };
+  }
+
   /// Coloca o pedido em Tocando agora, tira da sequência e marca a mesma
   /// música no setlist. Responde o item marcado, para poder desfazer.
   Future<ItemDoSetlist?> tocarPedido(GrupoPedidoMusical pedido) async {
-    await _alterarStatus(pedido, StatusPedidoMusical.tocandoAgora);
+    await alterarStatus(pedido, StatusPedidoMusical.tocandoAgora);
     aSeguir =
         aSeguir.where((id) => id != pedido.pedidoRepresentativoId).toList();
     _avisar();
@@ -144,7 +179,7 @@ class SequenciaDoPalco extends ChangeNotifier {
 
   Future<void> desfazerPedido(
       GrupoPedidoMusical pedido, ItemDoSetlist? marcado) async {
-    await _alterarStatus(pedido, StatusPedidoMusical.aceito);
+    await alterarStatus(pedido, StatusPedidoMusical.aceito);
     aSeguir = [
       pedido.pedidoRepresentativoId,
       ...aSeguir.where((id) => id != pedido.pedidoRepresentativoId),
@@ -158,11 +193,11 @@ class SequenciaDoPalco extends ChangeNotifier {
   /// Começar a próxima música encerra o pedido que estava tocando.
   Future<void> finalizarTocando() async {
     for (final pedido in tocandoAgora) {
-      await _alterarStatus(pedido, StatusPedidoMusical.finalizado);
+      await alterarStatus(pedido, StatusPedidoMusical.finalizado);
     }
   }
 
-  Future<void> _alterarStatus(
+  Future<void> alterarStatus(
       GrupoPedidoMusical pedido, StatusPedidoMusical status) async {
     salvando = true;
     _avisar();
