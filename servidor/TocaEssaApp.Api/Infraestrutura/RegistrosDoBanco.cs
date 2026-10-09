@@ -32,6 +32,8 @@ internal sealed class ApresentacaoRegistro
     public StatusApresentacao Status { get; set; }
     public TipoApresentacao Tipo { get; set; }
     public string? FotoRetrospectivaUrl { get; set; }
+    // ids dos pedidos marcados para tocar a seguir, em ordem, separados por vírgula
+    public string? PedidosASeguir { get; set; }
 }
 
 internal sealed class PedidoMusicalRegistro

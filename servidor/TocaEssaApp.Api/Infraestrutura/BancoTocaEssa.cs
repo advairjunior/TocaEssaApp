@@ -247,6 +247,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     ADD COLUMN IF NOT EXISTS "Tipo" integer NOT NULL DEFAULT 0;
                 ALTER TABLE "PedidosMusicais"
                     ADD COLUMN IF NOT EXISTS "DestinatarioAlo" character varying(120) NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "PedidosASeguir" text NULL;
                 CREATE TABLE IF NOT EXISTS "AvaliacoesPedidos" (
                     "PedidoId" uuid NOT NULL,
                     "IdentificadorAvaliador" character varying(160) NOT NULL,
@@ -533,6 +535,9 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 "ALTER TABLE \"Apresentacoes\" ADD COLUMN \"FotoRetrospectivaUrl\" TEXT NULL");
 
         MigrarPropriedadeSqlite(comando);
+        // Depois da migração de propriedade, que pode reconstruir a tabela.
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "PedidosASeguir", "TEXT NULL");
     }
 
     private void MigrarPropriedadePostgres()

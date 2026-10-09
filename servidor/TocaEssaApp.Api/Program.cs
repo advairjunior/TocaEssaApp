@@ -574,6 +574,24 @@ app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos/{represent
         ObterToken(http) ?? string.Empty, apresentacaoId,
         representanteId, requisicao.Status)));
 
+app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/pedidos-a-seguir", (
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarPedidosASeguir(
+        ObterToken(http) ?? string.Empty, apresentacaoId)));
+
+app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/pedidos-a-seguir/{pedidoId:guid}", (
+    Guid apresentacaoId, Guid pedidoId, bool? noInicio, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ColocarPedidoASeguir(
+        ObterToken(http) ?? string.Empty, apresentacaoId, pedidoId,
+        noInicio ?? false)));
+
+app.MapDelete("/api/apresentacoes/{apresentacaoId:guid}/pedidos-a-seguir/{pedidoId:guid}", (
+    Guid apresentacaoId, Guid pedidoId, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.TirarPedidoASeguir(
+        ObterToken(http) ?? string.Empty, apresentacaoId, pedidoId)));
+
 app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/fila", (
     Guid apresentacaoId, ReordenarFilaMusical requisicao, HttpRequest http,
     RepositorioTocaEssa repositorio) =>

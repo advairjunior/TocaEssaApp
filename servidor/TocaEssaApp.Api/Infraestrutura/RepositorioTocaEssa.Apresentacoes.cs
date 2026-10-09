@@ -155,6 +155,7 @@ public sealed partial class RepositorioTocaEssa
         {
             var item = ObterItemApresentacao(apresentacaoId, artistaId);
             _apresentacoes.TryRemove(item.Key, out _);
+            _pedidosASeguir.TryRemove(apresentacaoId, out _);
             foreach (var pedido in _pedidos.Values
                          .Where(pedido => pedido.ApresentacaoId == apresentacaoId)
                          .ToArray())

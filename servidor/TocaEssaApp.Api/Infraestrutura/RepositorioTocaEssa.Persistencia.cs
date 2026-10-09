@@ -77,6 +77,8 @@ public sealed partial class RepositorioTocaEssa
                 apresentacao.Tipo,
                 apresentacao.FotoRetrospectivaUrl,
                 apresentacao.ArtistaId);
+            if (LerPedidosASeguir(apresentacao.PedidosASeguir) is { Count: > 0 } aSeguir)
+                _pedidosASeguir[apresentacao.Id] = aSeguir;
         }
 
         foreach (var pedido in banco.Pedidos.AsNoTracking())
@@ -297,7 +299,8 @@ public sealed partial class RepositorioTocaEssa
                 PedidosAbertos = item.PedidosAbertos,
                 Status = item.Status,
                 Tipo = item.Tipo,
-                FotoRetrospectivaUrl = item.FotoRetrospectivaUrl
+                FotoRetrospectivaUrl = item.FotoRetrospectivaUrl,
+                PedidosASeguir = EscreverPedidosASeguir(item.Id)
             });
 
         IEnumerable<object> pedidos = _pedidos.Values.Select(item =>
