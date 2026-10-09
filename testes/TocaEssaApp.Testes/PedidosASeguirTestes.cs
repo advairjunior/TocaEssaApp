@@ -181,8 +181,8 @@ public class PedidosASeguirTestes
 
             var colocado = await ana.PutAsync($"{rota}/{pedidoId}", null);
             Assert.Equal(HttpStatusCode.OK, colocado.StatusCode);
-            Assert.Equal([pedidoId], await colocado.Content.ReadFromJsonAsync<Guid[]>());
-            Assert.Equal([pedidoId], await ana.GetFromJsonAsync<Guid[]>(rota));
+            Assert.Equal([pedidoId], (await colocado.Content.ReadFromJsonAsync<Guid[]>())!);
+            Assert.Equal([pedidoId], (await ana.GetFromJsonAsync<Guid[]>(rota))!);
 
             Assert.Equal(HttpStatusCode.NotFound, (await bia.GetAsync(rota)).StatusCode);
             Assert.Equal(HttpStatusCode.NotFound,
