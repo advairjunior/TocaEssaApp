@@ -40,7 +40,7 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
     // O desfazer fica na própria barra: um aviso no rodapé cobriria a
     // próxima música justamente quando o artista precisa vê-la.
     setState(() {
-      ultimaComecada = musica;
+      _ultimaComecada = musica;
       _desfazerUltima = desfazer;
     });
     if (url == null && preBuscada != null) {
@@ -49,14 +49,18 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
   }
 
   /// Última música começada pelo Tocar, enquanto ainda dá para desfazer.
-  MusicaDoPalco? ultimaComecada;
+  /// Some quando outro aparelho da banda começa outra música: desfazer
+  /// aqui atrapalharia a música do colega.
+  MusicaDoPalco? get ultimaComecada =>
+      identical(_ultimaComecada, sequencia.atual) ? _ultimaComecada : null;
+  MusicaDoPalco? _ultimaComecada;
   Future<void> Function()? _desfazerUltima;
 
   Future<void> desfazerUltima() async {
     final desfazer = _desfazerUltima;
-    if (desfazer == null) return;
+    if (desfazer == null || ultimaComecada == null) return;
     setState(() {
-      ultimaComecada = null;
+      _ultimaComecada = null;
       _desfazerUltima = null;
     });
     await executar(desfazer);

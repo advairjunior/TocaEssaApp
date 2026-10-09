@@ -208,6 +208,48 @@ mixin _ApiPedidos on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
+  /// Pedidos marcados para tocar a seguir, em ordem. Ficam no servidor para
+  /// todos os aparelhos da banda verem a mesma sequência.
+  Future<List<String>> listarPedidosASeguir(String apresentacaoId) async {
+    final resposta = await _cliente.get(
+      Uri.parse(
+          '$_enderecoBase/api/apresentacoes/$apresentacaoId/pedidos-a-seguir'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    return _lerPedidosASeguir(resposta);
+  }
+
+  /// Coloca o pedido no fim da sequência, ou no início; se já estava, muda
+  /// de lugar.
+  Future<List<String>> colocarPedidoASeguir(
+      String apresentacaoId, String pedidoId,
+      {bool noInicio = false}) async {
+    final resposta = await _cliente.put(
+      Uri.parse('$_enderecoBase/api/apresentacoes/$apresentacaoId'
+          '/pedidos-a-seguir/$pedidoId${noInicio ? '?noInicio=true' : ''}'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    return _lerPedidosASeguir(resposta);
+  }
+
+  Future<List<String>> tirarPedidoASeguir(
+      String apresentacaoId, String pedidoId) async {
+    final resposta = await _cliente.delete(
+      Uri.parse('$_enderecoBase/api/apresentacoes/$apresentacaoId'
+          '/pedidos-a-seguir/$pedidoId'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    return _lerPedidosASeguir(resposta);
+  }
+
+  List<String> _lerPedidosASeguir(http.Response resposta) {
+    _validar(resposta);
+    // Converte já aqui: resposta inesperada falha na chamada, não ao desenhar.
+    return [
+      for (final id in jsonDecode(resposta.body) as List<dynamic>) id as String
+    ];
+  }
+
   Future<List<PedidoMusical>> reordenarFila(
     String apresentacaoId,
     List<String> pedidos,

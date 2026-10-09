@@ -63,11 +63,11 @@ class _ModoPalcoState extends State<ModoPalco> with AcoesDoPalco<ModoPalco> {
     _carregar();
     _tempoReal = AssinaturaTempoReal(
       widget.api.enderecoTempoReal(widget.apresentacao.codigo),
-      _sequencia.recarregarPedidos,
+      _sequencia.recarregar,
     );
     _atualizacaoAutomatica = Timer.periodic(
       const Duration(seconds: 30),
-      (_) => _sequencia.recarregarPedidos(),
+      (_) => _sequencia.recarregar(),
     );
   }
 

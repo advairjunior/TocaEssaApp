@@ -6,7 +6,6 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
-import '../infraestrutura/pedidos_a_seguir.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
@@ -143,6 +142,8 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     if (_atualizando || !mounted) return;
     _atualizando = true;
     unawaited(_atualizarPublico());
+    // A sequência a seguir pode ter mudado em outro aparelho da banda.
+    unawaited(_lerASeguir());
     try {
       final pedidos = await widget.api
           .listarGruposDePedidosDoArtista(widget.apresentacao.id);
@@ -174,14 +175,25 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   }
 
   Future<void> _lerASeguir() async {
-    final ids = await PedidosASeguir.ler(widget.apresentacao.id);
-    if (mounted) setState(() => _aSeguir = ids);
+    try {
+      final ids = await widget.api.listarPedidosASeguir(widget.apresentacao.id);
+      if (mounted) setState(() => _aSeguir = ids);
+    } catch (_) {
+      // Sem a sequência, a fila segue; a próxima atualização tenta de novo.
+    }
   }
 
   Future<void> _alternarASeguir(GrupoPedidoMusical pedido) async {
-    final ids = await PedidosASeguir.alternar(
-        widget.apresentacao.id, pedido.pedidoRepresentativoId);
-    if (mounted) setState(() => _aSeguir = ids);
+    final apresentacaoId = widget.apresentacao.id;
+    final id = pedido.pedidoRepresentativoId;
+    try {
+      final ids = _aSeguir.contains(id)
+          ? await widget.api.tirarPedidoASeguir(apresentacaoId, id)
+          : await widget.api.colocarPedidoASeguir(apresentacaoId, id);
+      if (mounted) setState(() => _aSeguir = ids);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    }
   }
 
   Future<void> _alterar(

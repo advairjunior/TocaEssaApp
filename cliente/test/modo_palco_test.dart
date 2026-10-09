@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/modo_palco.dart';
+
+import 'apoio/pedidos_a_seguir_falsos.dart';
 
 const _id = '33333333-3333-3333-3333-333333333333';
 const _cifraSalva = 'https://www.cifraclub.com.br/banda/musica/';
@@ -47,6 +48,21 @@ class _Palco {
   var telaAcesa = 0;
   var telaLiberada = 0;
   List<Map<String, Object?>> grupos = [];
+  List<Map<String, Object?>> itens = [];
+  // Sequência "tocar a seguir" guardada no servidor falso.
+  final aSeguir = <String>[];
+
+  /// O colega marca a música do setlist como tocada no celular dele.
+  void outroAparelhoTocou(String itemId) {
+    final indice = itens.indexWhere((i) => i['id'] == itemId);
+    itens[indice] = {...itens[indice], 'tocada': true};
+  }
+
+  void outroAparelhoMudouStatus(String pedidoId, String status) {
+    final indice =
+        grupos.indexWhere((g) => g['pedidoRepresentativoId'] == pedidoId);
+    grupos[indice] = {...grupos[indice], 'status': status};
+  }
 
   Iterable<http.Request> status(String id) => requisicoes
       .where((r) => r.url.path.endsWith('/grupos-pedidos/$id/status'));
@@ -56,17 +72,20 @@ Future<_Palco> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? grupos,
 }) async {
-  SharedPreferences.setMockInitialValues({});
   final palco = _Palco();
-  final itens = [
+  palco.itens = [
     _item('1', 'Garota de Ipanema', 1, tocada: true),
     _item('2', 'Velha Infância', 2),
     _item('3', 'Evidências', 3),
   ];
-  final listaDeGrupos = palco.grupos = grupos ?? <Map<String, Object?>>[];
+  palco.grupos = grupos ?? <Map<String, Object?>>[];
   final cliente = MockClient((requisicao) async {
     palco.requisicoes.add(requisicao);
+    final sequencia = responderPedidosASeguir(requisicao, palco.aSeguir);
+    if (sequencia != null) return sequencia;
     final caminho = requisicao.url.path;
+    final listaDeGrupos = palco.grupos;
+    final itens = palco.itens;
     if (caminho.endsWith('/setlist')) {
       return http.Response(jsonEncode(itens), 200, headers: _json);
     }
@@ -86,10 +105,9 @@ Future<_Palco> _abrir(
     }
     if (caminho.endsWith('/tocada')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
-      final item = itens.firstWhere((i) => caminho.contains('/${i['id']}/'));
-      return http.Response(
-          jsonEncode({...item, 'tocada': corpo['tocada']}), 200,
-          headers: _json);
+      final indice = itens.indexWhere((i) => caminho.contains('/${i['id']}/'));
+      itens[indice] = {...itens[indice], 'tocada': corpo['tocada']};
+      return http.Response(jsonEncode(itens[indice]), 200, headers: _json);
     }
     if (caminho.endsWith('/cifras/consulta')) {
       return http.Response(
@@ -223,6 +241,87 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Próxima: Sozinho'), findsOneWidget);
     expect(find.text('Tirar da sequência'), findsOneWidget);
+    expect(palco.aSeguir, ['p2']);
+  });
+
+  group('com a banda em vários aparelhos', () {
+    Future<void> atualizar(WidgetTester tester) async {
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('pedido marcado a seguir no outro celular vira a próxima',
+        (tester) async {
+      final palco =
+          await _abrir(tester, grupos: [_grupo('p3', 'Sozinho', 'Aceito')]);
+      expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+
+      palco.aSeguir.add('p3');
+      await atualizar(tester);
+
+      expect(find.text('Próxima: Sozinho'), findsOneWidget);
+      expect(find.text('Tirar da sequência'), findsOneWidget);
+    });
+
+    testWidgets(
+        'música começada no outro celular vai para tocando agora '
+        'e a cifra abre pelo botão', (tester) async {
+      final palco = await _abrir(tester);
+
+      palco.outroAparelhoTocou('2');
+      await atualizar(tester);
+
+      expect(find.text('Velha Infância'), findsOneWidget);
+      expect(find.text('Próxima: Evidências'), findsOneWidget);
+      expect(palco.abertas, isEmpty);
+
+      await tester.tap(find.text('Abrir cifra'));
+      await tester.pumpAndSettle();
+      expect(palco.abertas, [Uri.parse(_cifraSalva)]);
+    });
+
+    testWidgets('pedido começado no outro celular vai para tocando agora',
+        (tester) async {
+      final palco =
+          await _abrir(tester, grupos: [_grupo('p3', 'Sozinho', 'Aceito')]);
+      palco.aSeguir.add('p3');
+      await atualizar(tester);
+      expect(find.text('Próxima: Sozinho'), findsOneWidget);
+
+      palco.outroAparelhoMudouStatus('p3', 'TocandoAgora');
+      palco.aSeguir.remove('p3');
+      await atualizar(tester);
+
+      expect(find.text('Sozinho'), findsOneWidget);
+      expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+    });
+
+    testWidgets('quando o colega começa outra música, o desfazer some',
+        (tester) async {
+      final palco = await _abrir(tester);
+      await tester.tap(find.text('Tocar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Desfazer'), findsOneWidget);
+
+      palco.outroAparelhoTocou('3');
+      await atualizar(tester);
+
+      expect(find.text('Desfazer'), findsNothing);
+      expect(find.text('Evidências'), findsOneWidget);
+    });
+
+    testWidgets('a música começada aqui continua em tocando agora',
+        (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Tocar'));
+      await tester.pumpAndSettle();
+
+      await atualizar(tester);
+
+      expect(find.text('Velha Infância'), findsOneWidget);
+      expect(find.text('Próxima: Evidências'), findsOneWidget);
+      expect(find.text('Desfazer'), findsOneWidget);
+    });
   });
 
   testWidgets('recusar pedido novo tira o pedido da tela', (tester) async {

@@ -1,34 +1,47 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:toca_essa_app/infraestrutura/pedidos_a_seguir.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+
+import 'apoio/pedidos_a_seguir_falsos.dart';
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  late List<http.Request> requisicoes;
+  late List<String> noServidor;
+  late ApiTocaEssa api;
 
-  test('sem pedidos marcados, a lista começa vazia', () async {
-    expect(await PedidosASeguir.ler('show-1'), isEmpty);
+  setUp(() {
+    requisicoes = [];
+    noServidor = [];
+    api = ApiTocaEssa(
+      enderecoBase: 'https://tocaessa.test',
+      cliente: MockClient((requisicao) async {
+        requisicoes.add(requisicao);
+        return responderPedidosASeguir(requisicao, noServidor)!;
+      }),
+    )..definirTokenArtista('token-artista');
   });
 
-  test('alternar marca na ordem e desmarca o pedido', () async {
-    await PedidosASeguir.alternar('show-1', 'p1');
-    await PedidosASeguir.alternar('show-1', 'p2');
-    expect(await PedidosASeguir.ler('show-1'), ['p1', 'p2']);
+  test('a sequência vem do servidor, para todos os aparelhos verem', () async {
+    noServidor.addAll(['p1', 'p2']);
 
-    await PedidosASeguir.alternar('show-1', 'p1');
-    expect(await PedidosASeguir.ler('show-1'), ['p2']);
+    expect(await api.listarPedidosASeguir('show-1'), ['p1', 'p2']);
+    expect(requisicoes.single.url.path,
+        '/api/apresentacoes/show-1/pedidos-a-seguir');
+    expect(requisicoes.single.headers['Authorization'], 'Bearer token-artista');
   });
 
-  test('cada apresentação tem a própria lista', () async {
-    await PedidosASeguir.alternar('show-1', 'p1');
+  test('colocar no fim ou no início e tirar respondem a nova sequência',
+      () async {
+    expect(await api.colocarPedidoASeguir('show-1', 'p1'), ['p1']);
+    expect(await api.colocarPedidoASeguir('show-1', 'p2', noInicio: true),
+        ['p2', 'p1']);
+    expect(await api.tirarPedidoASeguir('show-1', 'p2'), ['p1']);
 
-    expect(await PedidosASeguir.ler('show-2'), isEmpty);
-  });
-
-  test('remover tira o pedido e ignora pedido que não estava', () async {
-    await PedidosASeguir.alternar('show-1', 'p1');
-    await PedidosASeguir.remover('show-1', 'p1');
-    await PedidosASeguir.remover('show-1', 'p9');
-
-    expect(await PedidosASeguir.ler('show-1'), isEmpty);
+    expect(requisicoes.map((r) => '${r.method} ${r.url}'), [
+      'PUT https://tocaessa.test/api/apresentacoes/show-1/pedidos-a-seguir/p1',
+      'PUT https://tocaessa.test/api/apresentacoes/show-1/pedidos-a-seguir/p2?noInicio=true',
+      'DELETE https://tocaessa.test/api/apresentacoes/show-1/pedidos-a-seguir/p2',
+    ]);
   });
 }

@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
-import '../infraestrutura/pedidos_a_seguir.dart';
 
 /// Uma música que pode tocar no show: item do setlist ou pedido do público.
 class MusicaDoPalco {
@@ -34,6 +33,9 @@ class SequenciaDoPalco extends ChangeNotifier {
   // título e artista normalizados → cifra consultada
   Map<String, ResultadoCifraDoArtista> _cifras = {};
   bool _descartada = false;
+  // Muda a cada alteração feita neste aparelho: uma atualização que começou
+  // antes dela traz dados velhos e é descartada.
+  int _versaoLocal = 0;
 
   static String _chave(String titulo, String? artista) =>
       '${titulo.trim().toLowerCase()}|${artista?.trim().toLowerCase() ?? ''}';
@@ -48,9 +50,80 @@ class SequenciaDoPalco extends ChangeNotifier {
     ]);
     itens = resultados[0] as List<ItemDoSetlist>;
     pedidos = resultados[1] as List<GrupoPedidoMusical>;
-    aSeguir = await PedidosASeguir.ler(apresentacaoId);
+    aSeguir = await _lerASeguirSemErro() ?? const [];
     _avisar();
     buscarCifras();
+  }
+
+  Future<List<String>?> _lerASeguirSemErro() async {
+    try {
+      return await api.listarPedidosASeguir(apresentacaoId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Traz o que mudou em outro aparelho da banda: setlist, pedidos e a
+  /// sequência a seguir. A música que o colega começou vira a atual, para
+  /// a cifra estar a um toque. Falhas ficam para a próxima atualização.
+  Future<void> recarregar() async {
+    final versao = _versaoLocal;
+    final List<ItemDoSetlist> novosItens;
+    final List<GrupoPedidoMusical> novosPedidos;
+    final List<String>? novaSequencia;
+    try {
+      final resultados = await Future.wait([
+        api.obterSetlist(apresentacaoId),
+        api.listarGruposDePedidosDoArtista(apresentacaoId),
+        _lerASeguirSemErro(),
+      ]);
+      novosItens = resultados[0] as List<ItemDoSetlist>;
+      novosPedidos = resultados[1] as List<GrupoPedidoMusical>;
+      novaSequencia = resultados[2] as List<String>?;
+    } catch (_) {
+      return;
+    }
+    if (versao != _versaoLocal || _descartada) return;
+    final jaTocadas = {
+      for (final i in itens)
+        if (i.tocada) i.id
+    };
+    final jaTocando = {for (final p in tocandoAgora) p.pedidoRepresentativoId};
+    final setlistMudou = !_mesmosItens(itens, novosItens);
+    itens = novosItens;
+    pedidos = novosPedidos;
+    if (novaSequencia != null) aSeguir = novaSequencia;
+    final pedidoComecado = tocandoAgora
+        .where((p) => !jaTocando.contains(p.pedidoRepresentativoId))
+        .firstOrNull;
+    final itemComecado =
+        itens.where((i) => i.tocada && !jaTocadas.contains(i.id)).lastOrNull;
+    if (pedidoComecado != null) {
+      _atual = MusicaDoPalco.doPedido(pedidoComecado);
+    } else if (itemComecado != null) {
+      _atual = MusicaDoPalco.doSetlist(itemComecado);
+    } else if (_atual != null && !_continuaTocando(_atual!)) {
+      _atual = null;
+    }
+    _avisar();
+    if (setlistMudou) buscarCifras();
+  }
+
+  static bool _mesmosItens(List<ItemDoSetlist> a, List<ItemDoSetlist> b) =>
+      a.length == b.length &&
+      [
+        for (var i = 0; i < a.length; i++)
+          a[i].id == b[i].id &&
+              a[i].titulo == b[i].titulo &&
+              a[i].artista == b[i].artista
+      ].every((igual) => igual);
+
+  bool _continuaTocando(MusicaDoPalco musica) {
+    if (musica.item case final item?) {
+      return itens.any((i) => i.id == item.id && i.tocada);
+    }
+    final id = musica.pedido!.pedidoRepresentativoId;
+    return tocandoAgora.any((p) => p.pedidoRepresentativoId == id);
   }
 
   void substituirItens(List<ItemDoSetlist> novos) {
@@ -61,6 +134,7 @@ class SequenciaDoPalco extends ChangeNotifier {
 
   Future<void> marcar(ItemDoSetlist item, bool tocada) async {
     salvando = true;
+    _versaoLocal++;
     _avisar();
     try {
       final atualizado =
@@ -68,6 +142,7 @@ class SequenciaDoPalco extends ChangeNotifier {
       itens = itens.map((i) => i.id == atualizado.id ? atualizado : i).toList();
     } finally {
       salvando = false;
+      _versaoLocal++;
       _avisar();
     }
   }
@@ -117,21 +192,18 @@ class SequenciaDoPalco extends ChangeNotifier {
 
   /// Marca o pedido para tocar a seguir, ou desmarca, já buscando a cifra.
   Future<void> alternarASeguir(GrupoPedidoMusical pedido) async {
-    aSeguir = await PedidosASeguir.alternar(
-        apresentacaoId, pedido.pedidoRepresentativoId);
-    _avisar();
-    if (aSeguir.contains(pedido.pedidoRepresentativoId)) {
-      await atualizarCifra(MusicaDoPalco.doPedido(pedido));
-    }
-  }
-
-  /// Atualiza os pedidos sem interromper o show; falhas ficam para a próxima.
-  Future<void> recarregarPedidos() async {
+    final id = pedido.pedidoRepresentativoId;
+    _versaoLocal++;
     try {
-      pedidos = await api.listarGruposDePedidosDoArtista(apresentacaoId);
-      _avisar();
-    } catch (_) {
-      // A próxima atualização tenta novamente.
+      aSeguir = aSeguir.contains(id)
+          ? await api.tirarPedidoASeguir(apresentacaoId, id)
+          : await api.colocarPedidoASeguir(apresentacaoId, id);
+    } finally {
+      _versaoLocal++;
+    }
+    _avisar();
+    if (aSeguir.contains(id)) {
+      await atualizarCifra(MusicaDoPalco.doPedido(pedido));
     }
   }
 
@@ -206,7 +278,8 @@ class SequenciaDoPalco extends ChangeNotifier {
     aSeguir =
         aSeguir.where((id) => id != pedido.pedidoRepresentativoId).toList();
     _avisar();
-    await PedidosASeguir.remover(apresentacaoId, pedido.pedidoRepresentativoId);
+    await _gravarASeguir(() =>
+        api.tirarPedidoASeguir(apresentacaoId, pedido.pedidoRepresentativoId));
     final titulo = pedido.musica.trim().toLowerCase();
     final noSetlist = itens
         .where((i) => !i.tocada && i.titulo.trim().toLowerCase() == titulo)
@@ -223,9 +296,24 @@ class SequenciaDoPalco extends ChangeNotifier {
       ...aSeguir.where((id) => id != pedido.pedidoRepresentativoId),
     ];
     _avisar();
-    await PedidosASeguir.adicionarNoInicio(
-        apresentacaoId, pedido.pedidoRepresentativoId);
+    await _gravarASeguir(() => api.colocarPedidoASeguir(
+        apresentacaoId, pedido.pedidoRepresentativoId,
+        noInicio: true));
     if (marcado != null) await marcar(marcado, false);
+  }
+
+  /// Grava a sequência no servidor sem travar o show: o pedido já está
+  /// tocando (ou de volta) e a lista só vale para pedidos aceitos.
+  Future<void> _gravarASeguir(Future<List<String>> Function() gravar) async {
+    _versaoLocal++;
+    try {
+      aSeguir = await gravar();
+      _avisar();
+    } catch (_) {
+      // A próxima atualização traz a sequência do servidor.
+    } finally {
+      _versaoLocal++;
+    }
   }
 
   /// Começar a próxima música encerra o pedido que estava tocando.
@@ -238,6 +326,7 @@ class SequenciaDoPalco extends ChangeNotifier {
   Future<void> alterarStatus(
       GrupoPedidoMusical pedido, StatusPedidoMusical status) async {
     salvando = true;
+    _versaoLocal++;
     _avisar();
     try {
       final atualizado = await api.alterarStatusDoGrupo(
@@ -249,6 +338,7 @@ class SequenciaDoPalco extends ChangeNotifier {
           .toList();
     } finally {
       salvando = false;
+      _versaoLocal++;
       _avisar();
     }
   }

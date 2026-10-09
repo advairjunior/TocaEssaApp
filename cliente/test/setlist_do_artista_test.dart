@@ -6,11 +6,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
-import 'package:toca_essa_app/infraestrutura/pedidos_a_seguir.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 import 'package:toca_essa_app/telas/setlist_do_artista.dart';
+
+import 'apoio/pedidos_a_seguir_falsos.dart';
 
 const _id = '33333333-3333-3333-3333-333333333333';
 
@@ -64,6 +64,9 @@ void _simularAreaDeTransferencia(
 
 const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 
+// Sequência "tocar a seguir" guardada no servidor falso.
+var _aSeguirNoServidor = <String>[];
+
 Future<List<http.Request>> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? itens,
@@ -73,8 +76,7 @@ Future<List<http.Request>> _abrir(
   List<Map<String, Object?>>? grupos,
   List<String> pedidosASeguir = const [],
 }) async {
-  SharedPreferences.setMockInitialValues(
-      {'pedidosASeguir:$_id': pedidosASeguir});
+  _aSeguirNoServidor = [...pedidosASeguir];
   final requisicoes = <http.Request>[];
   final salvas = <String>{};
   final listaDeGrupos =
@@ -87,6 +89,8 @@ Future<List<http.Request>> _abrir(
       ];
   final cliente = MockClient((requisicao) async {
     requisicoes.add(requisicao);
+    final sequencia = responderPedidosASeguir(requisicao, _aSeguirNoServidor);
+    if (sequencia != null) return sequencia;
     final caminho = requisicao.url.path;
     if (caminho.endsWith('/setlist')) {
       return http.Response(jsonEncode(lista), 200,
@@ -507,7 +511,7 @@ void main() {
     final status = requisicoes.singleWhere((r) =>
         r.url.path == '/api/apresentacoes/$_id/grupos-pedidos/p1/status');
     expect(status.body, contains('"status":"TocandoAgora"'));
-    expect(await PedidosASeguir.ler(_id), isEmpty);
+    expect(_aSeguirNoServidor, isEmpty);
     expect(find.text('Começou: Evidências'), findsOneWidget);
     expect(find.text('Próxima: Velha Infância'), findsOneWidget);
   });
@@ -538,7 +542,7 @@ void main() {
         .where((r) => r.url.path.endsWith('/grupos-pedidos/p1/status'))
         .last;
     expect(status.body, contains('"status":"Aceito"'));
-    expect(await PedidosASeguir.ler(_id), ['p1']);
+    expect(_aSeguirNoServidor, ['p1']);
     expect(find.text('Próxima: Evidências'), findsOneWidget);
     expect(find.text('1 de 3 tocadas'), findsOneWidget);
   });
