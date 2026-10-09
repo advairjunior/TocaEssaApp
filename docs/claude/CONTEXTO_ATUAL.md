@@ -60,12 +60,17 @@ arquivo.
     Colar e próxima); ícone de cifra em amarelo quando falta;
   - uma única aba de cifra: cada cifra nova fecha a anterior.
 - Tocar a seguir: na fila, o pedido aceito pode ser marcado para entrar
-  antes do setlist na barra Próxima. A marcação fica no aparelho
-  (`PedidosASeguir`, `shared_preferences`), por apresentação. Tocar um
-  pedido o coloca em Tocando agora e encerra o que estava tocando.
+  antes do setlist na barra Próxima. A sequência fica no servidor, na
+  coluna `Apresentacoes.PedidosASeguir` (rotas privadas
+  `/api/apresentacoes/{id}/pedidos-a-seguir`), para todos os aparelhos da
+  banda verem a mesma. Tocar um pedido o coloca em Tocando agora e encerra
+  o que estava tocando.
 - Modo palco (botão no topo da setlist): tela única com a música atual em
   letra grande, a barra Próxima, alôs, pedidos novos (aceitar/recusar) e
   aceitos (tocar a seguir); tempo real e tela sempre acesa (Wake Lock).
+  Acompanha outros aparelhos: a cada aviso recarrega setlist, pedidos e
+  sequência; a música começada pelo colega vira Tocando agora (cifra pelo
+  botão Abrir cifra) e o Desfazer local some.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
