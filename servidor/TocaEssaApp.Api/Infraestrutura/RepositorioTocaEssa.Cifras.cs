@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using TocaEssaApp.Api.Dominio;
 
 namespace TocaEssaApp.Api.Infraestrutura;
@@ -96,6 +97,7 @@ public sealed partial class RepositorioTocaEssa
                 registro.Conteudo = conteudo;
                 registro.AtualizadaEm = DateTimeOffset.UtcNow;
                 _cifrasEmTexto[chave] = registro;
+                PreencherTomVazio(conta.Id, musica, artista, conteudo);
             }
             SalvarEstado();
             return ObterCifraDoArtista(token, musica, artista);
@@ -111,7 +113,28 @@ public sealed partial class RepositorioTocaEssa
             .ToList();
         while (linhas.Count > 0 && linhas[0].Length == 0) linhas.RemoveAt(0);
         while (linhas.Count > 0 && linhas[^1].Length == 0) linhas.RemoveAt(linhas.Count - 1);
+        // Várias linhas em branco seguidas, comuns ao copiar do site, viram uma.
+        linhas = linhas.Where((linha, i) => linha.Length > 0 || linhas[i - 1].Length > 0).ToList();
         return string.Join('\n', linhas);
+    }
+
+    private static readonly Regex TomDoCabecalho =
+        new(@"^\s*Tom:\s*([A-G][#b]?m?)(?![\w#])", RegexOptions.Multiline);
+
+    /// "Tom: E" da cifra colada preenche o tom das músicas do artista que
+    /// ainda estão sem tom, no acervo e na setlist. Tom já escolhido fica.
+    private void PreencherTomVazio(Guid artistaId, string musica, string? artista, string conteudo)
+    {
+        if (TomDoCabecalho.Match(conteudo) is not { Success: true } achado) return;
+        var tom = achado.Groups[1].Value;
+        foreach (var item in _musicasDoRepertorio.Values.Where(m =>
+                     m.ArtistaId == artistaId && string.IsNullOrWhiteSpace(m.Tom) &&
+                     MesmaMusica(m.Titulo, m.Artista, musica, artista)))
+            item.Tom = tom;
+        foreach (var item in _itensDoSetlist.Values.Where(i =>
+                     i.ArtistaId == artistaId && string.IsNullOrWhiteSpace(i.Tom) &&
+                     MesmaMusica(i.Titulo, i.Artista, musica, artista)))
+            item.Tom = tom;
     }
 
     public IReadOnlyCollection<CifraDoArtista> ListarCifrasDoArtista(string token)

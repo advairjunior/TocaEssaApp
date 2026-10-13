@@ -44,6 +44,66 @@ public class CifraEmTextoTestes
     }
 
     [Fact]
+    public void VariasLinhasEmBrancoSeguidasViramUma()
+    {
+        var (repo, token) = CriarConta();
+
+        repo.SalvarCifraEmTexto(token, "Evidências", null,
+            "[Intro] G\n\n\n\n   G\nQuando eu digo\n \n\t\nÉ porque");
+
+        Assert.Equal("[Intro] G\n\n   G\nQuando eu digo\n\nÉ porque",
+            repo.ObterCifraDoArtista(token, "Evidências", null).Texto);
+    }
+
+    [Fact]
+    public void TomDaCifraPreencheOTomVazioNoRepertorioENaSetlist()
+    {
+        var (repo, token) = CriarConta();
+        repo.SalvarPerfilDaConta(token, new SalvarPerfilArtistico("Duo", null));
+        var show = repo.CriarApresentacao(token, "Firma", new DateOnly(2026, 12, 12), "Salão");
+        var repertorio = repo.CriarRepertorio(token, "Sertanejo");
+        var semTom = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Deus e Eu no Sertão", "Victor & Leo");
+        var comTom = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null, "G");
+        repo.AdicionarMusicasAoSetlist(token, show.Id, [semTom.Id, comTom.Id]);
+
+        repo.SalvarCifraEmTexto(token, "Deus e eu no sertao", null, "Tom:  E\n\n[Intro] E9  C#m");
+        repo.SalvarCifraEmTexto(token, "Evidências", null, "Tom: A\nG  D");
+
+        var musicas = repo.ListarRepertorios(token).Single().Musicas.ToDictionary(m => m.Titulo);
+        Assert.Equal("E", musicas["Deus e Eu no Sertão"].Tom);
+        Assert.Equal("G", musicas["Evidências"].Tom);
+        var setlist = repo.ObterSetlist(token, show.Id).ToDictionary(i => i.Titulo);
+        Assert.Equal("E", setlist["Deus e Eu no Sertão"].Tom);
+        Assert.Equal("G", setlist["Evidências"].Tom);
+    }
+
+    [Fact]
+    public void TomComCapotrastePegaOTomQueSoa()
+    {
+        var (repo, token) = CriarConta();
+        var repertorio = repo.CriarRepertorio(token, "Sertanejo");
+        repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null);
+
+        repo.SalvarCifraEmTexto(token, "Evidências", null,
+            "Tom: C#m (forma dos acordes no tom de Am)\nAm  F");
+
+        Assert.Equal("C#m", repo.ListarRepertorios(token).Single().Musicas.Single().Tom);
+    }
+
+    [Fact]
+    public void TomDaCifraNaoMexeNoRepertorioDeOutroArtista()
+    {
+        var (repo, token) = CriarConta();
+        var tokenBia = repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        var repertorioBia = repo.CriarRepertorio(tokenBia, "Bia");
+        repo.AdicionarMusicaAoRepertorio(tokenBia, repertorioBia.Id, "Evidências", null);
+
+        repo.SalvarCifraEmTexto(token, "Evidências", null, "Tom: A\nA  E");
+
+        Assert.Null(repo.ListarRepertorios(tokenBia).Single().Musicas.Single().Tom);
+    }
+
+    [Fact]
     public void TextoVazioApaga()
     {
         var (repo, token) = CriarConta();
