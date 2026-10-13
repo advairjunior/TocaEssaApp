@@ -1,4 +1,6 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
@@ -9,6 +11,8 @@ import 'componentes_lista.dart';
 import 'componentes_palco.dart';
 import 'modo_palco.dart';
 import 'acoes_do_palco.dart';
+import 'colar_cifras.dart';
+import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
 import 'montar_setlist.dart';
 import 'sequencia_do_palco.dart';
@@ -100,24 +104,62 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     }
   }
 
-  /// Pede, uma a uma, a cifra das músicas que faltam tocar e estão sem cifra,
-  /// para resolver tudo antes de subir no palco. Fechar a escolha interrompe.
-  Future<void> _resolverSemCifra() async {
-    final pendentes = _sequencia.semCifra.map(MusicaDoPalco.doSetlist).toList();
-    for (final (indice, musica) in pendentes.indexed) {
-      final resultado = _sequencia.cifraDe(musica);
-      if (resultado == null || !mounted) return;
-      final ultima = indice == pendentes.length - 1;
-      try {
-        if (!await mostrarEscolhaDaCifra(musica, resultado,
-            rotuloColarEProxima:
-                ultima ? 'Colar e concluir' : 'Colar e próxima')) {
-          return;
-        }
-      } catch (erro) {
-        if (mounted) mostrarErro(context, erro);
-        return;
-      }
+  /// Colar e próxima nas músicas que faltam tocar sem cifra no app.
+  Future<void> _colarCifras() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ColarCifras(
+        api: widget.api,
+        abrirUrl: widget.abrirUrl,
+        musicas: [
+          for (final item in _sequencia.semCifra)
+            if (_sequencia.cifraDe(MusicaDoPalco.doSetlist(item))
+                case final consulta?)
+              (
+                titulo: item.titulo,
+                artista: item.artista,
+                url: consulta.cifra?.url,
+                urlPesquisa: consulta.urlPesquisa,
+              ),
+        ],
+      ),
+    ));
+    if (mounted) await _sequencia.buscarCifras();
+  }
+
+  /// Ações da cifra: colar no app primeiro, o link do site como reserva.
+  Future<void> _acoesDaCifra(ItemDoSetlist item) async {
+    final musica = MusicaDoPalco.doSetlist(item);
+    final escolha = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (contexto) => CupertinoActionSheet(
+        title: Text(item.titulo),
+        actions: [
+          CupertinoActionSheetAction(
+            isDefaultAction: true,
+            onPressed: () => Navigator.pop(contexto, 'colar'),
+            child: const Text('Colar ou corrigir cifra'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(contexto, 'link'),
+            child: const Text('Link do site'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(contexto),
+          child: const Text('Cancelar'),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (escolha == 'link') return escolherCifra(musica);
+    if (escolha != 'colar') return;
+    final texto = await pedirCifraEmTexto(context,
+        titulo: item.titulo, texto: _sequencia.cifraDe(musica)?.texto);
+    if (texto == null || !mounted) return;
+    try {
+      await _sequencia.salvarCifraEmTexto(musica, texto);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
     }
   }
 
@@ -278,31 +320,34 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
             const SizedBox(height: EspacoTocaEssa.base),
             _AvisoSemCifra(
               quantidade: _sequencia.semCifra.length,
-              resolver: _resolverSemCifra,
+              colar: _colarCifras,
             ),
           ],
           const SizedBox(height: EspacoTocaEssa.base + 4),
           if (_editando)
             ..._construirEdicao()
           else
-            GrupoDeLinhas(
-              recuoDivisoria: 60,
-              linhas: [
-                for (final item in _sequencia.itens)
-                  _LinhaSetlist(
-                    item: item,
-                    salvando: _sequencia.salvando,
-                    eProxima: item.id == proxima?.id,
-                    semCifra:
-                        _sequencia.estaSemCifra(MusicaDoPalco.doSetlist(item)),
-                    pedidosNaFila:
-                        pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
-                    marcar: (tocada) => _marcar(item, tocada),
-                    abrirCifra: () => abrirCifra(MusicaDoPalco.doSetlist(item)),
-                    escolherCifra: () =>
-                        escolherCifra(MusicaDoPalco.doSetlist(item)),
-                  ),
-              ],
+            SlidableAutoCloseBehavior(
+              child: GrupoDeLinhas(
+                recuoDivisoria: 60,
+                linhas: [
+                  for (final item in _sequencia.itens)
+                    _LinhaSetlist(
+                      item: item,
+                      salvando: _sequencia.salvando,
+                      eProxima: item.id == proxima?.id,
+                      semCifra: _sequencia
+                          .estaSemCifra(MusicaDoPalco.doSetlist(item)),
+                      pedidosNaFila:
+                          pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
+                      marcar: (tocada) => _marcar(item, tocada),
+                      abrirLeitor: () =>
+                          abrirLeitor(MusicaDoPalco.doSetlist(item)),
+                      acoesDaCifra: () => _acoesDaCifra(item),
+                      remover: () => _remover(item),
+                    ),
+                ],
+              ),
             ),
           const SizedBox(height: EspacoTocaEssa.base),
         ],
@@ -413,10 +458,10 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
 /// Avisa, antes do show, quantas músicas que faltam tocar estão sem cifra,
 /// para o artista não precisar escolher cifra no meio da apresentação.
 class _AvisoSemCifra extends StatelessWidget {
-  const _AvisoSemCifra({required this.quantidade, required this.resolver});
+  const _AvisoSemCifra({required this.quantidade, required this.colar});
 
   final int quantidade;
-  final VoidCallback resolver;
+  final VoidCallback colar;
 
   @override
   Widget build(BuildContext context) {
@@ -443,7 +488,7 @@ class _AvisoSemCifra extends StatelessWidget {
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
-          TextButton(onPressed: resolver, child: const Text('Resolver')),
+          TextButton(onPressed: colar, child: const Text('Colar')),
         ],
       ),
     );
@@ -580,8 +625,9 @@ class _LinhaEmEdicao extends StatelessWidget {
   }
 }
 
-/// Uma música do setlist. A linha inteira marca e desmarca como tocada,
-/// alvo grande para usar no palco.
+/// Uma música do setlist, no jeito do iPhone: tocar na música abre a cifra;
+/// o círculo marca como tocada; deslizar para a esquerda mostra Cifra e
+/// Remover (música já tocada não sai).
 class _LinhaSetlist extends StatelessWidget {
   const _LinhaSetlist({
     required this.item,
@@ -590,19 +636,21 @@ class _LinhaSetlist extends StatelessWidget {
     required this.semCifra,
     required this.pedidosNaFila,
     required this.marcar,
-    required this.abrirCifra,
-    required this.escolherCifra,
+    required this.abrirLeitor,
+    required this.acoesDaCifra,
+    required this.remover,
   });
 
   final ItemDoSetlist item;
   final bool salvando;
   final bool eProxima;
-  // Cifra já consultada e sem link salvo: o ícone fica em destaque.
+  // Cifra já consultada e sem cifra colada no app.
   final bool semCifra;
   final int pedidosNaFila;
   final ValueChanged<bool> marcar;
-  final VoidCallback abrirCifra;
-  final VoidCallback escolherCifra;
+  final VoidCallback abrirLeitor;
+  final VoidCallback acoesDaCifra;
+  final VoidCallback remover;
 
   @override
   Widget build(BuildContext context) {
@@ -612,104 +660,166 @@ class _LinhaSetlist extends StatelessWidget {
       if (item.artista != null) item.artista!,
       if (item.tom != null) 'Tom ${item.tom}',
     ].join(' · ');
-    return Container(
-      color: eProxima ? CoresTocaEssa.roxo.withValues(alpha: .12) : null,
-      child: Row(
+    return Slidable(
+      key: ValueKey(item.id),
+      endActionPane: ActionPane(
+        motion: const DrawerMotion(),
+        extentRatio: tocada ? .25 : .5,
         children: [
-          Expanded(
-            child: Semantics(
-              checked: tocada,
-              button: true,
-              child: InkWell(
-                onTap: salvando ? null : () => marcar(!tocada),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    EspacoTocaEssa.base,
-                    EspacoTocaEssa.medio,
-                    EspacoTocaEssa.pequeno,
-                    EspacoTocaEssa.medio,
-                  ),
-                  child: Row(
+          SlidableAction(
+            onPressed: (_) => acoesDaCifra(),
+            backgroundColor: CoresTocaEssa.roxo,
+            foregroundColor: CoresTocaEssa.texto,
+            icon: Icons.menu_book_rounded,
+            label: 'Cifra',
+          ),
+          if (!tocada)
+            SlidableAction(
+              onPressed: (_) => remover(),
+              backgroundColor: CoresTocaEssa.rosa,
+              foregroundColor: CoresTocaEssa.texto,
+              icon: Icons.remove_circle_outline_rounded,
+              label: 'Remover',
+            ),
+        ],
+      ),
+      child: Material(
+        color: eProxima
+            ? CoresTocaEssa.roxo.withValues(alpha: .12)
+            : Colors.transparent,
+        child: InkWell(
+          onTap: abrirLeitor,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              EspacoTocaEssa.pequeno,
+              EspacoTocaEssa.medio,
+              EspacoTocaEssa.base,
+              EspacoTocaEssa.medio,
+            ),
+            child: Row(
+              children: [
+                _CirculoDeTocada(
+                  tocada: tocada,
+                  marcar: salvando ? null : () => marcar(!tocada),
+                ),
+                const SizedBox(width: EspacoTocaEssa.pequeno),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: tocada ? CoresTocaEssa.roxo : null,
-                          border: Border.all(
-                            color: tocada
-                                ? CoresTocaEssa.roxo
-                                : CoresTocaEssa.textoSecundario,
-                            width: 2,
-                          ),
+                      if (eProxima)
+                        Text(
+                          'Próxima',
+                          style: texto.labelMedium
+                              ?.copyWith(color: CoresTocaEssa.roxoClaro),
                         ),
-                        child: tocada
-                            ? const Icon(Icons.check_rounded,
-                                size: 18, color: CoresTocaEssa.texto)
-                            : null,
-                      ),
-                      const SizedBox(width: EspacoTocaEssa.base),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (eProxima)
-                              Text(
-                                'Próxima',
-                                style: texto.labelMedium
-                                    ?.copyWith(color: CoresTocaEssa.roxoClaro),
-                              ),
-                            Text(
-                              item.titulo,
-                              style: texto.titleLarge?.copyWith(
-                                color: tocada
-                                    ? CoresTocaEssa.textoSecundario
-                                    : null,
-                                decoration:
-                                    tocada ? TextDecoration.lineThrough : null,
-                              ),
-                            ),
-                            if (detalhes.isNotEmpty)
-                              Text(
-                                detalhes,
-                                style: texto.bodyMedium?.copyWith(
-                                    color: CoresTocaEssa.textoSecundario),
-                              ),
-                            if (pedidosNaFila > 0)
-                              Text(
-                                pedidosNaFila == 1
-                                    ? '1 pedido na fila'
-                                    : '$pedidosNaFila pedidos na fila',
-                                style: texto.labelMedium
-                                    ?.copyWith(color: CoresTocaEssa.roxoClaro),
-                              ),
-                          ],
+                      Text(
+                        item.titulo,
+                        style: texto.titleMedium?.copyWith(
+                          color: tocada ? CoresTocaEssa.textoSecundario : null,
+                          decoration:
+                              tocada ? TextDecoration.lineThrough : null,
                         ),
                       ),
+                      if (detalhes.isNotEmpty)
+                        Text(
+                          detalhes,
+                          style: texto.bodySmall
+                              ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                        ),
                     ],
                   ),
                 ),
-              ),
+                if (pedidosNaFila > 0) ...[
+                  Tooltip(
+                    message: pedidosNaFila == 1
+                        ? '1 pedido na fila'
+                        : '$pedidosNaFila pedidos na fila',
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: EspacoTocaEssa.pequeno, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: CoresTocaEssa.roxo.withValues(alpha: .25),
+                        borderRadius:
+                            BorderRadius.circular(RaioTocaEssa.pilula),
+                      ),
+                      child: Text('$pedidosNaFila',
+                          style: texto.labelMedium
+                              ?.copyWith(color: CoresTocaEssa.roxoClaro)),
+                    ),
+                  ),
+                  const SizedBox(width: EspacoTocaEssa.pequeno),
+                ],
+                Tooltip(
+                  message: semCifra ? 'Sem cifra no app' : 'Cifra no app',
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: semCifra ? null : CoresTocaEssa.sucesso,
+                      border: Border.all(
+                        color: semCifra
+                            ? CoresTocaEssa.atencao
+                            : CoresTocaEssa.sucesso,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: EspacoTocaEssa.pequeno),
+                const Icon(Icons.chevron_right_rounded,
+                    color: CoresTocaEssa.textoSecundario),
+              ],
             ),
           ),
-          IconButton(
-            tooltip: semCifra ? 'Música sem cifra' : 'Ver cifra',
-            icon: Icon(Icons.menu_book_rounded,
-                color:
-                    semCifra ? CoresTocaEssa.atencao : CoresTocaEssa.roxoClaro),
-            onPressed: abrirCifra,
-          ),
-          IconButton(
-            tooltip: 'Escolher ou trocar cifra',
-            icon: const Icon(Icons.link_rounded,
-                color: CoresTocaEssa.textoSecundario),
-            onPressed: escolherCifra,
-          ),
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-        ],
+        ),
       ),
     );
   }
+}
+
+/// Círculo de marcar como tocada, alvo separado de abrir a cifra.
+class _CirculoDeTocada extends StatelessWidget {
+  const _CirculoDeTocada({required this.tocada, required this.marcar});
+
+  final bool tocada;
+  final VoidCallback? marcar;
+
+  @override
+  // Nó próprio de acessibilidade: a linha inteira abre a cifra.
+  Widget build(BuildContext context) => Semantics(
+        container: true,
+        checked: tocada,
+        button: true,
+        child: Tooltip(
+          message: tocada ? 'Desmarcar' : 'Marcar como tocada',
+          child: InkResponse(
+            onTap: marcar,
+            radius: 22,
+            child: Padding(
+              padding: const EdgeInsets.all(EspacoTocaEssa.pequeno),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: tocada ? CoresTocaEssa.roxo : null,
+                  border: Border.all(
+                    color: tocada
+                        ? CoresTocaEssa.roxo
+                        : CoresTocaEssa.textoSecundario,
+                    width: 2,
+                  ),
+                ),
+                child: tocada
+                    ? const Icon(Icons.check_rounded,
+                        size: 16, color: CoresTocaEssa.texto)
+                    : null,
+              ),
+            ),
+          ),
+        ),
+      );
 }

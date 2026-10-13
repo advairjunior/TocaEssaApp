@@ -384,10 +384,11 @@ class SequenciaDoPalco extends ChangeNotifier {
   ResultadoCifraDoArtista? cifraDe(MusicaDoPalco musica) =>
       _cifras[_chave(musica.titulo, musica.artista)];
 
-  // Só conta como sem cifra depois de consultada, para não acusar falha de rede.
+  /// Sem cifra colada no app (o link do site é só reserva). Só conta depois
+  /// de consultada, para não acusar falha de rede.
   bool estaSemCifra(MusicaDoPalco musica) {
     final resultado = cifraDe(musica);
-    return resultado != null && resultado.cifra == null;
+    return resultado != null && resultado.texto == null;
   }
 
   List<ItemDoSetlist> get semCifra => itens

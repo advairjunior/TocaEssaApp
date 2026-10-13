@@ -1,13 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
-import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 import 'package:toca_essa_app/telas/setlist_do_artista.dart';
 
 import 'apoio/pedidos_a_seguir_falsos.dart';
@@ -51,16 +49,6 @@ Map<String, Object?> _cifra(String url) => {
       'atualizadaEm': '2026-09-10T12:00:00Z',
     };
 
-void _simularAreaDeTransferencia(
-    WidgetTester tester, String Function() conteudo) {
-  tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-    SystemChannels.platform,
-    (chamada) async =>
-        chamada.method == 'Clipboard.getData' ? {'text': conteudo()} : null,
-  );
-  addTearDown(() => tester.binding.defaultBinaryMessenger
-      .setMockMethodCallHandler(SystemChannels.platform, null));
-}
 
 const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 
@@ -73,6 +61,7 @@ Future<List<http.Request>> _abrir(
   List<Uri>? abertas,
   bool comCifraSalva = true,
   Set<String> musicasSemCifra = const {},
+  Set<String> musicasComTexto = const {},
   List<Map<String, Object?>>? grupos,
   List<String> pedidosASeguir = const [],
   StatusApresentacao status = StatusApresentacao.emAndamento,
@@ -81,6 +70,10 @@ Future<List<http.Request>> _abrir(
   _aSeguirNoServidor = [...pedidosASeguir];
   final requisicoes = <http.Request>[];
   final salvas = <String>{};
+  // música → cifra colada no servidor falso
+  final textos = {
+    for (final musica in musicasComTexto) musica: 'G   D\nLetra de $musica',
+  };
   final listaDeGrupos =
       grupos ?? [_grupo('p1', 'Evidências', 'Aceito', quantidade: 2)];
   final lista = [
@@ -136,6 +129,20 @@ Future<List<http.Request>> _abrir(
         jsonEncode({
           'cifra': temCifra ? _cifra(_cifraSalva) : null,
           'urlPesquisa': 'https://www.google.com/search?q=cifra',
+          'texto': textos[musica],
+        }),
+        200,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+    }
+    if (caminho.endsWith('/cifras/texto')) {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      textos[corpo['musica'] as String] = corpo['texto'] as String;
+      return http.Response(
+        jsonEncode({
+          'cifra': null,
+          'urlPesquisa': 'https://www.google.com/search?q=cifra',
+          'texto': corpo['texto'],
         }),
         200,
         headers: {'content-type': 'application/json; charset=utf-8'},
@@ -213,64 +220,127 @@ void main() {
     expect(find.text('Trocar repertório'), findsNothing);
     expect(find.text('Próxima'), findsOneWidget);
     expect(find.text('Banda 2 · Tom G'), findsOneWidget);
-    expect(find.text('2 pedidos na fila'), findsOneWidget);
+    expect(find.byTooltip('2 pedidos na fila'), findsOneWidget);
   });
 
-  testWidgets('tocar na linha marca a música como tocada', (tester) async {
-    final requisicoes = await _abrir(tester);
+  group('linha da música', () {
+    testWidgets('tocar no círculo marca a música como tocada',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
 
-    await tester.tap(find.text('Velha Infância'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Marcar como tocada').first);
+      await tester.pumpAndSettle();
 
-    final marcacao = requisicoes.singleWhere((r) => r.method == 'PATCH');
-    expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
-    expect(marcacao.body, contains('"tocada":true'));
-    expect(find.text('2 de 3 tocadas'), findsOneWidget);
-  });
+      final marcacao = requisicoes.singleWhere((r) => r.method == 'PATCH');
+      expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
+      expect(marcacao.body, contains('"tocada":true'));
+      expect(find.text('2 de 3 tocadas'), findsOneWidget);
+    });
 
-  testWidgets('linha da música é anunciada como marcável', (tester) async {
-    final semantica = tester.ensureSemantics();
-    await _abrir(tester);
+    testWidgets('círculo é anunciado como marcável', (tester) async {
+      final semantica = tester.ensureSemantics();
+      await _abrir(tester);
 
-    expect(
-      tester.getSemantics(find.text('Garota de Ipanema')),
-      isSemantics(hasCheckedState: true, isChecked: true),
-    );
-    semantica.dispose();
-  });
+      expect(
+        tester.getSemantics(find.byTooltip('Desmarcar')),
+        isSemantics(hasCheckedState: true, isChecked: true),
+      );
+      semantica.dispose();
+    });
 
-  testWidgets('cifra já salva pode ser trocada pela setlist', (tester) async {
-    final requisicoes = await _abrir(tester);
+    testWidgets('tocar na música abre a cifra no leitor sem marcar',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
 
-    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Evidências').first);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Escolher cifra'), findsOneWidget);
-    expect(find.text(_cifraSalva), findsOneWidget);
+      expect(find.byTooltip('Fechar leitor'), findsOneWidget);
+      expect(requisicoes.where((r) => r.method == 'PATCH'), isEmpty);
+    });
 
-    const nova = 'https://www.cifras.com.br/cifra/banda-2/velha-infancia';
-    await tester.enterText(find.byType(TextField), nova);
-    await tester.tap(find.text('Confirmar cifra'));
-    await tester.pumpAndSettle();
+    testWidgets('ponto mostra quais músicas têm cifra no app',
+        (tester) async {
+      await _abrir(tester, musicasComTexto: {'Velha Infância'});
 
-    final salvamento = requisicoes.singleWhere((r) => r.method == 'PUT');
-    expect(salvamento.url.path, '/api/artista/cifras');
-    expect(salvamento.body, contains(nova));
-    expect(salvamento.body, contains('Velha Infância'));
-    expect(find.text('Cifra salva.'), findsOneWidget);
-  });
+      expect(find.byTooltip('Cifra no app'), findsOneWidget);
+      expect(find.byTooltip('Sem cifra no app'), findsNWidgets(2));
+    });
 
-  testWidgets('link da cifra pode ser removido pela setlist', (tester) async {
-    final requisicoes = await _abrir(tester);
+    testWidgets('deslizar mostra Cifra e Remover; tocada não sai',
+        (tester) async {
+      await _abrir(tester);
 
-    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Remover link'));
-    await tester.pumpAndSettle();
+      await tester.drag(find.text('Velha Infância'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Cifra'), findsOneWidget);
+      expect(find.text('Remover'), findsOneWidget);
 
-    final remocao = requisicoes.singleWhere((r) => r.method == 'DELETE');
-    expect(remocao.url.path, '/api/artista/cifras/c1');
-    expect(find.text('Link da cifra removido.'), findsOneWidget);
+      await tester.drag(find.text('Garota de Ipanema'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Remover'), findsNothing);
+    });
+
+    testWidgets('remover pelo deslizar tira a música da setlist',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.drag(find.text('Velha Infância'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Remover'));
+      await tester.pumpAndSettle();
+
+      expect(requisicoes.where((r) => r.method == 'DELETE').single.url.path,
+          '/api/apresentacoes/$_id/setlist/2');
+      expect(find.text('Velha Infância'), findsNothing);
+    });
+
+    testWidgets('Cifra começa por colar a cifra no app', (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.drag(find.text('Velha Infância'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cifra'));
+      await tester.pumpAndSettle();
+      expect(find.text('Colar ou corrigir cifra'), findsOneWidget);
+      expect(find.text('Link do site'), findsOneWidget);
+
+      await tester.tap(find.text('Colar ou corrigir cifra'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'C   G\nNova letra');
+      await tester.tap(find.text('Salvar'));
+      await tester.pumpAndSettle();
+
+      final salva = requisicoes
+          .singleWhere((r) => r.url.path.endsWith('/cifras/texto'));
+      expect(jsonDecode(salva.body), {
+        'musica': 'Velha Infância',
+        'artista': 'Banda 2',
+        'texto': 'C   G\nNova letra',
+      });
+      expect(find.byTooltip('Cifra no app'), findsOneWidget);
+    });
+
+    testWidgets('Link do site continua como opção', (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.drag(find.text('Velha Infância'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cifra'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Link do site'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Escolher cifra'), findsOneWidget);
+      const nova = 'https://www.cifras.com.br/cifra/banda-2/velha-infancia';
+      await tester.enterText(find.byType(TextField), nova);
+      await tester.tap(find.text('Confirmar cifra'));
+      await tester.pumpAndSettle();
+
+      final salvamento = requisicoes.singleWhere(
+          (r) => r.method == 'PUT' && r.url.path == '/api/artista/cifras');
+      expect(salvamento.body, contains(nova));
+    });
   });
 
   testWidgets('barra fixa mostra a próxima música para tocar', (tester) async {
@@ -290,149 +360,29 @@ void main() {
     expect(consultadas, {'Garota de Ipanema', 'Velha Infância', 'Evidências'});
   });
 
-  testWidgets('avisa quantas músicas que faltam tocar estão sem cifra',
-      (tester) async {
-    await _abrir(tester, musicasSemCifra: {
-      'Garota de Ipanema',
-      'Velha Infância',
-      'Evidências',
+  group('aviso de músicas sem cifra', () {
+    testWidgets('conta as que faltam tocar sem cifra no app e leva a colar',
+        (tester) async {
+      await _abrir(tester, musicasComTexto: {'Garota de Ipanema'});
+
+      expect(find.text('2 músicas sem cifra'), findsOneWidget);
+      await tester.tap(find.text('Colar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Colar cifras'), findsOneWidget);
+      expect(find.text('1 de 2'), findsOneWidget);
     });
 
-    expect(find.text('2 músicas sem cifra'), findsOneWidget);
-    expect(find.text('Resolver'), findsOneWidget);
-  });
+    testWidgets('com todas as cifras no app, não mostra o aviso',
+        (tester) async {
+      await _abrir(tester, musicasComTexto: {
+        'Garota de Ipanema',
+        'Velha Infância',
+        'Evidências',
+      });
 
-  testWidgets('música sem cifra mostra o ícone da cifra em amarelo',
-      (tester) async {
-    await _abrir(tester, musicasSemCifra: {'Evidências'});
-
-    final icones = tester
-        .widgetList<Icon>(find.byIcon(Icons.menu_book_rounded))
-        .map((icone) => icone.color)
-        .toList();
-    expect(icones, [
-      CoresTocaEssa.roxoClaro,
-      CoresTocaEssa.roxoClaro,
-      CoresTocaEssa.atencao,
-    ]);
-    expect(find.byTooltip('Música sem cifra'), findsOneWidget);
-  });
-
-  testWidgets('com todas as cifras salvas, não mostra o aviso', (tester) async {
-    await _abrir(tester);
-
-    expect(find.textContaining('sem cifra'), findsNothing);
-  });
-
-  testWidgets('resolver pede a cifra de cada música sem cifra, em sequência',
-      (tester) async {
-    final requisicoes =
-        await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
-
-    await tester.tap(find.text('Resolver'));
-    await tester.pumpAndSettle();
-    expect(find.text('Escolher cifra'), findsOneWidget);
-    await tester.enterText(
-        find.byType(TextField), 'https://www.cifraclub.com.br/a/velha/');
-    await tester.tap(find.text('Confirmar cifra'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Escolher cifra'), findsOneWidget);
-    await tester.enterText(
-        find.byType(TextField), 'https://www.cifraclub.com.br/a/evidencias/');
-    await tester.tap(find.text('Confirmar cifra'));
-    await tester.pumpAndSettle();
-
-    final salvas = requisicoes
-        .where((r) => r.method == 'PUT')
-        .map((r) => (jsonDecode(r.body) as Map)['musica']);
-    expect(salvas, ['Velha Infância', 'Evidências']);
-    expect(find.text('Escolher cifra'), findsNothing);
-    expect(find.textContaining('sem cifra'), findsNothing);
-  });
-
-  testWidgets('resolver pesquisa a música na web pela aba da cifra',
-      (tester) async {
-    final abertas = <Uri>[];
-    await _abrir(tester,
-        abertas: abertas, musicasSemCifra: {'Velha Infância', 'Evidências'});
-
-    await tester.tap(find.text('Resolver'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Pesquisar na web'));
-    await tester.pumpAndSettle();
-
-    expect(abertas, [Uri.parse('https://www.google.com/search?q=cifra')]);
-  });
-
-  testWidgets('colar e próxima salva o link copiado e segue para a próxima',
-      (tester) async {
-    var copiado = 'https://www.cifraclub.com.br/a/velha/';
-    _simularAreaDeTransferencia(tester, () => copiado);
-    final requisicoes =
-        await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
-
-    await tester.tap(find.text('Resolver'));
-    await tester.pumpAndSettle();
-    expect(find.text('Colar e próxima'), findsOneWidget);
-    await tester.tap(find.text('Colar e próxima'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Escolher cifra'), findsOneWidget);
-    expect(find.text('Colar e concluir'), findsOneWidget);
-    copiado = 'https://www.cifraclub.com.br/a/evidencias/';
-    await tester.tap(find.text('Colar e concluir'));
-    await tester.pumpAndSettle();
-
-    final salvas = requisicoes
-        .where((r) => r.method == 'PUT')
-        .map((r) => jsonDecode(r.body) as Map)
-        .map((corpo) => (corpo['musica'], corpo['url']));
-    expect(salvas, [
-      ('Velha Infância', 'https://www.cifraclub.com.br/a/velha/'),
-      ('Evidências', 'https://www.cifraclub.com.br/a/evidencias/'),
-    ]);
-    expect(find.text('Escolher cifra'), findsNothing);
-    expect(find.textContaining('sem cifra'), findsNothing);
-  });
-
-  testWidgets('colar e próxima sem link copiado avisa e não salva',
-      (tester) async {
-    _simularAreaDeTransferencia(tester, () => 'Velha Infância');
-    final requisicoes =
-        await _abrir(tester, musicasSemCifra: {'Velha Infância'});
-
-    await tester.tap(find.text('Resolver'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Colar e concluir'));
-    await tester.pumpAndSettle();
-
-    expect(requisicoes.where((r) => r.method == 'PUT'), isEmpty);
-    expect(find.text('Escolher cifra'), findsOneWidget);
-    expect(find.text('Copie o link da cifra antes de colar.'), findsOneWidget);
-  });
-
-  testWidgets('trocar cifra de uma música não mostra colar e próxima',
-      (tester) async {
-    await _abrir(tester);
-
-    await tester.tap(find.byTooltip('Escolher ou trocar cifra').at(1));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Colar e próxima'), findsNothing);
-    expect(find.text('Colar e concluir'), findsNothing);
-  });
-
-  testWidgets('fechar a escolha interrompe o resolver', (tester) async {
-    await _abrir(tester, musicasSemCifra: {'Velha Infância', 'Evidências'});
-
-    await tester.tap(find.text('Resolver'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Fechar'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Escolher cifra'), findsNothing);
-    expect(find.text('2 músicas sem cifra'), findsOneWidget);
+      expect(find.textContaining('sem cifra'), findsNothing);
+    });
   });
 
   testWidgets('barra mostra o tom da próxima e a música seguinte',

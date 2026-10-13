@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 
 /// Uma música sem cifra colada e onde achar a cifra dela.
 typedef MusicaParaColar = ({
-  MusicaDoRepertorio musica,
-  CifraDaMusicaDoRepertorio cifra,
+  String titulo,
+  String? artista,
+  // Link salvo da cifra; sem ele, abre a pesquisa pronta.
+  String? url,
+  String urlPesquisa,
 });
 
 /// Passa pelas músicas sem cifra, uma por vez: abrir no site, copiar lá,
@@ -46,9 +48,9 @@ class _ColarCifrasState extends State<ColarCifras> {
   }
 
   Future<void> _abrirNoSite() async {
-    final cifra = _atual.cifra;
+    final atual = _atual;
     try {
-      await widget.abrirUrl(Uri.parse(cifra.url ?? cifra.urlPesquisa));
+      await widget.abrirUrl(Uri.parse(atual.url ?? atual.urlPesquisa));
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -64,7 +66,7 @@ class _ColarCifrasState extends State<ColarCifras> {
     }
     setState(() => _salvando = true);
     try {
-      final musica = _atual.musica;
+      final musica = _atual;
       await widget.api
           .salvarCifraEmTexto(musica.titulo, musica.artista, copiado);
       if (mounted) _avancar();
@@ -78,7 +80,7 @@ class _ColarCifrasState extends State<ColarCifras> {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final musica = _atual.musica;
+    final musica = _atual;
     return Scaffold(
       appBar: AppBar(title: const Text('Colar cifras')),
       body: ConteudoMobile(

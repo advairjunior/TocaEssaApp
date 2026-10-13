@@ -207,7 +207,12 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
   List<MusicaParaColar> get _semCifra => [
         for (final musica in _musicas)
           if (_cifras[musica.id] case final cifra? when !cifra.temTexto)
-            (musica: musica, cifra: cifra),
+            (
+              titulo: musica.titulo,
+              artista: musica.artista,
+              url: cifra.url,
+              urlPesquisa: cifra.urlPesquisa,
+            ),
       ];
 
   Future<void> _abrirCifra(MusicaDoRepertorio musica) async {
