@@ -40,6 +40,7 @@ internal sealed class ApresentacaoRegistro
     public DateTimeOffset? IniciadaEm { get; set; }
     public DateTimeOffset? EmIntervaloDesde { get; set; }
     public int SegundosEmIntervalo { get; set; }
+    public DateTimeOffset? EncerradaEm { get; set; }
 }
 
 internal sealed class PedidoMusicalRegistro

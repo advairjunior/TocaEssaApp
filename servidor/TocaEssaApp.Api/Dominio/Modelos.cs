@@ -143,7 +143,10 @@ public sealed record RelogioDoShow(
     int SegundosEmIntervalo,
     int MusicasComecadas,
     int MusicasRestantes,
-    DateTimeOffset Agora);
+    DateTimeOffset Agora,
+    DateTimeOffset? EncerradaEm = null,
+    // Média dos shows encerrados do artista; nula sem histórico.
+    int? RitmoMedioSegundos = null);
 
 public sealed record ConfigurarRelogioDoShow(
     int? DuracaoContratadaMinutos, bool IntervaloPausaRelogio = false);

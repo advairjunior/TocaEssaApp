@@ -145,6 +145,50 @@ public class RelogioDoShowTestes
     }
 
     [Fact]
+    public void SemShowsEncerradosNaoHaRitmoMedio()
+    {
+        var cenario = CriarCenario();
+
+        Assert.Null(cenario.Repo.ObterRelogio(cenario.Token, cenario.Show.Id).RitmoMedioSegundos);
+    }
+
+    [Fact]
+    public void RitmoMedioVemDosShowsEncerradosDoProprioArtista()
+    {
+        var cenario = CriarCenario();
+        // 50 min tocando (1h menos 10 min de intervalo) em 10 músicas.
+        TocarShow(cenario, cenario.Token, musicas: 10, minutos: 60, minutosDeIntervalo: 10);
+        // Poucas músicas para medir: não conta.
+        TocarShow(cenario, cenario.Token, musicas: 2, minutos: 30);
+        // Esquecido aberto: mais de 15 min por música não conta.
+        TocarShow(cenario, cenario.Token, musicas: 3, minutos: 600);
+        // 60 min em 20 músicas.
+        TocarShow(cenario, cenario.Token, musicas: 20, minutos: 60);
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        cenario.Repo.SalvarPerfilDaConta(tokenBia, new SalvarPerfilArtistico("Bia", null));
+        TocarShow(cenario, tokenBia, musicas: 5, minutos: 60);
+
+        var relogio = cenario.Repo.ObterRelogio(cenario.Token, cenario.Show.Id);
+
+        // (50 + 60) min em 30 músicas = 220 s por música.
+        Assert.Equal(220, relogio.RitmoMedioSegundos);
+    }
+
+    [Fact]
+    public void EncerrarGuardaAHoraDoFim()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.AlterarStatusApresentacao(
+            cenario.Token, cenario.Show.Id, StatusApresentacao.EmAndamento);
+        cenario.Agora = Inicio.AddHours(3);
+        cenario.Repo.AlterarStatusApresentacao(
+            cenario.Token, cenario.Show.Id, StatusApresentacao.Encerrada);
+
+        Assert.Equal(Inicio.AddHours(3),
+            cenario.Repo.ObterRelogio(cenario.Token, cenario.Show.Id).EncerradaEm);
+    }
+
+    [Fact]
     public void OutroArtistaNaoVeNemMexeNoRelogio()
     {
         var cenario = CriarCenario();
@@ -204,7 +248,7 @@ public class RelogioDoShowTestes
                 foreach (var coluna in new[]
                          {
                              "DuracaoContratadaMinutos", "IntervaloPausaRelogio", "IniciadaEm",
-                             "EmIntervaloDesde", "SegundosEmIntervalo"
+                             "EmIntervaloDesde", "SegundosEmIntervalo", "EncerradaEm"
                          })
                 {
                     comando.CommandText = $"ALTER TABLE \"Apresentacoes\" DROP COLUMN \"{coluna}\"";
@@ -328,6 +372,31 @@ public class RelogioDoShowTestes
         cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
             "Bearer", json.RootElement.GetProperty("token").GetString());
         return cliente;
+    }
+
+    /// Cria, toca e encerra um show com [musicas] tocadas em [minutos].
+    private static void TocarShow(
+        Cenario cenario, string token, int musicas, int minutos, int minutosDeIntervalo = 0)
+    {
+        var repo = cenario.Repo;
+        var show = repo.CriarApresentacao(token, "Anterior", new DateOnly(2026, 10, 1), "Bar");
+        var repertorio = repo.CriarRepertorio(token, $"Show {show.Codigo}");
+        for (var i = 0; i < musicas; i++)
+            repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, $"Música {i}", null);
+        var itens = repo.ImportarRepertorioParaSetlist(token, show.Id, repertorio.Id);
+        var inicio = cenario.Agora;
+        repo.AlterarStatusApresentacao(token, show.Id, StatusApresentacao.EmAndamento);
+        foreach (var item in itens)
+            repo.MarcarItemDoSetlist(token, show.Id, item.Id, tocada: true);
+        if (minutosDeIntervalo > 0)
+        {
+            repo.IniciarIntervalo(token, show.Id);
+            cenario.Agora = inicio.AddMinutes(minutosDeIntervalo);
+            repo.EncerrarIntervalo(token, show.Id);
+        }
+        cenario.Agora = inicio.AddMinutes(minutos);
+        repo.AlterarStatusApresentacao(token, show.Id, StatusApresentacao.Encerrada);
+        cenario.Agora = inicio;
     }
 
     private static Cenario CriarCenario(string? arquivo = null)
