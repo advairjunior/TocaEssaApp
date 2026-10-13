@@ -97,6 +97,15 @@ arquivo.
   com as horas contratadas.
 - Recarregar a página com show em andamento volta à apresentação e à aba
   onde o artista estava (guardado no aparelho).
+- Leitor de cifras (`leitor_de_cifras.dart`, desenho em
+  `docs/superpowers/specs/2026-10-13-leitor-de-cifras-design.md`): cifra
+  colada no app, separada do link (tabela `CifrasEmTexto`, rota privada
+  `PUT /api/artista/cifras/texto`; a consulta da cifra traz `texto`). Tela só
+  com a cifra em JetBrains Mono (acordes em roxo, tamanho automático, pinça),
+  setas sempre visíveis que só trocam de música, Tocar no meio ("Tocando ✓"),
+  pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
+  cifra colada; botão Leitor no modo palco e na setlist. Etapa 2 (sem
+  internet) ainda não feita.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
