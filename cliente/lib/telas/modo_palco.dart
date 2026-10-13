@@ -12,6 +12,7 @@ import 'acoes_do_palco.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'componentes_palco.dart';
+import 'faixa_do_relogio.dart';
 import 'sequencia_do_palco.dart';
 
 /// Tela única para o show: o que está tocando, a próxima com Tocar e os
@@ -113,6 +114,11 @@ class _ModoPalcoState extends State<ModoPalco> with AcoesDoPalco<ModoPalco> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                FaixaDoRelogio(
+                  api: widget.api,
+                  apresentacaoId: widget.apresentacao.id,
+                  codigo: widget.apresentacao.codigo,
+                ),
                 Expanded(child: _construirConteudo(context)),
                 if (proxima != null || ultimaComecada != null)
                   BarraProximaMusica(

@@ -111,6 +111,25 @@ Future<_Palco> _abrir(
       itens[indice] = {...itens[indice], 'tocada': corpo['tocada']};
       return http.Response(jsonEncode(itens[indice]), 200, headers: _json);
     }
+    if (caminho.endsWith('/relogio')) {
+      // Show de 4 horas que começou há 1 hora.
+      final agora = DateTime.now().toUtc();
+      return http.Response(
+        jsonEncode({
+          'duracaoContratadaMinutos': 240,
+          'intervaloPausaRelogio': false,
+          'iniciadaEm':
+              agora.subtract(const Duration(hours: 1)).toIso8601String(),
+          'emIntervaloDesde': null,
+          'segundosEmIntervalo': 0,
+          'musicasComecadas': 0,
+          'musicasRestantes': 0,
+          'agora': agora.toIso8601String(),
+        }),
+        200,
+        headers: _json,
+      );
+    }
     if (caminho.endsWith('/cifras/consulta')) {
       return http.Response(
         jsonEncode({
@@ -388,6 +407,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sozinho'), findsOneWidget);
+  });
+
+  testWidgets('mostra o cronômetro do show no alto', (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('Restam 3h00'), findsOneWidget);
+    expect(find.text('Intervalo'), findsOneWidget);
   });
 
   testWidgets('modo palco cabe em celular de 360px', (tester) async {

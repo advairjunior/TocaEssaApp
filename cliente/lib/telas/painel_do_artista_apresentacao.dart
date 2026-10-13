@@ -63,24 +63,39 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
           intensidade: _aba == _AbaPainel.mais
               ? IntensidadeFundoTocaEssa.suave
               : IntensidadeFundoTocaEssa.cabecalho,
-          child: KeyedSubtree(
-            key: ValueKey('${_aba.name}-${apresentacao.id}'),
-            child: switch (_aba) {
-              _AbaPainel.fila => FilaMusicalArtista(
-                  api: _api, apresentacao: apresentacao, incorporada: true),
-              _AbaPainel.setlist => SetlistDoArtista(
-                  api: _api, apresentacao: apresentacao, incorporada: true),
-              _AbaPainel.estatisticas => EstatisticasDaApresentacaoTela(
-                  api: _api, apresentacao: apresentacao, incorporada: true),
-              _ => ConteudoMobile(
-                  filho: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: _construirAbaMais(context, apresentacao),
-                  ),
+          child: Column(
+            children: [
+              // Fora das abas, para seguir contando ao trocar de aba.
+              if (apresentacao.status == StatusApresentacao.emAndamento)
+                FaixaDoRelogio(
+                  key: ValueKey('relogio-${apresentacao.id}'),
+                  api: _api,
+                  apresentacaoId: apresentacao.id,
+                  codigo: apresentacao.codigo,
                 ),
-            },
+              Expanded(child: _construirAba(context, apresentacao)),
+            ],
           ),
         ),
+      );
+
+  Widget _construirAba(BuildContext context, Apresentacao apresentacao) =>
+      KeyedSubtree(
+        key: ValueKey('${_aba.name}-${apresentacao.id}'),
+        child: switch (_aba) {
+          _AbaPainel.fila => FilaMusicalArtista(
+              api: _api, apresentacao: apresentacao, incorporada: true),
+          _AbaPainel.setlist => SetlistDoArtista(
+              api: _api, apresentacao: apresentacao, incorporada: true),
+          _AbaPainel.estatisticas => EstatisticasDaApresentacaoTela(
+              api: _api, apresentacao: apresentacao, incorporada: true),
+          _ => ConteudoMobile(
+              filho: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: _construirAbaMais(context, apresentacao),
+              ),
+            ),
+        },
       );
 
   List<Widget> _construirAbaMais(

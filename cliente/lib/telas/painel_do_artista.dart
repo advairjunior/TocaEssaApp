@@ -16,6 +16,7 @@ import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import 'perfil_participante.dart';
 import 'estatisticas_da_apresentacao.dart';
+import 'faixa_do_relogio.dart';
 import 'fila_musical_artista.dart';
 import 'fundo_toca_essa.dart';
 import 'setlist_do_artista.dart';

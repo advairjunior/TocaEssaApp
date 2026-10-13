@@ -401,6 +401,59 @@ void main() {
       expect(find.textContaining('ex.: 4 ou 3h30'), findsOneWidget);
     });
 
+    testWidgets('show ao vivo mostra o cronômetro em todas as abas',
+        (tester) async {
+      final agora = DateTime.now().toUtc();
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Show de hoje',
+          data: '2026-09-04',
+          status: 'EmAndamento',
+        )}]',
+        outras: (requisicao) async => requisicao.url.path.endsWith('/relogio')
+            ? http.Response(
+                jsonEncode({
+                  ...jsonDecode(relogio(duracao: 240)) as Map<String, dynamic>,
+                  'iniciadaEm': agora
+                      .subtract(const Duration(hours: 1))
+                      .toIso8601String(),
+                  'agora': agora.toIso8601String(),
+                }),
+                200)
+            : null,
+      );
+      await tester.tap(find.text('Abrir fila'));
+      await tester.pumpAndSettle();
+      expect(find.text('Restam 3h00'), findsOneWidget);
+
+      for (final aba in ['Setlist', 'Estatísticas', 'Mais']) {
+        await tester.tap(find.text(aba));
+        await tester.pumpAndSettle();
+        expect(find.text('Restam 3h00'), findsOneWidget, reason: aba);
+      }
+    });
+
+    testWidgets('show agendado não mostra o cronômetro', (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Show de sábado',
+          data: '2026-09-05',
+        )}]',
+        outras: (requisicao) async => requisicao.url.path.endsWith('/relogio')
+            ? http.Response(relogio(duracao: 240), 200)
+            : null,
+      );
+      await tester.tap(find.text('Show de sábado'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Restam'), findsNothing);
+      expect(find.text('Intervalo'), findsNothing);
+    });
+
     testWidgets('editar mostra as horas guardadas e salva a mudança',
         (tester) async {
       final configuracoes = <Map<String, dynamic>>[];
