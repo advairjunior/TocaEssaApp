@@ -70,6 +70,30 @@ class RelogioDoShow {
   /// Na hora do aparelho; com o intervalo pausando, anda junto da pausa.
   DateTime termino(DateTime agora) => agora.add(restante(agora));
 
+  static const ritmoPadrao = Duration(minutes: 3);
+  static const musicasParaMedir = 3;
+
+  /// Até a 3ª música, o ritmo é a estimativa de 3 minutos por música.
+  bool get ritmoMedido => musicasComecadas >= musicasParaMedir;
+
+  /// Já conta a conversa entre as músicas, mas não o intervalo.
+  Duration ritmo(DateTime agora) => ritmoMedido
+      ? Duration(
+          seconds: tempoDeShow(agora).inSeconds ~/ musicasComecadas)
+      : ritmoPadrao;
+
+  int musicasQueCabem(DateTime agora) {
+    final falta = restante(agora);
+    final porMusica = ritmo(agora);
+    if (falta.isNegative || porMusica <= Duration.zero) return 0;
+    return falta.inSeconds ~/ porMusica.inSeconds;
+  }
+
+  /// Positivo: tempo que sobra depois da sequência; negativo: quanto ela
+  /// passa do horário.
+  Duration sobraDaSequencia(DateTime agora) =>
+      restante(agora) - ritmo(agora) * musicasRestantes;
+
   AlertaDoRelogio alerta(DateTime agora) {
     final falta = restante(agora);
     if (falta.isNegative) return AlertaDoRelogio.passou;
@@ -112,6 +136,14 @@ String escreverDuracaoContratada(int minutos) {
   if (minutos < 60) return '$minutos min';
   final resto = minutos % 60;
   return '${minutos ~/ 60}h${resto == 0 ? '' : resto.toString().padLeft(2, '0')}';
+}
+
+/// "3 min" ou "3,3 min".
+String formatarRitmo(Duration ritmo) {
+  final decimos = (ritmo.inSeconds / 6).round();
+  return decimos % 10 == 0
+      ? '${decimos ~/ 10} min'
+      : '${decimos ~/ 10},${decimos % 10} min';
 }
 
 /// "1h42", "3h00" ou "42 min".

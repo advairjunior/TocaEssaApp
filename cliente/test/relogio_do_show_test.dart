@@ -105,6 +105,62 @@ void main() {
     expect(relogio.restante(aparelhoAdiantado), const Duration(hours: 3));
   });
 
+  group('ritmo do show', () {
+    RelogioDoShow comMusicas(int comecadas, int restantes) =>
+        RelogioDoShow.deJson({
+          'duracaoContratadaMinutos': 240,
+          'intervaloPausaRelogio': false,
+          'iniciadaEm': _inicio.toIso8601String(),
+          'emIntervaloDesde': null,
+          'segundosEmIntervalo': 10 * 60,
+          'musicasComecadas': comecadas,
+          'musicasRestantes': restantes,
+          'agora': _inicio.toIso8601String(),
+        }, recebidoEm: _inicio);
+    final umaHoraDepois = _inicio.add(const Duration(hours: 1));
+
+    test('até a 3ª música usa 3 minutos por música', () {
+      final relogio = comMusicas(2, 18);
+
+      expect(relogio.ritmoMedido, isFalse);
+      expect(relogio.ritmo(umaHoraDepois), const Duration(minutes: 3));
+      expect(relogio.musicasQueCabem(umaHoraDepois), 60);
+      expect(relogio.sobraDaSequencia(umaHoraDepois),
+          const Duration(hours: 2, minutes: 6));
+    });
+
+    test('depois mede o ritmo real, sem contar o intervalo', () {
+      // 50 min tocando (1h menos 10 min de intervalo) em 15 músicas.
+      final relogio = comMusicas(15, 18);
+
+      expect(relogio.ritmoMedido, isTrue);
+      expect(relogio.ritmo(umaHoraDepois),
+          const Duration(minutes: 3, seconds: 20));
+      expect(relogio.musicasQueCabem(umaHoraDepois), 54);
+      expect(relogio.sobraDaSequencia(umaHoraDepois), const Duration(hours: 2));
+    });
+
+    test('sequência maior que o tempo passa do horário', () {
+      final relogio = comMusicas(15, 60);
+
+      expect(relogio.sobraDaSequencia(umaHoraDepois),
+          const Duration(minutes: -20));
+    });
+
+    test('depois do horário não cabe mais nenhuma', () {
+      final relogio = comMusicas(15, 3);
+
+      expect(relogio.musicasQueCabem(_inicio.add(const Duration(hours: 5))),
+          0);
+    });
+
+    test('escreve o ritmo em minutos com vírgula', () {
+      expect(formatarRitmo(const Duration(minutes: 3)), '3 min');
+      expect(formatarRitmo(const Duration(minutes: 3, seconds: 20)), '3,3 min');
+      expect(formatarRitmo(const Duration(minutes: 4, seconds: 12)), '4,2 min');
+    });
+  });
+
   test('formata o tempo como a banda fala', () {
     expect(formatarTempoDoShow(const Duration(hours: 1, minutes: 42)), '1h42');
     expect(formatarTempoDoShow(const Duration(hours: 3)), '3h00');

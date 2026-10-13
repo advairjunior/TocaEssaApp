@@ -12,6 +12,8 @@ final _inicio = DateTime.utc(2026, 10, 17, 21);
 String _relogio({
   int? duracao = 240,
   DateTime? emIntervaloDesde,
+  int comecadas = 0,
+  int restantes = 0,
 }) =>
     jsonEncode({
       'duracaoContratadaMinutos': duracao,
@@ -19,8 +21,8 @@ String _relogio({
       'iniciadaEm': _inicio.toIso8601String(),
       'emIntervaloDesde': emIntervaloDesde?.toIso8601String(),
       'segundosEmIntervalo': 0,
-      'musicasComecadas': 0,
-      'musicasRestantes': 0,
+      'musicasComecadas': comecadas,
+      'musicasRestantes': restantes,
       // O servidor responde com a mesma hora do aparelho nos testes.
       'agora': DateTime.now().toUtc().toIso8601String(),
     });
@@ -40,12 +42,15 @@ Future<_Servidor> _abrir(
   WidgetTester tester, {
   required Duration passado,
   int? duracao = 240,
+  int comecadas = 0,
+  int restantes = 0,
 }) async {
   final servidor = _Servidor();
   // O show começou há [passado], pela hora do aparelho.
   final agora = DateTime.now();
   final inicioNoAparelho = agora.subtract(passado);
-  servidor.resposta = _relogio(duracao: duracao)
+  servidor.resposta = _relogio(
+          duracao: duracao, comecadas: comecadas, restantes: restantes)
       .replaceAll(_inicio.toIso8601String(),
           inicioNoAparelho.toUtc().toIso8601String());
   final api = ApiTocaEssa(
@@ -80,8 +85,16 @@ void main() {
     await _abrir(tester, passado: const Duration(hours: 2, minutes: 18));
 
     expect(find.text('Restam 1h42'), findsOneWidget);
+    // Tolera a virada de um minuto entre a tela e o teste.
     final termino = DateTime.now().add(const Duration(hours: 1, minutes: 42));
-    expect(find.text('termina às ${_hora(termino)}'), findsOneWidget);
+    final aceitas = {
+      for (final ajuste in [-1, 0, 1])
+        'termina às ${_hora(termino.add(Duration(minutes: ajuste)))}'
+    };
+    expect(
+      find.byWidgetPredicate((w) => w is Text && aceitas.contains(w.data)),
+      findsOneWidget,
+    );
   });
 
   testWidgets('depois do horário mostra quanto passou', (tester) async {
@@ -118,6 +131,50 @@ void main() {
       ]),
     );
     expect(find.text('Intervalo'), findsOneWidget);
+  });
+
+  group('ritmo do show', () {
+    testWidgets('antes de medir, avisa que estima 3 min por música',
+        (tester) async {
+      await _abrir(tester,
+          passado: const Duration(minutes: 59, seconds: 50),
+          comecadas: 2,
+          restantes: 18);
+
+      expect(find.text('Cabem ~60 músicas (estimativa: 3 min cada)'),
+          findsOneWidget);
+      expect(find.text('Sequência de 18 músicas: sobram ~2h06'),
+          findsOneWidget);
+    });
+
+    testWidgets('com o ritmo medido, mostra o ritmo do show', (tester) async {
+      await _abrir(tester,
+          passado: const Duration(minutes: 49, seconds: 59), comecadas: 15);
+
+      expect(find.text('Cabem ~57 músicas no ritmo de 3,3 min'),
+          findsOneWidget);
+      expect(find.textContaining('Sequência'), findsNothing);
+    });
+
+    testWidgets('avisa quando a sequência passa do horário', (tester) async {
+      await _abrir(tester,
+          passado: const Duration(minutes: 49, seconds: 59),
+          comecadas: 15,
+          restantes: 65);
+
+      expect(find.text('Sequência de 65 músicas passa ~25 min do horário'),
+          findsOneWidget);
+    });
+
+    testWidgets('tocar na faixa explica como o app calcula', (tester) async {
+      await _abrir(tester, passado: const Duration(hours: 1));
+
+      await tester.tap(find.textContaining('Restam'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Como o TocaEssa calcula'), findsOneWidget);
+      expect(find.textContaining('3 minutos por música'), findsOneWidget);
+    });
   });
 
   testWidgets('falha ao consultar o relógio não incomoda a banda',

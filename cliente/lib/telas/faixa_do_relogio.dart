@@ -47,7 +47,8 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
       const Duration(seconds: 15),
       (_) => setState(() {}),
     );
-    _atualizacao = Timer.periodic(const Duration(minutes: 1), (_) => _carregar());
+    _atualizacao =
+        Timer.periodic(const Duration(minutes: 1), (_) => _carregar());
   }
 
   @override
@@ -91,7 +92,8 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
     final cor = switch (alerta) {
       AlertaDoRelogio.normal => CoresTocaEssa.roxoClaro,
       AlertaDoRelogio.trintaMinutos => CoresTocaEssa.atencao,
-      AlertaDoRelogio.dezMinutos || AlertaDoRelogio.passou =>
+      AlertaDoRelogio.dezMinutos ||
+      AlertaDoRelogio.passou =>
         CoresTocaEssa.perigo,
     };
     final principal = relogio.emIntervalo
@@ -104,6 +106,34 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
         : relogio.emIntervalo
             ? 'restam ${formatarTempoDoShow(_arredondarParaCima(restante))}'
             : 'termina às ${_hora(relogio.termino(agora))}';
+    final texto = Theme.of(context).textTheme;
+    final estiloRitmo =
+        texto.bodySmall?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final linhasDoRitmo = alerta == AlertaDoRelogio.passou
+        ? const <String>[]
+        : _linhasDoRitmo(relogio, agora);
+    return InkWell(
+      borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+      onTap: () => _explicarCalculo(context),
+      child: _construirFaixa(
+        relogio: relogio,
+        cor: cor,
+        principal: principal,
+        detalhe: detalhe,
+        rodape: [
+          for (final linha in linhasDoRitmo) Text(linha, style: estiloRitmo),
+        ],
+      ),
+    );
+  }
+
+  Widget _construirFaixa({
+    required RelogioDoShow relogio,
+    required Color cor,
+    required String principal,
+    required String detalhe,
+    required List<Widget> rodape,
+  }) {
     final texto = Theme.of(context).textTheme;
     return Container(
       margin: const EdgeInsets.fromLTRB(
@@ -123,7 +153,29 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
         borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
         border: Border.all(color: cor.withValues(alpha: 0.6)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _construirLinhaPrincipal(relogio, cor, principal, detalhe, texto),
+          if (rodape.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: EspacoTocaEssa.grande + EspacoTocaEssa.medio,
+                bottom: EspacoTocaEssa.mini,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: rodape,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _construirLinhaPrincipal(RelogioDoShow relogio, Color cor,
+          String principal, String detalhe, TextTheme texto) =>
+      Row(
         children: [
           Icon(
             relogio.emIntervalo
@@ -154,10 +206,51 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
             child: Text(relogio.emIntervalo ? 'Voltar ao show' : 'Intervalo'),
           ),
         ],
-      ),
-    );
+      );
+
+  List<String> _linhasDoRitmo(RelogioDoShow relogio, DateTime agora) {
+    final cabem = relogio.musicasQueCabem(agora);
+    final ritmo = formatarRitmo(relogio.ritmo(agora));
+    final restantes = relogio.musicasRestantes;
+    final sobra = relogio.sobraDaSequencia(agora);
+    return [
+      relogio.ritmoMedido
+          ? 'Cabem ~${_musicas(cabem)} no ritmo de $ritmo'
+          : 'Cabem ~${_musicas(cabem)} (estimativa: $ritmo cada)',
+      if (restantes > 0)
+        sobra.isNegative
+            ? 'Sequência de ${_musicas(restantes)} passa '
+                '~${formatarTempoDoShow(sobra)} do horário'
+            : 'Sequência de ${_musicas(restantes)}: '
+                'sobram ~${formatarTempoDoShow(sobra)}',
+    ];
   }
+
+  void _explicarCalculo(BuildContext context) => showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Como o TocaEssa calcula'),
+          content: const Text(
+            'O tempo conta a partir do primeiro Iniciar da apresentação. '
+            'Até a 3ª música, o TocaEssa estima 3 minutos por música. '
+            'Depois, mede o ritmo real do show: o tempo tocado dividido '
+            'pelas músicas começadas, já contando a conversa entre elas e '
+            'sem contar o intervalo.\n\n'
+            'A sequência são as músicas da setlist que faltam e os pedidos '
+            'marcados para tocar a seguir.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Entendi'),
+            ),
+          ],
+        ),
+      );
 }
+
+String _musicas(int quantidade) =>
+    quantidade == 1 ? '1 música' : '$quantidade músicas';
 
 // "Restam 1h42" continua até faltar exatamente 1h41, como num cronômetro.
 Duration _arredondarParaCima(Duration tempo) =>
