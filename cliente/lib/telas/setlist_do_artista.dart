@@ -70,9 +70,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   void initState() {
     super.initState();
     _carregar();
-    if (widget.apresentacao.status == StatusApresentacao.agendada) {
-      _carregarRelogio();
-    }
+    _carregarRelogio();
     // Acompanha o que os outros aparelhos da banda fazem no show.
     _tempoReal = AssinaturaTempoReal(
       widget.api.enderecoTempoReal(widget.apresentacao.codigo),
@@ -312,14 +310,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               abrirFila: abrirFila,
             ),
           ],
-          if (_relogio case final relogio?
-              when _sequencia.musicasNaSequencia > 0) ...[
-            const SizedBox(height: EspacoTocaEssa.base),
-            _DuracaoEstimada(
-              relogio: relogio,
-              musicas: _sequencia.musicasNaSequencia,
-            ),
-          ],
           if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
             _AvisoSemCifra(
@@ -389,29 +379,43 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     ];
   }
 
+  /// Ritmo para estimar o que falta: o medido no show, o médio do artista
+  /// ou, sem histórico, 3 minutos por música.
+  Duration get _ritmo {
+    final relogio = _relogio;
+    if (relogio == null) return RelogioDoShow.ritmoPadrao;
+    return relogio.iniciadaEm != null
+        ? relogio.ritmo(DateTime.now())
+        : relogio.ritmoAntesDeMedir;
+  }
+
+  /// "1 de 3 tocadas · faltam ~6 min" numa linha; antes do show, embaixo da
+  /// barra, o ritmo usado e a comparação com as horas contratadas.
   Widget _construirProgresso(BuildContext context) {
     final texto = Theme.of(context).textTheme;
     final total = _sequencia.itens.length;
-    final restantes = total - _sequencia.tocadas;
+    final faltam = _sequencia.musicasNaSequencia;
+    final completa = total - _sequencia.tocadas == 0;
+    final secundario =
+        texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario);
+    final legenda = _legendaAntesDoShow();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // Uma linha; com fonte grande, o tempo desce em vez de estourar.
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
                   Text('${_sequencia.tocadas} de $total tocadas',
                       style: texto.titleMedium),
                   Text(
-                    restantes == 0
-                        ? 'Setlist completo!'
-                        : restantes == 1
-                            ? 'Falta 1 música'
-                            : 'Faltam $restantes músicas',
-                    style: texto.bodyMedium
-                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                    completa
+                        ? ' · setlist completa'
+                        : ' · faltam ~${formatarTempoDoShow(_ritmo * faltam)}',
+                    style: secundario,
                   ),
                 ],
               ),
@@ -432,10 +436,35 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           value: total > 0 ? _sequencia.tocadas / total : 0,
           minHeight: 6,
           borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
-          color: restantes == 0 ? CoresTocaEssa.sucesso : null,
+          color: completa ? CoresTocaEssa.sucesso : null,
         ),
+        if (legenda != null) ...[
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(legenda,
+              style: texto.bodySmall
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario)),
+        ],
       ],
     );
+  }
+
+  /// Só antes do show: ao vivo, o tempo do contrato está na faixa do
+  /// cronômetro acima das abas.
+  String? _legendaAntesDoShow() {
+    final relogio = _relogio;
+    if (widget.apresentacao.status != StatusApresentacao.agendada ||
+        relogio == null) {
+      return null;
+    }
+    final ritmo = formatarRitmo(relogio.ritmoAntesDeMedir);
+    final contrato = compararComContrato(
+        relogio, relogio.duracaoEstimada(_sequencia.musicasNaSequencia));
+    return [
+      relogio.temRitmoMedio
+          ? 'seu ritmo médio: $ritmo por música'
+          : 'estimativa: $ritmo por música',
+      if (contrato != null) contrato,
+    ].join(' · ');
   }
 
   Widget _construirVazio() => Center(
@@ -494,58 +523,6 @@ class _AvisoSemCifra extends StatelessWidget {
             ),
           ),
           TextButton(onPressed: colar, child: const Text('Colar')),
-        ],
-      ),
-    );
-  }
-}
-
-/// Antes do show: quanto a sequência deve durar no ritmo médio do artista
-/// (ou 3 min por música sem histórico) e como fica perto do contratado.
-class _DuracaoEstimada extends StatelessWidget {
-  const _DuracaoEstimada({required this.relogio, required this.musicas});
-
-  final RelogioDoShow relogio;
-  final int musicas;
-
-  @override
-  Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-    final estimada = relogio.duracaoEstimada(musicas);
-    final ritmo = formatarRitmo(relogio.ritmoAntesDeMedir);
-    final contrato = compararComContrato(relogio, estimada);
-    final secundario =
-        texto.bodySmall?.copyWith(color: CoresTocaEssa.textoSecundario);
-    return Container(
-      padding: const EdgeInsets.all(EspacoTocaEssa.medio),
-      decoration: BoxDecoration(
-        color: CoresTocaEssa.superficie,
-        borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
-        border: Border.all(color: CoresTocaEssa.borda),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.timer_outlined, color: CoresTocaEssa.roxoClaro),
-          const SizedBox(width: EspacoTocaEssa.medio),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${musicas == 1 ? '1 música' : '$musicas músicas'} ≈ '
-                  '${formatarTempoDoShow(estimada)}',
-                  style: texto.titleSmall,
-                ),
-                Text(
-                  relogio.temRitmoMedio
-                      ? 'seu ritmo médio: $ritmo por música'
-                      : 'estimativa: $ritmo por música',
-                  style: secundario,
-                ),
-                if (contrato != null) Text(contrato, style: secundario),
-              ],
-            ),
-          ),
         ],
       ),
     );

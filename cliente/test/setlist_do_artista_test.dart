@@ -777,7 +777,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  group('duração estimada antes do show', () {
+  group('progresso e tempo numa linha', () {
     Map<String, Object?> relogio({int? duracao, int? ritmoMedio}) => {
           'duracaoContratadaMinutos': duracao,
           'intervaloPausaRelogio': false,
@@ -790,15 +790,18 @@ void main() {
           'ritmoMedioSegundos': ritmoMedio,
         };
 
-    testWidgets('sem histórico estima 3 min por música e compara com o contrato',
+    testWidgets('antes do show: tempo que falta e comparação com o contrato',
         (tester) async {
       await _abrir(tester,
           status: StatusApresentacao.agendada, relogio: relogio(duracao: 240));
 
-      expect(find.text('2 músicas ≈ 6 min'), findsOneWidget);
-      expect(find.text('estimativa: 3 min por música'), findsOneWidget);
-      expect(find.text('contratado 4h → faltam ~3h54 de músicas'),
+      expect(find.text('1 de 3 tocadas'), findsOneWidget);
+      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(
+          find.text('estimativa: 3 min por música · '
+              'contratado 4h → faltam ~3h54 de músicas'),
           findsOneWidget);
+      expect(find.textContaining('≈'), findsNothing);
     });
 
     testWidgets('com histórico usa o ritmo médio e avisa se passa',
@@ -810,25 +813,38 @@ void main() {
           ],
           relogio: relogio(duracao: 60, ritmoMedio: 240));
 
-      expect(find.text('20 músicas ≈ 1h20'), findsOneWidget);
-      expect(find.text('seu ritmo médio: 4 min por música'), findsOneWidget);
-      expect(find.text('a setlist passa ~20 min do contratado'),
+      expect(find.text('0 de 20 tocadas'), findsOneWidget);
+      expect(find.text(' · faltam ~1h20'), findsOneWidget);
+      expect(
+          find.text('seu ritmo médio: 4 min por música · '
+              'a setlist passa ~20 min do contratado'),
           findsOneWidget);
     });
 
-    testWidgets('sem horas contratadas mostra só a estimativa',
+    testWidgets('sem horas contratadas, a legenda mostra só o ritmo',
         (tester) async {
       await _abrir(tester,
           status: StatusApresentacao.agendada, relogio: relogio());
 
-      expect(find.text('2 músicas ≈ 6 min'), findsOneWidget);
-      expect(find.textContaining('contratado'), findsNothing);
+      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(find.text('estimativa: 3 min por música'), findsOneWidget);
     });
 
-    testWidgets('show ao vivo não mostra a estimativa', (tester) async {
+    testWidgets('ao vivo, só a linha; o contrato fica na faixa do cronômetro',
+        (tester) async {
       await _abrir(tester, relogio: relogio(duracao: 240));
 
-      expect(find.textContaining('≈'), findsNothing);
+      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(find.textContaining('por música'), findsNothing);
+    });
+
+    testWidgets('setlist toda tocada diz que está completa', (tester) async {
+      await _abrir(tester, itens: [
+        _item('1', 'Garota de Ipanema', 1, tocada: true),
+      ]);
+
+      expect(find.text('1 de 1 tocadas'), findsOneWidget);
+      expect(find.text(' · setlist completa'), findsOneWidget);
     });
   });
 }
