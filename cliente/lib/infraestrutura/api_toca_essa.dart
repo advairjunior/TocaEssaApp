@@ -1,8 +1,10 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../dominio/modelos.dart';
+import 'cliente_http_com_reserva.dart';
 part 'api_toca_essa_cifras_perfil.dart';
 part 'api_toca_essa_apresentacoes.dart';
 part 'api_toca_essa_pedidos.dart';
@@ -12,7 +14,7 @@ part 'api_toca_essa_relogio.dart';
 
 abstract class _ApiTocaEssaBase {
   _ApiTocaEssaBase({http.Client? cliente, String? enderecoBase})
-      : _cliente = cliente ?? http.Client(),
+      : _cliente = cliente ?? ClienteHttpComReserva(http.Client()),
         _enderecoBase = enderecoBase ?? _enderecoConfigurado();
 
   final http.Client _cliente;
@@ -20,6 +22,14 @@ abstract class _ApiTocaEssaBase {
   String? _tokenArtista;
 
   void definirTokenArtista(String? token) => _tokenArtista = token;
+
+  static final _sempreComInternet = ValueNotifier<DateTime?>(null);
+
+  /// Hora dos dados mostrados sem internet; nulo com internet.
+  ValueListenable<DateTime?> get semInternetDesde => switch (_cliente) {
+        final ClienteHttpComReserva reserva => reserva.semInternetDesde,
+        _ => _sempreComInternet,
+      };
 
   String enderecoTempoReal(String codigo) =>
       '$_enderecoBase/api/tempo-real/${codigo.trim().toUpperCase()}';

@@ -4,6 +4,7 @@ import 'infraestrutura/api_toca_essa.dart';
 import 'infraestrutura/teclado_virtual.dart';
 import 'tema/tema_toca_essa.dart';
 import 'telas/area_do_publico.dart';
+import 'telas/aviso_sem_internet.dart';
 import 'telas/acesso_do_artista.dart';
 import 'telas/componentes.dart';
 import 'telas/inicio.dart';
@@ -26,7 +27,11 @@ class TocaEssaApp extends StatelessWidget {
       title: 'TocaEssa',
       debugShowCheckedModeBanner: false,
       theme: TemaTocaEssa.escuro,
-      builder: (context, filho) => ManterCampoFocadoVisivel(child: filho!),
+      // A faixa "Sem internet" fica acima de todas as telas.
+      builder: (context, filho) => ComAvisoSemInternet(
+        semInternetDesde: servico.semInternetDesde,
+        child: ManterCampoFocadoVisivel(child: filho!),
+      ),
       onGenerateRoute: (configuracao) {
         final uri = Uri.parse(configuracao.name ?? '/');
         if (uri.pathSegments.length == 2 &&

@@ -45,9 +45,13 @@ class _AcessoDoArtistaState extends State<AcessoDoArtista> {
           _token = token;
           _conta = conta;
         });
-      } catch (_) {
+      } on FalhaNaApi {
+        // Só o servidor recusando o token encerra a sessão.
         widget.api.definirTokenArtista(null);
         await preferencias.remove('token_do_artista');
+      } catch (_) {
+        // Sem internet e sem nada guardado: o token fica para quando a rede
+        // voltar.
       }
     }
     if (mounted) setState(() => _carregando = false);
