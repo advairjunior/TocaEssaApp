@@ -18,7 +18,7 @@ class MusicaDoPalco {
 
 /// Sequência de músicas do show: setlist, pedidos do público e a cifra de cada
 /// música, buscada antes para abrir na hora no palco. Compartilhada pela
-/// setlist e pelo modo palco.
+/// setlist e pelo leitor de cifras.
 class SequenciaDoPalco extends ChangeNotifier {
   SequenciaDoPalco({required this.api, required this.apresentacaoId});
 

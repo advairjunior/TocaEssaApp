@@ -55,6 +55,15 @@ const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 // Sequência "tocar a seguir" guardada no servidor falso.
 var _aSeguirNoServidor = <String>[];
 
+// Setlist guardada no servidor falso, para simular o celular do colega.
+var _itensNoServidor = <Map<String, Object?>>[];
+
+/// O colega marca a música como tocada no celular dele.
+void _outroAparelhoTocou(String itemId) {
+  final indice = _itensNoServidor.indexWhere((i) => i['id'] == itemId);
+  _itensNoServidor[indice] = {..._itensNoServidor[indice], 'tocada': true};
+}
+
 Future<List<http.Request>> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? itens,
@@ -64,6 +73,7 @@ Future<List<http.Request>> _abrir(
   Set<String> musicasComTexto = const {},
   List<Map<String, Object?>>? grupos,
   List<String> pedidosASeguir = const [],
+  VoidCallback? abrirFila,
   StatusApresentacao status = StatusApresentacao.emAndamento,
   Map<String, Object?>? relogio,
 }) async {
@@ -76,7 +86,7 @@ Future<List<http.Request>> _abrir(
   };
   final listaDeGrupos =
       grupos ?? [_grupo('p1', 'Evidências', 'Aceito', quantidade: 2)];
-  final lista = [
+  final lista = _itensNoServidor = [
     ...itens ??
         [
           _item('1', 'Garota de Ipanema', 1, tocada: true),
@@ -197,6 +207,7 @@ Future<List<http.Request>> _abrir(
           tipo: TipoApresentacao.publica,
         ),
         incorporada: true,
+        abrirFila: abrirFila,
         abrirUrl: (url) async => abertas?.add(url),
         prepararAbertura: () => (url) async {
           if (url != null) abertas?.add(url);
@@ -216,7 +227,7 @@ void main() {
     expect(find.byType(Card), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.text('1 de 3 tocadas'), findsOneWidget);
-    expect(find.text('Montar'), findsOneWidget);
+    expect(find.byTooltip('Montar setlist'), findsOneWidget);
     expect(find.text('Trocar repertório'), findsNothing);
     expect(find.text('Próxima'), findsOneWidget);
     expect(find.text('Banda 2 · Tom G'), findsOneWidget);
@@ -541,13 +552,76 @@ void main() {
     expect(status.body, contains('"status":"Finalizado"'));
   });
 
-  testWidgets('setlist abre o modo palco', (tester) async {
+  testWidgets('topo limpo: sem modo palco nem botão de leitor',
+      (tester) async {
     await _abrir(tester);
 
-    await tester.tap(find.text('Modo palco'));
+    expect(find.text('Modo palco'), findsNothing);
+    expect(find.text('Leitor'), findsNothing);
+    expect(find.byTooltip('Montar setlist'), findsOneWidget);
+    expect(find.text('Editar'), findsOneWidget);
+  });
+
+  testWidgets('pedidos novos aparecem num selo que leva à fila',
+      (tester) async {
+    var abriuFila = false;
+    await _abrir(tester,
+        grupos: [_grupo('p9', 'Sozinho', 'Aguardando')],
+        abrirFila: () => abriuFila = true);
+
+    await tester.tap(find.text('1 pedido novo'));
     await tester.pumpAndSettle();
 
-    expect(find.byTooltip('Sair do modo palco'), findsOneWidget);
+    expect(abriuFila, isTrue);
+  });
+
+  testWidgets('sem pedidos novos, não mostra o selo', (tester) async {
+    await _abrir(tester, abrirFila: () {});
+
+    expect(find.textContaining('pedido novo'), findsNothing);
+    expect(find.textContaining('pedidos novos'), findsNothing);
+  });
+
+  group('com a banda em vários aparelhos', () {
+    Future<void> atualizar(WidgetTester tester) async {
+      await tester.pump(const Duration(seconds: 30));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('música marcada no outro celular atualiza a setlist',
+        (tester) async {
+      await _abrir(tester);
+
+      _outroAparelhoTocou('2');
+      await atualizar(tester);
+
+      expect(find.text('2 de 3 tocadas'), findsOneWidget);
+      expect(find.text('Próxima: Evidências'), findsOneWidget);
+    });
+
+    testWidgets('pedido marcado a seguir no outro celular vira a próxima',
+        (tester) async {
+      await _abrir(tester, grupos: [_grupo('p3', 'Sozinho', 'Aceito')]);
+      expect(find.text('Próxima: Velha Infância'), findsOneWidget);
+
+      _aSeguirNoServidor.add('p3');
+      await atualizar(tester);
+
+      expect(find.text('Próxima: Sozinho'), findsOneWidget);
+    });
+
+    testWidgets('quando o colega começa outra música, o desfazer some',
+        (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.text('Tocar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Desfazer'), findsOneWidget);
+
+      _outroAparelhoTocou('3');
+      await atualizar(tester);
+
+      expect(find.text('Desfazer'), findsNothing);
+    });
   });
 
   testWidgets('setlist completa não mostra a barra de próxima', (tester) async {
@@ -577,20 +651,10 @@ void main() {
             .dy
             .compareTo(tester.getTopLeft(find.text(b).first).dy));
 
-    testWidgets('botão Leitor abre o leitor de cifras', (tester) async {
-      await _abrir(tester);
-
-      await tester.tap(find.text('Leitor'));
-      await tester.pumpAndSettle();
-
-      expect(find.byTooltip('Fechar leitor'), findsOneWidget);
-      expect(find.text('Velha Infância'), findsOneWidget);
-    });
-
     testWidgets('montar abre o acervo', (tester) async {
       await _abrir(tester);
 
-      await tester.tap(find.text('Montar'));
+      await tester.tap(find.byTooltip('Montar setlist'));
       await tester.pumpAndSettle();
 
       expect(find.text('Montar setlist'), findsOneWidget);

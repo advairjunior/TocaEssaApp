@@ -8,7 +8,7 @@ import 'escolher_cifra.dart';
 import 'leitor_de_cifras.dart';
 import 'sequencia_do_palco.dart';
 
-/// Ações de palco compartilhadas pela setlist e pelo modo palco: tocar a
+/// Ações de palco da setlist e do leitor de cifras: tocar a
 /// próxima, abrir e escolher cifras.
 mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
   SequenciaDoPalco get sequencia;

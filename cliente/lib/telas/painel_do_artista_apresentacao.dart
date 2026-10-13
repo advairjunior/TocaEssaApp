@@ -86,7 +86,10 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
           _AbaPainel.fila => FilaMusicalArtista(
               api: _api, apresentacao: apresentacao, incorporada: true),
           _AbaPainel.setlist => SetlistDoArtista(
-              api: _api, apresentacao: apresentacao, incorporada: true),
+              api: _api,
+              apresentacao: apresentacao,
+              incorporada: true,
+              abrirFila: () => _selecionarAba(_AbaPainel.fila)),
           _AbaPainel.estatisticas => EstatisticasDaApresentacaoTela(
               api: _api, apresentacao: apresentacao, incorporada: true),
           _ => ConteudoMobile(

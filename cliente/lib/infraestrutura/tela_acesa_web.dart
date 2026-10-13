@@ -4,7 +4,7 @@ import 'package:web/web.dart' as web;
 
 typedef LiberarTelaAcesa = void Function();
 
-/// Impede a tela de apagar enquanto o modo palco está aberto. O navegador
+/// Impede a tela de apagar enquanto o leitor de cifras está aberto. O navegador
 /// solta o pedido quando a aba fica escondida (ao abrir a cifra), então ele é
 /// refeito sempre que o app volta a aparecer. Navegador sem suporte segue
 /// normalmente.

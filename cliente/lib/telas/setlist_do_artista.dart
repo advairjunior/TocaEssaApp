@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -9,7 +11,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'componentes_palco.dart';
-import 'modo_palco.dart';
+import '../infraestrutura/assinatura_tempo_real.dart';
 import 'acoes_do_palco.dart';
 import 'colar_cifras.dart';
 import 'leitor_de_cifras.dart';
@@ -25,11 +27,14 @@ class SetlistDoArtista extends StatefulWidget {
     this.incorporada = false,
     this.abrirUrl = abrirNaAbaDaCifra,
     this.prepararAbertura = prepararAberturaNaAbaDaCifra,
+    this.abrirFila,
   });
 
   final ApiTocaEssa api;
   final Apresentacao apresentacao;
   final bool incorporada;
+  // Selo de pedidos novos leva à aba Fila do painel.
+  final VoidCallback? abrirFila;
   final Future<void> Function(Uri url) abrirUrl;
   final FinalizarAberturaExterna Function() prepararAbertura;
 
@@ -58,6 +63,9 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
   RelogioDoShow? _relogio;
 
+  AssinaturaTempoReal? _tempoReal;
+  Timer? _atualizacaoAutomatica;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +73,15 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     if (widget.apresentacao.status == StatusApresentacao.agendada) {
       _carregarRelogio();
     }
+    // Acompanha o que os outros aparelhos da banda fazem no show.
+    _tempoReal = AssinaturaTempoReal(
+      widget.api.enderecoTempoReal(widget.apresentacao.codigo),
+      _sequencia.recarregar,
+    );
+    _atualizacaoAutomatica = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => _sequencia.recarregar(),
+    );
   }
 
   Future<void> _carregarRelogio() async {
@@ -78,6 +95,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
 
   @override
   void dispose() {
+    _tempoReal?.encerrar();
+    _atualizacaoAutomatica?.cancel();
     _sequencia.dispose();
     super.dispose();
   }
@@ -161,19 +180,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
-  }
-
-  /// Ao voltar do modo palco, o setlist e os pedidos podem ter mudado.
-  Future<void> _abrirModoPalco() async {
-    await Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ModoPalco(
-        api: widget.api,
-        apresentacao: widget.apresentacao,
-        abrirUrl: widget.abrirUrl,
-        prepararAbertura: widget.prepararAbertura,
-      ),
-    ));
-    if (mounted) await _carregar();
   }
 
   Future<void> _montar() async {
@@ -287,27 +293,15 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  onPressed: _abrirModoPalco,
-                  icon: const Icon(Icons.mic_rounded),
-                  label: const Text('Modo palco'),
-                ),
-              ),
-              const SizedBox(width: EspacoTocaEssa.pequeno),
-              Expanded(
-                child: FilledButton.tonalIcon(
-                  onPressed: abrirLeitorDoShow,
-                  icon: const Icon(Icons.auto_stories_rounded),
-                  label: const Text('Leitor'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: EspacoTocaEssa.base),
           _construirProgresso(context),
+          if (widget.abrirFila case final abrirFila?
+              when _sequencia.pedidosNovos.isNotEmpty) ...[
+            const SizedBox(height: EspacoTocaEssa.medio),
+            _SeloPedidosNovos(
+              quantidade: _sequencia.pedidosNovos.length,
+              abrirFila: abrirFila,
+            ),
+          ],
           if (_relogio case final relogio?
               when _sequencia.musicasNaSequencia > 0) ...[
             const SizedBox(height: EspacoTocaEssa.base),
@@ -411,14 +405,14 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                 ],
               ),
             ),
-            TextButton.icon(
-              onPressed: _editando ? null : _montar,
-              icon: const Icon(Icons.playlist_add_rounded, size: 18),
-              label: const Text('Montar'),
-            ),
             TextButton(
               onPressed: () => setState(() => _editando = !_editando),
               child: Text(_editando ? 'Concluir' : 'Editar'),
+            ),
+            IconButton(
+              tooltip: 'Montar setlist',
+              onPressed: _editando ? null : _montar,
+              icon: const Icon(Icons.add_rounded),
             ),
           ],
         ),
@@ -545,6 +539,47 @@ class _DuracaoEstimada extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "2 pedidos novos ›": leva à aba Fila, onde se aceita ou recusa.
+class _SeloPedidosNovos extends StatelessWidget {
+  const _SeloPedidosNovos({required this.quantidade, required this.abrirFila});
+
+  final int quantidade;
+  final VoidCallback abrirFila;
+
+  @override
+  Widget build(BuildContext context) => Material(
+        color: CoresTocaEssa.roxo.withValues(alpha: .14),
+        borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+          onTap: abrirFila,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: EspacoTocaEssa.base,
+              vertical: EspacoTocaEssa.medio,
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.queue_music_rounded,
+                    color: CoresTocaEssa.roxoClaro),
+                const SizedBox(width: EspacoTocaEssa.pequeno),
+                Expanded(
+                  child: Text(
+                    quantidade == 1
+                        ? '1 pedido novo'
+                        : '$quantidade pedidos novos',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded,
+                    color: CoresTocaEssa.textoSecundario),
+              ],
+            ),
+          ),
+        ),
+      );
 }
 
 /// Linha da setlist em edição: só a que falta tocar tem alça e remover.

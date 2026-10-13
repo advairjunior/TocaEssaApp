@@ -31,7 +31,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
   /// Realça a música que está tocando agora.
   final bool destaque;
 
-  /// Marcado para entrar na barra Próxima da setlist e do modo palco.
+  /// Marcado para entrar na barra Próxima da setlist e do leitor de cifras.
   final bool aSeguir;
   final VoidCallback? alternarASeguir;
 
@@ -79,7 +79,7 @@ class CartaoPedidoArtista extends StatelessWidget {
   /// Realça a música que está tocando agora.
   final bool destaque;
 
-  /// Marcado para entrar na barra Próxima da setlist e do modo palco.
+  /// Marcado para entrar na barra Próxima da setlist e do leitor de cifras.
   final bool aSeguir;
   final VoidCallback? alternarASeguir;
 
