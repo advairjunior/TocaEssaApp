@@ -132,6 +132,12 @@ class SequenciaDoPalco extends ChangeNotifier {
     buscarCifras();
   }
 
+  /// Nova ordem ou música removida: as cifras já buscadas continuam valendo.
+  void reorganizarItens(List<ItemDoSetlist> novos) {
+    itens = novos;
+    _avisar();
+  }
+
   Future<void> marcar(ItemDoSetlist item, bool tocada) async {
     salvando = true;
     _versaoLocal++;

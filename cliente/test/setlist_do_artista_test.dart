@@ -83,12 +83,14 @@ Future<List<http.Request>> _abrir(
   final salvas = <String>{};
   final listaDeGrupos =
       grupos ?? [_grupo('p1', 'Evidências', 'Aceito', quantidade: 2)];
-  final lista = itens ??
-      [
-        _item('1', 'Garota de Ipanema', 1, tocada: true),
-        _item('2', 'Velha Infância', 2, tom: 'G'),
-        _item('3', 'Evidências', 3),
-      ];
+  final lista = [
+    ...itens ??
+        [
+          _item('1', 'Garota de Ipanema', 1, tocada: true),
+          _item('2', 'Velha Infância', 2, tom: 'G'),
+          _item('3', 'Evidências', 3),
+        ],
+  ];
   final cliente = MockClient((requisicao) async {
     requisicoes.add(requisicao);
     final sequencia = responderPedidosASeguir(requisicao, _aSeguirNoServidor);
@@ -145,6 +147,27 @@ Future<List<http.Request>> _abrir(
       return http.Response(jsonEncode(_cifra(corpo['url'] as String)), 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
+    const comoJson = {'content-type': 'application/json; charset=utf-8'};
+    if (requisicao.method == 'DELETE' && caminho.endsWith('/setlist')) {
+      lista.clear();
+      return http.Response('', 204);
+    }
+    if (requisicao.method == 'DELETE' && caminho.contains('/setlist/')) {
+      lista.removeWhere((i) => caminho.endsWith('/${i['id']}'));
+      return http.Response(jsonEncode(lista), 200, headers: comoJson);
+    }
+    if (caminho.endsWith('/setlist/ordem')) {
+      final ids = (jsonDecode(requisicao.body)['itemIds'] as List).cast<String>();
+      final faltam = ids.map((id) => lista.firstWhere((i) => i['id'] == id));
+      final fila = faltam.toList();
+      final nova = [
+        for (final item in lista) item['tocada'] == true ? item : fila.removeAt(0)
+      ];
+      lista
+        ..clear()
+        ..addAll(nova);
+      return http.Response(jsonEncode(lista), 200, headers: comoJson);
+    }
     if (requisicao.method == 'DELETE') return http.Response('', 204);
     return http.Response('[]', 200);
   });
@@ -186,7 +209,8 @@ void main() {
     expect(find.byType(Card), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
     expect(find.text('1 de 3 tocadas'), findsOneWidget);
-    expect(find.text('Trocar repertório'), findsOneWidget);
+    expect(find.text('Montar'), findsOneWidget);
+    expect(find.text('Trocar repertório'), findsNothing);
     expect(find.text('Próxima'), findsOneWidget);
     expect(find.text('Banda 2 · Tom G'), findsOneWidget);
     expect(find.text('2 pedidos na fila'), findsOneWidget);
@@ -584,11 +608,100 @@ void main() {
     expect(find.text('Tocar'), findsNothing);
   });
 
-  testWidgets('sem repertório, convida a importar', (tester) async {
+  testWidgets('setlist vazia convida a montar com o acervo', (tester) async {
     await _abrir(tester, itens: []);
 
-    expect(find.text('Nenhum repertório nesta apresentação'), findsOneWidget);
-    expect(find.text('Importar repertório'), findsOneWidget);
+    expect(find.text('Setlist vazia'), findsOneWidget);
+    await tester.tap(find.text('Montar setlist'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Buscar no acervo'), findsOneWidget);
+  });
+
+  group('editar a setlist', () {
+    List<String> titulos(WidgetTester tester) => [
+          for (final titulo in ['Garota de Ipanema', 'Velha Infância', 'Evidências'])
+            if (find.text(titulo).evaluate().isNotEmpty) titulo
+        ]..sort((a, b) => tester
+            .getTopLeft(find.text(a).first)
+            .dy
+            .compareTo(tester.getTopLeft(find.text(b).first).dy));
+
+    testWidgets('montar abre o acervo', (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.text('Montar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Montar setlist'), findsOneWidget);
+    });
+
+    testWidgets('remove só as músicas que ainda não foram tocadas',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('Remover da setlist'), findsNWidgets(2));
+      await tester.tap(find.byTooltip('Remover da setlist').first);
+      await tester.pumpAndSettle();
+
+      expect(
+          requisicoes.where((r) => r.method == 'DELETE').single.url.path,
+          '/api/apresentacoes/$_id/setlist/2');
+      expect(find.text('Velha Infância'), findsNothing);
+      expect(find.text('Evidências'), findsOneWidget);
+    });
+
+    testWidgets('mover para o topo reordena as que faltam', (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      // Só as que faltam têm alça.
+      expect(find.bySemanticsLabel('Arrastar para reordenar'), findsNWidgets(2));
+      await tester.tap(find.bySemanticsLabel('Arrastar para reordenar').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mover para cima'));
+      await tester.pumpAndSettle();
+
+      final ordem = requisicoes.singleWhere((r) => r.method == 'PUT');
+      expect(ordem.url.path, '/api/apresentacoes/$_id/setlist/ordem');
+      expect(jsonDecode(ordem.body), {
+        'itemIds': ['3', '2']
+      });
+      expect(titulos(tester),
+          ['Garota de Ipanema', 'Evidências', 'Velha Infância']);
+    });
+
+    testWidgets('limpar pede confirmação e esvazia a setlist', (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      final limpar = find.text('Limpar setlist');
+      await tester.ensureVisible(limpar);
+      await tester.tap(limpar);
+      await tester.pumpAndSettle();
+      expect(find.text('Limpar a setlist?'), findsOneWidget);
+      await tester.tap(find.text('Limpar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Setlist vazia'), findsOneWidget);
+    });
+
+    testWidgets('concluir volta a marcar como tocada pela linha',
+        (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Concluir'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Remover da setlist'), findsNothing);
+      expect(find.text('Editar'), findsOneWidget);
+    });
   });
 
   testWidgets('setlist cabe em celular de 360px', (tester) async {

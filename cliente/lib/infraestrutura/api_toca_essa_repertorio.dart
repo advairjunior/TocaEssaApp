@@ -104,20 +104,6 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
         .toList();
   }
 
-  Future<List<ItemDoSetlist>> importarRepertorioParaSetlist(
-      String apresentacaoId, String repertorioId) async {
-    final resposta = await _cliente.post(
-      Uri.parse(
-          '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist/importar'),
-      headers: _cabecalhos(token: _tokenArtista, json: true),
-      body: jsonEncode({'repertorioId': repertorioId}),
-    );
-    _validar(resposta);
-    return (jsonDecode(resposta.body) as List<dynamic>)
-        .map((i) => ItemDoSetlist.deJson(i as Map<String, dynamic>))
-        .toList();
-  }
-
   /// Coloca as músicas do acervo no fim da setlist; o servidor não repete
   /// as que já estão nela.
   Future<List<ItemDoSetlist>> adicionarMusicasAoSetlist(

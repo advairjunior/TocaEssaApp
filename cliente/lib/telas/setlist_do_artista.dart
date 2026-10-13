@@ -9,6 +9,8 @@ import 'componentes_lista.dart';
 import 'componentes_palco.dart';
 import 'modo_palco.dart';
 import 'acoes_do_palco.dart';
+import 'lista_reordenavel.dart';
+import 'montar_setlist.dart';
 import 'sequencia_do_palco.dart';
 
 class SetlistDoArtista extends StatefulWidget {
@@ -48,6 +50,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     apresentacaoId: widget.apresentacao.id,
   )..addListener(_redesenhar);
   bool _carregando = true;
+  bool _editando = false;
   // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
   RelogioDoShow? _relogio;
 
@@ -131,48 +134,73 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     if (mounted) await _carregar();
   }
 
-  Future<void> _mostrarImportarRepertorio() async {
-    List<Repertorio>? repertorios;
+  Future<void> _montar() async {
+    final mudou = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => MontarSetlist(
+        api: widget.api,
+        apresentacaoId: widget.apresentacao.id,
+        naSetlist: _sequencia.itens,
+      ),
+    ));
+    if (mudou == true && mounted) await _carregar();
+  }
+
+  Future<void> _remover(ItemDoSetlist item) async {
     try {
-      repertorios = await widget.api.listarRepertorios();
+      _sequencia.reorganizarItens(await widget.api
+          .removerItemDoSetlist(widget.apresentacao.id, item.id));
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
-      return;
     }
-    if (!mounted) return;
+  }
 
-    if (repertorios.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Nenhum repertório criado. Crie um em Repertórios, no menu da sua conta.'),
-        ),
-      );
-      return;
-    }
-
-    final selecionado = await showModalBottomSheet<Repertorio>(
-      context: context,
-      useSafeArea: true,
-      isScrollControlled: true,
-      backgroundColor: CoresTocaEssa.superficie,
-      builder: (_) => _SelecionarRepertorioSheet(repertorios: repertorios!),
-    );
-    if (selecionado == null || !mounted) return;
-
-    setState(() => _carregando = true);
+  /// Só as que faltam mudam de lugar; as tocadas ficam onde estão.
+  Future<void> _reordenar(int de, int para) async {
+    final antes = _sequencia.itens;
+    final nova = [...antes];
+    nova.insert(para, nova.removeAt(de));
+    _sequencia.reorganizarItens(nova);
     try {
-      final novos = await widget.api.importarRepertorioParaSetlist(
-          widget.apresentacao.id, selecionado.id);
-      if (!mounted) return;
-      _sequencia.substituirItens(novos);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Repertório "${selecionado.nome}" importado.')),
-      );
+      _sequencia.reorganizarItens(
+          await widget.api.reordenarSetlist(widget.apresentacao.id, [
+        for (final item in nova)
+          if (!item.tocada) item.id
+      ]));
+    } catch (erro) {
+      _sequencia.reorganizarItens(antes);
+      if (mounted) mostrarErro(context, erro);
+    }
+  }
+
+  Future<void> _limpar() async {
+    final confirmou = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Limpar a setlist?'),
+            content: const Text(
+                'Todas as músicas saem da setlist, inclusive as já tocadas.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style:
+                    FilledButton.styleFrom(backgroundColor: CoresTocaEssa.rosa),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Limpar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmou || !mounted) return;
+    try {
+      await widget.api.limparSetlist(widget.apresentacao.id);
+      _sequencia.reorganizarItens(const []);
+      if (mounted) setState(() => _editando = false);
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
-    } finally {
-      if (mounted) setState(() => _carregando = false);
     }
   }
 
@@ -240,29 +268,61 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
             ),
           ],
           const SizedBox(height: EspacoTocaEssa.base + 4),
-          GrupoDeLinhas(
-            recuoDivisoria: 60,
-            linhas: [
-              for (final item in _sequencia.itens)
-                _LinhaSetlist(
-                  item: item,
-                  salvando: _sequencia.salvando,
-                  eProxima: item.id == proxima?.id,
-                  semCifra:
-                      _sequencia.estaSemCifra(MusicaDoPalco.doSetlist(item)),
-                  pedidosNaFila:
-                      pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
-                  marcar: (tocada) => _marcar(item, tocada),
-                  abrirCifra: () => abrirCifra(MusicaDoPalco.doSetlist(item)),
-                  escolherCifra: () =>
-                      escolherCifra(MusicaDoPalco.doSetlist(item)),
-                ),
-            ],
-          ),
+          if (_editando)
+            ..._construirEdicao()
+          else
+            GrupoDeLinhas(
+              recuoDivisoria: 60,
+              linhas: [
+                for (final item in _sequencia.itens)
+                  _LinhaSetlist(
+                    item: item,
+                    salvando: _sequencia.salvando,
+                    eProxima: item.id == proxima?.id,
+                    semCifra:
+                        _sequencia.estaSemCifra(MusicaDoPalco.doSetlist(item)),
+                    pedidosNaFila:
+                        pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
+                    marcar: (tocada) => _marcar(item, tocada),
+                    abrirCifra: () => abrirCifra(MusicaDoPalco.doSetlist(item)),
+                    escolherCifra: () =>
+                        escolherCifra(MusicaDoPalco.doSetlist(item)),
+                  ),
+              ],
+            ),
           const SizedBox(height: EspacoTocaEssa.base),
         ],
       ),
     );
+  }
+
+  /// Edição: as que faltam podem ser arrastadas ou removidas; as tocadas
+  /// ficam no lugar.
+  List<Widget> _construirEdicao() {
+    final itens = _sequencia.itens;
+    return [
+      ListaReordenavel(
+        quantidade: itens.length,
+        chaveDoItem: (indice) => ValueKey(itens[indice].id),
+        habilitada: !_sequencia.salvando,
+        aoReordenar: _reordenar,
+        construirItem: (context, indice, alca) => _LinhaEmEdicao(
+          item: itens[indice],
+          remover: () => _remover(itens[indice]),
+          alca: alca,
+        ),
+      ),
+      const SizedBox(height: EspacoTocaEssa.base),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: _limpar,
+          style: TextButton.styleFrom(foregroundColor: CoresTocaEssa.rosa),
+          icon: const Icon(Icons.delete_sweep_outlined),
+          label: const Text('Limpar setlist'),
+        ),
+      ),
+    ];
   }
 
   Widget _construirProgresso(BuildContext context) {
@@ -293,9 +353,13 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               ),
             ),
             TextButton.icon(
-              onPressed: _mostrarImportarRepertorio,
-              icon: const Icon(Icons.swap_horiz_rounded, size: 18),
-              label: const Text('Trocar repertório'),
+              onPressed: _editando ? null : _montar,
+              icon: const Icon(Icons.playlist_add_rounded, size: 18),
+              label: const Text('Montar'),
+            ),
+            TextButton(
+              onPressed: () => setState(() => _editando = !_editando),
+              child: Text(_editando ? 'Concluir' : 'Editar'),
             ),
           ],
         ),
@@ -317,14 +381,14 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
             children: [
               const EstadoVazio(
                 icone: Icons.playlist_play_rounded,
-                titulo: 'Nenhum repertório nesta apresentação',
-                descricao:
-                    'Importe um repertório para acompanhar o que já tocou.',
+                titulo: 'Setlist vazia',
+                descricao: 'Monte a setlist com músicas dos seus repertórios '
+                    'ou avulsas.',
               ),
               FilledButton.icon(
-                onPressed: _mostrarImportarRepertorio,
+                onPressed: _montar,
                 icon: const Icon(Icons.playlist_add_rounded),
-                label: const Text('Importar repertório'),
+                label: const Text('Montar setlist'),
               ),
             ],
           ),
@@ -422,7 +486,84 @@ class _DuracaoEstimada extends StatelessWidget {
       ),
     );
   }
+}
 
+/// Linha da setlist em edição: só a que falta tocar tem alça e remover.
+class _LinhaEmEdicao extends StatelessWidget {
+  const _LinhaEmEdicao({
+    required this.item,
+    required this.remover,
+    required this.alca,
+  });
+
+  final ItemDoSetlist item;
+  final VoidCallback remover;
+  final ConstrutorDaAlca alca;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final detalhes = [
+      if (item.artista != null) item.artista!,
+      if (item.tom != null) 'Tom ${item.tom}',
+    ].join(' · ');
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: CoresTocaEssa.borda)),
+      ),
+      padding: const EdgeInsets.only(left: EspacoTocaEssa.pequeno),
+      child: Row(
+        children: [
+          Expanded(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: EspacoTocaEssa.medio),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.titulo,
+                    style: texto.titleMedium?.copyWith(
+                      color: item.tocada
+                          ? CoresTocaEssa.textoSecundario
+                          : CoresTocaEssa.texto,
+                    ),
+                  ),
+                  if (detalhes.isNotEmpty)
+                    Text(detalhes,
+                        style: texto.bodySmall
+                            ?.copyWith(color: CoresTocaEssa.textoSecundario)),
+                ],
+              ),
+            ),
+          ),
+          if (item.tocada)
+            const Padding(
+              padding: EdgeInsets.all(EspacoTocaEssa.medio),
+              child: Icon(Icons.check_rounded, color: CoresTocaEssa.sucesso),
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Remover da setlist',
+              icon: const Icon(Icons.remove_circle_outline_rounded,
+                  color: CoresTocaEssa.textoSecundario, size: 20),
+              onPressed: remover,
+            ),
+            alca(
+              const Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: EspacoTocaEssa.pequeno,
+                  vertical: EspacoTocaEssa.medio,
+                ),
+                child: Icon(Icons.drag_handle_rounded,
+                    color: CoresTocaEssa.textoSecundario),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 /// Uma música do setlist. A linha inteira marca e desmarca como tocada,
@@ -557,38 +698,4 @@ class _LinhaSetlist extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SelecionarRepertorioSheet extends StatelessWidget {
-  const _SelecionarRepertorioSheet({required this.repertorios});
-  final List<Repertorio> repertorios;
-
-  @override
-  Widget build(BuildContext context) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-            child: Text(
-              'Selecionar repertório',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          for (final rep in repertorios)
-            ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-              title: Text(rep.nome),
-              subtitle: Text(
-                '${rep.musicas.length} '
-                '${rep.musicas.length == 1 ? 'música' : 'músicas'}',
-                style: const TextStyle(color: CoresTocaEssa.textoSecundario),
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-              onTap: () => Navigator.pop(context, rep),
-            ),
-          const SizedBox(height: 16),
-        ],
-      );
 }
