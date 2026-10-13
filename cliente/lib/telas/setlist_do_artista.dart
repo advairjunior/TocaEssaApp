@@ -245,10 +245,24 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FilledButton.tonalIcon(
-            onPressed: _abrirModoPalco,
-            icon: const Icon(Icons.mic_rounded),
-            label: const Text('Modo palco'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: _abrirModoPalco,
+                  icon: const Icon(Icons.mic_rounded),
+                  label: const Text('Modo palco'),
+                ),
+              ),
+              const SizedBox(width: EspacoTocaEssa.pequeno),
+              Expanded(
+                child: FilledButton.tonalIcon(
+                  onPressed: abrirLeitorDoShow,
+                  icon: const Icon(Icons.auto_stories_rounded),
+                  label: const Text('Leitor'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: EspacoTocaEssa.base),
           _construirProgresso(context),

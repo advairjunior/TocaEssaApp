@@ -627,6 +627,16 @@ void main() {
             .dy
             .compareTo(tester.getTopLeft(find.text(b).first).dy));
 
+    testWidgets('botão Leitor abre o leitor de cifras', (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.text('Leitor'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Fechar leitor'), findsOneWidget);
+      expect(find.text('Velha Infância'), findsOneWidget);
+    });
+
     testWidgets('montar abre o acervo', (tester) async {
       await _abrir(tester);
 

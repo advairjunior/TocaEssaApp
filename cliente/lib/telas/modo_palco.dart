@@ -109,6 +109,13 @@ class _ModoPalcoState extends State<ModoPalco> with AcoesDoPalco<ModoPalco> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Modo palco'),
+        actions: [
+          IconButton(
+            tooltip: 'Leitor de cifras',
+            icon: const Icon(Icons.auto_stories_rounded),
+            onPressed: abrirLeitorDoShow,
+          ),
+        ],
       ),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())

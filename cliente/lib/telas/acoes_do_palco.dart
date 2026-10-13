@@ -5,6 +5,7 @@ import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import 'componentes.dart';
 import 'escolher_cifra.dart';
+import 'leitor_de_cifras.dart';
 import 'sequencia_do_palco.dart';
 
 /// Ações de palco compartilhadas pela setlist e pelo modo palco: tocar a
@@ -21,8 +22,11 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
     final musica = sequencia.proxima;
     if (musica == null) return;
     final preBuscada = sequencia.cifraDe(musica);
-    final url = preBuscada?.cifra?.url;
-    if (url != null) {
+    final colada = preBuscada?.texto != null;
+    final url = colada ? null : preBuscada?.cifra?.url;
+    if (colada) {
+      abrirLeitor(musica);
+    } else if (url != null) {
       abrirUrl(Uri.parse(url)).catchError((Object erro) {
         if (mounted) mostrarErro(context, erro);
       });
@@ -43,9 +47,27 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
       _ultimaComecada = musica;
       _desfazerUltima = desfazer;
     });
-    if (url == null && preBuscada != null) {
+    if (!colada && url == null && preBuscada != null) {
       await mostrarEscolhaDaCifra(musica, preBuscada);
     }
+  }
+
+  /// Leitor de cifras na música pedida, usando a mesma sequência do show.
+  Future<void> abrirLeitor(MusicaDoPalco musica) =>
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => LeitorDeCifras(
+          sequencia: sequencia,
+          musicaInicial: musica,
+          abrirUrl: abrirUrl,
+        ),
+      ));
+
+  /// Botão Leitor: abre na música tocando ou, sem ela, na próxima.
+  Future<void> abrirLeitorDoShow() async {
+    final musica = sequencia.atual ??
+        sequencia.proxima ??
+        sequencia.paginasDoLeitor.firstOrNull;
+    if (musica != null) await abrirLeitor(musica);
   }
 
   /// Última música começada pelo Tocar, enquanto ainda dá para desfazer.
@@ -77,6 +99,10 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
   /// Cifra já buscada abre direto no toque: a aba em branco à espera do
   /// servidor podia ficar branca no iPhone com a internet fraca do show.
   Future<void> abrirCifra(MusicaDoPalco musica) async {
+    if (sequencia.cifraDe(musica)?.texto != null) {
+      await abrirLeitor(musica);
+      return;
+    }
     final preBuscada = sequencia.cifraDe(musica)?.cifra?.url;
     if (preBuscada != null) {
       try {

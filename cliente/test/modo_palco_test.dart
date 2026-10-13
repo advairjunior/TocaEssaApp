@@ -73,6 +73,7 @@ class _Palco {
 Future<_Palco> _abrir(
   WidgetTester tester, {
   List<Map<String, Object?>>? grupos,
+  String? textoDaCifra,
 }) async {
   final palco = _Palco();
   palco.itens = [
@@ -144,6 +145,7 @@ Future<_Palco> _abrir(
             'atualizadaEm': '2026-09-10T12:00:00Z',
           },
           'urlPesquisa': 'https://www.google.com/search?q=cifra',
+          'texto': textoDaCifra,
         }),
         200,
         headers: _json,
@@ -407,6 +409,46 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Sozinho'), findsOneWidget);
+  });
+
+  group('com cifra colada', () {
+    const cifra = 'G   D\nLetra da música';
+
+    testWidgets('tocar abre o leitor em vez do site', (tester) async {
+      final palco = await _abrir(tester, textoDaCifra: cifra);
+
+      await tester.tap(find.text('Tocar'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Fechar leitor'), findsOneWidget);
+      expect(find.text('Letra da música'), findsOneWidget);
+      expect(find.text('Tocando ✓'), findsOneWidget);
+      expect(palco.abertas, isEmpty);
+    });
+
+    testWidgets('abrir cifra da música tocando abre o leitor', (tester) async {
+      final palco = await _abrir(tester, textoDaCifra: cifra);
+      await tester.tap(find.text('Tocar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Fechar leitor'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Abrir cifra'));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Fechar leitor'), findsOneWidget);
+      expect(palco.abertas, isEmpty);
+    });
+
+    testWidgets('botão Leitor abre na próxima música', (tester) async {
+      await _abrir(tester, textoDaCifra: cifra);
+
+      await tester.tap(find.byTooltip('Leitor de cifras'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Velha Infância'), findsOneWidget);
+      expect(find.text('Tocar'), findsOneWidget);
+    });
   });
 
   testWidgets('mostra o cronômetro do show no alto', (tester) async {
