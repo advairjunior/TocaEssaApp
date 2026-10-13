@@ -1,6 +1,6 @@
 # TocaEssaApp — Contexto atual
 
-> Atualizado em: 2026-10-08
+> Atualizado em: 2026-10-13
 
 ## Arquitetura
 
@@ -71,6 +71,18 @@ arquivo.
   Acompanha outros aparelhos: a cada aviso recarrega setlist, pedidos e
   sequência; a música começada pelo colega vira Tocando agora (cifra pelo
   botão Abrir cifra) e o Desfazer local some.
+- Cronômetro do show (só artistas veem): horas contratadas e "intervalo
+  pausa o relógio" no formulário; o relógio começa no primeiro Iniciar. Faixa
+  acima das abas do show ao vivo e no alto do modo palco: quanto falta, hora
+  de terminar, aviso aos 30 e 10 min, "Passou X min", botão Intervalo/Voltar
+  ao show. Ritmo: 3 min por música até a 3ª, depois tempo tocado (sem
+  intervalo) ÷ músicas começadas; mostra quantas cabem e se a sequência sobra
+  ou passa. Colunas em `Apresentacoes` (`DuracaoContratadaMinutos`,
+  `IntervaloPausaRelogio`, `IniciadaEm`, `EmIntervaloDesde`,
+  `SegundosEmIntervalo`), fora do registro público; rotas privadas
+  `/api/apresentacoes/{id}/relogio` e `.../relogio/intervalo`.
+- Recarregar a página com show em andamento volta à apresentação e à aba
+  onde o artista estava (guardado no aparelho).
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
@@ -86,6 +98,9 @@ O proprietário testa e usa no iPhone. Testes de widget não pegam:
 - Gestos de arrastar precisaram de ajuste específico para o iPhone.
 - Manter a tela acesa (Wake Lock) é solto quando a aba fica escondida e
   precisa ser pedido de novo ao voltar (`tela_acesa_web.dart`).
+- A aba de cifra aberta em branco antes da resposta do servidor podia ficar
+  branca no palco: cifra já buscada abre direto no toque; a espera mostra
+  aviso escuro (`pagina_de_espera_da_cifra.dart`).
 
 ### Investigações registradas
 

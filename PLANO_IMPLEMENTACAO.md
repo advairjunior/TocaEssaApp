@@ -106,8 +106,11 @@ cada uma começa por uma investigação antes de virar plano.
 
 - **Tom, capotraste e observação por música no repertório:** salvar uma vez
   ("Tom G, capo 2, começa só voz") e mostrar na barra da próxima música.
-- **Cronômetro do show:** tempo tocado e restante do contrato, com estimativa
-  de quantas músicas ainda cabem.
+- **Cronômetro do show:** ✅ entregue em 2026-10-13 (contagem regressiva,
+  intervalo e ritmo real; plano em
+  `docs/superpowers/plans/2026-10-13-cronometro-do-show.md`). Falta a fase 3:
+  estimar antes do show quanto a setlist dura, com o ritmo médio dos shows
+  anteriores.
 - **Modo sem internet:** guardar setlist e links das cifras no aparelho para a
   área do artista seguir funcionando se a rede do bar cair.
 
