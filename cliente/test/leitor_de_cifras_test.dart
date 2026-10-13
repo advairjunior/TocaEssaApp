@@ -229,6 +229,48 @@ void main() {
     expect(find.text(_cifraVelha), findsOneWidget);
   });
 
+  group('trocar de tom', () {
+    testWidgets('subir meio tom muda acordes e tom, não a letra',
+        (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Subir meio tom'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('G#   D#'), findsOneWidget);
+      expect(find.text('Tom G# (+1)'), findsOneWidget);
+      expect(find.text('Quando eu digo que deixei de te amar'), findsOneWidget);
+    });
+
+    testWidgets('descer dois semitons', (tester) async {
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Baixar meio tom'));
+      await tester.tap(find.byTooltip('Baixar meio tom'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('F    C'), findsOneWidget);
+      expect(find.text('Tom F (-2)'), findsOneWidget);
+    });
+
+    testWidgets('o tom escolhido fica guardado para a música',
+        (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.byTooltip('Subir meio tom'));
+      await tester.pumpAndSettle();
+
+      // Outra música começa no tom original.
+      await tester.tap(find.byTooltip('Próxima música'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('(+'), findsNothing);
+
+      // Reabrir o leitor mantém o tom escolhido na música.
+      await tester.pumpWidget(const SizedBox());
+      await _abrir(tester);
+      expect(find.text('G#   D#'), findsOneWidget);
+    });
+  });
+
   testWidgets('pinça aumenta a letra e o tamanho fica guardado',
       (tester) async {
     await _abrir(tester);

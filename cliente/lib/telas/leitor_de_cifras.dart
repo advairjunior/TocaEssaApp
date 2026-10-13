@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../dominio/modelos.dart';
 import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
@@ -76,10 +77,54 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     try {
       final preferencias = await SharedPreferences.getInstance();
       final salva = preferencias.getDouble(_chaveEscala);
-      if (salva != null && mounted) setState(() => _escala = salva);
+      if (mounted) {
+        setState(() {
+          _preferencias = preferencias;
+          if (salva != null) _escala = salva;
+        });
+      }
     } catch (_) {
-      // Sem preferência salva, vale o tamanho automático.
+      // Sem preferência salva, vale o tamanho automático e o tom original.
     }
+  }
+
+  SharedPreferences? _preferencias;
+
+  // Tom escolhido por música, guardado no aparelho.
+  static String _chaveDoTom(MusicaDoPalco musica) =>
+      'leitor_tom|${normalizarMusica(musica.titulo)}|'
+      '${normalizarMusica(musica.artista)}';
+
+  int _semitonsDe(MusicaDoPalco musica) =>
+      _preferencias?.getInt(_chaveDoTom(musica)) ?? 0;
+
+  Future<void> _mudarTom(MusicaDoPalco musica, int passo) async {
+    // Entre -11 e +11: uma oitava inteira volta ao tom original.
+    final semitons = (_semitonsDe(musica) + passo).remainder(12);
+    final preferencias = _preferencias;
+    if (preferencias == null) return;
+    try {
+      if (semitons == 0) {
+        await preferencias.remove(_chaveDoTom(musica));
+      } else {
+        await preferencias.setInt(_chaveDoTom(musica), semitons);
+      }
+    } catch (_) {
+      // O tom só não fica guardado para a próxima vez.
+    }
+    if (mounted) setState(() {});
+  }
+
+  String? _rotuloDoTom(MusicaDoPalco musica) {
+    final semitons = _semitonsDe(musica);
+    final tom = musica.tom?.trim();
+    final mudanca = semitons == 0
+        ? ''
+        : ' (${semitons > 0 ? '+' : ''}$semitons)';
+    if (tom != null && tom.isNotEmpty) {
+      return 'Tom ${transporTom(tom, semitons)}$mudanca';
+    }
+    return semitons == 0 ? null : 'Tom$mudanca';
   }
 
   Future<void> _salvarEscala() async {
@@ -214,15 +259,27 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(pagina.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
-              if (pagina.tom?.isNotEmpty == true)
+              if (_rotuloDoTom(pagina) case final tom?)
                 Text(
-                  'Tom ${pagina.tom}',
+                  tom,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: CoresTocaEssa.textoSecundario),
                 ),
             ],
           ),
           actions: [
+            IconButton(
+              tooltip: 'Baixar meio tom',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.remove_rounded),
+              onPressed: () => _mudarTom(pagina, -1),
+            ),
+            IconButton(
+              tooltip: 'Subir meio tom',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () => _mudarTom(pagina, 1),
+            ),
             IconButton(
               tooltip: 'Colar ou corrigir cifra',
               icon: const Icon(Icons.edit_outlined),
@@ -241,7 +298,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                 onPointerMove: _dedoMoveu,
                 onPointerUp: _dedoSaiu,
                 onPointerCancel: _dedoSaiu,
-                child: _Cifra(texto: texto, escala: _escala),
+                child: _Cifra(
+                  texto: transporCifra(texto, _semitonsDe(pagina)),
+                  escala: _escala,
+                ),
               ),
         bottomNavigationBar: _BarraDoLeitor(
           temAnterior: indice > 0,
