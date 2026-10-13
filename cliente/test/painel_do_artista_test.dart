@@ -32,8 +32,12 @@ Future<void> _abrirPainel(
   String? perfil = _perfilJson,
   String apresentacoes = '[]',
   Future<http.Response?> Function(http.Request)? outras,
+  bool recarregando = false,
 }) async {
-  SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+  // Recarregar a página mantém o que o aparelho guardou.
+  if (!recarregando) {
+    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+  }
   final cliente = MockClient((requisicao) async {
     final resposta = await outras?.call(requisicao);
     if (resposta != null) return resposta;
@@ -322,5 +326,59 @@ void main() {
     expect(find.text('Editar apresentação'), findsOneWidget);
     expect(find.text('Excluir apresentação'), findsOneWidget);
     expect(find.text('Iniciar'), findsOneWidget);
+  });
+
+  group('ao recarregar a página', () {
+    String showDeHoje({String status = 'EmAndamento'}) => '[${_apresentacao(
+          id: '1',
+          nome: 'Show de hoje',
+          data: '2026-09-04',
+          status: status,
+        )}]';
+
+    Future<void> abrirSetlistDoShow(WidgetTester tester) async {
+      await _abrirPainel(tester, apresentacoes: showDeHoje());
+      await tester.tap(find.text('Abrir fila'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Setlist'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> recarregar(WidgetTester tester, String apresentacoes) async {
+      await tester.pumpWidget(const SizedBox());
+      await _abrirPainel(tester,
+          apresentacoes: apresentacoes, recarregando: true);
+    }
+
+    testWidgets('volta para a aba do show em andamento onde parou',
+        (tester) async {
+      await abrirSetlistDoShow(tester);
+
+      await recarregar(tester, showDeHoje());
+
+      final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(barra.selectedIndex, 1);
+      expect(find.text('Show de hoje'), findsWidgets);
+    });
+
+    testWidgets('show já encerrado abre o início do painel', (tester) async {
+      await abrirSetlistDoShow(tester);
+
+      await recarregar(tester, showDeHoje(status: 'Encerrada'));
+
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.text('Olá, Duo Aurora'), findsOneWidget);
+    });
+
+    testWidgets('depois de voltar ao início, abre o início', (tester) async {
+      await abrirSetlistDoShow(tester);
+      await tester.tap(find.byTooltip('Voltar ao início'));
+      await tester.pumpAndSettle();
+
+      await recarregar(tester, showDeHoje());
+
+      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.text('Olá, Duo Aurora'), findsOneWidget);
+    });
   });
 }

@@ -91,6 +91,7 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         _carregando = false;
         _restaurarPerfil();
       });
+      await _voltarOndeParou();
     } catch (erro) {
       if (!mounted) return;
       setState(() => _carregando = false);
@@ -202,8 +203,37 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     return _escolherApresentacaoDaGestao(_apresentacoes);
   }
 
+  /// Ao recarregar a página no meio do show, reabre a apresentação e a aba
+  /// onde o artista estava. Show encerrado ou ausente abre o início.
+  Future<void> _voltarOndeParou() async {
+    final preferencias = await SharedPreferences.getInstance();
+    final id = preferencias.getString(_chaveApresentacaoAberta);
+    final aba = _AbaPainel.values
+        .where((aba) => aba.name == preferencias.getString(_chaveAbaAberta))
+        .firstOrNull;
+    if (!mounted || aba == null || !_abasDaApresentacao.contains(aba)) return;
+    final apresentacao = _apresentacoes
+        .where((item) =>
+            item.id == id && item.status == StatusApresentacao.emAndamento)
+        .firstOrNull;
+    if (apresentacao != null) _abrirApresentacao(apresentacao, aba: aba);
+  }
+
+  Future<void> _lembrarOndeParou() async {
+    final preferencias = await SharedPreferences.getInstance();
+    final id = _apresentacaoGestaoId;
+    if (_dentroDaApresentacao && id != null) {
+      await preferencias.setString(_chaveApresentacaoAberta, id);
+      await preferencias.setString(_chaveAbaAberta, _aba.name);
+    } else {
+      await preferencias.remove(_chaveApresentacaoAberta);
+      await preferencias.remove(_chaveAbaAberta);
+    }
+  }
+
   Future<void> _selecionarAba(_AbaPainel aba) async {
     setState(() => _aba = aba);
+    _lembrarOndeParou();
     final apresentacao = _apresentacaoDaGestao;
     if (aba == _AbaPainel.mais &&
         apresentacao?.tipo == TipoApresentacao.resenhaEntreAmigos) {
@@ -225,7 +255,10 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         });
   }
 
-  void _voltarAoInicio() => setState(() => _aba = _AbaPainel.inicio);
+  void _voltarAoInicio() {
+    setState(() => _aba = _AbaPainel.inicio);
+    _lembrarOndeParou();
+  }
 
   Future<void> _carregarGalera([String? apresentacaoId]) async {
     final id = apresentacaoId ?? _resenhaGaleraId;

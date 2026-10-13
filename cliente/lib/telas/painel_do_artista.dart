@@ -5,6 +5,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
@@ -35,6 +36,10 @@ part 'formulario_apresentacao.dart';
 part 'codigo_da_apresentacao.dart';
 
 enum _FiltroApresentacoes { proximas, historico }
+
+// Onde o artista parou, guardado no aparelho para sobreviver a um recarregar.
+const _chaveApresentacaoAberta = 'painel_apresentacao_aberta';
+const _chaveAbaAberta = 'painel_aba_aberta';
 
 /// Telas do painel: o início e o perfil ficam fora de uma apresentação;
 /// as demais são as abas de uma apresentação aberta.
