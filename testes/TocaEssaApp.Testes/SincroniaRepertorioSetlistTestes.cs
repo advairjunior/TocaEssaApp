@@ -15,14 +15,13 @@ namespace TocaEssaApp.Testes;
 
 public class SincroniaRepertorioSetlistTestes
 {
+    // A setlist é a seleção do show: o acervo pode mudar sem mexer nela.
     [Fact]
-    public void ReordenarRepertorioRefleteNaSetlistSemPerderMarcacaoDeTocada()
+    public void ReordenarRepertorioNaoMexeNaSetlist()
     {
         var cenario = CriarCenario();
-        var setlist = cenario.Repo.ImportarRepertorioParaSetlist(
+        cenario.Repo.ImportarRepertorioParaSetlist(
             cenario.Token, cenario.Show.Id, cenario.Repertorio.Id);
-        var primeira = setlist.Single(item => item.Titulo == "Primeira");
-        cenario.Repo.MarcarItemDoSetlist(cenario.Token, cenario.Show.Id, primeira.Id, true);
 
         var reordenado = cenario.Repo.ReordenarMusicasDoRepertorio(
             cenario.Token, cenario.Repertorio.Id,
@@ -30,13 +29,12 @@ public class SincroniaRepertorioSetlistTestes
 
         Assert.Equal(["Terceira", "Primeira", "Segunda"],
             reordenado.Musicas.OrderBy(m => m.Ordem).Select(m => m.Titulo));
-        var atualizada = cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id);
-        Assert.Equal(["Terceira", "Primeira", "Segunda"], atualizada.Select(i => i.Titulo));
-        Assert.True(atualizada.Single(i => i.Titulo == "Primeira").Tocada);
+        Assert.Equal(["Primeira", "Segunda", "Terceira"],
+            cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id).Select(i => i.Titulo));
     }
 
     [Fact]
-    public void MusicaAdicionadaAoRepertorioApareceNaSetlistSemReimportar()
+    public void MusicaAdicionadaAoRepertorioNaoEntraSozinhaNaSetlist()
     {
         var cenario = CriarCenario();
         cenario.Repo.ImportarRepertorioParaSetlist(
@@ -45,17 +43,12 @@ public class SincroniaRepertorioSetlistTestes
         cenario.Repo.AdicionarMusicaAoRepertorio(
             cenario.Token, cenario.Repertorio.Id, "Nova", "Banda", "G");
 
-        var setlist = cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id);
-        Assert.Equal(["Primeira", "Segunda", "Terceira", "Nova"],
-            setlist.Select(i => i.Titulo));
-        var nova = setlist.Last();
-        Assert.False(nova.Tocada);
-        Assert.Equal("Banda", nova.Artista);
-        Assert.Equal("G", nova.Tom);
+        Assert.Equal(["Primeira", "Segunda", "Terceira"],
+            cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id).Select(i => i.Titulo));
     }
 
     [Fact]
-    public void MusicaRemovidaDoRepertorioSaiDaSetlist()
+    public void MusicaRemovidaDoRepertorioContinuaNaSetlist()
     {
         var cenario = CriarCenario();
         cenario.Repo.ImportarRepertorioParaSetlist(
@@ -64,8 +57,27 @@ public class SincroniaRepertorioSetlistTestes
         cenario.Repo.RemoverMusicaDoRepertorio(
             cenario.Token, cenario.Repertorio.Id, cenario.Musicas[1].Id);
 
-        Assert.Equal(["Primeira", "Terceira"],
+        Assert.Equal(["Primeira", "Segunda", "Terceira"],
             cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id).Select(i => i.Titulo));
+    }
+
+    [Fact]
+    public void CorrecaoNoAcervoChegaNaSetlistSemPerderTocada()
+    {
+        var cenario = CriarCenario();
+        var setlist = cenario.Repo.ImportarRepertorioParaSetlist(
+            cenario.Token, cenario.Show.Id, cenario.Repertorio.Id);
+        cenario.Repo.MarcarItemDoSetlist(
+            cenario.Token, cenario.Show.Id, setlist.First().Id, tocada: true);
+
+        cenario.Repo.EditarMusicaDoRepertorio(cenario.Token, cenario.Repertorio.Id,
+            cenario.Musicas[0].Id, "Primeira (versão acústica)", "Banda", "D");
+
+        var corrigida = cenario.Repo.ObterSetlist(cenario.Token, cenario.Show.Id).First();
+        Assert.Equal("Primeira (versão acústica)", corrigida.Titulo);
+        Assert.Equal("Banda", corrigida.Artista);
+        Assert.Equal("D", corrigida.Tom);
+        Assert.True(corrigida.Tocada);
     }
 
     [Fact]
@@ -131,43 +143,6 @@ public class SincroniaRepertorioSetlistTestes
         Assert.Throws<RepertorioNaoEncontradoException>(() =>
             cenario.Repo.ReordenarMusicasDoRepertorio(tokenBia, cenario.Repertorio.Id,
                 cenario.Musicas.Select(m => m.Id).ToArray()));
-    }
-
-    [Fact]
-    public void SetlistLegadaSemVinculoPassaAAcompanharORepertorio()
-    {
-        var arquivo = Path.Combine(Path.GetTempPath(),
-            $"tocaessa-setlist-legada-{Guid.NewGuid()}.db");
-        try
-        {
-            var cenario = CriarCenario(arquivo);
-            cenario.Repo.ImportarRepertorioParaSetlist(
-                cenario.Token, cenario.Show.Id, cenario.Repertorio.Id);
-            using (var conexao = new SqliteConnection($"Data Source={arquivo};Pooling=False"))
-            {
-                conexao.Open();
-                using var comando = conexao.CreateCommand();
-                comando.CommandText =
-                    "UPDATE \"ItensDoSetlist\" SET \"MusicaDoRepertorioId\" = NULL";
-                comando.ExecuteNonQuery();
-            }
-            var reiniciado = new RepositorioTocaEssa(arquivo);
-
-            reiniciado.AdicionarMusicaAoRepertorio(
-                cenario.Token, cenario.Repertorio.Id, "Nova", null);
-            reiniciado.ReordenarMusicasDoRepertorio(cenario.Token, cenario.Repertorio.Id,
-                reiniciado.ListarRepertorios(cenario.Token).Single().Musicas
-                    .OrderBy(m => m.Ordem).Select(m => m.Id).Reverse().ToArray());
-
-            Assert.Equal(["Nova", "Terceira", "Segunda", "Primeira"],
-                reiniciado.ObterSetlist(cenario.Token, cenario.Show.Id)
-                    .Select(i => i.Titulo));
-        }
-        finally
-        {
-            foreach (var caminho in new[] { arquivo, $"{arquivo}-shm", $"{arquivo}-wal" })
-                if (File.Exists(caminho)) File.Delete(caminho);
-        }
     }
 
     [Fact]
