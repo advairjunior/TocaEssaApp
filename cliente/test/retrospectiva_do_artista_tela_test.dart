@@ -65,6 +65,8 @@ Future<void> _abrir(
   TipoApresentacao tipo = TipoApresentacao.publica,
   StatusApresentacao status = StatusApresentacao.encerrada,
   String? instagram = 'duoaurora',
+  String? fotoRetrospectivaUrl,
+  String? fotoDoPerfil,
   List<http.Request>? requisicoes,
 }) async {
   final cliente = MockClient((requisicao) async {
@@ -100,10 +102,12 @@ Future<void> _abrir(
             id: '11111111-1111-1111-1111-111111111111',
             nomeArtistico: 'Duo Aurora',
             instagram: instagram,
+            fotoUrl: fotoDoPerfil,
           ),
           pedidosAbertos: false,
           status: status,
           tipo: tipo,
+          fotoRetrospectivaUrl: fotoRetrospectivaUrl,
         ),
         incorporada: true,
       ),
@@ -122,13 +126,56 @@ void main() {
       (tester) async {
     await _abrir(tester, estatisticas: _noiteCheia);
 
-    expect(find.text('RETROSPECTIVA DO SHOW'), findsOneWidget);
+    expect(find.text('Retrospectiva do show'), findsOneWidget);
     expect(_noCartao('Duo Aurora'), findsOneWidget);
     expect(_noCartao('@duoaurora'), findsOneWidget);
-    expect(_noCartao('80'), findsOneWidget);
-    expect(_noCartao('pessoas no app'), findsOneWidget);
-    expect(_noCartao('“Evidências” foi a favorita da galera.'), findsOneWidget);
-    expect(_noCartao('21h00 às 00h12 · 3h12 de show'), findsOneWidget);
+    for (final (rotulo, valor) in [
+      ('Tempo', '3h12'),
+      ('Músicas', '50'),
+      ('Nota', '4,8'),
+    ]) {
+      expect(_noCartao(rotulo), findsOneWidget);
+      expect(_noCartao(valor), findsOneWidget);
+    }
+    expect(_noCartao('80'), findsNothing);
+    expect(_noCartao('A mais pedida da noite'), findsOneWidget);
+    expect(_noCartao('Evidências'), findsOneWidget);
+    expect(_noCartao('Na próxima, peça a sua música'), findsOneWidget);
+  });
+
+  testWidgets('sem selfie, o cartão convida a tirar uma com o público',
+      (tester) async {
+    await _abrir(tester,
+        estatisticas: _noiteCheia, fotoDoPerfil: '/fotos/perfil.jpg');
+
+    final convite = find.text('Tire uma selfie com o seu público');
+    expect(convite, findsOneWidget);
+    // O convite fica por cima do cartão, fora da imagem compartilhada.
+    expect(_noCartao('Tire uma selfie com o seu público'), findsNothing);
+    // A foto do perfil não conta a noite: o cartão fica com o fundo de palco.
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('cartao-retrospectiva')),
+        matching: find.byWidgetPredicate(
+            (w) => w is Image && w.image is NetworkImage),
+      ),
+      findsNothing,
+    );
+
+    await tester.tap(convite);
+    await tester.pumpAndSettle();
+    expect(find.text('Tirar uma selfie'), findsOneWidget);
+  });
+
+  testWidgets('com a selfie, o convite some e o botão é compartilhar',
+      (tester) async {
+    await _abrir(tester,
+        estatisticas: _noiteCheia, fotoRetrospectivaUrl: '/fotos/selfie.jpg');
+
+    expect(find.text('Tire uma selfie com o seu público'), findsNothing);
+    expect(find.text('Compartilhar imagem'), findsOneWidget);
+    expect(find.text('Trocar selfie'), findsOneWidget);
+    expect(find.text('Compartilhar sem foto'), findsNothing);
   });
 
   testWidgets('compartilhar manda a imagem do cartão com o nome do show',
@@ -136,7 +183,7 @@ void main() {
     final compartilhamento = usarCompartilhamentoFalso();
     await _abrir(tester, estatisticas: _noiteCheia);
 
-    final botao = find.text('Compartilhar imagem');
+    final botao = find.text('Compartilhar sem foto');
     await tester.ensureVisible(botao);
     await tester.tap(botao);
     // A imagem espera um quadro desenhado e tempo real para ficar pronta.
@@ -160,7 +207,7 @@ void main() {
     await _abrir(tester, estatisticas: _noiteFraca, instagram: null);
 
     expect(_noCartao('3'), findsNothing);
-    expect(_noCartao('2.0'), findsNothing);
+    expect(_noCartao('2,0'), findsNothing);
     expect(_noCartao('pessoas no app'), findsNothing);
     expect(_noCartao('Valeu, Café Central!'), findsOneWidget);
     expect(find.textContaining('@'), findsNothing);
@@ -171,10 +218,10 @@ void main() {
     await _abrir(tester,
         estatisticas: _resenha, tipo: TipoApresentacao.resenhaEntreAmigos);
 
-    expect(find.text('RETROSPECTIVA DA RESENHA'), findsOneWidget);
-    expect(_noCartao('recusada'), findsOneWidget);
-    expect(_noCartao('20h00 às 23h30 · 3h30 de show'), findsOneWidget);
-    expect(_noCartao('2.5'), findsOneWidget);
+    expect(find.text('Retrospectiva da resenha'), findsOneWidget);
+    expect(_noCartao('Recusadas'), findsOneWidget);
+    expect(_noCartao('2,5'), findsOneWidget);
+    expect(_noCartao('7'), findsNothing);
     expect(_noCartao('Pidão da noite'), findsOneWidget);
     expect(find.text('Prêmios da noite'), findsOneWidget);
     for (final premio in [
@@ -192,7 +239,7 @@ void main() {
     await _abrir(tester, estatisticas: _noiteCheia);
 
     double topo(Finder alvo) => tester.getTopLeft(alvo).dy;
-    expect(topo(find.text('RETROSPECTIVA DO SHOW')),
+    expect(topo(find.text('Retrospectiva do show')),
         lessThan(topo(find.text('Músicas mais pedidas'))));
   });
 
@@ -200,7 +247,7 @@ void main() {
       (tester) async {
     for (final tipo in TipoApresentacao.values) {
       await _abrir(tester, estatisticas: _noiteCheia, tipo: tipo);
-      final botao = find.text('Adicionar foto ou selfie');
+      final botao = find.text('Tirar selfie com o público');
       await tester.ensureVisible(botao);
       await tester.tap(botao);
       await tester.pumpAndSettle();
@@ -221,7 +268,7 @@ void main() {
     final requisicoes = <http.Request>[];
     await _abrir(tester, estatisticas: _noiteCheia, requisicoes: requisicoes);
 
-    final botao = find.text('Adicionar foto ou selfie');
+    final botao = find.text('Tirar selfie com o público');
     await tester.ensureVisible(botao);
     await tester.tap(botao);
     await tester.pumpAndSettle();
@@ -245,7 +292,7 @@ void main() {
           r.method == 'POST' && r.url.path.endsWith('/foto-retrospectiva')),
       hasLength(1),
     );
-    expect(find.text('Trocar foto ou selfie'), findsOneWidget);
+    expect(find.text('Trocar selfie'), findsOneWidget);
   });
 
   testWidgets('fotografar a galera abre a câmera traseira', (tester) async {
@@ -255,7 +302,7 @@ void main() {
     await _abrir(tester,
         estatisticas: _resenha, tipo: TipoApresentacao.resenhaEntreAmigos);
 
-    final botao = find.text('Adicionar foto ou selfie');
+    final botao = find.text('Tirar selfie com o público');
     await tester.ensureVisible(botao);
     await tester.tap(botao);
     await tester.pumpAndSettle();
@@ -266,7 +313,7 @@ void main() {
     expect(
       find.descendant(
           of: find.byType(CameraDoCartao),
-          matching: find.text('RETROSPECTIVA DA RESENHA')),
+          matching: find.text('Retrospectiva da resenha')),
       findsOneWidget,
     );
   });
@@ -305,8 +352,10 @@ void main() {
         const [],
       );
 
-      expect(texto, contains('80 pessoas no app'));
-      expect(texto, contains('Evidências'));
+      expect(texto, contains('Tempo 3h12 · Músicas 50 · Nota 4,8'));
+      expect(texto, isNot(contains('80')));
+      expect(texto, contains('A mais pedida da noite: Evidências'));
+      expect(texto, contains('Na próxima, peça a sua música'));
       expect(texto, contains('21h00 às 00h12 · 3h12 de show'));
     });
 
@@ -320,7 +369,8 @@ void main() {
         ],
       );
 
-      expect(texto, contains('1 recusada'));
+      expect(texto, contains('Recusadas 1'));
+      expect(texto, isNot(contains('na resenha')));
       expect(texto, contains('20h00 às 23h30 · 3h30 de show'));
       expect(texto, contains('🎤 Pidão da noite: Bia'));
       expect(texto, contains('🚫 Polêmica da noite: Macarena'));

@@ -1,6 +1,6 @@
 import 'modelos.dart';
 
-/// Um número de destaque do cartão: "80" + "pessoas no app".
+/// Um número de destaque do cartão, no jeito do Strava: "Tempo" + "3h12".
 class DestaqueDaRetrospectiva {
   const DestaqueDaRetrospectiva({required this.valor, required this.rotulo});
   final String valor;
@@ -22,17 +22,17 @@ class PremioDaResenha {
 }
 
 // Regras da vitrine do show público: o cartão serve para o artista se
-// divulgar, então um número só aparece quando valoriza a noite.
-const _publicoMinimo = 10;
+// divulgar, então um número só aparece quando valoriza a noite. Público no
+// app, atendimento e alôs interessam só ao artista e ficam fora.
+const _duracaoMinima = Duration(minutes: 30);
 const _tocadosMinimos = 3;
 const _tocadosPorPessoa = .15;
 const _avaliacoesMinimas = 3;
 const _notaMinima = 4.0;
-const _pedidosMinimosParaAtendimento = 5;
-const _atendimentoMinimo = .7;
 const _musicasTocadasMinimas = 10;
-const _alosMinimos = 3;
 const _maximoDeDestaques = 3;
+
+String _nota(double media) => media.toStringAsFixed(1).replaceAll('.', ',');
 
 // O cartão usa só os números validados pelo servidor (cada pessoa conta uma
 // vez por música); sem eles, nenhum número de pedido aparece.
@@ -55,40 +55,32 @@ DadosDaRetrospectiva _validados(EstatisticasDaApresentacao e) =>
     e.retrospectiva ?? _semDadosValidados;
 
 /// Números que entram no cartão do show público, do mais forte ao mais
-/// fraco, sem nunca mostrar público pequeno, poucas músicas ou nota baixa.
+/// fraco, sem nunca mostrar show curto, poucas músicas ou nota baixa.
 List<DestaqueDaRetrospectiva> destaquesDoShow(EstatisticasDaApresentacao e) {
   final r = _validados(e);
   final destaques = <DestaqueDaRetrospectiva>[];
-  if (e.pessoasNoEvento >= _publicoMinimo) {
-    destaques.add(DestaqueDaRetrospectiva(
-        valor: '${e.pessoasNoEvento}', rotulo: 'pessoas no app'));
+  if (r.iniciadaEm case final inicio?) {
+    if (r.encerradaEm?.difference(inicio) case final tempo?
+        when tempo >= _duracaoMinima) {
+      destaques.add(DestaqueDaRetrospectiva(
+          valor: formatarTempoDoShow(tempo), rotulo: 'Tempo'));
+    }
   }
-  final aPedido = r.musicasAPedidoTocadas;
-  if (aPedido >= _tocadosMinimos &&
-      aPedido >= e.pessoasNoEvento * _tocadosPorPessoa) {
-    destaques.add(
-        DestaqueDaRetrospectiva(valor: '$aPedido', rotulo: 'músicas a pedido'));
+  if (r.musicasTocadas >= _musicasTocadasMinimas) {
+    destaques.add(DestaqueDaRetrospectiva(
+        valor: '${r.musicasTocadas}', rotulo: 'Músicas'));
   }
   final media = r.mediaDasAvaliacoes;
   if (media != null &&
       r.pessoasQueAvaliaram >= _avaliacoesMinimas &&
       media >= _notaMinima) {
-    destaques.add(DestaqueDaRetrospectiva(
-        valor: media.toStringAsFixed(1), rotulo: 'de nota'));
+    destaques.add(DestaqueDaRetrospectiva(valor: _nota(media), rotulo: 'Nota'));
   }
-  if (r.pedidosConsiderados >= _pedidosMinimosParaAtendimento &&
-      r.pedidosAtendidos / r.pedidosConsiderados >= _atendimentoMinimo) {
-    destaques.add(DestaqueDaRetrospectiva(
-        valor: '${(r.pedidosAtendidos * 100 / r.pedidosConsiderados).round()}%',
-        rotulo: 'pedidos atendidos'));
-  }
-  if (r.musicasTocadas >= _musicasTocadasMinimas) {
-    destaques.add(DestaqueDaRetrospectiva(
-        valor: '${r.musicasTocadas}', rotulo: 'músicas tocadas'));
-  }
-  if (r.alosDados >= _alosMinimos) {
+  final aPedido = r.musicasAPedidoTocadas;
+  if (aPedido >= _tocadosMinimos &&
+      aPedido >= e.pessoasNoEvento * _tocadosPorPessoa) {
     destaques
-        .add(DestaqueDaRetrospectiva(valor: '${r.alosDados}', rotulo: 'alôs'));
+        .add(DestaqueDaRetrospectiva(valor: '$aPedido', rotulo: 'A pedido'));
   }
   return destaques.take(_maximoDeDestaques).toList();
 }
@@ -113,24 +105,15 @@ String? duracaoDoShow(EstatisticasDaApresentacao e) {
 /// mas sem contar a mesma pessoa duas vezes na mesma música.
 List<DestaqueDaRetrospectiva> numerosDaResenha(EstatisticasDaApresentacao e) {
   final r = _validados(e);
-  String plural(int valor, String um, String varios) =>
-      valor == 1 ? um : varios;
-  final recusadas = r.recusadasPorPessoas.length;
   return [
     DestaqueDaRetrospectiva(
-        valor: '${e.pessoasNoEvento}', rotulo: 'na resenha'),
+        valor: '${r.pedidosConsiderados}', rotulo: 'Pedidos'),
     DestaqueDaRetrospectiva(
-        valor: '${r.pedidosConsiderados}',
-        rotulo: plural(r.pedidosConsiderados, 'pedido', 'pedidos')),
+        valor: '${r.musicasAPedidoTocadas}', rotulo: 'Tocadas'),
     DestaqueDaRetrospectiva(
-        valor: '${r.musicasAPedidoTocadas}',
-        rotulo: plural(r.musicasAPedidoTocadas, 'tocada', 'tocadas')),
-    DestaqueDaRetrospectiva(
-        valor: '$recusadas',
-        rotulo: plural(recusadas, 'recusada', 'recusadas')),
-    if (r.mediaDasAvaliacoes != null)
-      DestaqueDaRetrospectiva(
-          valor: r.mediaDasAvaliacoes!.toStringAsFixed(1), rotulo: 'de nota'),
+        valor: '${r.recusadasPorPessoas.length}', rotulo: 'Recusadas'),
+    if (r.mediaDasAvaliacoes case final media?)
+      DestaqueDaRetrospectiva(valor: _nota(media), rotulo: 'Nota'),
   ];
 }
 

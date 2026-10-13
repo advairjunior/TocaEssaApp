@@ -115,9 +115,8 @@ class _EstatisticasDaApresentacaoTelaState
               apresentacao: apresentacao,
               dados: dados,
               participantes: participantes,
-              enderecoFoto: api.enderecoArquivo(
-                  apresentacao.fotoRetrospectivaUrl ??
-                      apresentacao.perfilArtistico.fotoUrl),
+              enderecoFoto:
+                  api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
               temFotoPropria: apresentacao.fotoRetrospectivaUrl != null,
               enviandoFoto: _enviandoFoto,
               escolherFoto: _escolherFotoDoEncontro,

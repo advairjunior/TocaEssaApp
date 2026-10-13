@@ -125,10 +125,10 @@ void main() {
     expect(find.text('8'), findsWidgets);
     expect(find.text('Evidências'), findsWidgets);
     expect(find.text('3 pedidos'), findsOneWidget);
-    expect(find.text('RETROSPECTIVA DA RESENHA'), findsOneWidget);
+    expect(find.text('Retrospectiva da resenha'), findsOneWidget);
     expect(find.text('Galera da resenha'), findsOneWidget);
     expect(find.text('Ana Souza'), findsWidgets);
-    expect(find.text('Compartilhar imagem'), findsOneWidget);
+    expect(find.text('Tirar selfie com o público'), findsOneWidget);
     final copiar = find.text('Copiar resumo em texto');
     await tester.ensureVisible(copiar);
     expect(copiar, findsOneWidget);

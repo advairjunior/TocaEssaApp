@@ -1,5 +1,7 @@
 part of 'estatisticas_da_apresentacao.dart';
 
+const _conviteDoProximoShow = 'Na próxima, peça a sua música';
+
 /// Resumo para colar no Instagram ou no WhatsApp, com as mesmas regras do
 /// cartão: no show só números que valorizam; na resenha, tudo e os prêmios.
 String textoDaRetrospectiva(
@@ -8,21 +10,20 @@ String textoDaRetrospectiva(
   List<ParticipanteDaResenha> participantes,
 ) {
   final perfil = apresentacao.perfilArtistico;
-  final instagram = perfil.instagram?.trim().replaceFirst(RegExp('^@'), '');
+  final instagram = _instagram(perfil);
   final cabecalho = [
     '🎶 Retrospectiva TocaEssa',
     '${apresentacao.nome} · ${formatarData(apresentacao.data)}',
     apresentacao.local,
     if (duracaoDoShow(dados) case final duracao?) duracao,
   ];
+  String numeros(List<DestaqueDaRetrospectiva> lista) =>
+      lista.map((item) => '${item.rotulo} ${item.valor}').join(' · ');
   if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) {
-    final numeros = numerosDaResenha(dados)
-        .map((item) => '${item.valor} ${item.rotulo}')
-        .join(' · ');
     return [
       ...cabecalho,
       '',
-      numeros,
+      numeros(numerosDaResenha(dados)),
       '',
       for (final premio in premiosDaResenha(participantes, dados))
         '${premio.emoji} ${premio.titulo}: ${premio.vencedor}',
@@ -31,19 +32,25 @@ String textoDaRetrospectiva(
   final favorita = favoritaDoShow(dados);
   final destaques = destaquesDoShow(dados);
   return [
-    perfil.nomeArtistico +
-        (instagram == null || instagram.isEmpty ? '' : ' · @$instagram'),
+    perfil.nomeArtistico + (instagram == null ? '' : ' · @$instagram'),
     ...cabecalho,
     '',
-    if (destaques.isNotEmpty)
-      destaques.map((item) => '${item.valor} ${item.rotulo}').join(' · '),
-    if (favorita != null) '“$favorita” foi a favorita da galera.',
+    if (destaques.isNotEmpty) numeros(destaques),
+    if (favorita != null) 'A mais pedida da noite: $favorita',
     if (destaques.isEmpty && favorita == null) 'Valeu, ${apresentacao.local}!',
+    '',
+    '$_conviteDoProximoShow 🎶',
   ].join('\n').trimRight();
 }
 
-/// Retrospectiva do artista: no show público é vitrine para divulgar (só
-/// números que valorizam a noite); na resenha vale tudo, com prêmios.
+String? _instagram(PerfilArtistico perfil) {
+  final instagram = perfil.instagram?.trim().replaceFirst(RegExp('^@'), '');
+  return instagram == null || instagram.isEmpty ? null : instagram;
+}
+
+/// Retrospectiva do artista, no jeito do Strava: a selfie com o público é a
+/// estrela e os números vêm por cima. No show público só entram números que
+/// valorizam a noite; na resenha vale tudo, com prêmios.
 class _RetrospectivaDoArtista extends StatelessWidget {
   const _RetrospectivaDoArtista({
     required this.chaveCartao,
@@ -64,7 +71,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   final EstatisticasDaApresentacao dados;
   final List<ParticipanteDaResenha> participantes;
 
-  /// Foto do cartão: a da retrospectiva ou, sem ela, a do perfil.
+  /// Selfie da retrospectiva; sem ela, o cartão fica com o fundo de palco.
   final String? enderecoFoto;
   final bool temFotoPropria;
   final bool enviandoFoto;
@@ -86,16 +93,40 @@ class _RetrospectivaDoArtista extends StatelessWidget {
             premios: premios,
           )
         : _ConteudoDoShow(apresentacao: apresentacao, dados: dados);
+    void tirarSelfie() => escolherFoto((_, fundo) => _MolduraDoCartao(
+          enderecoFoto: null,
+          fundo: fundo,
+          child: conteudo,
+        ));
+    Widget progresso() => const SizedBox.square(
+          dimension: 18,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RepaintBoundary(
-          key: chaveCartao,
-          child: _MolduraDoCartao(
-            key: const ValueKey('cartao-retrospectiva'),
-            enderecoFoto: enderecoFoto,
-            child: conteudo,
-          ),
+        Stack(
+          children: [
+            RepaintBoundary(
+              key: chaveCartao,
+              child: _MolduraDoCartao(
+                key: const ValueKey('cartao-retrospectiva'),
+                enderecoFoto: enderecoFoto,
+                child: conteudo,
+              ),
+            ),
+            // Fora da área compartilhada: o convite nunca sai na imagem.
+            if (!temFotoPropria)
+              Positioned.fill(
+                child: Align(
+                  alignment: const Alignment(0, -.45),
+                  child: _ConviteDaSelfie(
+                    enviando: enviandoFoto,
+                    tirarSelfie: tirarSelfie,
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: EspacoTocaEssa.medio),
         Text(
@@ -107,42 +138,43 @@ class _RetrospectivaDoArtista extends StatelessWidget {
               ?.copyWith(color: CoresTocaEssa.textoSecundario),
         ),
         const SizedBox(height: EspacoTocaEssa.base),
-        FilledButton.icon(
-          onPressed: gerandoImagem ? null : baixarImagem,
-          icon: gerandoImagem
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.ios_share_rounded),
-          label: Text(gerandoImagem
-              ? 'Gerando imagem...'
-              : 'Compartilhar imagem'),
-        ),
-        const SizedBox(height: EspacoTocaEssa.pequeno),
-        OutlinedButton.icon(
-          onPressed: enviandoFoto
-              ? null
-              : () => escolherFoto((_, fundo) => _MolduraDoCartao(
-                    enderecoFoto: null,
-                    fundo: fundo,
-                    child: conteudo,
-                  )),
-          icon: enviandoFoto
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(temFotoPropria
-                  ? Icons.cameraswitch_outlined
-                  : Icons.add_a_photo_outlined),
-          label: Text(enviandoFoto
-              ? 'Enviando foto...'
-              : temFotoPropria
-                  ? 'Trocar foto ou selfie'
-                  : 'Adicionar foto ou selfie'),
-        ),
-        const SizedBox(height: EspacoTocaEssa.pequeno),
+        if (temFotoPropria) ...[
+          FilledButton.icon(
+            onPressed: gerandoImagem ? null : baixarImagem,
+            icon: gerandoImagem
+                ? progresso()
+                : const Icon(Icons.ios_share_rounded),
+            label: Text(
+                gerandoImagem ? 'Gerando imagem...' : 'Compartilhar imagem'),
+          ),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          OutlinedButton.icon(
+            onPressed: enviandoFoto ? null : tirarSelfie,
+            icon: enviandoFoto
+                ? progresso()
+                : const Icon(Icons.cameraswitch_outlined),
+            label: Text(enviandoFoto ? 'Enviando foto...' : 'Trocar selfie'),
+          ),
+        ] else ...[
+          FilledButton.icon(
+            onPressed: enviandoFoto ? null : tirarSelfie,
+            icon: enviandoFoto
+                ? progresso()
+                : const Icon(Icons.photo_camera_front_outlined),
+            label: Text(enviandoFoto
+                ? 'Enviando foto...'
+                : 'Tirar selfie com o público'),
+          ),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          TextButton.icon(
+            onPressed: gerandoImagem ? null : baixarImagem,
+            icon: gerandoImagem
+                ? progresso()
+                : const Icon(Icons.ios_share_rounded),
+            label: Text(
+                gerandoImagem ? 'Gerando imagem...' : 'Compartilhar sem foto'),
+          ),
+        ],
         TextButton.icon(
           onPressed: copiar,
           icon: const Icon(Icons.copy_rounded),
@@ -160,7 +192,61 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   }
 }
 
-/// Cartão 9:16 com a foto ao fundo, marca no topo e o texto embaixo.
+/// Lembrete no lugar da foto: o melhor cartão é a selfie com a galera.
+class _ConviteDaSelfie extends StatelessWidget {
+  const _ConviteDaSelfie({required this.enviando, required this.tirarSelfie});
+
+  final bool enviando;
+  final VoidCallback tirarSelfie;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        child: GestureDetector(
+          onTap: enviando ? null : tirarSelfie,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            decoration: BoxDecoration(
+              color: const Color(0x8C000000),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                enviando
+                    ? const SizedBox.square(
+                        dimension: 30,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.photo_camera_front_outlined,
+                        color: Colors.white, size: 32),
+                const SizedBox(height: 10),
+                const Text(
+                  'Tire uma selfie com o seu público',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Toque para abrir a câmera',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+/// Cartão 9:16: a foto ocupa tudo, com a marca no topo e os números embaixo
+/// sobre um escurecido suave.
 class _MolduraDoCartao extends StatelessWidget {
   const _MolduraDoCartao({
     super.key,
@@ -178,17 +264,10 @@ class _MolduraDoCartao extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AspectRatio(
         aspectRatio: 9 / 16,
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF16101F),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: const Color(0xFF6F4A9E)),
-            boxShadow: const [
-              BoxShadow(color: Color(0x33784DFF), blurRadius: 26),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(23),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: ColoredBox(
+            color: const Color(0xFF111111),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -199,17 +278,18 @@ class _MolduraDoCartao extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0x99140B1D),
-                        Color(0x00140B1D),
-                        Color(0x00140B1D),
-                        Color(0xF5140B1D),
+                        Color(0x66000000),
+                        Color(0x00000000),
+                        Color(0x00000000),
+                        Color(0xD9000000),
+                        Color(0xF2000000),
                       ],
-                      stops: [0, .2, .38, .78],
+                      stops: [0, .14, .42, .72, 1],
                     ),
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(22),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -219,22 +299,28 @@ class _MolduraDoCartao extends StatelessWidget {
                             borderRadius: BorderRadius.circular(6),
                             child: Image.asset(
                               'assets/marca/toca_essa_icone.png',
-                              width: 26,
-                              height: 26,
+                              width: 22,
+                              height: 22,
                               errorBuilder: (_, __, ___) =>
-                                  const SizedBox.square(dimension: 26),
+                                  const SizedBox.square(dimension: 22),
                             ),
                           ),
                           const SizedBox(width: 8),
                           const Text(
                             'TocaEssa',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600),
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
                       const Spacer(),
-                      child,
+                      DefaultTextStyle.merge(
+                        style: const TextStyle(color: Colors.white),
+                        child: child,
+                      ),
                     ],
                   ),
                 ),
@@ -245,55 +331,67 @@ class _MolduraDoCartao extends StatelessWidget {
       );
 }
 
-/// "21h00 às 00h12 · 3h12 de show", só quando o servidor validou o horário.
-class _LinhaDaDuracao extends StatelessWidget {
-  const _LinhaDaDuracao(this.texto);
-  final String texto;
+/// Número do cartão no jeito do Strava: rótulo pequeno em cima, valor grande.
+class _NumeroDoCartao extends StatelessWidget {
+  const _NumeroDoCartao(this.destaque);
+  final DestaqueDaRetrospectiva destaque;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          texto,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: CoresTocaEssa.roxoClaro,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+  Widget build(BuildContext context) => Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              destaque.rotulo,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white70, fontSize: 11),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                destaque.valor,
+                maxLines: 1,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  height: 1.15,
+                ),
+              ),
+            ),
+          ],
         ),
       );
 }
 
+class _NumerosDoCartao extends StatelessWidget {
+  const _NumerosDoCartao(this.numeros);
+  final List<DestaqueDaRetrospectiva> numeros;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [for (final numero in numeros) _NumeroDoCartao(numero)],
+      );
+}
+
+/// Linha discreta acima do nome: "Retrospectiva do show".
 class _RotuloDoCartao extends StatelessWidget {
   const _RotuloDoCartao(this.texto);
   final String texto;
 
   @override
-  Widget build(BuildContext context) => Row(
-        children: [
-          const Icon(Icons.auto_awesome_rounded,
-              color: CoresTocaEssa.roxoClaro, size: 16),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              texto,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: CoresTocaEssa.roxoClaro,
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                letterSpacing: .9,
-              ),
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) => Text(
+        texto,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(color: Colors.white70, fontSize: 12),
       );
 }
 
-/// Vitrine do show público: o artista em destaque e só números bons.
+/// Vitrine do show público: o artista, a noite e só números bons.
 class _ConteudoDoShow extends StatelessWidget {
   const _ConteudoDoShow({required this.apresentacao, required this.dados});
   final Apresentacao apresentacao;
@@ -302,92 +400,86 @@ class _ConteudoDoShow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final perfil = apresentacao.perfilArtistico;
-    final instagram = perfil.instagram?.trim().replaceFirst(RegExp('^@'), '');
+    final instagram = _instagram(perfil);
     final destaques = destaquesDoShow(dados);
     final favorita = favoritaDoShow(dados);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        const _RotuloDoCartao('RETROSPECTIVA DO SHOW'),
-        const SizedBox(height: 10),
+        const _RotuloDoCartao('Retrospectiva do show'),
+        const SizedBox(height: 2),
         Text(
           perfil.nomeArtistico,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 30,
+            fontSize: 26,
             fontWeight: FontWeight.w700,
             height: 1.1,
-            color: Colors.white,
           ),
         ),
-        if (instagram != null && instagram.isNotEmpty)
+        if (instagram != null)
           Text(
             '@$instagram',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: CoresTocaEssa.roxoClaro,
-            ),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
           ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         Text(
-          '${apresentacao.nome} · ${formatarData(apresentacao.data)}',
+          '${apresentacao.nome} · ${apresentacao.local} · '
+          '${formatarData(apresentacao.data)}',
           maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
-        ),
-        Text(
-          apresentacao.local,
-          maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
-        if (duracaoDoShow(dados) case final duracao?) _LinhaDaDuracao(duracao),
-        if (favorita != null) ...[
-          const SizedBox(height: 10),
-          Text(
-            '“$favorita” foi a favorita da galera.',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-        const SizedBox(height: 14),
-        const Divider(color: Colors.white38, height: 1),
-        const SizedBox(height: 12),
-        if (destaques.isEmpty)
+        const SizedBox(height: 16),
+        if (destaques.isNotEmpty)
+          _NumerosDoCartao(destaques)
+        else if (favorita == null)
           Text(
             'Valeu, ${apresentacao.local}!',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          )
-        else
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+        if (favorita != null) ...[
+          const SizedBox(height: 14),
+          const Text(
+            'A mais pedida da noite',
+            style: TextStyle(color: Colors.white70, fontSize: 11),
+          ),
           Row(
             children: [
-              for (final destaque in destaques)
-                _DadoDaRetrospectiva(
-                    valor: destaque.valor, rotulo: destaque.rotulo),
+              const Icon(Icons.music_note_rounded,
+                  color: Colors.white, size: 16),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  favorita,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
             ],
           ),
+        ],
+        const SizedBox(height: 14),
+        const Divider(color: Colors.white24, height: 1),
+        const SizedBox(height: 10),
+        const Text(
+          _conviteDoProximoShow,
+          style: TextStyle(color: Colors.white70, fontSize: 12),
+        ),
       ],
     );
   }
 }
 
-/// Resenha: números completos e os primeiros prêmios da noite.
+/// Resenha: o encontro, os primeiros prêmios e os números completos.
 class _ConteudoDaResenha extends StatelessWidget {
   const _ConteudoDaResenha({
     required this.apresentacao,
@@ -404,17 +496,16 @@ class _ConteudoDaResenha extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          const _RotuloDoCartao('RETROSPECTIVA DA RESENHA'),
-          const SizedBox(height: 10),
+          const _RotuloDoCartao('Retrospectiva da resenha'),
+          const SizedBox(height: 2),
           Text(
             apresentacao.nome,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 24,
               fontWeight: FontWeight.w700,
-              height: 1.15,
-              color: Colors.white,
+              height: 1.1,
             ),
           ),
           const SizedBox(height: 4),
@@ -424,10 +515,8 @@ class _ConteudoDaResenha extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
-          if (duracaoDoShow(dados) case final duracao?)
-            _LinhaDaDuracao(duracao),
-          const SizedBox(height: 12),
-          for (final premio in premios.take(4))
+          const SizedBox(height: 14),
+          for (final premio in premios.take(3))
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Row(
@@ -444,17 +533,13 @@ class _ConteudoDaResenha extends StatelessWidget {
                         Text(
                           premio.titulo,
                           style: const TextStyle(
-                            color: CoresTocaEssa.roxoClaro,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
+                              color: Colors.white70, fontSize: 11),
                         ),
                         Text(
                           premio.vencedor,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            color: Colors.white,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
@@ -466,15 +551,7 @@ class _ConteudoDaResenha extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 6),
-          const Divider(color: Colors.white38, height: 1),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              for (final numero in numerosDaResenha(dados))
-                _DadoDaRetrospectiva(
-                    valor: numero.valor, rotulo: numero.rotulo),
-            ],
-          ),
+          _NumerosDoCartao(numerosDaResenha(dados)),
         ],
       );
 }

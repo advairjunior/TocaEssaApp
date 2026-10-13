@@ -92,7 +92,7 @@ void main() {
 
     double topo(Finder alvo) => tester.getTopLeft(alvo).dy;
     expect(topo(find.text('não atendidos')),
-        lessThan(topo(find.text('RETROSPECTIVA DA RESENHA'))));
+        lessThan(topo(find.text('Retrospectiva da resenha'))));
     expect(find.text('Retrospectiva'), findsOneWidget);
   });
 

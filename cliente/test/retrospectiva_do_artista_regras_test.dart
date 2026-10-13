@@ -80,28 +80,36 @@ ParticipanteDaResenha _pessoa(
     );
 
 List<String> _rotulos(List<DestaqueDaRetrospectiva> destaques) =>
-    destaques.map((item) => '${item.valor} ${item.rotulo}').toList();
+    destaques.map((item) => '${item.rotulo} ${item.valor}').toList();
 
 void main() {
   group('vitrine do show público', () {
-    test('noite cheia mostra público, músicas a pedido e nota', () {
-      final destaques = destaquesDoShow(_estatisticas(
-        pessoas: 80,
-        retrospectiva: _dados(
-          aPedido: 32,
-          considerados: 40,
-          atendidos: 36,
-          avaliaram: 12,
-          media: 4.8,
-          tocadas: 50,
-        ),
-      ));
+    final noiteCheia = _dados(
+      inicio: DateTime(2026, 10, 17, 21),
+      fim: DateTime(2026, 10, 18, 0, 12),
+      tocadas: 42,
+      avaliaram: 12,
+      media: 4.8,
+      aPedido: 32,
+      considerados: 40,
+      atendidos: 36,
+      alos: 9,
+    );
 
-      expect(_rotulos(destaques), [
-        '80 pessoas no app',
-        '32 músicas a pedido',
-        '4.8 de nota',
-      ]);
+    test('noite cheia mostra tempo, músicas e nota, como no Strava', () {
+      final destaques =
+          destaquesDoShow(_estatisticas(pessoas: 80, retrospectiva: noiteCheia));
+
+      expect(_rotulos(destaques), ['Tempo 3h12', 'Músicas 42', 'Nota 4,8']);
+    });
+
+    test('público no app, atendimento e alôs nunca vão para as redes', () {
+      final destaques = destaquesDoShow(_estatisticas(
+          pessoas: 80,
+          retrospectiva: _dados(
+              aPedido: 32, considerados: 40, atendidos: 36, alos: 9)));
+
+      expect(_rotulos(destaques), ['A pedido 32']);
     });
 
     test('nunca usa os pedidos brutos, só o que foi validado', () {
@@ -111,52 +119,26 @@ void main() {
       expect(favoritaDoShow(_estatisticas()), isNull);
     });
 
-    test('pouca gente não aparece', () {
-      final destaques = destaquesDoShow(
-          _estatisticas(pessoas: 6, retrospectiva: _dados(aPedido: 5)));
-
-      expect(_rotulos(destaques), isNot(contains(startsWith('6 pessoas'))));
-    });
-
-    test('poucas músicas a pedido para o tamanho do público não aparecem', () {
-      final destaques = destaquesDoShow(
-          _estatisticas(pessoas: 100, retrospectiva: _dados(aPedido: 4)));
-
-      expect(_rotulos(destaques), ['100 pessoas no app']);
+    test('show curto, poucas músicas ou poucas a pedido não aparecem', () {
+      expect(
+          destaquesDoShow(_estatisticas(
+              pessoas: 100,
+              retrospectiva: _dados(
+                  inicio: DateTime(2026, 10, 17, 21),
+                  fim: DateTime(2026, 10, 17, 21, 20),
+                  tocadas: 8,
+                  aPedido: 4))),
+          isEmpty);
     });
 
     test('nota baixa ou de poucas pessoas nunca aparece', () {
       expect(
-          _rotulos(destaquesDoShow(_estatisticas(
-              pessoas: 50,
-              retrospectiva: _dados(avaliaram: 20, media: 3.4)))),
-          ['50 pessoas no app']);
-      expect(
-          _rotulos(destaquesDoShow(_estatisticas(
-              pessoas: 50, retrospectiva: _dados(avaliaram: 2, media: 5)))),
-          ['50 pessoas no app']);
-    });
-
-    test('atendimento alto conta pedidos sem repetição', () {
-      final destaques = destaquesDoShow(_estatisticas(
-          pessoas: 12,
-          retrospectiva: _dados(aPedido: 6, considerados: 10, atendidos: 9)));
-
-      expect(_rotulos(destaques), [
-        '12 pessoas no app',
-        '6 músicas a pedido',
-        '90% pedidos atendidos',
-      ]);
-    });
-
-    test('total de músicas tocadas e alôs entram quando sobra espaço', () {
-      final destaques = destaquesDoShow(
-          _estatisticas(retrospectiva: _dados(tocadas: 42, alos: 7)));
-
-      expect(_rotulos(destaques), ['42 músicas tocadas', '7 alôs']);
+          destaquesDoShow(_estatisticas(
+              retrospectiva: _dados(avaliaram: 20, media: 3.4))),
+          isEmpty);
       expect(
           destaquesDoShow(
-              _estatisticas(retrospectiva: _dados(tocadas: 8, alos: 2))),
+              _estatisticas(retrospectiva: _dados(avaliaram: 2, media: 5))),
           isEmpty);
     });
 
@@ -181,7 +163,7 @@ void main() {
   });
 
   group('números da resenha', () {
-    test('mostra tudo, sem contar a mesma pessoa duas vezes', () {
+    test('mostra tudo, sem contar gente no app', () {
       final numeros = numerosDaResenha(_estatisticas(
         pessoas: 7,
         retrospectiva: _dados(
@@ -195,13 +177,8 @@ void main() {
         ),
       ));
 
-      expect(_rotulos(numeros), [
-        '7 na resenha',
-        '9 pedidos',
-        '4 tocadas',
-        '2 recusadas',
-        '2.5 de nota',
-      ]);
+      expect(_rotulos(numeros),
+          ['Pedidos 9', 'Tocadas 4', 'Recusadas 2', 'Nota 2,5']);
     });
   });
 
