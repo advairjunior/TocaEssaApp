@@ -1,5 +1,8 @@
+import 'dart:js_interop';
+
 import 'package:web/web.dart' as web;
 
+import 'pagina_de_espera_da_cifra.dart';
 import 'url_externa_validacao.dart';
 
 Future<void> abrirUrlExterna(Uri url) async {
@@ -45,6 +48,14 @@ web.Window _abrirAbaEmBranco() {
         'O navegador bloqueou a nova aba. Permita pop-ups para o TocaEssa.');
   }
   janela.opener = null;
+  try {
+    janela.document
+      ..open()
+      ..write(paginaDeEsperaDaCifra.toJS)
+      ..close();
+  } catch (_) {
+    // Sem o aviso, a aba só fica em branco até o link chegar.
+  }
   return janela;
 }
 
