@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'sequencia_do_palco.dart';
+
+export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
 
 const _chaveEscala = 'leitor_escala';
 
@@ -16,23 +19,6 @@ double tamanhoDaFonteDaCifra({
   required int maiorLinha,
 }) =>
     maiorLinha == 0 ? 24 : (largura / (maiorLinha * .6)).clamp(10, 24);
-
-final _acorde = RegExp(
-    r'^[A-G][#b]?(m|maj7?|M7?|dim|aug|sus[24]?|add9|º|°|\+)?\d{0,2}'
-    r'(\([^)]*\))?([#b]\d{1,2})*(/[A-G][#b]?)?$');
-
-/// Linha só de acordes ("G   D/F#   Em"), para aparecer em destaque. Aceita
-/// o rótulo de parte no começo ("[Intro] E9 C#m") e acordes entre
-/// parênteses ("( E C#m )"), como o Cifra Club escreve.
-bool linhaDeAcordes(String linha) {
-  final partes = linha
-      .replaceFirst(RegExp(r'^\s*\[[^\]]*\]'), '')
-      .replaceAll(RegExp(r'[()]'), ' ')
-      .split(RegExp(r'\s+'))
-      .where((parte) => parte.isNotEmpty && !RegExp(r'^[|\-/]+$').hasMatch(parte))
-      .toList();
-  return partes.isNotEmpty && partes.every(_acorde.hasMatch);
-}
 
 /// Leitor de cifras do show: só a cifra na tela, setas para trocar de
 /// música (sem marcar nada) e Tocar sempre à mão. Pedal Bluetooth de virar
