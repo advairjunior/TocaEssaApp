@@ -216,11 +216,11 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('Show de sábado')),
-      containsSemantics(isButton: true, hasTapAction: true),
+      isSemantics(isButton: true, hasTapAction: true),
     );
     expect(
       tester.getSemantics(find.byTooltip('Minha conta')),
-      containsSemantics(isButton: true),
+      isSemantics(isButton: true),
     );
     semantica.dispose();
   });

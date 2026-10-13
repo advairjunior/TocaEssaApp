@@ -234,7 +234,7 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('Garota de Ipanema')),
-      containsSemantics(hasCheckedState: true, isChecked: true),
+      isSemantics(hasCheckedState: true, isChecked: true),
     );
     semantica.dispose();
   });

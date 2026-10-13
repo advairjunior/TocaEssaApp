@@ -75,11 +75,11 @@ void main() {
 
     expect(
       tester.getSemantics(find.text('R\$ 10')),
-      containsSemantics(isSelected: true),
+      isSemantics(isSelected: true),
     );
     expect(
       tester.getSemantics(find.text('R\$ 5')),
-      containsSemantics(isSelected: false),
+      isSemantics(isSelected: false),
     );
     expect(
         find.ancestor(
