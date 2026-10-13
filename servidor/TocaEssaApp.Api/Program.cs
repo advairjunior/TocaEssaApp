@@ -143,6 +143,18 @@ app.MapPut("/api/artista/cifras", (
         requisicao.Artista, requisicao.Url));
 });
 
+app.MapPut("/api/artista/cifras/texto", (
+    SalvarCifraEmTexto requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    string.IsNullOrWhiteSpace(requisicao.Musica)
+        ? Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["musica"] = ["Informe a música."]
+        })
+        : Results.Ok(repositorio.SalvarCifraEmTexto(
+            ObterToken(http) ?? string.Empty, requisicao.Musica,
+            requisicao.Artista, requisicao.Texto)));
+
 app.MapDelete("/api/artista/cifras/{id:guid}", (
     Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

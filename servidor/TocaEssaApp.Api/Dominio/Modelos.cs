@@ -82,8 +82,11 @@ public sealed record CifraDoArtista(
     DateTimeOffset CriadaEm,
     DateTimeOffset AtualizadaEm);
 
+/// [Texto] é a letra e cifra coladas no app, independente do link.
 public sealed record ResultadoCifraDoArtista(
-    CifraDoArtista? Cifra, string? UrlSugerida, string UrlPesquisa);
+    CifraDoArtista? Cifra, string? UrlSugerida, string UrlPesquisa, string? Texto = null);
+
+public sealed record SalvarCifraEmTexto(string Musica, string? Artista, string? Texto);
 
 public sealed record SalvarCifraDoArtista(
     string Musica, string? Artista, string Url);

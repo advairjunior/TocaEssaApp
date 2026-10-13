@@ -18,7 +18,60 @@ public sealed partial class RepositorioTocaEssa
         return new ResultadoCifraDoArtista(
             registro is null ? null : ParaDominio(registro),
             null,
-            CriarPesquisa(musica, artista));
+            CriarPesquisa(musica, artista),
+            _cifrasEmTexto.GetValueOrDefault(chave)?.Conteudo);
+    }
+
+    private const int TamanhoMaximoDaCifraEmTexto = 20_000;
+
+    /// Letra e cifra coladas no app. Guarda os espaços que alinham os
+    /// acordes; tira só linhas e espaços sobrando nas bordas. Vazio apaga.
+    public ResultadoCifraDoArtista SalvarCifraEmTexto(
+        string token, string musica, string? artista, string? texto)
+    {
+        lock (_sincronizacao)
+        {
+            var conta = ObterRegistroArtista(token)
+                ?? throw new SessaoArtistaInvalidaException();
+            ValidarIdentificacao(musica, artista);
+            var conteudo = LimparCifraEmTexto(texto);
+            if (conteudo.Length > TamanhoMaximoDaCifraEmTexto)
+                throw new DadosDeCifraInvalidosException();
+            var chave = CriarChave(conta.Id, musica, artista);
+            if (conteudo.Length == 0)
+            {
+                _cifrasEmTexto.TryRemove(chave, out _);
+            }
+            else
+            {
+                var registro = _cifrasEmTexto.GetValueOrDefault(chave) ?? new CifraEmTextoRegistro
+                {
+                    Id = Guid.NewGuid(),
+                    ArtistaId = conta.Id,
+                    MusicaNormalizada = chave.Musica,
+                    ArtistaNormalizado = chave.Artista
+                };
+                registro.Musica = musica.Trim();
+                registro.Artista = string.IsNullOrWhiteSpace(artista) ? null : artista.Trim();
+                registro.Conteudo = conteudo;
+                registro.AtualizadaEm = DateTimeOffset.UtcNow;
+                _cifrasEmTexto[chave] = registro;
+            }
+            SalvarEstado();
+            return ObterCifraDoArtista(token, musica, artista);
+        }
+    }
+
+    private static string LimparCifraEmTexto(string? texto)
+    {
+        var linhas = (texto ?? string.Empty)
+            .Replace("\r\n", "\n").Replace('\r', '\n')
+            .Split('\n')
+            .Select(linha => linha.TrimEnd())
+            .ToList();
+        while (linhas.Count > 0 && linhas[0].Length == 0) linhas.RemoveAt(0);
+        while (linhas.Count > 0 && linhas[^1].Length == 0) linhas.RemoveAt(linhas.Count - 1);
+        return string.Join('\n', linhas);
     }
 
     public IReadOnlyCollection<CifraDoArtista> ListarCifrasDoArtista(string token)

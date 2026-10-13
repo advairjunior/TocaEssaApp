@@ -137,6 +137,9 @@ public sealed partial class RepositorioTocaEssa
         foreach (var cifra in banco.CifrasDoArtista.AsNoTracking())
             _cifrasDoArtista[(cifra.ArtistaId, cifra.MusicaNormalizada,
                 cifra.ArtistaNormalizado)] = cifra;
+        foreach (var cifra in banco.CifrasEmTexto.AsNoTracking())
+            _cifrasEmTexto[(cifra.ArtistaId, cifra.MusicaNormalizada,
+                cifra.ArtistaNormalizado)] = cifra;
         foreach (var r in banco.Repertorios.AsNoTracking())
             _repertorios[r.Id] = r;
         foreach (var m in banco.MusicasDoRepertorio.AsNoTracking())
@@ -230,6 +233,7 @@ public sealed partial class RepositorioTocaEssa
             (typeof(SessaoPublicoRegistro), banco => banco.SessoesPublicas.AsNoTracking()),
             (typeof(ContaArtistaRegistro), banco => banco.ContasArtistas.AsNoTracking()),
             (typeof(CifraDoArtistaRegistro), banco => banco.CifrasDoArtista.AsNoTracking()),
+            (typeof(CifraEmTextoRegistro), banco => banco.CifrasEmTexto.AsNoTracking()),
             (typeof(RepertorioRegistro), banco => banco.Repertorios.AsNoTracking()),
             (typeof(MusicaDoRepertorioRegistro),
                 banco => banco.MusicasDoRepertorio.AsNoTracking()),
@@ -340,6 +344,7 @@ public sealed partial class RepositorioTocaEssa
             _sessoesPublicas.Values.Where(item => item.ExpiraEm > agora),
             _contasArtistas.Values,
             _cifrasDoArtista.Values,
+            _cifrasEmTexto.Values,
             _repertorios.Values,
             _musicasDoRepertorio.Values,
             _itensDoSetlist.Values,

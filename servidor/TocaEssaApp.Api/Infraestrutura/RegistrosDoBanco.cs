@@ -130,6 +130,19 @@ internal sealed class SessaoArtistaRegistro
     public DateTimeOffset ExpiraEm { get; set; }
 }
 
+// Letra e cifra coladas no app, com a mesma chave de música dos links.
+internal sealed class CifraEmTextoRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Musica { get; set; } = string.Empty;
+    public string? Artista { get; set; }
+    public string MusicaNormalizada { get; set; } = string.Empty;
+    public string ArtistaNormalizado { get; set; } = string.Empty;
+    public string Conteudo { get; set; } = string.Empty;
+    public DateTimeOffset AtualizadaEm { get; set; }
+}
+
 internal sealed class CifraDoArtistaRegistro
 {
     public Guid Id { get; set; }
