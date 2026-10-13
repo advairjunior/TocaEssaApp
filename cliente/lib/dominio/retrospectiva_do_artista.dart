@@ -30,61 +30,107 @@ const _avaliacoesMinimas = 3;
 const _notaMinima = 4.0;
 const _pedidosMinimosParaAtendimento = 5;
 const _atendimentoMinimo = .7;
+const _musicasTocadasMinimas = 10;
+const _alosMinimos = 3;
 const _maximoDeDestaques = 3;
+
+// O cartão usa só os números validados pelo servidor (cada pessoa conta uma
+// vez por música); sem eles, nenhum número de pedido aparece.
+const _semDadosValidados = DadosDaRetrospectiva(
+  favorita: null,
+  musicasAPedidoTocadas: 0,
+  pedidosConsiderados: 0,
+  pedidosAtendidos: 0,
+  pessoasQueAvaliaram: 0,
+  mediaDasAvaliacoes: null,
+  musicasTocadas: 0,
+  alosDados: 0,
+  iniciadaEm: null,
+  encerradaEm: null,
+  maisPedidasPorPessoas: [],
+  recusadasPorPessoas: [],
+);
+
+DadosDaRetrospectiva _validados(EstatisticasDaApresentacao e) =>
+    e.retrospectiva ?? _semDadosValidados;
 
 /// Números que entram no cartão do show público, do mais forte ao mais
 /// fraco, sem nunca mostrar público pequeno, poucas músicas ou nota baixa.
 List<DestaqueDaRetrospectiva> destaquesDoShow(EstatisticasDaApresentacao e) {
+  final r = _validados(e);
   final destaques = <DestaqueDaRetrospectiva>[];
   if (e.pessoasNoEvento >= _publicoMinimo) {
     destaques.add(DestaqueDaRetrospectiva(
         valor: '${e.pessoasNoEvento}', rotulo: 'pessoas no app'));
   }
-  if (e.tocados >= _tocadosMinimos &&
-      e.tocados >= e.pessoasNoEvento * _tocadosPorPessoa) {
-    destaques.add(DestaqueDaRetrospectiva(
-        valor: '${e.tocados}', rotulo: 'músicas a pedido'));
+  final aPedido = r.musicasAPedidoTocadas;
+  if (aPedido >= _tocadosMinimos &&
+      aPedido >= e.pessoasNoEvento * _tocadosPorPessoa) {
+    destaques.add(
+        DestaqueDaRetrospectiva(valor: '$aPedido', rotulo: 'músicas a pedido'));
   }
-  final media = e.mediaAvaliacoes;
+  final media = r.mediaDasAvaliacoes;
   if (media != null &&
-      e.avaliados >= _avaliacoesMinimas &&
+      r.pessoasQueAvaliaram >= _avaliacoesMinimas &&
       media >= _notaMinima) {
     destaques.add(DestaqueDaRetrospectiva(
         valor: media.toStringAsFixed(1), rotulo: 'de nota'));
   }
-  if (e.totalPedidos >= _pedidosMinimosParaAtendimento &&
-      e.tocados / e.totalPedidos >= _atendimentoMinimo) {
+  if (r.pedidosConsiderados >= _pedidosMinimosParaAtendimento &&
+      r.pedidosAtendidos / r.pedidosConsiderados >= _atendimentoMinimo) {
     destaques.add(DestaqueDaRetrospectiva(
-        valor: '${(e.tocados * 100 / e.totalPedidos).round()}%',
+        valor: '${(r.pedidosAtendidos * 100 / r.pedidosConsiderados).round()}%',
         rotulo: 'pedidos atendidos'));
+  }
+  if (r.musicasTocadas >= _musicasTocadasMinimas) {
+    destaques.add(DestaqueDaRetrospectiva(
+        valor: '${r.musicasTocadas}', rotulo: 'músicas tocadas'));
+  }
+  if (r.alosDados >= _alosMinimos) {
+    destaques
+        .add(DestaqueDaRetrospectiva(valor: '${r.alosDados}', rotulo: 'alôs'));
   }
   return destaques.take(_maximoDeDestaques).toList();
 }
 
-/// Música mais pedida do show, só quando foi pedida mais de uma vez.
-String? favoritaDoShow(EstatisticasDaApresentacao e) {
-  final primeira = e.musicasMaisPedidas.firstOrNull;
-  return primeira != null && primeira.quantidade >= 2 ? primeira.musica : null;
+/// Música tocada que mais pessoas diferentes pediram (pelo menos duas).
+String? favoritaDoShow(EstatisticasDaApresentacao e) =>
+    _validados(e).favorita?.musica;
+
+/// "21h00 às 00h12 · 3h12 de show", só com início e fim plausíveis.
+String? duracaoDoShow(EstatisticasDaApresentacao e) {
+  final r = _validados(e);
+  final inicio = r.iniciadaEm?.toLocal();
+  final fim = r.encerradaEm?.toLocal();
+  if (inicio == null || fim == null) return null;
+  String hora(DateTime data) => '${data.hour.toString().padLeft(2, '0')}h'
+      '${data.minute.toString().padLeft(2, '0')}';
+  return '${hora(inicio)} às ${hora(fim)} · '
+      '${formatarTempoDoShow(fim.difference(inicio))} de show';
 }
 
-/// Na resenha vale tudo: números completos, inclusive recusas e nota baixa.
+/// Na resenha vale tudo: números completos, inclusive recusas e nota baixa,
+/// mas sem contar a mesma pessoa duas vezes na mesma música.
 List<DestaqueDaRetrospectiva> numerosDaResenha(EstatisticasDaApresentacao e) {
+  final r = _validados(e);
   String plural(int valor, String um, String varios) =>
       valor == 1 ? um : varios;
+  final recusadas = r.recusadasPorPessoas.length;
   return [
     DestaqueDaRetrospectiva(
         valor: '${e.pessoasNoEvento}', rotulo: 'na resenha'),
     DestaqueDaRetrospectiva(
-        valor: '${e.totalPedidos}',
-        rotulo: plural(e.totalPedidos, 'pedido', 'pedidos')),
+        valor: '${r.pedidosConsiderados}',
+        rotulo: plural(r.pedidosConsiderados, 'pedido', 'pedidos')),
     DestaqueDaRetrospectiva(
-        valor: '${e.tocados}', rotulo: plural(e.tocados, 'tocado', 'tocados')),
+        valor: '${r.musicasAPedidoTocadas}',
+        rotulo: plural(r.musicasAPedidoTocadas, 'tocada', 'tocadas')),
     DestaqueDaRetrospectiva(
-        valor: '${e.recusados}',
-        rotulo: plural(e.recusados, 'recusado', 'recusados')),
-    if (e.mediaAvaliacoes != null)
+        valor: '$recusadas',
+        rotulo: plural(recusadas, 'recusada', 'recusadas')),
+    if (r.mediaDasAvaliacoes != null)
       DestaqueDaRetrospectiva(
-          valor: e.mediaAvaliacoes!.toStringAsFixed(1), rotulo: 'de nota'),
+          valor: r.mediaDasAvaliacoes!.toStringAsFixed(1), rotulo: 'de nota'),
   ];
 }
 
@@ -107,7 +153,7 @@ List<PremioDaResenha> premiosDaResenha(
   String plural(int valor, String um, String varios) =>
       '$valor ${valor == 1 ? um : varios}';
 
-  final hino = e.musicasMaisPedidas.firstOrNull;
+  final hino = _validados(e).maisPedidasPorPessoas.firstOrNull;
   final pidao = maior(galera.where((p) => pediu(p) > 0), pediu);
   final certeiro = maior(
       galera.where((p) => p.pedidosTocados > 0 && p.pedidosTocados == pediu(p)),
@@ -115,7 +161,7 @@ List<PremioDaResenha> premiosDaResenha(
   final ignorado = maior(galera.where((p) => p.pedidosRecusados > 0),
           (p) => p.pedidosRecusados) ??
       maior(galera.where((p) => pediu(p) > 0 && p.pedidosTocados == 0), pediu);
-  final polemica = e.musicasRecusadas.firstOrNull;
+  final polemica = _validados(e).recusadasPorPessoas.firstOrNull;
   final avaliadores = galera.where((p) => p.avaliacoes.isNotEmpty);
   final critico = maior(avaliadores.where((p) => mediaDada(p) < _notaMinima),
       (p) => -mediaDada(p));
@@ -134,7 +180,8 @@ List<PremioDaResenha> premiosDaResenha(
           emoji: '🔥',
           titulo: 'Hino da resenha',
           vencedor: hino.musica,
-          detalhe: 'pedida ${plural(hino.quantidade, 'vez', 'vezes')}'),
+          detalhe:
+              'pedida por ${plural(hino.quantidade, 'pessoa', 'pessoas')}'),
     if (pidao != null)
       PremioDaResenha(
           emoji: '🎤',
@@ -161,7 +208,8 @@ List<PremioDaResenha> premiosDaResenha(
           emoji: '🚫',
           titulo: 'Polêmica da noite',
           vencedor: polemica.musica,
-          detalhe: 'recusada ${plural(polemica.quantidade, 'vez', 'vezes')}'),
+          detalhe:
+              'recusada para ${plural(polemica.quantidade, 'pessoa', 'pessoas')}'),
     if (critico != null)
       PremioDaResenha(
           emoji: '🧐',

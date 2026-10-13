@@ -62,7 +62,11 @@ class EstatisticasDaApresentacao {
     this.pessoasNoEvento = 0,
     this.pessoasQuePediram = 0,
     this.musicasRecusadas = const [],
+    this.retrospectiva,
   });
+
+  /// Números validados para o cartão; nulo em servidor antigo.
+  final DadosDaRetrospectiva? retrospectiva;
 
   final int totalPedidos;
   final int aguardando;
@@ -97,7 +101,74 @@ class EstatisticasDaApresentacao {
             .map(
                 (item) => MusicaMaisPedida.deJson(item as Map<String, dynamic>))
             .toList(),
+        retrospectiva: switch (json['retrospectiva']) {
+          final Map<String, dynamic> dados =>
+            DadosDaRetrospectiva.deJson(dados),
+          _ => null,
+        },
       );
+}
+
+/// Números do cartão de retrospectiva já validados pelo servidor: cada
+/// pessoa conta uma vez por música, a favorita foi tocada e a duração é
+/// plausível. Em [MusicaMaisPedida] daqui, a quantidade é de pessoas.
+class DadosDaRetrospectiva {
+  const DadosDaRetrospectiva({
+    required this.favorita,
+    required this.musicasAPedidoTocadas,
+    required this.pedidosConsiderados,
+    required this.pedidosAtendidos,
+    required this.pessoasQueAvaliaram,
+    required this.mediaDasAvaliacoes,
+    required this.musicasTocadas,
+    required this.alosDados,
+    required this.iniciadaEm,
+    required this.encerradaEm,
+    required this.maisPedidasPorPessoas,
+    required this.recusadasPorPessoas,
+  });
+
+  final MusicaMaisPedida? favorita;
+  final int musicasAPedidoTocadas;
+  final int pedidosConsiderados;
+  final int pedidosAtendidos;
+  final int pessoasQueAvaliaram;
+  final double? mediaDasAvaliacoes;
+  final int musicasTocadas;
+  final int alosDados;
+  final DateTime? iniciadaEm;
+  final DateTime? encerradaEm;
+  final List<MusicaMaisPedida> maisPedidasPorPessoas;
+  final List<MusicaMaisPedida> recusadasPorPessoas;
+
+  factory DadosDaRetrospectiva.deJson(Map<String, dynamic> json) {
+    List<MusicaMaisPedida> musicas(String chave) =>
+        (json[chave] as List<dynamic>? ?? [])
+            .map((item) =>
+                MusicaMaisPedida.deJson(item as Map<String, dynamic>))
+            .toList();
+    DateTime? data(String chave) => switch (json[chave]) {
+          final String valor => DateTime.parse(valor),
+          _ => null,
+        };
+    return DadosDaRetrospectiva(
+      favorita: switch (json['favorita']) {
+        final Map<String, dynamic> musica => MusicaMaisPedida.deJson(musica),
+        _ => null,
+      },
+      musicasAPedidoTocadas: json['musicasAPedidoTocadas'] as int? ?? 0,
+      pedidosConsiderados: json['pedidosConsiderados'] as int? ?? 0,
+      pedidosAtendidos: json['pedidosAtendidos'] as int? ?? 0,
+      pessoasQueAvaliaram: json['pessoasQueAvaliaram'] as int? ?? 0,
+      mediaDasAvaliacoes: (json['mediaDasAvaliacoes'] as num?)?.toDouble(),
+      musicasTocadas: json['musicasTocadas'] as int? ?? 0,
+      alosDados: json['alosDados'] as int? ?? 0,
+      iniciadaEm: data('iniciadaEm'),
+      encerradaEm: data('encerradaEm'),
+      maisPedidasPorPessoas: musicas('maisPedidasPorPessoas'),
+      recusadasPorPessoas: musicas('recusadasPorPessoas'),
+    );
+  }
 }
 
 class EstatisticasDoPublico {

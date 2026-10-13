@@ -16,20 +16,39 @@ const _noiteCheia =
     '{"totalPedidos":40,"aguardando":0,"aceitos":32,"tocados":32,"recusados":3,'
     '"avaliados":12,"mediaAvaliacoes":4.8,"pessoasNoEvento":80,'
     '"pessoasQuePediram":30,"musicasRecusadas":[],'
-    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":5}]}';
+    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":5}],'
+    '"retrospectiva":{"favorita":{"musica":"Evidências","quantidade":5},'
+    '"musicasAPedidoTocadas":32,"pedidosConsiderados":40,'
+    '"pedidosAtendidos":32,"pessoasQueAvaliaram":12,'
+    '"mediaDasAvaliacoes":4.8,"musicasTocadas":50,"alosDados":0,'
+    '"iniciadaEm":"2026-10-03T21:00:00","encerradaEm":"2026-10-04T00:12:00",'
+    '"maisPedidasPorPessoas":[{"musica":"Evidências","quantidade":5}],'
+    '"recusadasPorPessoas":[]}}';
 
 const _noiteFraca =
     '{"totalPedidos":2,"aguardando":0,"aceitos":1,"tocados":1,"recusados":1,'
     '"avaliados":1,"mediaAvaliacoes":2.0,"pessoasNoEvento":3,'
     '"pessoasQuePediram":2,"musicasRecusadas":[],'
-    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":1}]}';
+    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":1}],'
+    '"retrospectiva":{"favorita":null,"musicasAPedidoTocadas":1,'
+    '"pedidosConsiderados":2,"pedidosAtendidos":1,"pessoasQueAvaliaram":1,'
+    '"mediaDasAvaliacoes":2.0,"musicasTocadas":3,"alosDados":0,'
+    '"iniciadaEm":null,"encerradaEm":null,'
+    '"maisPedidasPorPessoas":[{"musica":"Evidências","quantidade":1}],'
+    '"recusadasPorPessoas":[]}}';
 
 const _resenha =
     '{"totalPedidos":9,"aguardando":0,"aceitos":4,"tocados":4,"recusados":3,'
     '"avaliados":3,"mediaAvaliacoes":2.5,"pessoasNoEvento":7,'
     '"pessoasQuePediram":3,'
     '"musicasRecusadas":[{"musica":"Macarena","quantidade":2}],'
-    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":4}]}';
+    '"musicasMaisPedidas":[{"musica":"Evidências","quantidade":4}],'
+    '"retrospectiva":{"favorita":null,"musicasAPedidoTocadas":4,'
+    '"pedidosConsiderados":9,"pedidosAtendidos":4,"pessoasQueAvaliaram":3,'
+    '"mediaDasAvaliacoes":2.5,"musicasTocadas":4,"alosDados":0,'
+    '"iniciadaEm":"2026-10-03T20:00:00","encerradaEm":"2026-10-03T23:30:00",'
+    '"maisPedidasPorPessoas":[{"musica":"Evidências","quantidade":4}],'
+    '"recusadasPorPessoas":[{"musica":"Macarena","quantidade":2}]}}';
 
 const _galera = '['
     '{"publicoId":"p1","nome":"Bia","pedidos":5,"pedidosTocados":2,'
@@ -108,6 +127,7 @@ void main() {
     expect(_noCartao('80'), findsOneWidget);
     expect(_noCartao('pessoas no app'), findsOneWidget);
     expect(_noCartao('“Evidências” foi a favorita da galera.'), findsOneWidget);
+    expect(_noCartao('21h00 às 00h12 · 3h12 de show'), findsOneWidget);
   });
 
   testWidgets('noite fraca no show não expõe números ruins no cartão',
@@ -127,7 +147,8 @@ void main() {
         estatisticas: _resenha, tipo: TipoApresentacao.resenhaEntreAmigos);
 
     expect(find.text('RETROSPECTIVA DA RESENHA'), findsOneWidget);
-    expect(_noCartao('recusados'), findsOneWidget);
+    expect(_noCartao('recusada'), findsOneWidget);
+    expect(_noCartao('20h00 às 23h30 · 3h30 de show'), findsOneWidget);
     expect(_noCartao('2.5'), findsOneWidget);
     expect(_noCartao('Pidão da noite'), findsOneWidget);
     expect(find.text('Prêmios da noite'), findsOneWidget);
@@ -261,6 +282,7 @@ void main() {
 
       expect(texto, contains('80 pessoas no app'));
       expect(texto, contains('Evidências'));
+      expect(texto, contains('21h00 às 00h12 · 3h12 de show'));
     });
 
     test('resenha leva números e prêmios', () {
@@ -273,7 +295,8 @@ void main() {
         ],
       );
 
-      expect(texto, contains('3 recusados'));
+      expect(texto, contains('1 recusada'));
+      expect(texto, contains('20h00 às 23h30 · 3h30 de show'));
       expect(texto, contains('🎤 Pidão da noite: Bia'));
       expect(texto, contains('🚫 Polêmica da noite: Macarena'));
     });

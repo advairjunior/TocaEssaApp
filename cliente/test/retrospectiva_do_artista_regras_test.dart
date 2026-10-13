@@ -2,29 +2,55 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/dominio/retrospectiva_do_artista.dart';
 
-EstatisticasDaApresentacao _estatisticas({
-  int pessoas = 0,
-  int pediram = 0,
-  int pedidos = 0,
-  int tocados = 0,
-  int recusados = 0,
-  int avaliados = 0,
+/// Números já validados pelo servidor: cada pessoa conta uma vez por música.
+DadosDaRetrospectiva _dados({
+  MusicaMaisPedida? favorita,
+  int aPedido = 0,
+  int considerados = 0,
+  int atendidos = 0,
+  int avaliaram = 0,
   double? media,
+  int tocadas = 0,
+  int alos = 0,
+  DateTime? inicio,
+  DateTime? fim,
   List<MusicaMaisPedida> maisPedidas = const [],
   List<MusicaMaisPedida> recusadas = const [],
 }) =>
+    DadosDaRetrospectiva(
+      favorita: favorita,
+      musicasAPedidoTocadas: aPedido,
+      pedidosConsiderados: considerados,
+      pedidosAtendidos: atendidos,
+      pessoasQueAvaliaram: avaliaram,
+      mediaDasAvaliacoes: media,
+      musicasTocadas: tocadas,
+      alosDados: alos,
+      iniciadaEm: inicio,
+      encerradaEm: fim,
+      maisPedidasPorPessoas: maisPedidas,
+      recusadasPorPessoas: recusadas,
+    );
+
+/// Os números brutos (pedidos) ficam altos de propósito: o cartão não pode
+/// usá-los, só o bloco validado.
+EstatisticasDaApresentacao _estatisticas({
+  int pessoas = 0,
+  DadosDaRetrospectiva? retrospectiva,
+}) =>
     EstatisticasDaApresentacao(
-      totalPedidos: pedidos,
+      totalPedidos: 99,
       aguardando: 0,
-      aceitos: tocados,
-      tocados: tocados,
-      recusados: recusados,
-      avaliados: avaliados,
-      mediaAvaliacoes: media,
-      musicasMaisPedidas: maisPedidas,
+      aceitos: 99,
+      tocados: 99,
+      recusados: 99,
+      avaliados: 99,
+      mediaAvaliacoes: 5,
+      musicasMaisPedidas: const [
+        MusicaMaisPedida(musica: 'Pedida pela mesma pessoa', quantidade: 9)
+      ],
       pessoasNoEvento: pessoas,
-      pessoasQuePediram: pediram,
-      musicasRecusadas: recusadas,
+      retrospectiva: retrospectiva ?? _dados(),
     );
 
 ParticipanteDaResenha _pessoa(
@@ -58,15 +84,17 @@ List<String> _rotulos(List<DestaqueDaRetrospectiva> destaques) =>
 
 void main() {
   group('vitrine do show público', () {
-    test('noite cheia mostra público, músicas a pedido, nota e atendimento',
-        () {
+    test('noite cheia mostra público, músicas a pedido e nota', () {
       final destaques = destaquesDoShow(_estatisticas(
         pessoas: 80,
-        pediram: 30,
-        pedidos: 40,
-        tocados: 32,
-        avaliados: 12,
-        media: 4.8,
+        retrospectiva: _dados(
+          aPedido: 32,
+          considerados: 40,
+          atendidos: 36,
+          avaliaram: 12,
+          media: 4.8,
+          tocadas: 50,
+        ),
       ));
 
       expect(_rotulos(destaques), [
@@ -76,73 +104,102 @@ void main() {
       ]);
     });
 
+    test('nunca usa os pedidos brutos, só o que foi validado', () {
+      final destaques = destaquesDoShow(_estatisticas(pessoas: 3));
+
+      expect(destaques, isEmpty);
+      expect(favoritaDoShow(_estatisticas()), isNull);
+    });
+
     test('pouca gente não aparece', () {
       final destaques = destaquesDoShow(
-          _estatisticas(pessoas: 6, pediram: 4, pedidos: 5, tocados: 5));
+          _estatisticas(pessoas: 6, retrospectiva: _dados(aPedido: 5)));
 
       expect(_rotulos(destaques), isNot(contains(startsWith('6 pessoas'))));
     });
 
-    test('poucas músicas tocadas para o tamanho do público não aparecem', () {
+    test('poucas músicas a pedido para o tamanho do público não aparecem', () {
       final destaques = destaquesDoShow(
-          _estatisticas(pessoas: 100, pediram: 10, pedidos: 10, tocados: 4));
+          _estatisticas(pessoas: 100, retrospectiva: _dados(aPedido: 4)));
 
       expect(_rotulos(destaques), ['100 pessoas no app']);
     });
 
-    test('nota baixa ou com poucas avaliações nunca aparece', () {
+    test('nota baixa ou de poucas pessoas nunca aparece', () {
       expect(
-          _rotulos(destaquesDoShow(
-              _estatisticas(pessoas: 50, avaliados: 20, media: 3.4))),
+          _rotulos(destaquesDoShow(_estatisticas(
+              pessoas: 50,
+              retrospectiva: _dados(avaliaram: 20, media: 3.4)))),
           ['50 pessoas no app']);
       expect(
-          _rotulos(destaquesDoShow(
-              _estatisticas(pessoas: 50, avaliados: 2, media: 5))),
+          _rotulos(destaquesDoShow(_estatisticas(
+              pessoas: 50, retrospectiva: _dados(avaliaram: 2, media: 5)))),
           ['50 pessoas no app']);
     });
 
-    test('atendimento alto aparece quando sobra espaço', () {
-      final destaques = destaquesDoShow(
-          _estatisticas(pessoas: 12, pediram: 6, pedidos: 10, tocados: 9));
+    test('atendimento alto conta pedidos sem repetição', () {
+      final destaques = destaquesDoShow(_estatisticas(
+          pessoas: 12,
+          retrospectiva: _dados(aPedido: 6, considerados: 10, atendidos: 9)));
 
       expect(_rotulos(destaques), [
         '12 pessoas no app',
-        '9 músicas a pedido',
+        '6 músicas a pedido',
         '90% pedidos atendidos',
       ]);
     });
 
-    test('noite fraca não mostra número nenhum', () {
+    test('total de músicas tocadas e alôs entram quando sobra espaço', () {
+      final destaques = destaquesDoShow(
+          _estatisticas(retrospectiva: _dados(tocadas: 42, alos: 7)));
+
+      expect(_rotulos(destaques), ['42 músicas tocadas', '7 alôs']);
       expect(
-          destaquesDoShow(_estatisticas(
-              pessoas: 3, pedidos: 2, tocados: 1, avaliados: 1, media: 2)),
+          destaquesDoShow(
+              _estatisticas(retrospectiva: _dados(tocadas: 8, alos: 2))),
           isEmpty);
     });
 
-    test('favorita da galera só com pelo menos dois pedidos', () {
+    test('favorita é a que o servidor validou', () {
       expect(
-          favoritaDoShow(_estatisticas(maisPedidas: const [
-            MusicaMaisPedida(musica: 'Evidências', quantidade: 3)
-          ])),
+          favoritaDoShow(_estatisticas(
+              retrospectiva: _dados(
+                  favorita: const MusicaMaisPedida(
+                      musica: 'Evidências', quantidade: 3)))),
           'Evidências');
+    });
+
+    test('duração com horário de início e fim', () {
       expect(
-          favoritaDoShow(_estatisticas(maisPedidas: const [
-            MusicaMaisPedida(musica: 'Evidências', quantidade: 1)
-          ])),
-          isNull);
+          duracaoDoShow(_estatisticas(
+              retrospectiva: _dados(
+                  inicio: DateTime(2026, 10, 17, 21),
+                  fim: DateTime(2026, 10, 18, 0, 12)))),
+          '21h00 às 00h12 · 3h12 de show');
+      expect(duracaoDoShow(_estatisticas()), isNull);
     });
   });
 
   group('números da resenha', () {
-    test('mostra tudo, inclusive recusas e nota baixa', () {
+    test('mostra tudo, sem contar a mesma pessoa duas vezes', () {
       final numeros = numerosDaResenha(_estatisticas(
-          pessoas: 7, pedidos: 9, tocados: 4, recusados: 3, media: 2.5));
+        pessoas: 7,
+        retrospectiva: _dados(
+          considerados: 9,
+          aPedido: 4,
+          media: 2.5,
+          recusadas: const [
+            MusicaMaisPedida(musica: 'Macarena', quantidade: 2),
+            MusicaMaisPedida(musica: 'Ragatanga', quantidade: 1),
+          ],
+        ),
+      ));
 
       expect(_rotulos(numeros), [
         '7 na resenha',
         '9 pedidos',
-        '4 tocados',
-        '3 recusados',
+        '4 tocadas',
+        '2 recusadas',
         '2.5 de nota',
       ]);
     });
@@ -158,10 +215,12 @@ void main() {
       _pessoa('Fê'),
     ];
     final estatisticas = _estatisticas(
-      maisPedidas: const [
-        MusicaMaisPedida(musica: 'Evidências', quantidade: 4)
-      ],
-      recusadas: const [MusicaMaisPedida(musica: 'Macarena', quantidade: 2)],
+      retrospectiva: _dados(
+        maisPedidas: const [
+          MusicaMaisPedida(musica: 'Evidências', quantidade: 4)
+        ],
+        recusadas: const [MusicaMaisPedida(musica: 'Macarena', quantidade: 2)],
+      ),
     );
 
     Map<String, String> premios() => {
@@ -181,6 +240,16 @@ void main() {
         'Climão da noite': 'Bia',
         'Só veio pela resenha': 'Edu e Fê',
       });
+    });
+
+    test('hino e polêmica contam pessoas, não pedidos repetidos', () {
+      final detalhes = {
+        for (final premio in premiosDaResenha(participantes, estatisticas))
+          premio.titulo: premio.detalhe,
+      };
+
+      expect(detalhes['Hino da resenha'], 'pedida por 4 pessoas');
+      expect(detalhes['Polêmica da noite'], 'recusada para 2 pessoas');
     });
 
     test('artista nunca concorre', () {

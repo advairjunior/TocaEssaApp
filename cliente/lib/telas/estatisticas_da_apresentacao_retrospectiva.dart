@@ -13,6 +13,7 @@ String textoDaRetrospectiva(
     '🎶 Retrospectiva TocaEssa',
     '${apresentacao.nome} · ${formatarData(apresentacao.data)}',
     apresentacao.local,
+    if (duracaoDoShow(dados) case final duracao?) duracao,
   ];
   if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) {
     final numeros = numerosDaResenha(dados)
@@ -244,6 +245,27 @@ class _MolduraDoCartao extends StatelessWidget {
       );
 }
 
+/// "21h00 às 00h12 · 3h12 de show", só quando o servidor validou o horário.
+class _LinhaDaDuracao extends StatelessWidget {
+  const _LinhaDaDuracao(this.texto);
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          texto,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: CoresTocaEssa.roxoClaro,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+}
+
 class _RotuloDoCartao extends StatelessWidget {
   const _RotuloDoCartao(this.texto);
   final String texto;
@@ -324,6 +346,7 @@ class _ConteudoDoShow extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(color: Colors.white70, fontSize: 12),
         ),
+        if (duracaoDoShow(dados) case final duracao?) _LinhaDaDuracao(duracao),
         if (favorita != null) ...[
           const SizedBox(height: 10),
           Text(
@@ -401,6 +424,8 @@ class _ConteudoDaResenha extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(color: Colors.white70, fontSize: 12),
           ),
+          if (duracaoDoShow(dados) case final duracao?)
+            _LinhaDaDuracao(duracao),
           const SizedBox(height: 12),
           for (final premio in premios.take(4))
             Padding(
