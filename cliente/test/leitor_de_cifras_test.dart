@@ -256,6 +256,30 @@ void main() {
     expect(preferencias.getDouble('leitor_escala'), greaterThan(1));
   });
 
+  test('reconhece linhas de acordes de uma cifra real do Cifra Club', () {
+    for (final acordes in [
+      'E               C#m  C#9',
+      ' A   B         E  B',
+      '( E  C#m  C#9 )',
+      '[Intro] E9  C#m  C#9',
+      '        E9  C#m  C#9',
+      'F#m                      B',
+      'A',
+    ]) {
+      expect(linhaDeAcordes(acordes), isTrue, reason: acordes);
+    }
+    for (final letra in [
+      '  Nunca vi ninguém',
+      'Deus e eu no sertão',
+      'E|-4-7---4----------------------------------| ',
+      'Tom:  E',
+      '[Primeira Parte]',
+      'Em casa',
+    ]) {
+      expect(linhaDeAcordes(letra), isFalse, reason: letra);
+    }
+  });
+
   test('a fonte se ajusta para a linha mais larga caber na tela', () {
     expect(tamanhoDaFonteDaCifra(largura: 300, maiorLinha: 50), 10);
     expect(tamanhoDaFonteDaCifra(largura: 300, maiorLinha: 25), 20);

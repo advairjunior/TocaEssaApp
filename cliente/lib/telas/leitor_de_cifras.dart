@@ -21,9 +21,13 @@ final _acorde = RegExp(
     r'^[A-G][#b]?(m|maj7?|M7?|dim|aug|sus[24]?|add9|º|°|\+)?\d{0,2}'
     r'(\([^)]*\))?([#b]\d{1,2})*(/[A-G][#b]?)?$');
 
-/// Linha só de acordes ("G   D/F#   Em"), para aparecer em destaque.
-bool _linhaDeAcordes(String linha) {
+/// Linha só de acordes ("G   D/F#   Em"), para aparecer em destaque. Aceita
+/// o rótulo de parte no começo ("[Intro] E9 C#m") e acordes entre
+/// parênteses ("( E C#m )"), como o Cifra Club escreve.
+bool linhaDeAcordes(String linha) {
   final partes = linha
+      .replaceFirst(RegExp(r'^\s*\[[^\]]*\]'), '')
+      .replaceAll(RegExp(r'[()]'), ' ')
       .split(RegExp(r'\s+'))
       .where((parte) => parte.isNotEmpty && !RegExp(r'^[|\-/]+$').hasMatch(parte))
       .toList();
@@ -307,7 +311,7 @@ class _Cifra extends StatelessWidget {
                             fontFamily: 'JetBrainsMono',
                             fontSize: tamanho,
                             height: 1.35,
-                            color: _linhaDeAcordes(linha)
+                            color: linhaDeAcordes(linha)
                                 ? CoresTocaEssa.roxoClaro
                                 : CoresTocaEssa.texto,
                           ),
