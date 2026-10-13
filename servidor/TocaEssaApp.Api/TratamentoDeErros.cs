@@ -72,6 +72,24 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
             await contexto.Response.WriteAsJsonAsync(new { mensagem = "Escolha de 1 a 5 estrelas." });
         }
+        catch (MusicaJaNaSetlistException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Essa música já está na setlist." });
+        }
+        catch (ItemDoSetlistJaTocadoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Música já tocada não sai da setlist." });
+        }
+        catch (OrdemDoSetlistInvalidaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "A setlist mudou em outro aparelho. Atualize e tente de novo."
+            });
+        }
         catch (NomeDoSolicitanteObrigatorioException)
         {
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;

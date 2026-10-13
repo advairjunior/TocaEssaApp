@@ -125,6 +125,13 @@ public sealed record MarcarItemDoSetlist(bool Tocada);
 
 public sealed record ImportarRepertorio(Guid RepertorioId);
 
+public sealed record AdicionarMusicasAoSetlist(Guid[]? MusicaIds);
+
+public sealed record AdicionarMusicaAvulsa(
+    string Titulo, string? Artista = null, string? Tom = null, Guid? RepertorioId = null);
+
+public sealed record ReordenarSetlist(Guid[]? ItemIds);
+
 public sealed record CriarApresentacao(
     string Nome, DateOnly Data, string Local, TipoApresentacao Tipo = TipoApresentacao.Publica);
 

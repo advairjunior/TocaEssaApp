@@ -95,6 +95,12 @@ public sealed class PedidoAindaNaoTocadoException : Exception { }
 public sealed class ShowNaoIniciadoException : Exception { }
 
 public sealed class NomeDoSolicitanteObrigatorioException : Exception { }
+
+public sealed class MusicaJaNaSetlistException : Exception { }
+
+public sealed class ItemDoSetlistJaTocadoException : Exception { }
+
+public sealed class OrdemDoSetlistInvalidaException : Exception { }
 public sealed class ApoioPixIndisponivelException : Exception { }
 
 public sealed class EmailArtistaJaCadastradoException : Exception { }
