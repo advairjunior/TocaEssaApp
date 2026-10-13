@@ -89,7 +89,15 @@ arquivo.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
-  as fotos dos cartões.
+  as fotos dos cartões. O cartão usa só o bloco `retrospectiva` das
+  estatísticas (`RepositorioTocaEssa.Retrospectiva.cs`), validado no
+  servidor: cada pessoa conta uma vez por música (sem acento nem
+  maiúscula); favorita só tocada e pedida por 2 pessoas; músicas a pedido
+  contam músicas; nota exige 3 pessoas e vale o último voto de cada pessoa
+  por música; alôs só dados; duração ("21h00 às 00h12 · 3h12 de show") só
+  de show encerrado entre 30 min e 12 h. Horas contratadas e ritmo nunca
+  entram no cartão. Limite: quem pede sem conta e muda o nome conta como
+  outra pessoa.
 
 ### Lições do iPhone/Safari
 
