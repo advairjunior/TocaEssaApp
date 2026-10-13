@@ -1,4 +1,5 @@
-FROM ghcr.io/cirruslabs/flutter:stable AS cliente
+# Mesma versão usada nos testes locais; trocar só junto com o Flutter local.
+FROM ghcr.io/cirruslabs/flutter:3.44.0 AS cliente
 WORKDIR /src/cliente
 COPY cliente/pubspec.yaml cliente/pubspec.lock ./
 RUN flutter pub get
