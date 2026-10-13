@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_guitar_chord/flutter_guitar_chord.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../dominio/desenho_de_acorde.dart';
 import '../dominio/modelos.dart';
 import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/tela_acesa.dart';
@@ -413,8 +415,7 @@ class _Cifra extends StatelessWidget {
         return SingleChildScrollView(
           // Margem de baixo: o fim da cifra rola acima do botão de rolagem.
           controller: controlador,
-          padding: const EdgeInsets.fromLTRB(
-              margem, margem, margem, 80),
+          padding: const EdgeInsets.fromLTRB(margem, margem, margem, 80),
           scrollDirection: Axis.vertical,
           child: SingleChildScrollView(
             // Letra grande demais pela pinça rola para o lado.
@@ -425,23 +426,126 @@ class _Cifra extends StatelessWidget {
                 for (final linha in linhas)
                   linha.trim().isEmpty
                       ? SizedBox(height: tamanho * .9)
-                      : Text(
-                          linha,
-                          softWrap: false,
-                          style: TextStyle(
-                            fontFamily: 'JetBrainsMono',
-                            fontSize: tamanho,
-                            height: 1.35,
-                            color: linhaDeAcordes(linha)
-                                ? CoresTocaEssa.roxoClaro
-                                : CoresTocaEssa.texto,
-                          ),
-                        ),
+                      : _linha(context, linha, tamanho),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  /// Linha de acordes: tocar num acorde mostra o desenho dele.
+  Widget _linha(BuildContext context, String linha, double tamanho) {
+    final acordes = linhaDeAcordes(linha);
+    final estilo = TextStyle(
+      fontFamily: 'JetBrainsMono',
+      fontSize: tamanho,
+      height: 1.35,
+      color: acordes ? CoresTocaEssa.roxoClaro : CoresTocaEssa.texto,
+    );
+    final texto = Text(linha, softWrap: false, style: estilo);
+    if (!acordes) return texto;
+    return GestureDetector(
+      onTapUp: (toque) {
+        final medida = TextPainter(
+          text: TextSpan(text: linha, style: estilo),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        // O cursor mais próximo pode ficar depois do caractere tocado.
+        var coluna = medida.getPositionForOffset(toque.localPosition).offset;
+        final inicio = medida
+            .getOffsetForCaret(TextPosition(offset: coluna), Rect.zero)
+            .dx;
+        if (inicio > toque.localPosition.dx) coluna--;
+        medida.dispose();
+        final acorde = acordeNaPosicao(linha, coluna);
+        if (acorde != null) mostrarDesenhoDoAcorde(context, acorde);
+      },
+      child: texto,
+    );
+  }
+}
+
+/// Desenho do acorde no violão, com as outras posições ao lado.
+Future<void> mostrarDesenhoDoAcorde(BuildContext context, String acorde) =>
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (_) => _DesenhoDoAcorde(acorde: acorde),
+    );
+
+class _DesenhoDoAcorde extends StatefulWidget {
+  const _DesenhoDoAcorde({required this.acorde});
+
+  final String acorde;
+
+  @override
+  State<_DesenhoDoAcorde> createState() => _DesenhoDoAcordeState();
+}
+
+class _DesenhoDoAcordeState extends State<_DesenhoDoAcorde> {
+  late final _posicoes = posicoesDoAcorde(widget.acorde) ?? const [];
+  var _atual = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final textos = Theme.of(context).textTheme;
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+            EspacoTocaEssa.base, 0, EspacoTocaEssa.base, EspacoTocaEssa.base),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(widget.acorde, style: textos.headlineSmall),
+            const SizedBox(height: EspacoTocaEssa.base),
+            if (_posicoes.isEmpty)
+              Text('Sem desenho para este acorde.',
+                  style: textos.bodyMedium
+                      ?.copyWith(color: CoresTocaEssa.textoSecundario))
+            else ...[
+              FlutterGuitarChord(
+                chordName: widget.acorde,
+                frets: _posicoes[_atual].frets,
+                fingers: _posicoes[_atual].fingers,
+                baseFret: _posicoes[_atual].baseFret,
+                showLabel: false,
+                width: 180,
+                height: 200,
+                stringColor: CoresTocaEssa.texto,
+                barColor: CoresTocaEssa.textoSecundario,
+                firstFrameColor: CoresTocaEssa.texto,
+                tabBackgroundColor: CoresTocaEssa.roxoClaro,
+                tabForegroundColor: Colors.white,
+                labelColor: CoresTocaEssa.texto,
+                mutedColor: CoresTocaEssa.textoSecundario,
+              ),
+              if (_posicoes.length > 1)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      tooltip: 'Posição anterior',
+                      onPressed:
+                          _atual == 0 ? null : () => setState(() => _atual--),
+                      icon: const Icon(Icons.chevron_left_rounded),
+                    ),
+                    Text('${_atual + 1} de ${_posicoes.length}',
+                        style: textos.bodyMedium),
+                    IconButton(
+                      tooltip: 'Próxima posição',
+                      onPressed: _atual == _posicoes.length - 1
+                          ? null
+                          : () => setState(() => _atual++),
+                      icon: const Icon(Icons.chevron_right_rounded),
+                    ),
+                  ],
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

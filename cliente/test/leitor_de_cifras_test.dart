@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_guitar_chord/flutter_guitar_chord.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/leitor_de_cifras.dart';
 import 'package:toca_essa_app/telas/sequencia_do_palco.dart';
@@ -229,6 +230,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(_cifraVelha), findsOneWidget);
+  });
+
+  group('desenho do acorde', () {
+    Future<void> tocarNoComecoDe(WidgetTester tester, String linha) async {
+      final caixa = tester.getRect(find.text(linha));
+      await tester.tapAt(caixa.centerLeft + const Offset(2, 0));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('tocar no acorde mostra o desenho e outras posições',
+        (tester) async {
+      await _abrir(tester);
+
+      await tocarNoComecoDe(tester, 'G    D');
+
+      expect(find.byType(FlutterGuitarChord), findsOneWidget);
+      expect(find.text('G'), findsWidgets);
+      expect(find.textContaining('1 de '), findsOneWidget);
+      await tester.tap(find.byTooltip('Próxima posição'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('2 de '), findsOneWidget);
+    });
+
+    testWidgets('com o tom trocado, o desenho é do acorde na tela',
+        (tester) async {
+      await _abrir(tester);
+      await tester.tap(find.byTooltip('Subir meio tom'));
+      await tester.pumpAndSettle();
+
+      await tocarNoComecoDe(tester, 'G#   D#');
+
+      expect(
+          tester
+              .widget<FlutterGuitarChord>(find.byType(FlutterGuitarChord))
+              .chordName,
+          'G#');
+    });
+
+    testWidgets('tocar na letra não abre nada', (tester) async {
+      await _abrir(tester);
+
+      await tocarNoComecoDe(tester, 'Quando eu digo que deixei de te amar');
+
+      expect(find.byType(FlutterGuitarChord), findsNothing);
+    });
   });
 
   group('trocar de tom', () {
