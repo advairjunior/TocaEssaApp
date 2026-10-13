@@ -30,7 +30,7 @@ public sealed partial class RepositorioTocaEssa
                 IdentificadorAvaliador = chave,
                 PublicoId = publicoId,
                 Estrelas = estrelas,
-                AvaliadoEm = DateTimeOffset.UtcNow
+                AvaliadoEm = Agora()
             };
             SalvarEstado();
             return ComAvaliacoes(pedido, chave);

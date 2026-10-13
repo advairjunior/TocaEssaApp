@@ -133,7 +133,8 @@ public sealed partial class RepositorioTocaEssa
             pessoasQuePediram,
             AgruparMusicas(pedidos.Where(item => item.Status is
                 StatusPedidoMusical.NaoConhecemos or
-                StatusPedidoMusical.AindaNaoSabemosTocar)));
+                StatusPedidoMusical.AindaNaoSabemosTocar)),
+            MontarRetrospectiva(apresentacaoId));
     }
 
     public EstatisticasDaApresentacao ObterEstatisticasDaApresentacao(

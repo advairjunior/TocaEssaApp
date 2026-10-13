@@ -257,7 +257,25 @@ public sealed record EstatisticasDaApresentacao(
     IReadOnlyCollection<MusicaMaisPedida> MusicasMaisPedidas,
     int PessoasNoEvento = 0,
     int PessoasQuePediram = 0,
-    IReadOnlyCollection<MusicaMaisPedida>? MusicasRecusadas = null);
+    IReadOnlyCollection<MusicaMaisPedida>? MusicasRecusadas = null,
+    DadosDaRetrospectiva? Retrospectiva = null);
+
+/// Números do cartão de retrospectiva, já validados: cada pessoa conta uma
+/// vez por música, "favorita" só se foi tocada, duração só se plausível.
+/// As quantidades de `MusicaMaisPedida` aqui são pessoas, não pedidos.
+public sealed record DadosDaRetrospectiva(
+    MusicaMaisPedida? Favorita,
+    int MusicasAPedidoTocadas,
+    int PedidosConsiderados,
+    int PedidosAtendidos,
+    int PessoasQueAvaliaram,
+    double? MediaDasAvaliacoes,
+    int MusicasTocadas,
+    int AlosDados,
+    DateTimeOffset? IniciadaEm,
+    DateTimeOffset? EncerradaEm,
+    IReadOnlyCollection<MusicaMaisPedida> MaisPedidasPorPessoas,
+    IReadOnlyCollection<MusicaMaisPedida> RecusadasPorPessoas);
 
 public sealed record RegistrarAcessoAoEvento(string? Visitante);
 
