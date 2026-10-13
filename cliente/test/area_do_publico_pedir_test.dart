@@ -82,6 +82,7 @@ void main() {
     final requisicoes = await _abrirArea(tester);
 
     await tester.enterText(campo('Música'), 'Evidências');
+    await tester.enterText(campo('Seu nome'), 'Rui');
     final enviar = find.text('Enviar pedido');
     await tester.ensureVisible(enviar);
     await tester.tap(enviar);
@@ -92,6 +93,44 @@ void main() {
         .single;
     expect(envio.url.path, '/api/publico/apresentacoes/A1B2C3/pedidos');
     expect(envio.body, contains('"musica":"Evidências"'));
+    expect(envio.body, contains('"nomeSolicitante":"Rui"'));
+  });
+
+  testWidgets('sem nome o pedido não sai', (tester) async {
+    final requisicoes = await _abrirArea(tester);
+
+    expect(tester.widget<TextField>(campo('Seu nome')).decoration?.hintText,
+        isNot('Opcional'));
+    await tester.enterText(campo('Música'), 'Evidências');
+    await tester.enterText(campo('Seu nome'), 'a');
+    final enviar = find.text('Enviar pedido');
+    await tester.ensureVisible(enviar);
+    await tester.tap(enviar);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Informe seu nome.'), findsOneWidget);
+    expect(
+        requisicoes.where(
+            (r) => r.method == 'POST' && r.url.path.endsWith('/pedidos')),
+        isEmpty);
+  });
+
+  testWidgets('alô sem nome também não sai', (tester) async {
+    final requisicoes = await _abrirArea(tester);
+
+    await tester.tap(find.text('Alô'));
+    await tester.pumpAndSettle();
+    await tester.enterText(campo('Para quem é o alô?'), 'Bia');
+    final enviar = find.text('Enviar alô');
+    await tester.ensureVisible(enviar);
+    await tester.tap(enviar);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Informe seu nome.'), findsOneWidget);
+    expect(
+        requisicoes.where(
+            (r) => r.method == 'POST' && r.url.path.endsWith('/pedidos')),
+        isEmpty);
   });
 
   testWidgets('pedir cabe em celular de 360px', (tester) async {

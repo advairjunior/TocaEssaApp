@@ -12,6 +12,18 @@ extension _PedidosAreaDoPublico on _AreaDoPublicoState {
       mostrarErro(_contexto, 'Informe para quem é o Alô.');
       return;
     }
+    // Sem conta, o nome é como o artista sabe quem pediu (mesma regra do
+    // servidor: pelo menos duas letras).
+    if (_perfilPublico == null &&
+        _nome.text.runes
+                .where((letra) =>
+                    String.fromCharCode(letra).toLowerCase() !=
+                    String.fromCharCode(letra).toUpperCase())
+                .length <
+            2) {
+      mostrarErro(_contexto, 'Informe seu nome.');
+      return;
+    }
     _mudarEstado(() => _enviando = true);
     try {
       final pedido = await _api.criarPedidoMusical(

@@ -168,7 +168,6 @@ extension _FormularioPedidoPublico on _AreaDoPublicoState {
       return CampoTexto(
         rotulo: 'Seu nome',
         controlador: _nome,
-        dica: 'Opcional',
         capitalizacao: TextCapitalization.words,
         ajuda: 'Seu nome e seus pedidos ficam salvos só neste aparelho.',
       );
