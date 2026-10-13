@@ -30,6 +30,10 @@ public sealed partial class RepositorioTocaEssa
             var perfilPublico = ObterRegistroPublico(tokenPublico);
             if (apresentacao.Tipo == TipoApresentacao.ResenhaEntreAmigos && perfilPublico is null)
                 throw new IdentificacaoPublicaObrigatoriaException();
+            // Sem conta, o nome é o único jeito de o artista saber quem pediu.
+            nomeSolicitante = nomeSolicitante?.Trim();
+            if (perfilPublico is null && (nomeSolicitante?.Count(char.IsLetter) ?? 0) < 2)
+                throw new NomeDoSolicitanteObrigatorioException();
             if (apresentacao.Tipo == TipoApresentacao.Publica)
             {
                 formaParticipacao = FormaParticipacaoPedido.PedidoNormal;

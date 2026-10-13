@@ -80,8 +80,8 @@ public class RepositorioTocaEssaTestes
     public void ArtistaPodeReordenarFilaComoUmaPlaylist()
     {
         var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
-        var primeiro = repositorio.CriarPedido(apresentacao.Codigo, "Primeira", null, null);
-        var segundo = repositorio.CriarPedido(apresentacao.Codigo, "Segunda", null, null);
+        var primeiro = repositorio.CriarPedido(apresentacao.Codigo, "Primeira", null, "Rui");
+        var segundo = repositorio.CriarPedido(apresentacao.Codigo, "Segunda", null, "Rui");
         repositorio.AlterarStatus(apresentacao.Id, primeiro.Id, StatusPedidoMusical.Aceito);
         repositorio.AlterarStatus(apresentacao.Id, segundo.Id, StatusPedidoMusical.Aceito);
 
@@ -98,7 +98,7 @@ public class RepositorioTocaEssaTestes
     public void PedidoRecusadoNaoApareceNaFilaPublica()
     {
         var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
-        var pedido = repositorio.CriarPedido(apresentacao.Codigo, "Música desconhecida", null, null);
+        var pedido = repositorio.CriarPedido(apresentacao.Codigo, "Música desconhecida", null, "Rui");
 
         repositorio.AlterarStatus(apresentacao.Id, pedido.Id, StatusPedidoMusical.NaoConhecemos);
 
@@ -113,7 +113,7 @@ public class RepositorioTocaEssaTestes
         repositorio.AlterarPedidos(apresentacao.Id, false);
 
         Assert.Throws<PedidosEncerradosException>(() =>
-            repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, null));
+            repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, "Rui"));
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class RepositorioTocaEssaTestes
     public void ExcluirApresentacaoRemoveTambemSeusPedidos()
     {
         var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
-        repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, null);
+        repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, "Rui");
 
         repositorio.ExcluirApresentacao(apresentacao.Id);
 
@@ -196,7 +196,7 @@ public class RepositorioTocaEssaTestes
         Assert.Equal(StatusApresentacao.Encerrada, encerrada.Status);
         Assert.False(encerrada.PedidosAbertos);
         Assert.Throws<PedidosEncerradosException>(() =>
-            repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, null));
+            repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, "Rui"));
     }
 
     [Fact]
@@ -210,16 +210,16 @@ public class RepositorioTocaEssaTestes
 
         Assert.Equal(StatusApresentacao.Agendada, agendada.Status);
         Assert.True(agendada.PedidosAbertos);
-        Assert.NotNull(repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, null));
+        Assert.NotNull(repositorio.CriarPedido(apresentacao.Codigo, "Evidências", null, "Rui"));
     }
 
     [Fact]
     public void TocarProximaMusicaFinalizaAnteriorERenumeraFila()
     {
         var repositorio = CriarRepositorioComApresentacao(out var apresentacao);
-        var primeira = repositorio.CriarPedido(apresentacao.Codigo, "Primeira", null, null);
-        var segunda = repositorio.CriarPedido(apresentacao.Codigo, "Segunda", null, null);
-        var terceira = repositorio.CriarPedido(apresentacao.Codigo, "Terceira", null, null);
+        var primeira = repositorio.CriarPedido(apresentacao.Codigo, "Primeira", null, "Rui");
+        var segunda = repositorio.CriarPedido(apresentacao.Codigo, "Segunda", null, "Rui");
+        var terceira = repositorio.CriarPedido(apresentacao.Codigo, "Terceira", null, "Rui");
         repositorio.AlterarStatus(apresentacao.Id, primeira.Id, StatusPedidoMusical.Aceito);
         repositorio.AlterarStatus(apresentacao.Id, segunda.Id, StatusPedidoMusical.Aceito);
         repositorio.AlterarStatus(apresentacao.Id, terceira.Id, StatusPedidoMusical.Aceito);
