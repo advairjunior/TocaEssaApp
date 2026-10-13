@@ -225,6 +225,35 @@ class SequenciaDoPalco extends ChangeNotifier {
   /// Músicas que ainda faltam: pedidos a seguir e setlist não tocado.
   int get musicasNaSequencia => _sequenciaRestante().length;
 
+  /// Páginas do leitor de cifras na ordem do show: o setlist já tocado, o
+  /// pedido tocando agora, os pedidos a seguir e o setlist que falta.
+  List<MusicaDoPalco> get paginasDoLeitor {
+    final setlist = itens.map(MusicaDoPalco.doSetlist).toList();
+    final primeiraQueFalta = itens.indexWhere((i) => !i.tocada);
+    setlist.insertAll(primeiraQueFalta < 0 ? setlist.length : primeiraQueFalta, [
+      ...tocandoAgora.map(MusicaDoPalco.doPedido),
+      ...pedidosASeguir.map(MusicaDoPalco.doPedido),
+    ]);
+    return setlist;
+  }
+
+  /// A mesma música do show, vinda do setlist ou de um pedido.
+  static bool mesmaPagina(MusicaDoPalco a, MusicaDoPalco b) =>
+      (a.item != null && a.item!.id == b.item?.id) ||
+      (a.pedido != null &&
+          a.pedido!.pedidoRepresentativoId == b.pedido?.pedidoRepresentativoId);
+
+  bool estaTocando(MusicaDoPalco musica) =>
+      atual != null && mesmaPagina(atual!, musica);
+
+  /// Letra e cifra coladas no leitor; já valem para as próximas consultas.
+  Future<void> salvarCifraEmTexto(MusicaDoPalco musica, String texto) async {
+    final resultado =
+        await api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
+    _cifras = {..._cifras, _chave(musica.titulo, musica.artista): resultado};
+    _avisar();
+  }
+
   List<MusicaDoPalco> _sequenciaRestante() => [
         ...pedidosASeguir.map(MusicaDoPalco.doPedido),
         ...itens.where((i) => !i.tocada).map(MusicaDoPalco.doSetlist),

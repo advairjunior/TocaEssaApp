@@ -38,11 +38,15 @@ class ResultadoCifraDoArtista {
     required this.urlPesquisa,
     this.cifra,
     this.urlSugerida,
+    this.texto,
   });
 
   final CifraDoArtista? cifra;
   final String? urlSugerida;
   final String urlPesquisa;
+
+  /// Letra e cifra coladas no app, independentes do link.
+  final String? texto;
 
   factory ResultadoCifraDoArtista.deJson(Map<String, dynamic> json) =>
       ResultadoCifraDoArtista(
@@ -51,5 +55,6 @@ class ResultadoCifraDoArtista {
             : CifraDoArtista.deJson(json['cifra'] as Map<String, dynamic>),
         urlSugerida: json['urlSugerida'] as String?,
         urlPesquisa: json['urlPesquisa'] as String,
+        texto: json['texto'] as String?,
       );
 }

@@ -74,6 +74,10 @@ flutter:
           weight: 500
         - asset: assets/fontes/Poppins-SemiBold.ttf
           weight: 600
+    # Largura fixa: mantém os acordes alinhados no leitor de cifras.
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fontes/JetBrainsMono.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

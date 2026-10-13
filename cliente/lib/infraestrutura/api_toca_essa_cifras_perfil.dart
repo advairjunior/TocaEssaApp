@@ -29,6 +29,19 @@ mixin _ApiCifrasPerfil on _ApiTocaEssaBase {
         .toList();
   }
 
+  /// Salva a letra e cifra coladas no app; texto vazio apaga.
+  Future<ResultadoCifraDoArtista> salvarCifraEmTexto(
+      String musica, String? artista, String texto) async {
+    final resposta = await _cliente.put(
+      Uri.parse('$_enderecoBase/api/artista/cifras/texto'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'musica': musica, 'artista': artista, 'texto': texto}),
+    );
+    _validar(resposta);
+    return ResultadoCifraDoArtista.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
   Future<CifraDoArtista> salvarCifra(
       String musica, String? artista, String url) async {
     final resposta = await _cliente.put(
