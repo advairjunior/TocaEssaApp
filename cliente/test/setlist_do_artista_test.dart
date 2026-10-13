@@ -6,7 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/telas/componentes_palco.dart';
 import 'package:toca_essa_app/telas/setlist_do_artista.dart';
+import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 import 'apoio/pedidos_a_seguir_falsos.dart';
 
@@ -351,6 +353,44 @@ void main() {
       final salvamento = requisicoes.singleWhere(
           (r) => r.method == 'PUT' && r.url.path == '/api/artista/cifras');
       expect(salvamento.body, contains(nova));
+    });
+  });
+
+  group('visual no jeito do iPhone', () {
+    testWidgets('barra Próxima é translúcida e a lista passa por trás',
+        (tester) async {
+      await _abrir(tester);
+
+      final barra = find.byType(BarraProximaMusica);
+      expect(find.descendant(of: barra, matching: find.byType(BackdropFilter)),
+          findsOneWidget);
+      // A lista ocupa a tela toda; a barra fica por cima, no rodapé.
+      expect(
+        find.ancestor(of: barra, matching: find.byType(Stack)),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('a próxima se destaca pelo rótulo, sem fundo colorido',
+        (tester) async {
+      await _abrir(tester);
+
+      final fundo = tester.widget<Material>(find
+          .ancestor(
+              of: find.text('Velha Infância'),
+              matching: find.byType(Material))
+          .first);
+      expect(fundo.color, Colors.transparent);
+      expect(find.text('Próxima'), findsOneWidget);
+    });
+
+    testWidgets('selo de pedidos na fila é discreto, sem roxo',
+        (tester) async {
+      await _abrir(tester);
+
+      final numero = tester.widget<Text>(find.descendant(
+          of: find.byTooltip('2 pedidos na fila'), matching: find.text('2')));
+      expect(numero.style?.color, CoresTocaEssa.textoSecundario);
     });
   });
 

@@ -271,23 +271,33 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       return _construirVazio();
     }
     final proxima = _sequencia.proxima;
-    return Column(
+    final temBarra = proxima != null || ultimaComecada != null;
+    // A lista passa por trás da barra translúcida, como no iPhone.
+    return Stack(
       children: [
-        Expanded(child: _construirLista(context, proxima?.item)),
-        if (proxima != null || ultimaComecada != null)
-          BarraProximaMusica(
-            titulo: proxima?.titulo,
-            detalhe: _sequencia.detalheDaProxima,
-            salvando: _sequencia.salvando,
-            tocar: tocarProxima,
-            comecou: ultimaComecada?.titulo,
-            desfazer: desfazerUltima,
+        Positioned.fill(
+          child: _construirLista(context, proxima?.item, temBarra: temBarra),
+        ),
+        if (temBarra)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: BarraProximaMusica(
+              titulo: proxima?.titulo,
+              detalhe: _sequencia.detalheDaProxima,
+              salvando: _sequencia.salvando,
+              tocar: tocarProxima,
+              comecou: ultimaComecada?.titulo,
+              desfazer: desfazerUltima,
+            ),
           ),
       ],
     );
   }
 
-  Widget _construirLista(BuildContext context, ItemDoSetlist? proxima) {
+  Widget _construirLista(BuildContext context, ItemDoSetlist? proxima,
+      {required bool temBarra}) {
     final pedidosNaFila = _sequencia.pedidosNaFila;
     return ConteudoMobile(
       filho: Column(
@@ -343,7 +353,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                 ],
               ),
             ),
-          const SizedBox(height: EspacoTocaEssa.base),
+          // Espaço para o fim da lista rolar acima da barra Próxima.
+          SizedBox(height: temBarra ? 150 : EspacoTocaEssa.base),
         ],
       ),
     );
@@ -719,9 +730,8 @@ class _LinhaSetlist extends StatelessWidget {
         ],
       ),
       child: Material(
-        color: eProxima
-            ? CoresTocaEssa.roxo.withValues(alpha: .12)
-            : Colors.transparent,
+        // A próxima se destaca só pelo rótulo, sem fundo colorido.
+        color: Colors.transparent,
         child: InkWell(
           onTap: abrirLeitor,
           child: Padding(
@@ -774,13 +784,13 @@ class _LinhaSetlist extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: EspacoTocaEssa.pequeno, vertical: 2),
                       decoration: BoxDecoration(
-                        color: CoresTocaEssa.roxo.withValues(alpha: .25),
+                        color: CoresTocaEssa.superficieElevada,
                         borderRadius:
                             BorderRadius.circular(RaioTocaEssa.pilula),
                       ),
                       child: Text('$pedidosNaFila',
                           style: texto.labelMedium
-                              ?.copyWith(color: CoresTocaEssa.roxoClaro)),
+                              ?.copyWith(color: CoresTocaEssa.textoSecundario)),
                     ),
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),

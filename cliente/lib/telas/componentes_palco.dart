@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 
 import '../tema/tema_toca_essa.dart';
@@ -27,8 +29,21 @@ class BarraProximaMusica extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
+    // Translúcida e desfocada, como as barras do iPhone: a lista aparece
+    // por trás.
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: _conteudo(texto),
+      ),
+    );
+  }
+
+  Widget _conteudo(TextTheme texto) {
     return Material(
-      color: CoresTocaEssa.superficie,
+      color: CoresTocaEssa.superficie.withValues(alpha: .78),
+      shape: const Border(
+          top: BorderSide(color: CoresTocaEssa.borda, width: .5)),
       child: SafeArea(
         top: false,
         child: Align(
