@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +14,9 @@ import 'sequencia_do_palco.dart';
 export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
 
 const _chaveEscala = 'leitor_escala';
+const _chaveVelocidade = 'leitor_velocidade';
+// Pixels por segundo de cada velocidade da rolagem automática (1x a 5x).
+const _velocidades = [12.0, 20.0, 30.0, 45.0, 65.0];
 
 /// Tamanho da fonte para a linha mais larga caber em [largura]. A fonte de
 /// largura fixa ocupa 0,6 da altura por caractere.
@@ -51,6 +56,9 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   final _dedos = <int, Offset>{};
   double? _distanciaInicial;
   double _escalaInicial = 1;
+  final _rolagem = ScrollController(keepScrollOffset: false);
+  Timer? _rolando;
+  int _velocidade = 1;
 
   SequenciaDoPalco get _sequencia => widget.sequencia;
 
@@ -66,6 +74,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   void dispose() {
     _liberarTela();
     _sequencia.removeListener(_redesenhar);
+    _rolando?.cancel();
+    _rolagem.dispose();
     super.dispose();
   }
 
@@ -77,10 +87,12 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     try {
       final preferencias = await SharedPreferences.getInstance();
       final salva = preferencias.getDouble(_chaveEscala);
+      final velocidade = preferencias.getInt(_chaveVelocidade);
       if (mounted) {
         setState(() {
           _preferencias = preferencias;
           if (salva != null) _escala = salva;
+          if (velocidade != null) _velocidade = velocidade.clamp(1, 5);
         });
       }
     } catch (_) {
@@ -118,9 +130,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   String? _rotuloDoTom(MusicaDoPalco musica) {
     final semitons = _semitonsDe(musica);
     final tom = musica.tom?.trim();
-    final mudanca = semitons == 0
-        ? ''
-        : ' (${semitons > 0 ? '+' : ''}$semitons)';
+    final mudanca =
+        semitons == 0 ? '' : ' (${semitons > 0 ? '+' : ''}$semitons)';
     if (tom != null && tom.isNotEmpty) {
       return 'Tom ${transporTom(tom, semitons)}$mudanca';
     }
@@ -151,7 +162,43 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     return (paginas, indice);
   }
 
+  void _iniciarRolagem() {
+    _rolando?.cancel();
+    const passo = Duration(milliseconds: 50);
+    _rolando = Timer.periodic(passo, (_) {
+      if (!_rolagem.hasClients) return;
+      final posicao = _rolagem.position;
+      final destino = posicao.pixels +
+          _velocidades[_velocidade - 1] * passo.inMilliseconds / 1000;
+      if (destino >= posicao.maxScrollExtent) {
+        _rolagem.jumpTo(posicao.maxScrollExtent);
+        _pararRolagem();
+      } else {
+        _rolagem.jumpTo(destino);
+      }
+    });
+    setState(() {});
+  }
+
+  void _pararRolagem() {
+    if (_rolando == null) return;
+    _rolando!.cancel();
+    _rolando = null;
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _mudarVelocidade(int passo) async {
+    setState(() => _velocidade = (_velocidade + passo).clamp(1, 5));
+    try {
+      await _preferencias?.setInt(_chaveVelocidade, _velocidade);
+    } catch (_) {
+      // A velocidade só não fica guardada para a próxima vez.
+    }
+  }
+
   void _irPara(int deslocamento) {
+    _pararRolagem();
+    if (_rolagem.hasClients) _rolagem.jumpTo(0);
     final (paginas, indice) = _posicao();
     final destino = indice + deslocamento;
     if (destino < 0 || destino >= paginas.length) return;
@@ -262,8 +309,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               if (_rotuloDoTom(pagina) case final tom?)
                 Text(
                   tom,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: CoresTocaEssa.textoSecundario),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: CoresTocaEssa.textoSecundario),
                 ),
             ],
           ),
@@ -293,15 +342,36 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                 colar: () => _editarCifra(null),
                 abrirNoSite: _abrirNoSite,
               )
-            : Listener(
-                onPointerDown: _dedoNaTela,
-                onPointerMove: _dedoMoveu,
-                onPointerUp: _dedoSaiu,
-                onPointerCancel: _dedoSaiu,
-                child: _Cifra(
-                  texto: transporCifra(texto, _semitonsDe(pagina)),
-                  escala: _escala,
-                ),
+            : Stack(
+                children: [
+                  Positioned.fill(
+                    child: Listener(
+                      onPointerDown: (evento) {
+                        _pararRolagem();
+                        _dedoNaTela(evento);
+                      },
+                      onPointerMove: _dedoMoveu,
+                      onPointerUp: _dedoSaiu,
+                      onPointerCancel: _dedoSaiu,
+                      child: _Cifra(
+                        texto: transporCifra(texto, _semitonsDe(pagina)),
+                        escala: _escala,
+                        controlador: _rolagem,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: EspacoTocaEssa.medio,
+                    bottom: EspacoTocaEssa.medio,
+                    child: _ControleDaRolagem(
+                      rolando: _rolando != null,
+                      velocidade: _velocidade,
+                      iniciar: _iniciarRolagem,
+                      pausar: _pararRolagem,
+                      mudarVelocidade: _mudarVelocidade,
+                    ),
+                  ),
+                ],
               ),
         bottomNavigationBar: _BarraDoLeitor(
           temAnterior: indice > 0,
@@ -319,7 +389,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
 }
 
 class _Cifra extends StatelessWidget {
-  const _Cifra({required this.texto, required this.escala});
+  const _Cifra(
+      {required this.texto, required this.escala, required this.controlador});
+
+  final ScrollController controlador;
 
   final String texto;
   final double escala;
@@ -338,8 +411,10 @@ class _Cifra extends StatelessWidget {
             ) *
             escala;
         return SingleChildScrollView(
+          // Margem de baixo: o fim da cifra rola acima do botão de rolagem.
+          controller: controlador,
           padding: const EdgeInsets.fromLTRB(
-              margem, margem, margem, EspacoTocaEssa.grande),
+              margem, margem, margem, 80),
           scrollDirection: Axis.vertical,
           child: SingleChildScrollView(
             // Letra grande demais pela pinça rola para o lado.
@@ -367,6 +442,65 @@ class _Cifra extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// ▶ discreto; rolando, vira "− 2x + ⏸".
+class _ControleDaRolagem extends StatelessWidget {
+  const _ControleDaRolagem({
+    required this.rolando,
+    required this.velocidade,
+    required this.iniciar,
+    required this.pausar,
+    required this.mudarVelocidade,
+  });
+
+  final bool rolando;
+  final int velocidade;
+  final VoidCallback iniciar;
+  final VoidCallback pausar;
+  final ValueChanged<int> mudarVelocidade;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!rolando) {
+      return IconButton.filledTonal(
+        tooltip: 'Rolar automaticamente',
+        onPressed: iniciar,
+        icon: const Icon(Icons.play_arrow_rounded),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: CoresTocaEssa.superficieElevada,
+        borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+        border: Border.all(color: CoresTocaEssa.borda),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Mais devagar',
+            visualDensity: VisualDensity.compact,
+            onPressed: velocidade > 1 ? () => mudarVelocidade(-1) : null,
+            icon: const Icon(Icons.remove_rounded),
+          ),
+          Text('${velocidade}x'),
+          IconButton(
+            tooltip: 'Mais rápido',
+            visualDensity: VisualDensity.compact,
+            onPressed: velocidade < 5 ? () => mudarVelocidade(1) : null,
+            icon: const Icon(Icons.add_rounded),
+          ),
+          IconButton(
+            tooltip: 'Pausar rolagem',
+            visualDensity: VisualDensity.compact,
+            onPressed: pausar,
+            icon: const Icon(Icons.pause_rounded),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -43,8 +43,10 @@ class _Palco {
   ];
 }
 
-Future<_Palco> _abrir(WidgetTester tester, {String inicial = '2'}) async {
+Future<_Palco> _abrir(WidgetTester tester,
+    {String inicial = '2', String? cifraDaVelha}) async {
   final palco = _Palco();
+  if (cifraDaVelha != null) palco.textos['Velha Infância'] = cifraDaVelha;
   final cliente = MockClient((requisicao) async {
     palco.requisicoes.add(requisicao);
     final sequencia = responderPedidosASeguir(requisicao, []);
@@ -268,6 +270,66 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await _abrir(tester);
       expect(find.text('G#   D#'), findsOneWidget);
+    });
+  });
+
+  group('rolagem automática', () {
+    final cifraLonga = [
+      for (var verso = 1; verso <= 60; verso++) ...['G    D', 'Verso $verso'],
+    ].join('\n');
+
+    double rolagem(WidgetTester tester) => tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .pixels;
+
+    testWidgets('▶ rola a cifra e um toque na cifra pausa', (tester) async {
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump(const Duration(seconds: 3));
+      final rolou = rolagem(tester);
+      expect(rolou, greaterThan(0));
+      expect(find.text('1x'), findsOneWidget);
+
+      await tester.tap(find.text('Verso 3'), warnIfMissed: false);
+      await tester.pump(const Duration(seconds: 3));
+      final parada = rolagem(tester);
+      await tester.pump(const Duration(seconds: 3));
+      expect(rolagem(tester), parada);
+      expect(find.byTooltip('Rolar automaticamente'), findsOneWidget);
+    });
+
+    testWidgets('mais rápido rola mais e a velocidade fica guardada',
+        (tester) async {
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Mais rápido'));
+      await tester.pump();
+      expect(find.text('2x'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(rolagem(tester), greaterThan(0));
+
+      await tester.tap(find.byTooltip('Pausar rolagem'));
+      await tester.pump();
+      final preferencias = await SharedPreferences.getInstance();
+      expect(preferencias.getInt('leitor_velocidade'), 2);
+    });
+
+    testWidgets('trocar de música pausa e volta ao topo', (tester) async {
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump(const Duration(seconds: 3));
+
+      await tester.tap(find.byTooltip('Música anterior'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Próxima música'));
+      await tester.pumpAndSettle();
+
+      expect(rolagem(tester), 0);
+      expect(find.byTooltip('Rolar automaticamente'), findsOneWidget);
     });
   });
 
