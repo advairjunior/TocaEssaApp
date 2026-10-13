@@ -74,7 +74,18 @@ mixin AcoesDoPalco<T extends StatefulWidget> on State<T> {
     }
   }
 
+  /// Cifra já buscada abre direto no toque: a aba em branco à espera do
+  /// servidor podia ficar branca no iPhone com a internet fraca do show.
   Future<void> abrirCifra(MusicaDoPalco musica) async {
+    final preBuscada = sequencia.cifraDe(musica)?.cifra?.url;
+    if (preBuscada != null) {
+      try {
+        await abrirUrl(Uri.parse(preBuscada));
+      } catch (erro) {
+        if (mounted) mostrarErro(context, erro);
+      }
+      return;
+    }
     FinalizarAberturaExterna? finalizar;
     try {
       finalizar = prepararAbertura();

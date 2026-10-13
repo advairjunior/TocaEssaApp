@@ -45,6 +45,8 @@ Map<String, Object?> _grupo(String id, String musica, String status,
 class _Palco {
   final requisicoes = <http.Request>[];
   final abertas = <Uri>[];
+  // Abas abertas em branco à espera da cifra consultada na hora.
+  var abasEmBranco = 0;
   var telaAcesa = 0;
   var telaLiberada = 0;
   List<Map<String, Object?>> grupos = [];
@@ -154,8 +156,11 @@ Future<_Palco> _abrir(
               api: api,
               apresentacao: apresentacao,
               abrirUrl: (url) async => palco.abertas.add(url),
-              prepararAbertura: () => (url) async {
-                if (url != null) palco.abertas.add(url);
+              prepararAbertura: () {
+                palco.abasEmBranco++;
+                return (url) async {
+                  if (url != null) palco.abertas.add(url);
+                };
               },
               manterTelaAcesa: () {
                 palco.telaAcesa++;
@@ -198,6 +203,27 @@ void main() {
     expect(palco.abertas, [Uri.parse(_cifraSalva)]);
     expect(find.text('Velha Infância'), findsOneWidget);
     expect(find.text('Próxima: Evidências'), findsOneWidget);
+  });
+
+  testWidgets('abrir cifra já buscada abre o link direto, sem aba em branco',
+      (tester) async {
+    final palco = await _abrir(tester);
+    await tester.tap(find.text('Tocar'));
+    await tester.pumpAndSettle();
+    final consultasAntes = palco.requisicoes
+        .where((r) => r.url.path.endsWith('/cifras/consulta'))
+        .length;
+
+    await tester.tap(find.text('Abrir cifra'));
+    await tester.pumpAndSettle();
+
+    expect(palco.abertas, [Uri.parse(_cifraSalva), Uri.parse(_cifraSalva)]);
+    expect(palco.abasEmBranco, 0);
+    expect(
+        palco.requisicoes
+            .where((r) => r.url.path.endsWith('/cifras/consulta'))
+            .length,
+        consultasAntes);
   });
 
   testWidgets('depois de tocar, a próxima continua visível e dá para desfazer',
