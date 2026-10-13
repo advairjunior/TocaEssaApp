@@ -385,7 +385,7 @@ class _DuracaoEstimada extends StatelessWidget {
     final texto = Theme.of(context).textTheme;
     final estimada = relogio.duracaoEstimada(musicas);
     final ritmo = formatarRitmo(relogio.ritmoAntesDeMedir);
-    final contratada = relogio.duracaoContratadaMinutos;
+    final contrato = compararComContrato(relogio, estimada);
     final secundario =
         texto.bodySmall?.copyWith(color: CoresTocaEssa.textoSecundario);
     return Container(
@@ -414,12 +414,7 @@ class _DuracaoEstimada extends StatelessWidget {
                       : 'estimativa: $ritmo por música',
                   style: secundario,
                 ),
-                if (contratada != null)
-                  Text(
-                    _comparar(Duration(minutes: contratada) - estimada,
-                        contratada),
-                    style: secundario,
-                  ),
+                if (contrato != null) Text(contrato, style: secundario),
               ],
             ),
           ),
@@ -428,15 +423,6 @@ class _DuracaoEstimada extends StatelessWidget {
     );
   }
 
-  String _comparar(Duration diferenca, int contratada) {
-    if (diferenca.abs() < relogio.ritmoAntesDeMedir) {
-      return 'a setlist fecha as horas contratadas';
-    }
-    return diferenca.isNegative
-        ? 'a setlist passa ~${formatarTempoDoShow(diferenca)} do contratado'
-        : 'contratado ${escreverDuracaoContratada(contratada)} → '
-            'faltam ~${formatarTempoDoShow(diferenca)} de músicas';
-  }
 }
 
 /// Uma música do setlist. A linha inteira marca e desmarca como tocada,

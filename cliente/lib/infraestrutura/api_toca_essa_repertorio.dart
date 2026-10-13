@@ -118,6 +118,62 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
         .toList();
   }
 
+  /// Coloca as músicas do acervo no fim da setlist; o servidor não repete
+  /// as que já estão nela.
+  Future<List<ItemDoSetlist>> adicionarMusicasAoSetlist(
+          String apresentacaoId, List<String> musicaIds) async =>
+      _lerSetlist(await _cliente.post(
+        Uri.parse(
+            '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist/musicas'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode({'musicaIds': musicaIds}),
+      ));
+
+  /// Música fora do acervo; com [repertorioId], fica também no acervo.
+  Future<List<ItemDoSetlist>> adicionarMusicaAvulsa(
+    String apresentacaoId, {
+    required String titulo,
+    String? artista,
+    String? tom,
+    String? repertorioId,
+  }) async =>
+      _lerSetlist(await _cliente.post(
+        Uri.parse(
+            '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist/avulsa'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode({
+          'titulo': titulo,
+          'artista': artista,
+          'tom': tom,
+          'repertorioId': repertorioId,
+        }),
+      ));
+
+  Future<List<ItemDoSetlist>> removerItemDoSetlist(
+          String apresentacaoId, String itemId) async =>
+      _lerSetlist(await _cliente.delete(
+        Uri.parse(
+            '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist/$itemId'),
+        headers: _cabecalhos(token: _tokenArtista),
+      ));
+
+  /// [itemIds] é a nova ordem das músicas que ainda não foram tocadas.
+  Future<List<ItemDoSetlist>> reordenarSetlist(
+          String apresentacaoId, List<String> itemIds) async =>
+      _lerSetlist(await _cliente.put(
+        Uri.parse(
+            '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist/ordem'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode({'itemIds': itemIds}),
+      ));
+
+  List<ItemDoSetlist> _lerSetlist(http.Response resposta) {
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((i) => ItemDoSetlist.deJson(i as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<ItemDoSetlist> marcarItemDoSetlist(
       String apresentacaoId, String itemId, bool tocada) async {
     final resposta = await _cliente.patch(

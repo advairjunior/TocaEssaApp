@@ -167,3 +167,18 @@ String formatarTempoDoShow(Duration tempo) {
   if (minutos < 60) return '$minutos min';
   return '${minutos ~/ 60}h${(minutos % 60).toString().padLeft(2, '0')}';
 }
+
+/// Compara a duração estimada da setlist com as horas contratadas; nulo sem
+/// horas contratadas.
+String? compararComContrato(RelogioDoShow relogio, Duration estimada) {
+  final contratada = relogio.duracaoContratadaMinutos;
+  if (contratada == null) return null;
+  final diferenca = Duration(minutes: contratada) - estimada;
+  if (diferenca.abs() < relogio.ritmoAntesDeMedir) {
+    return 'a setlist fecha as horas contratadas';
+  }
+  return diferenca.isNegative
+      ? 'a setlist passa ~${formatarTempoDoShow(diferenca)} do contratado'
+      : 'contratado ${escreverDuracaoContratada(contratada)} → '
+          'faltam ~${formatarTempoDoShow(diferenca)} de músicas';
+}

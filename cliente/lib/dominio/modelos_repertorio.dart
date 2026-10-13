@@ -80,3 +80,30 @@ class ItemDoSetlist {
         ordem: json['ordem'] as int,
       );
 }
+
+const _semAcento = {
+  'á': 'a', 'à': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', //
+  'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e', //
+  'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i', //
+  'ó': 'o', 'ò': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', //
+  'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u', 'ç': 'c', 'ñ': 'n',
+};
+
+/// Mesma regra do servidor: sem acento, maiúscula nem espaço repetido.
+String normalizarMusica(String? valor) => (valor ?? '')
+    .toLowerCase()
+    .split('')
+    .map((letra) => _semAcento[letra] ?? letra)
+    .join()
+    .split(RegExp(r'\s+'))
+    .where((parte) => parte.isNotEmpty)
+    .join(' ');
+
+/// Mesmo título e mesmo cantor; sem cantor num dos lados, vale o título.
+bool mesmaMusica(
+    String titulo, String? artista, String outroTitulo, String? outroArtista) {
+  if (normalizarMusica(titulo) != normalizarMusica(outroTitulo)) return false;
+  final um = normalizarMusica(artista);
+  final outro = normalizarMusica(outroArtista);
+  return um.isEmpty || outro.isEmpty || um == outro;
+}
