@@ -20,6 +20,15 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
     Apresentacao apresentacao,
     StatusApresentacao status,
   ) async {
+    // Encerrar é a última chance de pegar a galera junta: sem selfie ainda,
+    // o aviso oferece tirar uma antes de encerrar.
+    if (status == StatusApresentacao.encerrada &&
+        apresentacao.fotoRetrospectivaUrl == null) {
+      final selfieGuardada = await _lembrarDaSelfie(apresentacao);
+      if (selfieGuardada == null || !mounted) return;
+      await _mudarStatus(apresentacao, status);
+      return;
+    }
     final confirmacao = switch (status) {
       StatusApresentacao.emAndamento => (
           'Iniciar apresentação?',
@@ -55,7 +64,64 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
           false;
       if (!confirmou || !mounted) return;
     }
+    await _mudarStatus(apresentacao, status);
+  }
 
+  /// Pergunta da selfie ao encerrar. Devolve nulo quando o artista desiste
+  /// (cancelou ou fechou a câmera), falso quando encerra sem foto e
+  /// verdadeiro quando a selfie foi guardada na retrospectiva.
+  Future<bool?> _lembrarDaSelfie(Apresentacao apresentacao) async {
+    final tirarSelfie = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Encerrar apresentação?'),
+        content: const Text(
+            '📸 Antes da galera ir embora, tire uma selfie com o público '
+            'para o cartão da retrospectiva.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Encerrar sem foto'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Tirar selfie'),
+          ),
+        ],
+      ),
+    );
+    if (tirarSelfie != true || !mounted) return tirarSelfie;
+    final foto = await escolherFotoDoCartao(
+      context,
+      cartao: (_, fundo) => cartaoDaSelfie(apresentacao, fundo),
+    );
+    if (foto == null || !mounted) return null;
+    _mudarEstado(() => _salvando = true);
+    try {
+      await widget.api.enviarFotoRetrospectiva(
+        apresentacao.id,
+        foto,
+        foto.first == 0x89
+            ? 'foto-retrospectiva.png'
+            : 'foto-retrospectiva.jpg',
+      );
+      return true;
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+      return null;
+    } finally {
+      if (mounted) _mudarEstado(() => _salvando = false);
+    }
+  }
+
+  Future<void> _mudarStatus(
+    Apresentacao apresentacao,
+    StatusApresentacao status,
+  ) async {
     _mudarEstado(() => _salvando = true);
     try {
       final atualizada =

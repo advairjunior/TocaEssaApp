@@ -43,6 +43,41 @@ String textoDaRetrospectiva(
   ].join('\n').trimRight();
 }
 
+/// Prévia na câmera da selfie tirada ao encerrar, antes de haver números:
+/// mostra como a foto vai ficar no cartão.
+Widget cartaoDaSelfie(Apresentacao apresentacao, Widget fundo) =>
+    _MolduraDoCartao(
+      enderecoFoto: null,
+      fundo: fundo,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _RotuloDoCartao(
+              apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
+                  ? 'Retrospectiva da resenha'
+                  : 'Retrospectiva do show'),
+          const SizedBox(height: 2),
+          Text(
+            apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
+                ? apresentacao.nome
+                : apresentacao.perfilArtistico.nomeArtistico,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w700, height: 1.1),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${apresentacao.local} · ${formatarData(apresentacao.data)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Colors.white70, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+
 String? _instagram(PerfilArtistico perfil) {
   final instagram = perfil.instagram?.trim().replaceFirst(RegExp('^@'), '');
   return instagram == null || instagram.isEmpty ? null : instagram;

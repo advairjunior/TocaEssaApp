@@ -14,6 +14,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 import 'perfil_participante.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'faixa_do_relogio.dart';

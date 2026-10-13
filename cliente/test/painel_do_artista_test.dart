@@ -6,8 +6,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
+
+import 'apoio/camera_falsa.dart';
 
 const _contaArtistaJson =
     '{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","nome":"Ana","email":"ana@artista.com","criadoEm":"2026-09-03T20:00:00Z"}';
@@ -283,6 +286,83 @@ void main() {
     expect(pedidosAlterados, isTrue);
   });
 
+  group('encerrar lembra da selfie com o público', () {
+    Future<List<String>> abrirShowAoVivo(WidgetTester tester) async {
+      final chamadas = <String>[];
+      final aoVivo = _apresentacao(
+          id: '1',
+          nome: 'Show de hoje',
+          data: '2026-09-04',
+          status: 'EmAndamento');
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[$aoVivo]',
+        outras: (requisicao) async {
+          final caminho = requisicao.url.path;
+          if (caminho.endsWith('/foto-retrospectiva')) {
+            chamadas.add('foto');
+            return http.Response(
+                aoVivo.replaceFirst(
+                    '"tipo"', '"fotoRetrospectivaUrl":"/fotos/s.jpg","tipo"'),
+                200);
+          }
+          if (caminho.endsWith('/status')) {
+            chamadas.add('encerrar');
+            return http.Response(
+                aoVivo.replaceFirst('EmAndamento', 'Encerrada'), 200);
+          }
+          return null;
+        },
+      );
+      await tester.tap(find.text('Show de hoje'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Encerrar'));
+      await tester.pumpAndSettle();
+      return chamadas;
+    }
+
+    testWidgets('tirar a selfie guarda a foto e depois encerra',
+        (tester) async {
+      final camera = CameraFalsa();
+      fabricaDeCamera = () => camera;
+      addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+      final chamadas = await abrirShowAoVivo(tester);
+
+      expect(find.textContaining('selfie com o público'), findsOneWidget);
+      await tester.tap(find.text('Tirar selfie'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tirar uma selfie'));
+      await tester.pumpAndSettle();
+      expect(camera.iniciadas, [LenteDaCamera.frontal]);
+      await tester.tap(find.byTooltip('Tirar foto'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Usar foto'));
+      await tester.pumpAndSettle();
+
+      expect(chamadas, ['foto', 'encerrar']);
+    });
+
+    testWidgets('encerrar sem selfie continua possível', (tester) async {
+      final chamadas = await abrirShowAoVivo(tester);
+
+      await tester.tap(find.widgetWithText(TextButton, 'Encerrar sem foto'));
+      await tester.pumpAndSettle();
+
+      expect(chamadas, ['encerrar']);
+    });
+
+    testWidgets('desistir da câmera não encerra o show', (tester) async {
+      final chamadas = await abrirShowAoVivo(tester);
+
+      await tester.tap(find.text('Tirar selfie'));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(10, 10));
+      await tester.pumpAndSettle();
+
+      expect(chamadas, isEmpty);
+    });
+  });
+
   testWidgets('início e barra de status cabem em celular de 360px',
       (tester) async {
     addTearDown(tester.view.reset);
@@ -457,8 +537,8 @@ void main() {
     testWidgets('editar mostra as horas guardadas e salva a mudança',
         (tester) async {
       final configuracoes = <Map<String, dynamic>>[];
-      final show = _apresentacao(
-          id: '1', nome: 'Show de sábado', data: '2026-09-05');
+      final show =
+          _apresentacao(id: '1', nome: 'Show de sábado', data: '2026-09-05');
       await _abrirPainel(tester, apresentacoes: '[$show]',
           outras: (requisicao) async {
         if (requisicao.url.path.endsWith('/relogio')) {
