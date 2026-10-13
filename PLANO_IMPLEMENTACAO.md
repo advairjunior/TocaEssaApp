@@ -116,8 +116,8 @@ cada uma começa por uma investigação antes de virar plano.
 - **Cronômetro do show:** ✅ entregue em 2026-10-13 (contagem regressiva,
   intervalo, ritmo real e estimativa da setlist antes do show com o ritmo
   médio; plano em `docs/superpowers/plans/2026-10-13-cronometro-do-show.md`).
-- **Modo sem internet:** guardar setlist e links das cifras no aparelho para a
-  área do artista seguir funcionando se a rede do bar cair.
+- **Modo sem internet:** ✅ entregue em 2026-10-13 (leituras guardadas no
+  aparelho, fila de marcações e aviso no topo).
 
 ### Para o público
 

@@ -108,8 +108,12 @@ arquivo.
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
   cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
   tom (guardado por música no aparelho) e rolagem automática (1x a 5x).
-  Etapa 2 (sem
-  internet) ainda não feita.
+  Sem internet (2026-10-13): `ClienteHttpComReserva` guarda no aparelho as
+  leituras do artista (separadas por token) e responde com elas sem rede,
+  inclusive ao recarregar; marcar tocada sem rede vai para uma fila que sobe
+  quando a internet volta; o login só sai se o servidor recusar o token;
+  faixa "Sem internet · dados salvos às HH:MM" no topo (`aviso_sem_internet.dart`).
+  Pedidos e mudanças na setlist continuam exigindo rede.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e leitor.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
