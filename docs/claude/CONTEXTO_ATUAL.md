@@ -63,28 +63,30 @@ arquivo.
   montada a setlist é independente: só correções de título, cantor e tom do
   acervo são repassadas (decisão de 2026-10-13). Rotas privadas
   `/setlist/musicas`, `/setlist/avulsa`, `/setlist/ordem`, `DELETE /setlist/{itemId}`.
-- Cifras por música (link salvo por conta). Na setlist:
-  - todas as cifras são buscadas ao abrir, para abrir na hora no palco;
-  - barra fixa "Próxima" com Tocar (abre a cifra e marca como tocada), tom e
-    a música seguinte;
-  - aviso "X músicas sem cifra" com Resolver em sequência (Pesquisar na web e
-    Colar e próxima); ícone de cifra em amarelo quando falta;
-  - uma única aba de cifra: cada cifra nova fecha a anterior.
+- Setlist (desde 2026-10-13 é o centro do show, no jeito do iPhone):
+  - tocar na música abre o leitor; o círculo à esquerda marca como tocada;
+    deslizar para a esquerda (`flutter_slidable`) mostra Cifra (colar no app
+    primeiro, link do site como reserva) e Remover (só as que faltam);
+  - ponto verde/amarelo = tem ou não cifra colada; selo cinza com o número
+    de pedidos daquela música;
+  - aviso "X músicas sem cifra · Colar" conta a cifra colada e leva ao
+    Colar e próxima (`colar_cifras.dart`);
+  - selo "N pedidos novos ›" leva à aba Fila; no topo só Editar e ＋ (montar);
+  - todas as cifras são buscadas ao abrir; barra "Próxima" translúcida com
+    Tocar (abre o leitor se houver cifra colada, senão o link), tom e a
+    música seguinte; uma única aba de cifra para links;
+  - acompanha outros aparelhos pelo tempo real e a cada 30 s.
 - Tocar a seguir: na fila, o pedido aceito pode ser marcado para entrar
   antes do setlist na barra Próxima. A sequência fica no servidor, na
   coluna `Apresentacoes.PedidosASeguir` (rotas privadas
   `/api/apresentacoes/{id}/pedidos-a-seguir`), para todos os aparelhos da
   banda verem a mesma. Tocar um pedido o coloca em Tocando agora e encerra
   o que estava tocando.
-- Modo palco (botão no topo da setlist): tela única com a música atual em
-  letra grande, a barra Próxima, alôs, pedidos novos (aceitar/recusar) e
-  aceitos (tocar a seguir); tempo real e tela sempre acesa (Wake Lock).
-  Acompanha outros aparelhos: a cada aviso recarrega setlist, pedidos e
-  sequência; a música começada pelo colega vira Tocando agora (cifra pelo
-  botão Abrir cifra) e o Desfazer local some.
+- O antigo modo palco foi removido em 2026-10-13: o leitor é a tela do
+  palco (tela acesa, Tocar, próxima) e os pedidos ficam na aba Fila.
 - Cronômetro do show (só artistas veem): horas contratadas e "intervalo
   pausa o relógio" no formulário; o relógio começa no primeiro Iniciar. Faixa
-  acima das abas do show ao vivo e no alto do modo palco: quanto falta, hora
+  acima das abas do show ao vivo: quanto falta, hora
   de terminar, aviso aos 30 e 10 min, "Passou X min", botão Intervalo/Voltar
   ao show. Ritmo: 3 min por música até a 3ª, depois tempo tocado (sem
   intervalo) ÷ músicas começadas; mostra quantas cabem e se a sequência sobra
@@ -104,10 +106,12 @@ arquivo.
   com a cifra em JetBrains Mono (acordes em roxo, tamanho automático, pinça),
   setas sempre visíveis que só trocam de música, Tocar no meio ("Tocando ✓"),
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
-  cifra colada; botão Leitor no modo palco e na setlist. Etapa 2 (sem
+  cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
+  tom (guardado por música no aparelho) e rolagem automática (1x a 5x).
+  Etapa 2 (sem
   internet) ainda não feita.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
-  `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e modo palco.
+  `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e leitor.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
   as fotos dos cartões. O cartão usa só o bloco `retrospectiva` das
   estatísticas (`RepositorioTocaEssa.Retrospectiva.cs`), validado no
