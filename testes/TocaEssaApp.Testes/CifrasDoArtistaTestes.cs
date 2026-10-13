@@ -17,7 +17,8 @@ public class CifrasDoArtistaTestes
         var encontrada = primeiro.ObterCifraDoArtista(
             tokenAna, " evidencias! ", "CHITAOZINHO E XORORO");
         Assert.Equal(salva.Id, encontrada.Cifra?.Id);
-        Assert.Null(primeiro.ObterCifraDoArtista(tokenAna, "Evidências", null).Cifra);
+        // Sem cantor, a única cifra com esse título é a mesma música.
+        Assert.Equal(salva.Id, primeiro.ObterCifraDoArtista(tokenAna, "Evidências", null).Cifra?.Id);
         Assert.Null(segundo.ObterCifraDoArtista(tokenBia,
             "Evidências", "Chitãozinho & Xororó").Cifra);
     }

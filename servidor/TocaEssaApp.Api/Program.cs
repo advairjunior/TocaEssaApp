@@ -196,6 +196,10 @@ app.MapDelete("/api/artista/repertorios/{id:guid}", (
     return Results.NoContent();
 });
 
+app.MapGet("/api/artista/repertorios/{id:guid}/cifras", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarCifrasDoRepertorio(ObterToken(http) ?? string.Empty, id)));
+
 app.MapPost("/api/artista/repertorios/{id:guid}/musicas", (
     Guid id, AdicionarMusicaAoRepertorio requisicao,
     HttpRequest http, RepositorioTocaEssa repositorio) =>

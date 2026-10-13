@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -14,12 +15,51 @@ public sealed partial class RepositorioTocaEssa
             ?? throw new SessaoArtistaInvalidaException();
         ValidarIdentificacao(musica, artista);
         var chave = CriarChave(conta.Id, musica, artista);
-        _cifrasDoArtista.TryGetValue(chave, out var registro);
+        var registro = ProcurarMesmaMusica(_cifrasDoArtista, chave);
         return new ResultadoCifraDoArtista(
             registro is null ? null : ParaDominio(registro),
             null,
             CriarPesquisa(musica, artista),
-            _cifrasEmTexto.GetValueOrDefault(chave)?.Conteudo);
+            ProcurarMesmaMusica(_cifrasEmTexto, chave)?.Conteudo);
+    }
+
+    /// Situação da cifra de cada música do repertório, para o acervo mostrar
+    /// o que falta colar sem consultar música por música.
+    public IReadOnlyCollection<CifraDaMusicaDoRepertorio> ListarCifrasDoRepertorio(
+        string token, Guid repertorioId)
+    {
+        var conta = ObterRegistroArtista(token)
+            ?? throw new SessaoArtistaInvalidaException();
+        if (!_repertorios.TryGetValue(repertorioId, out var repertorio) ||
+            repertorio.ArtistaId != conta.Id)
+            throw new RepertorioNaoEncontradoException();
+        return _musicasDoRepertorio.Values
+            .Where(musica => musica.RepertorioId == repertorioId)
+            .OrderBy(musica => musica.Ordem)
+            .Select(musica =>
+            {
+                var chave = CriarChave(conta.Id, musica.Titulo, musica.Artista);
+                return new CifraDaMusicaDoRepertorio(
+                    musica.Id,
+                    ProcurarMesmaMusica(_cifrasEmTexto, chave) is not null,
+                    ProcurarMesmaMusica(_cifrasDoArtista, chave)?.Url,
+                    CriarPesquisa(musica.Titulo, musica.Artista));
+            })
+            .ToArray();
+    }
+
+    /// Título e cantor iguais; se não houver, a única cifra com o mesmo
+    /// título (cantor escrito diferente ou ausente). Com duas, não chuta.
+    private static T? ProcurarMesmaMusica<T>(
+        ConcurrentDictionary<(Guid ArtistaId, string Musica, string Artista), T> registros,
+        (Guid ArtistaId, string Musica, string Artista) chave) where T : class
+    {
+        if (registros.TryGetValue(chave, out var exato)) return exato;
+        var mesmoTitulo = registros
+            .Where(par => par.Key.ArtistaId == chave.ArtistaId && par.Key.Musica == chave.Musica)
+            .Take(2)
+            .ToArray();
+        return mesmoTitulo.Length == 1 ? mesmoTitulo[0].Value : null;
     }
 
     private const int TamanhoMaximoDaCifraEmTexto = 20_000;

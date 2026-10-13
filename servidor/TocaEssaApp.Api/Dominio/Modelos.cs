@@ -88,6 +88,9 @@ public sealed record ResultadoCifraDoArtista(
 
 public sealed record SalvarCifraEmTexto(string Musica, string? Artista, string? Texto);
 
+public sealed record CifraDaMusicaDoRepertorio(
+    Guid MusicaId, bool TemTexto, string? Url, string UrlPesquisa);
+
 public sealed record SalvarCifraDoArtista(
     string Musica, string? Artista, string Url);
 

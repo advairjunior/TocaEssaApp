@@ -56,6 +56,52 @@ public class CifraEmTextoTestes
     }
 
     [Fact]
+    public void MesmaMusicaComOutroCantorOuSemCantorAchaACifra()
+    {
+        var (repo, token) = CriarConta();
+        repo.SalvarCifraEmTexto(token, "Evidências", "Chitãozinho & Xororó", Cifra);
+
+        Assert.Equal(Cifra, repo.ObterCifraDoArtista(token, "evidencias", null).Texto);
+        Assert.Equal(Cifra, repo.ObterCifraDoArtista(token, "Evidências", "Leonardo").Texto);
+    }
+
+    [Fact]
+    public void TituloComDoisCantoresNaoChutaQualE()
+    {
+        var (repo, token) = CriarConta();
+        repo.SalvarCifraEmTexto(token, "Tempo", "Banda A", "Cifra A");
+        repo.SalvarCifraEmTexto(token, "Tempo", "Banda B", "Cifra B");
+
+        Assert.Null(repo.ObterCifraDoArtista(token, "Tempo", null).Texto);
+        Assert.Equal("Cifra B", repo.ObterCifraDoArtista(token, "Tempo", "Banda B").Texto);
+    }
+
+    [Fact]
+    public void RepertorioMostraQuaisMusicasTemCifra()
+    {
+        var (repo, token) = CriarConta();
+        var repertorio = repo.CriarRepertorio(token, "Sertanejo");
+        var comTexto = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Deus e Eu no Sertão", "Victor & Leo");
+        var comLink = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null);
+        var semNada = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Pense em Mim", null);
+        repo.SalvarCifraEmTexto(token, "Deus e eu no sertao", null, Cifra);
+        repo.SalvarCifraDoArtista(token, "Evidências", null, "https://www.cifraclub.com.br/x/evidencias/");
+
+        var cifras = repo.ListarCifrasDoRepertorio(token, repertorio.Id).ToDictionary(c => c.MusicaId);
+
+        Assert.True(cifras[comTexto.Id].TemTexto);
+        Assert.False(cifras[comLink.Id].TemTexto);
+        Assert.Equal("https://www.cifraclub.com.br/x/evidencias/", cifras[comLink.Id].Url);
+        Assert.False(cifras[semNada.Id].TemTexto);
+        Assert.Null(cifras[semNada.Id].Url);
+        Assert.Contains("cifraclub", cifras[semNada.Id].UrlPesquisa);
+
+        var tokenBia = repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        Assert.Throws<RepertorioNaoEncontradoException>(() =>
+            repo.ListarCifrasDoRepertorio(tokenBia, repertorio.Id));
+    }
+
+    [Fact]
     public void TextoGrandeDemaisERecusado()
     {
         var (repo, token) = CriarConta();
@@ -162,6 +208,21 @@ public class CifraEmTextoTestes
             Assert.Equal(HttpStatusCode.BadRequest,
                 (await ana.PutAsJsonAsync("/api/artista/cifras/texto",
                     new { musica = "", texto = Cifra })).StatusCode);
+
+            var repertorio = repo.CriarRepertorio(token, "Românticas");
+            var musica = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null);
+            var rotaRepertorio = $"/api/artista/repertorios/{repertorio.Id}/cifras";
+            using (var lista = JsonDocument.Parse(await ana.GetStringAsync(rotaRepertorio)))
+            {
+                var item = lista.RootElement.EnumerateArray().Single();
+                Assert.Equal(musica.Id, item.GetProperty("musicaId").GetGuid());
+                Assert.True(item.GetProperty("temTexto").GetBoolean());
+            }
+            Assert.Equal(HttpStatusCode.Unauthorized, (await publico.GetAsync(rotaRepertorio)).StatusCode);
+            var tokenBia = repo.CriarContaArtista("Bia", "bia@teste.com", "senha123").Token;
+            using var bia = fabrica.CreateClient();
+            bia.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokenBia);
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.GetAsync(rotaRepertorio)).StatusCode);
         }
         finally
         {
