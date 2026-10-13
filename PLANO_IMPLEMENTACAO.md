@@ -104,6 +104,13 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### No palco
 
+- **Salvar a setlist como repertório:** reaproveitar a seleção de um show
+  (ex.: "Confraternização empresa X") em outro.
+- **Blocos do show:** "1º set · Intervalo · 2º set" na setlist, ligados ao
+  botão Intervalo do cronômetro.
+- **Estilo ou energia por música** ("calma", "animada") e filtro ao montar a
+  setlist.
+
 - **Tom, capotraste e observação por música no repertório:** salvar uma vez
   ("Tom G, capo 2, começa só voz") e mostrar na barra da próxima música.
 - **Cronômetro do show:** ✅ entregue em 2026-10-13 (contagem regressiva,

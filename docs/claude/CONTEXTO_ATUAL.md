@@ -54,7 +54,15 @@ arquivo.
 - Perfil artístico com foto e perfil público; apresentações Pública ou Resenha.
 - Fila musical em tempo real (SSE em `/api/tempo-real/{codigo}`, com
   atualização periódica como reserva).
-- Repertórios ordenáveis; setlist da apresentação segue o repertório.
+- Repertórios ordenáveis formam o acervo. A setlist de cada show é montada
+  na tela Montar setlist (`montar_setlist.dart`): chips dos repertórios,
+  marcar músicas ou todas, busca no acervo, rodapé com duração estimada e
+  horas contratadas, música avulsa (pode ficar no acervo). Adiciona no fim,
+  sem repetir a mesma música (sem acento nem maiúscula). Editar: arrastar e
+  remover só as que faltam; Limpar setlist com confirmação. Depois de
+  montada a setlist é independente: só correções de título, cantor e tom do
+  acervo são repassadas (decisão de 2026-10-13). Rotas privadas
+  `/setlist/musicas`, `/setlist/avulsa`, `/setlist/ordem`, `DELETE /setlist/{itemId}`.
 - Cifras por música (link salvo por conta). Na setlist:
   - todas as cifras são buscadas ao abrir, para abrir na hora no palco;
   - barra fixa "Próxima" com Tocar (abre a cifra e marca como tocada), tom e
