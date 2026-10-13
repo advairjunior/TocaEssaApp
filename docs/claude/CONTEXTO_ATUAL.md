@@ -79,8 +79,11 @@ arquivo.
   intervalo) ÷ músicas começadas; mostra quantas cabem e se a sequência sobra
   ou passa. Colunas em `Apresentacoes` (`DuracaoContratadaMinutos`,
   `IntervaloPausaRelogio`, `IniciadaEm`, `EmIntervaloDesde`,
-  `SegundosEmIntervalo`), fora do registro público; rotas privadas
-  `/api/apresentacoes/{id}/relogio` e `.../relogio/intervalo`.
+  `SegundosEmIntervalo`, `EncerradaEm`), fora do registro público; rotas
+  privadas `/api/apresentacoes/{id}/relogio` e `.../relogio/intervalo`.
+  Antes de medir, usa o ritmo médio dos shows encerrados do artista; na
+  setlist de show agendado, cartão com a duração estimada e a comparação
+  com as horas contratadas.
 - Recarregar a página com show em andamento volta à apresentação e à aba
   onde o artista estava (guardado no aparelho).
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin

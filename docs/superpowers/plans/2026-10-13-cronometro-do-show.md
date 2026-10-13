@@ -72,4 +72,17 @@ ao configurar a duração, o início passa a ser aquele momento.
 6. Cliente: ritmo do show e músicas que cabem (fase 2).
 7. Docs: contexto atual e banco de ideias.
 
-Fora desta rodada: estimativa antes do show com o histórico (fase 3).
+## Fase 3 (aprovada em 2026-10-13)
+
+- Encerrar a apresentação grava `EncerradaEm` (coluna nova, adicionada só
+  quando falta).
+- O relógio devolve `ritmoMedioSegundos`: tempo tocado (sem intervalo) somado
+  dos shows encerrados do próprio artista ÷ músicas começadas neles. Ficam
+  de fora shows com menos de 3 músicas ou ritmo fora de 1 a 15 min
+  (esquecidos abertos).
+- Setlist de apresentação agendada: cartão "N músicas ≈ duração", com o
+  ritmo usado e a comparação com as horas contratadas.
+- Ao vivo, até a 3ª música, o ritmo é o médio do artista; sem histórico,
+  3 minutos.
+- Shows anteriores a 2026-10-13 não têm horários gravados: o histórico
+  começa no primeiro show encerrado depois desta versão.
