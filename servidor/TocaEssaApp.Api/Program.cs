@@ -574,6 +574,30 @@ app.MapPatch("/api/apresentacoes/{apresentacaoId:guid}/grupos-pedidos/{represent
         ObterToken(http) ?? string.Empty, apresentacaoId,
         representanteId, requisicao.Status)));
 
+app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/relogio", (
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ObterRelogio(ObterToken(http) ?? string.Empty, apresentacaoId)));
+
+app.MapPut("/api/apresentacoes/{apresentacaoId:guid}/relogio", (
+    Guid apresentacaoId, ConfigurarRelogioDoShow requisicao, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    requisicao.DuracaoContratadaMinutos is < 1 or > 24 * 60
+        ? Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["duracaoContratadaMinutos"] = ["Informe uma duração entre 1 minuto e 24 horas."]
+        })
+        : Results.Ok(repositorio.ConfigurarRelogio(
+            ObterToken(http) ?? string.Empty, apresentacaoId,
+            requisicao.DuracaoContratadaMinutos, requisicao.IntervaloPausaRelogio)));
+
+app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/relogio/intervalo", (
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.IniciarIntervalo(ObterToken(http) ?? string.Empty, apresentacaoId)));
+
+app.MapDelete("/api/apresentacoes/{apresentacaoId:guid}/relogio/intervalo", (
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.EncerrarIntervalo(ObterToken(http) ?? string.Empty, apresentacaoId)));
+
 app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/pedidos-a-seguir", (
     Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarPedidosASeguir(

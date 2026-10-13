@@ -72,6 +72,14 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
             await contexto.Response.WriteAsJsonAsync(new { mensagem = "Escolha de 1 a 5 estrelas." });
         }
+        catch (ShowNaoIniciadoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Inicie a apresentação antes de marcar o intervalo."
+            });
+        }
         catch (PedidoAindaNaoTocadoException)
         {
             contexto.Response.StatusCode = StatusCodes.Status409Conflict;

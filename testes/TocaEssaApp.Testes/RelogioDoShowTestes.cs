@@ -1,4 +1,14 @@
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using TocaEssaApp.Api.Dominio;
 using TocaEssaApp.Api.Infraestrutura;
 
@@ -216,6 +226,108 @@ public class RelogioDoShowTestes
         {
             ExcluirBanco(arquivo);
         }
+    }
+
+    [Fact]
+    public async Task RotasDoRelogioSaoSoDoDonoEOPublicoNaoVeOTempo()
+    {
+        var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-relogio-{Guid.NewGuid():N}.db");
+        try
+        {
+            await using var fabrica = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureLogging(logging => logging.ClearProviders());
+                builder.ConfigureAppConfiguration((_, configuracao) =>
+                    configuracao.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:DefaultConnection"] = banco,
+                        ["Aplicacao:ArquivoBanco"] = banco,
+                        ["Aplicacao:ArquivoDados"] = $"{banco}.json"
+                    }));
+                builder.ConfigureServices(servicos =>
+                {
+                    servicos.RemoveAll<RepositorioTocaEssa>();
+                    servicos.AddSingleton(new RepositorioTocaEssa(banco, $"{banco}.json"));
+                });
+            });
+            using var publico = fabrica.CreateClient();
+            using var ana = await CriarClienteArtista(fabrica, "ana@teste.com");
+            using var bia = await CriarClienteArtista(fabrica, "bia@teste.com");
+            (await ana.PutAsJsonAsync("/api/perfil-artistico",
+                new { nomeArtistico = "Duo Aurora" })).EnsureSuccessStatusCode();
+            var criada = await ana.PostAsJsonAsync("/api/apresentacoes", new
+            {
+                nome = "Casamento", data = "2026-10-17", local = "Salão", tipo = "Publica"
+            });
+            criada.EnsureSuccessStatusCode();
+            using var jsonShow = JsonDocument.Parse(await criada.Content.ReadAsStringAsync());
+            var show = jsonShow.RootElement.GetProperty("apresentacao");
+            var showId = show.GetProperty("id").GetGuid();
+            var codigo = show.GetProperty("codigo").GetString();
+            var rota = $"/api/apresentacoes/{showId}/relogio";
+
+            var configurado = await ana.PutAsJsonAsync(rota,
+                new { duracaoContratadaMinutos = 240, intervaloPausaRelogio = true });
+            Assert.Equal(HttpStatusCode.OK, configurado.StatusCode);
+            using (var json = JsonDocument.Parse(await configurado.Content.ReadAsStringAsync()))
+            {
+                Assert.Equal(240, json.RootElement.GetProperty("duracaoContratadaMinutos").GetInt32());
+                Assert.True(json.RootElement.GetProperty("intervaloPausaRelogio").GetBoolean());
+            }
+            foreach (var invalida in new[] { 0, 24 * 60 + 1 })
+                Assert.Equal(HttpStatusCode.BadRequest,
+                    (await ana.PutAsJsonAsync(rota, new { duracaoContratadaMinutos = invalida })).StatusCode);
+
+            Assert.Equal(HttpStatusCode.Conflict,
+                (await ana.PostAsync($"{rota}/intervalo", null)).StatusCode);
+            (await ana.PatchAsJsonAsync($"/api/apresentacoes/{showId}/status",
+                new { status = "EmAndamento" })).EnsureSuccessStatusCode();
+            var intervalo = await ana.PostAsync($"{rota}/intervalo", null);
+            Assert.Equal(HttpStatusCode.OK, intervalo.StatusCode);
+            using (var json = JsonDocument.Parse(await intervalo.Content.ReadAsStringAsync()))
+                Assert.NotEqual(JsonValueKind.Null,
+                    json.RootElement.GetProperty("emIntervaloDesde").ValueKind);
+            var voltou = await ana.DeleteAsync($"{rota}/intervalo");
+            Assert.Equal(HttpStatusCode.OK, voltou.StatusCode);
+            using (var json = JsonDocument.Parse(await ana.GetStringAsync(rota)))
+            {
+                Assert.Equal(JsonValueKind.Null, json.RootElement.GetProperty("emIntervaloDesde").ValueKind);
+                Assert.NotEqual(JsonValueKind.Null, json.RootElement.GetProperty("iniciadaEm").ValueKind);
+            }
+
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.GetAsync(rota)).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound,
+                (await bia.PutAsJsonAsync(rota, new { duracaoContratadaMinutos = 60 })).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.PostAsync($"{rota}/intervalo", null)).StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.DeleteAsync($"{rota}/intervalo")).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await publico.GetAsync(rota)).StatusCode);
+
+            var paginaPublica = await publico.GetAsync($"/api/publico/apresentacoes/{codigo}");
+            Assert.Equal(HttpStatusCode.OK, paginaPublica.StatusCode);
+            var corpoPublico = await paginaPublica.Content.ReadAsStringAsync();
+            Assert.DoesNotContain("duracaoContratada", corpoPublico);
+            Assert.DoesNotContain("iniciadaEm", corpoPublico);
+            Assert.DoesNotContain("intervalo", corpoPublico, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(HttpStatusCode.OK,
+                (await publico.GetAsync($"/api/publico/apresentacoes/{codigo}/fila")).StatusCode);
+        }
+        finally
+        {
+            ExcluirBanco(banco);
+        }
+    }
+
+    private static async Task<HttpClient> CriarClienteArtista(
+        WebApplicationFactory<Program> fabrica, string email)
+    {
+        var cliente = fabrica.CreateClient();
+        var resposta = await cliente.PostAsJsonAsync(
+            "/api/artista/contas", new { nome = "Artista", email, senha = "senha123" });
+        resposta.EnsureSuccessStatusCode();
+        using var json = JsonDocument.Parse(await resposta.Content.ReadAsStringAsync());
+        cliente.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", json.RootElement.GetProperty("token").GetString());
+        return cliente;
     }
 
     private static Cenario CriarCenario(string? arquivo = null)
