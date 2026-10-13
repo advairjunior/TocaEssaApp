@@ -154,6 +154,28 @@ void main() {
           0);
     });
 
+    test('antes de medir, usa o ritmo médio dos shows anteriores', () {
+      final relogio = RelogioDoShow.deJson({
+        ...{
+          'duracaoContratadaMinutos': 240,
+          'intervaloPausaRelogio': false,
+          'iniciadaEm': _inicio.toIso8601String(),
+          'emIntervaloDesde': null,
+          'segundosEmIntervalo': 0,
+          'musicasComecadas': 2,
+          'musicasRestantes': 18,
+          'agora': _inicio.toIso8601String(),
+        },
+        'ritmoMedioSegundos': 250,
+      }, recebidoEm: _inicio);
+
+      expect(relogio.temRitmoMedio, isTrue);
+      expect(relogio.ritmo(umaHoraDepois), const Duration(seconds: 250));
+      expect(relogio.duracaoEstimada(18), const Duration(minutes: 75));
+      expect(comMusicas(2, 18).duracaoEstimada(18),
+          const Duration(minutes: 54));
+    });
+
     test('escreve o ritmo em minutos com vírgula', () {
       expect(formatarRitmo(const Duration(minutes: 3)), '3 min');
       expect(formatarRitmo(const Duration(minutes: 3, seconds: 20)), '3,3 min');

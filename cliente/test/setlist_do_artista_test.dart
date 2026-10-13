@@ -75,6 +75,8 @@ Future<List<http.Request>> _abrir(
   Set<String> musicasSemCifra = const {},
   List<Map<String, Object?>>? grupos,
   List<String> pedidosASeguir = const [],
+  StatusApresentacao status = StatusApresentacao.emAndamento,
+  Map<String, Object?>? relogio,
 }) async {
   _aSeguirNoServidor = [...pedidosASeguir];
   final requisicoes = <http.Request>[];
@@ -92,6 +94,10 @@ Future<List<http.Request>> _abrir(
     final sequencia = responderPedidosASeguir(requisicao, _aSeguirNoServidor);
     if (sequencia != null) return sequencia;
     final caminho = requisicao.url.path;
+    if (caminho.endsWith('/relogio') && relogio != null) {
+      return http.Response(jsonEncode(relogio), 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    }
     if (caminho.endsWith('/setlist')) {
       return http.Response(jsonEncode(lista), 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
@@ -157,7 +163,7 @@ Future<List<http.Request>> _abrir(
               id: '22222222-2222-2222-2222-222222222222',
               nomeArtistico: 'Duo Aurora'),
           pedidosAbertos: true,
-          status: StatusApresentacao.emAndamento,
+          status: status,
           tipo: TipoApresentacao.publica,
         ),
         incorporada: true,
@@ -592,5 +598,60 @@ void main() {
     await _abrir(tester);
 
     expect(tester.takeException(), isNull);
+  });
+
+  group('duração estimada antes do show', () {
+    Map<String, Object?> relogio({int? duracao, int? ritmoMedio}) => {
+          'duracaoContratadaMinutos': duracao,
+          'intervaloPausaRelogio': false,
+          'iniciadaEm': null,
+          'emIntervaloDesde': null,
+          'segundosEmIntervalo': 0,
+          'musicasComecadas': 0,
+          'musicasRestantes': 0,
+          'agora': '2026-09-10T21:00:00Z',
+          'ritmoMedioSegundos': ritmoMedio,
+        };
+
+    testWidgets('sem histórico estima 3 min por música e compara com o contrato',
+        (tester) async {
+      await _abrir(tester,
+          status: StatusApresentacao.agendada, relogio: relogio(duracao: 240));
+
+      expect(find.text('2 músicas ≈ 6 min'), findsOneWidget);
+      expect(find.text('estimativa: 3 min por música'), findsOneWidget);
+      expect(find.text('contratado 4h → faltam ~3h54 de músicas'),
+          findsOneWidget);
+    });
+
+    testWidgets('com histórico usa o ritmo médio e avisa se passa',
+        (tester) async {
+      await _abrir(tester,
+          status: StatusApresentacao.agendada,
+          itens: [
+            for (var i = 1; i <= 20; i++) _item('$i', 'Música $i', i),
+          ],
+          relogio: relogio(duracao: 60, ritmoMedio: 240));
+
+      expect(find.text('20 músicas ≈ 1h20'), findsOneWidget);
+      expect(find.text('seu ritmo médio: 4 min por música'), findsOneWidget);
+      expect(find.text('a setlist passa ~20 min do contratado'),
+          findsOneWidget);
+    });
+
+    testWidgets('sem horas contratadas mostra só a estimativa',
+        (tester) async {
+      await _abrir(tester,
+          status: StatusApresentacao.agendada, relogio: relogio());
+
+      expect(find.text('2 músicas ≈ 6 min'), findsOneWidget);
+      expect(find.textContaining('contratado'), findsNothing);
+    });
+
+    testWidgets('show ao vivo não mostra a estimativa', (tester) async {
+      await _abrir(tester, relogio: relogio(duracao: 240));
+
+      expect(find.textContaining('≈'), findsNothing);
+    });
   });
 }

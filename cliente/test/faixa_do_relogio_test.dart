@@ -14,8 +14,10 @@ String _relogio({
   DateTime? emIntervaloDesde,
   int comecadas = 0,
   int restantes = 0,
+  int? ritmoMedio,
 }) =>
     jsonEncode({
+      'ritmoMedioSegundos': ritmoMedio,
       'duracaoContratadaMinutos': duracao,
       'intervaloPausaRelogio': false,
       'iniciadaEm': _inicio.toIso8601String(),
@@ -44,13 +46,17 @@ Future<_Servidor> _abrir(
   int? duracao = 240,
   int comecadas = 0,
   int restantes = 0,
+  int? ritmoMedio,
 }) async {
   final servidor = _Servidor();
   // O show começou há [passado], pela hora do aparelho.
   final agora = DateTime.now();
   final inicioNoAparelho = agora.subtract(passado);
   servidor.resposta = _relogio(
-          duracao: duracao, comecadas: comecadas, restantes: restantes)
+          duracao: duracao,
+          comecadas: comecadas,
+          restantes: restantes,
+          ritmoMedio: ritmoMedio)
       .replaceAll(_inicio.toIso8601String(),
           inicioNoAparelho.toUtc().toIso8601String());
   final api = ApiTocaEssa(
@@ -144,6 +150,17 @@ void main() {
       expect(find.text('Cabem ~60 músicas (estimativa: 3 min cada)'),
           findsOneWidget);
       expect(find.text('Sequência de 18 músicas: sobram ~2h06'),
+          findsOneWidget);
+    });
+
+    testWidgets('antes de medir, usa o ritmo médio dos shows anteriores',
+        (tester) async {
+      await _abrir(tester,
+          passado: const Duration(minutes: 59, seconds: 50),
+          comecadas: 2,
+          ritmoMedio: 240);
+
+      expect(find.text('Cabem ~45 músicas (seu ritmo médio: 4 min)'),
           findsOneWidget);
     });
 

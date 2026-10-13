@@ -214,9 +214,12 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
     final restantes = relogio.musicasRestantes;
     final sobra = relogio.sobraDaSequencia(agora);
     return [
-      relogio.ritmoMedido
-          ? 'Cabem ~${_musicas(cabem)} no ritmo de $ritmo'
-          : 'Cabem ~${_musicas(cabem)} (estimativa: $ritmo cada)',
+      if (relogio.ritmoMedido)
+        'Cabem ~${_musicas(cabem)} no ritmo de $ritmo'
+      else if (relogio.temRitmoMedio)
+        'Cabem ~${_musicas(cabem)} (seu ritmo médio: $ritmo)'
+      else
+        'Cabem ~${_musicas(cabem)} (estimativa: $ritmo cada)',
       if (restantes > 0)
         sobra.isNegative
             ? 'Sequência de ${_musicas(restantes)} passa '
@@ -232,7 +235,8 @@ class _FaixaDoRelogioState extends State<FaixaDoRelogio> {
           title: const Text('Como o TocaEssa calcula'),
           content: const Text(
             'O tempo conta a partir do primeiro Iniciar da apresentação. '
-            'Até a 3ª música, o TocaEssa estima 3 minutos por música. '
+            'Até a 3ª música, o TocaEssa usa o seu ritmo médio dos shows '
+            'anteriores ou, sem histórico, 3 minutos por música. '
             'Depois, mede o ritmo real do show: o tempo tocado dividido '
             'pelas músicas começadas, já contando a conversa entre elas e '
             'sem contar o intervalo.\n\n'

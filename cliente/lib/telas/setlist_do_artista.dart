@@ -48,11 +48,25 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     apresentacaoId: widget.apresentacao.id,
   )..addListener(_redesenhar);
   bool _carregando = true;
+  // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
+  RelogioDoShow? _relogio;
 
   @override
   void initState() {
     super.initState();
     _carregar();
+    if (widget.apresentacao.status == StatusApresentacao.agendada) {
+      _carregarRelogio();
+    }
+  }
+
+  Future<void> _carregarRelogio() async {
+    try {
+      final relogio = await widget.api.obterRelogio(widget.apresentacao.id);
+      if (mounted) setState(() => _relogio = relogio);
+    } catch (_) {
+      // Sem a estimativa, a setlist segue normal.
+    }
   }
 
   @override
@@ -210,6 +224,14 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           ),
           const SizedBox(height: EspacoTocaEssa.base),
           _construirProgresso(context),
+          if (_relogio case final relogio?
+              when _sequencia.musicasNaSequencia > 0) ...[
+            const SizedBox(height: EspacoTocaEssa.base),
+            _DuracaoEstimada(
+              relogio: relogio,
+              musicas: _sequencia.musicasNaSequencia,
+            ),
+          ],
           if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
             _AvisoSemCifra(
@@ -347,6 +369,73 @@ class _AvisoSemCifra extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Antes do show: quanto a sequência deve durar no ritmo médio do artista
+/// (ou 3 min por música sem histórico) e como fica perto do contratado.
+class _DuracaoEstimada extends StatelessWidget {
+  const _DuracaoEstimada({required this.relogio, required this.musicas});
+
+  final RelogioDoShow relogio;
+  final int musicas;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final estimada = relogio.duracaoEstimada(musicas);
+    final ritmo = formatarRitmo(relogio.ritmoAntesDeMedir);
+    final contratada = relogio.duracaoContratadaMinutos;
+    final secundario =
+        texto.bodySmall?.copyWith(color: CoresTocaEssa.textoSecundario);
+    return Container(
+      padding: const EdgeInsets.all(EspacoTocaEssa.medio),
+      decoration: BoxDecoration(
+        color: CoresTocaEssa.superficie,
+        borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+        border: Border.all(color: CoresTocaEssa.borda),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.timer_outlined, color: CoresTocaEssa.roxoClaro),
+          const SizedBox(width: EspacoTocaEssa.medio),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${musicas == 1 ? '1 música' : '$musicas músicas'} ≈ '
+                  '${formatarTempoDoShow(estimada)}',
+                  style: texto.titleSmall,
+                ),
+                Text(
+                  relogio.temRitmoMedio
+                      ? 'seu ritmo médio: $ritmo por música'
+                      : 'estimativa: $ritmo por música',
+                  style: secundario,
+                ),
+                if (contratada != null)
+                  Text(
+                    _comparar(Duration(minutes: contratada) - estimada,
+                        contratada),
+                    style: secundario,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _comparar(Duration diferenca, int contratada) {
+    if (diferenca.abs() < relogio.ritmoAntesDeMedir) {
+      return 'a setlist fecha as horas contratadas';
+    }
+    return diferenca.isNegative
+        ? 'a setlist passa ~${formatarTempoDoShow(diferenca)} do contratado'
+        : 'contratado ${escreverDuracaoContratada(contratada)} → '
+            'faltam ~${formatarTempoDoShow(diferenca)} de músicas';
   }
 }
 

@@ -216,6 +216,9 @@ class SequenciaDoPalco extends ChangeNotifier {
   /// Pedidos marcados para tocar a seguir vêm antes do setlist.
   MusicaDoPalco? get proxima => _sequenciaRestante().firstOrNull;
 
+  /// Músicas que ainda faltam: pedidos a seguir e setlist não tocado.
+  int get musicasNaSequencia => _sequenciaRestante().length;
+
   List<MusicaDoPalco> _sequenciaRestante() => [
         ...pedidosASeguir.map(MusicaDoPalco.doPedido),
         ...itens.where((i) => !i.tocada).map(MusicaDoPalco.doSetlist),

@@ -15,7 +15,11 @@ class RelogioDoShow {
     required this.musicasComecadas,
     required this.musicasRestantes,
     required Duration ajusteDoAparelho,
+    this.ritmoMedio,
   }) : _ajusteDoAparelho = ajusteDoAparelho;
+
+  /// Ritmo dos shows encerrados do artista; nulo sem histórico.
+  final Duration? ritmoMedio;
 
   final int? duracaoContratadaMinutos;
   final bool intervaloPausaRelogio;
@@ -42,6 +46,10 @@ class RelogioDoShow {
       musicasComecadas: json['musicasComecadas'] as int? ?? 0,
       musicasRestantes: json['musicasRestantes'] as int? ?? 0,
       ajusteDoAparelho: data('agora')!.difference(recebidoEm),
+      ritmoMedio: switch (json['ritmoMedioSegundos']) {
+        final int segundos => Duration(seconds: segundos),
+        _ => null,
+      },
     );
   }
 
@@ -73,14 +81,21 @@ class RelogioDoShow {
   static const ritmoPadrao = Duration(minutes: 3);
   static const musicasParaMedir = 3;
 
-  /// Até a 3ª música, o ritmo é a estimativa de 3 minutos por música.
+  /// A partir da 3ª música, o ritmo é medido no próprio show.
   bool get ritmoMedido => musicasComecadas >= musicasParaMedir;
+  bool get temRitmoMedio => ritmoMedio != null;
+
+  /// Antes de medir: o ritmo médio do artista ou, sem histórico, 3 minutos.
+  Duration get ritmoAntesDeMedir => ritmoMedio ?? ritmoPadrao;
 
   /// Já conta a conversa entre as músicas, mas não o intervalo.
   Duration ritmo(DateTime agora) => ritmoMedido
       ? Duration(
           seconds: tempoDeShow(agora).inSeconds ~/ musicasComecadas)
-      : ritmoPadrao;
+      : ritmoAntesDeMedir;
+
+  /// Quanto [musicas] devem durar, antes de o show começar.
+  Duration duracaoEstimada(int musicas) => ritmoAntesDeMedir * musicas;
 
   int musicasQueCabem(DateTime agora) {
     final falta = restante(agora);
