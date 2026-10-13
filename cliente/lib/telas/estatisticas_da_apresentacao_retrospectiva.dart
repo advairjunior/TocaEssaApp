@@ -117,7 +117,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
               : const Icon(Icons.ios_share_rounded),
           label: Text(gerandoImagem
               ? 'Gerando imagem...'
-              : 'Salvar imagem para compartilhar'),
+              : 'Compartilhar imagem'),
         ),
         const SizedBox(height: EspacoTocaEssa.pequeno),
         OutlinedButton.icon(

@@ -11,6 +11,7 @@ import 'package:toca_essa_app/telas/camera_do_cartao.dart';
 import 'package:toca_essa_app/telas/estatisticas_da_apresentacao.dart';
 
 import 'apoio/camera_falsa.dart';
+import 'apoio/compartilhamento_falso.dart';
 
 const _noiteCheia =
     '{"totalPedidos":40,"aguardando":0,"aceitos":32,"tocados":32,"recusados":3,'
@@ -128,6 +129,30 @@ void main() {
     expect(_noCartao('pessoas no app'), findsOneWidget);
     expect(_noCartao('“Evidências” foi a favorita da galera.'), findsOneWidget);
     expect(_noCartao('21h00 às 00h12 · 3h12 de show'), findsOneWidget);
+  });
+
+  testWidgets('compartilhar manda a imagem do cartão com o nome do show',
+      (tester) async {
+    final compartilhamento = usarCompartilhamentoFalso();
+    await _abrir(tester, estatisticas: _noiteCheia);
+
+    final botao = find.text('Compartilhar imagem');
+    await tester.ensureVisible(botao);
+    await tester.tap(botao);
+    // A imagem espera um quadro desenhado e tempo real para ficar pronta.
+    for (var tentativa = 0;
+        tentativa < 20 && compartilhamento.pedidos.isEmpty;
+        tentativa++) {
+      await tester.pump();
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+    }
+    await tester.pump();
+
+    final arquivo = compartilhamento.pedidos.single.files!.single;
+    expect(arquivo.mimeType, 'image/png');
+    expect(compartilhamento.pedidos.single.fileNameOverrides,
+        ['tocaessa-noite-acustica.png']);
   });
 
   testWidgets('noite fraca no show não expõe números ruins no cartão',

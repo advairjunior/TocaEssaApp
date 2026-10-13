@@ -61,13 +61,9 @@ class _MemoriaDaResenhaState extends State<MemoriaDaResenha> {
   Future<void> _salvar() async {
     setState(() => _gerando = true);
     try {
-      await baixarCartaoComoImagem(
+      await compartilharCartaoComoImagem(
         _chaveCartao,
         'tocaessa-${nomeDeArquivo(_apresentacao.nome)}-meu-resumo.png',
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sua retrospectiva foi salva.')),
       );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
@@ -130,7 +126,7 @@ class _MemoriaDaResenhaState extends State<MemoriaDaResenha> {
                         icon: const Icon(Icons.ios_share_rounded),
                         label: Text(_gerando
                             ? 'Gerando imagem...'
-                            : 'Salvar imagem para compartilhar'),
+                            : 'Compartilhar imagem'),
                       ),
                       const SizedBox(height: EspacoTocaEssa.mini),
                       TextButton.icon(

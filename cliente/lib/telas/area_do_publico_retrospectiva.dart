@@ -8,16 +8,12 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
     }
   }
 
-  Future<void> _baixarMinhaRetrospectiva(Apresentacao apresentacao) async {
+  Future<void> _compartilharMinhaRetrospectiva(Apresentacao apresentacao) async {
     _mudarEstado(() => _gerandoRetrospectiva = true);
     try {
-      await baixarCartaoComoImagem(
+      await compartilharCartaoComoImagem(
         _chaveRetrospectivaPublico,
         'tocaessa-${nomeDeArquivo(apresentacao.nome)}-meu-resumo.png',
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sua retrospectiva foi salva.')),
       );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
@@ -73,11 +69,11 @@ extension _RetrospectivaAreaDoPublico on _AreaDoPublicoState {
       FilledButton.icon(
         onPressed: _gerandoRetrospectiva
             ? null
-            : () => _baixarMinhaRetrospectiva(apresentacao),
+            : () => _compartilharMinhaRetrospectiva(apresentacao),
         icon: const Icon(Icons.ios_share_rounded),
         label: Text(_gerandoRetrospectiva
             ? 'Gerando imagem...'
-            : 'Salvar imagem para compartilhar'),
+            : 'Compartilhar imagem'),
       ),
       TextButton.icon(
         onPressed: () => _escolherFotoDaMinhaRetrospectiva(

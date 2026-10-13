@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import '../dominio/modelos.dart';
 import '../dominio/retrospectiva_do_artista.dart';
 import '../infraestrutura/api_toca_essa.dart';
-import '../infraestrutura/baixar_arquivo.dart';
+import '../infraestrutura/compartilhar_imagem.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
@@ -122,7 +122,7 @@ class _EstatisticasDaApresentacaoTelaState
               enviandoFoto: _enviandoFoto,
               escolherFoto: _escolherFotoDoEncontro,
               gerandoImagem: _gerandoCartao,
-              baixarImagem: _baixarCartao,
+              baixarImagem: _compartilharCartao,
               copiar: () => _copiarRetrospectiva(context, dados, participantes),
             ),
           ];

@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 
+import 'apoio/compartilhamento_falso.dart';
+
 String _resenhaJson({String status = 'EmAndamento', String? foto}) =>
     '{"id":"22222222-2222-2222-2222-222222222222","nome":"Resenha de sexta","data":"2026-09-03","local":"Casa da Ana","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"$status","tipo":"ResenhaEntreAmigos","fotoRetrospectivaUrl":${foto == null ? 'null' : '"$foto"'}}';
 
@@ -77,17 +79,41 @@ void main() {
     expect(find.text('Minha retrospectiva'), findsOneWidget);
   });
 
-  testWidgets('sem foto, o cartão já pode ser salvo e convida a pôr uma foto',
+  testWidgets('sem foto, o cartão já pode ser compartilhado e convida a pôr uma foto',
       (tester) async {
     await _abrirNestaResenha(tester);
 
     expect(find.text('Toque para colocar sua foto'), findsNothing);
     final salvar = tester.widget<FilledButton>(find.ancestor(
-      of: find.text('Salvar imagem para compartilhar'),
+      of: find.text('Compartilhar imagem'),
       matching: find.byWidgetPredicate((w) => w is FilledButton),
     ));
     expect(salvar.onPressed, isNotNull);
     expect(find.text('Colocar minha foto'), findsOneWidget);
+  });
+
+  testWidgets('compartilhar manda a imagem do cartão para o sistema',
+      (tester) async {
+    final compartilhamento = usarCompartilhamentoFalso();
+    await _abrirNestaResenha(tester);
+
+    final botao = find.text('Compartilhar imagem');
+    await tester.ensureVisible(botao);
+    await tester.tap(botao);
+    // A imagem espera um quadro desenhado e tempo real para ficar pronta.
+    for (var tentativa = 0;
+        tentativa < 20 && compartilhamento.pedidos.isEmpty;
+        tentativa++) {
+      await tester.pump();
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+    }
+    await tester.pump();
+
+    final arquivo = compartilhamento.pedidos.single.files!.single;
+    expect(arquivo.mimeType, 'image/png');
+    expect(compartilhamento.pedidos.single.fileNameOverrides!.single,
+        endsWith('-meu-resumo.png'));
   });
 
   testWidgets('cartão diz com quem a pessoa estava, sem contar o artista',

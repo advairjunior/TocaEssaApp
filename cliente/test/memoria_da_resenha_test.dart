@@ -157,7 +157,7 @@ void main() {
 
     expect(find.text('Ana Souza'), findsOneWidget);
     final salvar = find.ancestor(
-      of: find.text('Salvar imagem para compartilhar'),
+      of: find.text('Compartilhar imagem'),
       matching: find.byWidgetPredicate((w) => w is FilledButton),
     );
     expect(tester.widget<FilledButton>(salvar).onPressed, isNotNull);

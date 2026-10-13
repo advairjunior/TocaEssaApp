@@ -91,12 +91,8 @@ class _RetrospectivaDoAnoState extends State<RetrospectivaDoAno> {
   Future<void> _salvar() async {
     setState(() => _gerando = true);
     try {
-      await baixarCartaoComoImagem(
+      await compartilharCartaoComoImagem(
           _chaveCartao, 'tocaessa-meu-${widget.ano}.png');
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sua retrospectiva do ano foi salva.')),
-      );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
@@ -134,7 +130,7 @@ class _RetrospectivaDoAnoState extends State<RetrospectivaDoAno> {
                 icon: const Icon(Icons.ios_share_rounded),
                 label: Text(_gerando
                     ? 'Gerando imagem...'
-                    : 'Salvar imagem para compartilhar'),
+                    : 'Compartilhar imagem'),
               ),
             ],
           ),

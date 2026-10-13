@@ -33,7 +33,7 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
     }
   }
 
-  Future<void> _baixarCartao() async {
+  Future<void> _compartilharCartao() async {
     setState(() => _gerandoCartao = true);
     try {
       await WidgetsBinding.instance.endOfFrame;
@@ -46,17 +46,9 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
       final imagem = await limite.toImage(pixelRatio: proporcao);
       final dados = await imagem.toByteData(format: ui.ImageByteFormat.png);
       if (dados == null) throw StateError('Não foi possível gerar a imagem.');
-      final nomeSeguro = apresentacao.nome
-          .toLowerCase()
-          .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-          .replaceAll(RegExp(r'^-|-$'), '');
-      baixarArquivo(
+      await compartilharImagem(
         dados.buffer.asUint8List(),
-        'tocaessa-${nomeSeguro.isEmpty ? 'resenha' : nomeSeguro}.png',
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cartão salvo como imagem.')),
+        'tocaessa-${nomeDeArquivo(apresentacao.nome)}.png',
       );
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);

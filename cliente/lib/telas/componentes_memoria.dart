@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../dominio/modelos.dart';
-import '../infraestrutura/baixar_arquivo.dart';
+import '../infraestrutura/compartilhar_imagem.dart';
 import '../infraestrutura/camera_do_app.dart';
 import '../tema/tema_toca_essa.dart';
 import 'camera_do_cartao.dart';
@@ -299,7 +299,9 @@ Uint8List? _dentroDoLimite(BuildContext context, Uint8List bytes) {
 }
 
 /// Transforma o cartão sob [chave] em PNG de ~1080px de largura e baixa.
-Future<void> baixarCartaoComoImagem(GlobalKey chave, String nomeArquivo) async {
+/// Gera a imagem do cartão e abre a janela de compartilhar do sistema.
+Future<void> compartilharCartaoComoImagem(
+    GlobalKey chave, String nomeArquivo) async {
   await WidgetsBinding.instance.endOfFrame;
   final limite =
       chave.currentContext?.findRenderObject() as RenderRepaintBoundary?;
@@ -308,13 +310,13 @@ Future<void> baixarCartaoComoImagem(GlobalKey chave, String nomeArquivo) async {
   final imagem = await limite.toImage(pixelRatio: proporcao);
   final dados = await imagem.toByteData(format: ui.ImageByteFormat.png);
   if (dados == null) throw StateError('Não foi possível gerar a imagem.');
-  baixarArquivo(dados.buffer.asUint8List(), nomeArquivo);
+  await compartilharImagem(dados.buffer.asUint8List(), nomeArquivo);
 }
 
 /// Nome de arquivo seguro a partir do nome da apresentação.
 String nomeDeArquivo(String nome, {String padrao = 'resenha'}) {
-  final limpo = nome
-      .toLowerCase()
+  // Sem acento primeiro: "Acústica" vira "acustica", não "ac-stica".
+  final limpo = normalizarMusica(nome)
       .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
       .replaceAll(RegExp(r'^-|-$'), '');
   return limpo.isEmpty ? padrao : limpo;

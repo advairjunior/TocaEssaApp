@@ -90,6 +90,6 @@ void main() {
     expect(find.text('PARCERIA DO ANO'), findsOneWidget);
     expect(find.text('Bia'), findsOneWidget);
     expect(find.text('Duo · Léo'), findsOneWidget);
-    expect(find.text('Salvar imagem para compartilhar'), findsOneWidget);
+    expect(find.text('Compartilhar imagem'), findsOneWidget);
   });
 }
