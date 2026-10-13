@@ -5,13 +5,20 @@ typedef _DadosApresentacao = ({
   String local,
   DateTime data,
   TipoApresentacao tipo,
+  int? duracaoMinutos,
+  bool intervaloPausa,
 });
 
 /// Cria ou edita uma apresentação. Fecha devolvendo o que [salvar] retornar.
 class _FormularioApresentacao extends StatefulWidget {
-  const _FormularioApresentacao({required this.salvar, this.apresentacao});
+  const _FormularioApresentacao({
+    required this.salvar,
+    this.apresentacao,
+    this.relogio,
+  });
 
   final Apresentacao? apresentacao;
+  final RelogioDoShow? relogio;
   final Future<Object> Function(_DadosApresentacao dados) salvar;
 
   @override
@@ -25,6 +32,13 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
   late DateTime _data = widget.apresentacao?.data ?? DateTime.now();
   late TipoApresentacao _tipo =
       widget.apresentacao?.tipo ?? TipoApresentacao.publica;
+  late final _horas = TextEditingController(
+    text: switch (widget.relogio?.duracaoContratadaMinutos) {
+      final minutos? => escreverDuracaoContratada(minutos),
+      null => '',
+    },
+  )..addListener(() => setState(() {}));
+  late bool _intervaloPausa = widget.relogio?.intervaloPausaRelogio ?? false;
   bool _salvando = false;
 
   bool get _editando => widget.apresentacao != null;
@@ -33,6 +47,7 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
   void dispose() {
     _nome.dispose();
     _local.dispose();
+    _horas.dispose();
     super.dispose();
   }
 
@@ -52,6 +67,13 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
       mostrarErro(context, 'Informe o nome e o local da apresentação.');
       return;
     }
+    final int? duracaoMinutos;
+    try {
+      duracaoMinutos = lerDuracaoContratada(_horas.text);
+    } on FormatException catch (erro) {
+      mostrarErro(context, erro.message);
+      return;
+    }
     setState(() => _salvando = true);
     try {
       final resultado = await widget.salvar((
@@ -59,6 +81,8 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
         local: _local.text.trim(),
         data: _data,
         tipo: _tipo,
+        duracaoMinutos: duracaoMinutos,
+        intervaloPausa: _intervaloPausa,
       ));
       if (mounted) Navigator.pop(context, resultado);
     } catch (erro) {
@@ -114,6 +138,25 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
               ),
               const SizedBox(height: EspacoTocaEssa.base + 4),
               CampoData(rotulo: 'Data', data: _data, tocar: _escolherData),
+              const SizedBox(height: EspacoTocaEssa.base + 4),
+              CampoTexto(
+                rotulo: 'Horas contratadas',
+                controlador: _horas,
+                dica: 'Ex.: 4 ou 3h30',
+                ajuda: 'Opcional. Mostra à banda quanto falta do show; '
+                    'o público não vê.',
+                acaoTeclado: TextInputAction.done,
+              ),
+              if (_horas.text.trim().isNotEmpty)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _intervaloPausa,
+                  onChanged: (valor) => setState(() => _intervaloPausa = valor),
+                  title: const Text('Intervalo pausa o relógio'),
+                  subtitle: const Text(
+                      'Desligado, as horas são corridas e o intervalo '
+                      'conta no tempo do contrato.'),
+                ),
               const SizedBox(height: EspacoTocaEssa.enorme),
               FilledButton(
                 onPressed: _salvando ? null : _salvar,

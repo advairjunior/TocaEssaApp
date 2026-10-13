@@ -81,6 +81,39 @@ class RelogioDoShow {
   }
 }
 
+/// Lê as horas contratadas como a banda escreve: "4", "3h30", "3:30", "3,5"
+/// ou "45 min". Vazio significa sem cronômetro.
+int? lerDuracaoContratada(String texto) {
+  final limpo = texto.trim().toLowerCase().replaceAll(' ', '');
+  if (limpo.isEmpty) return null;
+  final horasEMinutos =
+      RegExp(r'^(\d{1,2})[h:](\d{1,2})?$').firstMatch(limpo);
+  final soMinutos = RegExp(r'^(\d{1,4})min$').firstMatch(limpo);
+  final decimal = RegExp(r'^(\d{1,2})(?:[.,](\d+))?$').firstMatch(limpo);
+  int? minutos;
+  if (horasEMinutos != null) {
+    final resto = int.parse(horasEMinutos[2] ?? '0');
+    if (resto < 60) minutos = int.parse(horasEMinutos[1]!) * 60 + resto;
+  } else if (soMinutos != null) {
+    minutos = int.parse(soMinutos[1]!);
+  } else if (decimal != null) {
+    minutos =
+        (double.parse('${decimal[1]}.${decimal[2] ?? 0}') * 60).round();
+  }
+  if (minutos == null || minutos < 1 || minutos > 24 * 60) {
+    throw const FormatException(
+        'Não entendi as horas contratadas: ex.: 4 ou 3h30.');
+  }
+  return minutos;
+}
+
+/// "4h", "3h30" ou "45 min", para o campo de horas contratadas.
+String escreverDuracaoContratada(int minutos) {
+  if (minutos < 60) return '$minutos min';
+  final resto = minutos % 60;
+  return '${minutos ~/ 60}h${resto == 0 ? '' : resto.toString().padLeft(2, '0')}';
+}
+
 /// "1h42", "3h00" ou "42 min".
 String formatarTempoDoShow(Duration tempo) {
   final minutos = tempo.inMinutes.abs();

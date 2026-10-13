@@ -207,6 +207,12 @@ void main() {
           200,
         );
       }
+      if (requisicao.url.path.endsWith('/relogio')) {
+        return http.Response(
+          '{"duracaoContratadaMinutos":null,"intervaloPausaRelogio":false,"iniciadaEm":null,"emIntervaloDesde":null,"segundosEmIntervalo":0,"musicasComecadas":0,"musicasRestantes":0,"agora":"2026-09-03T21:00:00Z"}',
+          200,
+        );
+      }
       if (requisicao.method == 'GET') {
         return http.Response(
           '[{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica","data":"2026-09-03","local":"Café Central","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":"Voz e violão"},"pedidosAbertos":true}]',

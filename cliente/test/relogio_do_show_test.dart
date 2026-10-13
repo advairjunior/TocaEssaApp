@@ -113,6 +113,29 @@ void main() {
     expect(formatarTempoDoShow(const Duration(seconds: 20)), '0 min');
   });
 
+  test('entende as horas contratadas do jeito que a banda escreve', () {
+    expect(lerDuracaoContratada(''), isNull);
+    expect(lerDuracaoContratada('  '), isNull);
+    expect(lerDuracaoContratada('4'), 240);
+    expect(lerDuracaoContratada('4h'), 240);
+    expect(lerDuracaoContratada('3h30'), 210);
+    expect(lerDuracaoContratada('3H 30'), 210);
+    expect(lerDuracaoContratada('3:30'), 210);
+    expect(lerDuracaoContratada('3,5'), 210);
+    expect(lerDuracaoContratada('1.5'), 90);
+    expect(lerDuracaoContratada('45 min'), 45);
+    for (final invalida in ['abc', '0', '25', '3h75', '-2']) {
+      expect(() => lerDuracaoContratada(invalida), throwsFormatException,
+          reason: invalida);
+    }
+  });
+
+  test('escreve a duração contratada para editar', () {
+    expect(escreverDuracaoContratada(240), '4h');
+    expect(escreverDuracaoContratada(210), '3h30');
+    expect(escreverDuracaoContratada(45), '45 min');
+  });
+
   test('API configura o relógio e marca o intervalo', () async {
     final requisicoes = <http.Request>[];
     final api = ApiTocaEssa(

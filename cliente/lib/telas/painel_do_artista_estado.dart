@@ -356,12 +356,20 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       context,
       MaterialPageRoute<Object>(
         builder: (_) => _FormularioApresentacao(
-          salvar: (dados) => widget.api.criarApresentacao(
-            dados.nome,
-            dados.data,
-            dados.local,
-            dados.tipo,
-          ),
+          salvar: (dados) async {
+            final criada = await widget.api.criarApresentacao(
+              dados.nome,
+              dados.data,
+              dados.local,
+              dados.tipo,
+            );
+            if (dados.duracaoMinutos != null) {
+              await widget.api.configurarRelogio(
+                  criada.apresentacao.id, dados.duracaoMinutos,
+                  pausa: dados.intervaloPausa);
+            }
+            return criada;
+          },
         ),
       ),
     );

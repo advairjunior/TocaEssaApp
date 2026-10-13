@@ -80,18 +80,36 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
   }
 
   Future<void> _editarApresentacao(Apresentacao apresentacao) async {
+    final RelogioDoShow relogio;
+    try {
+      relogio = await widget.api.obterRelogio(apresentacao.id);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+      return;
+    }
+    if (!mounted) return;
     final atualizada = await Navigator.push<Object>(
       context,
       MaterialPageRoute<Object>(
         builder: (_) => _FormularioApresentacao(
           apresentacao: apresentacao,
-          salvar: (dados) => widget.api.editarApresentacao(
-            apresentacao.id,
-            dados.nome,
-            dados.data,
-            dados.local,
-            dados.tipo,
-          ),
+          relogio: relogio,
+          salvar: (dados) async {
+            final editada = await widget.api.editarApresentacao(
+              apresentacao.id,
+              dados.nome,
+              dados.data,
+              dados.local,
+              dados.tipo,
+            );
+            if (dados.duracaoMinutos != relogio.duracaoContratadaMinutos ||
+                dados.intervaloPausa != relogio.intervaloPausaRelogio) {
+              await widget.api.configurarRelogio(
+                  apresentacao.id, dados.duracaoMinutos,
+                  pausa: dados.intervaloPausa);
+            }
+            return editada;
+          },
         ),
       ),
     );

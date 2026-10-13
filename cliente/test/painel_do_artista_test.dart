@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -326,6 +328,114 @@ void main() {
     expect(find.text('Editar apresentação'), findsOneWidget);
     expect(find.text('Excluir apresentação'), findsOneWidget);
     expect(find.text('Iniciar'), findsOneWidget);
+  });
+
+  group('horas contratadas', () {
+    String relogio({int? duracao, bool pausa = false}) => jsonEncode({
+          'duracaoContratadaMinutos': duracao,
+          'intervaloPausaRelogio': pausa,
+          'iniciadaEm': null,
+          'emIntervaloDesde': null,
+          'segundosEmIntervalo': 0,
+          'musicasComecadas': 0,
+          'musicasRestantes': 0,
+          'agora': '2026-09-04T21:00:00Z',
+        });
+
+    testWidgets('nova apresentação guarda as horas e se o intervalo pausa',
+        (tester) async {
+      final configuracoes = <Map<String, dynamic>>[];
+      await _abrirPainel(tester, outras: (requisicao) async {
+        if (requisicao.method == 'POST' &&
+            requisicao.url.path == '/api/apresentacoes') {
+          return http.Response(
+            '{"apresentacao":${_apresentacao(id: '1', nome: 'Casamento', data: '2026-09-05')},"linkPublico":"http://teste/#/publico/COD001"}',
+            201,
+          );
+        }
+        if (requisicao.url.path.endsWith('/relogio')) {
+          configuracoes
+              .add(jsonDecode(requisicao.body) as Map<String, dynamic>);
+          return http.Response(relogio(duracao: 240, pausa: true), 200);
+        }
+        return null;
+      });
+      await tester.tap(find.text('Nova apresentação'));
+      await tester.pumpAndSettle();
+      await tester.enterText(campo('Nome da apresentação'), 'Casamento');
+      await tester.enterText(campo('Local'), 'Salão');
+      expect(find.text('Intervalo pausa o relógio'), findsNothing);
+      await tester.enterText(campo('Horas contratadas'), '4');
+      await tester.pumpAndSettle();
+      final pausa = find.text('Intervalo pausa o relógio');
+      await tester.ensureVisible(pausa);
+      await tester.tap(pausa);
+      final criar = find.text('Criar apresentação');
+      await tester.ensureVisible(criar);
+      await tester.tap(criar);
+      await tester.pumpAndSettle();
+
+      expect(configuracoes, [
+        {'duracaoContratadaMinutos': 240, 'intervaloPausaRelogio': true}
+      ]);
+      expect(find.text('Apresentação criada!'), findsOneWidget);
+    });
+
+    testWidgets('horas que o app não entende não salvam', (tester) async {
+      var criou = false;
+      await _abrirPainel(tester, outras: (requisicao) async {
+        if (requisicao.method == 'POST') criou = true;
+        return null;
+      });
+      await tester.tap(find.text('Nova apresentação'));
+      await tester.pumpAndSettle();
+      await tester.enterText(campo('Nome da apresentação'), 'Casamento');
+      await tester.enterText(campo('Local'), 'Salão');
+      await tester.enterText(campo('Horas contratadas'), 'quatro');
+      final criar = find.text('Criar apresentação');
+      await tester.ensureVisible(criar);
+      await tester.tap(criar);
+      await tester.pumpAndSettle();
+
+      expect(criou, isFalse);
+      expect(find.textContaining('ex.: 4 ou 3h30'), findsOneWidget);
+    });
+
+    testWidgets('editar mostra as horas guardadas e salva a mudança',
+        (tester) async {
+      final configuracoes = <Map<String, dynamic>>[];
+      final show = _apresentacao(
+          id: '1', nome: 'Show de sábado', data: '2026-09-05');
+      await _abrirPainel(tester, apresentacoes: '[$show]',
+          outras: (requisicao) async {
+        if (requisicao.url.path.endsWith('/relogio')) {
+          if (requisicao.method == 'PUT') {
+            configuracoes
+                .add(jsonDecode(requisicao.body) as Map<String, dynamic>);
+          }
+          return http.Response(relogio(duracao: 240), 200);
+        }
+        if (requisicao.method == 'PUT') return http.Response(show, 200);
+        return null;
+      });
+      await tester.tap(find.text('Show de sábado'));
+      await tester.pumpAndSettle();
+      final editar = find.text('Editar apresentação');
+      await tester.ensureVisible(editar);
+      await tester.tap(editar);
+      await tester.pumpAndSettle();
+
+      expect(find.text('4h'), findsOneWidget);
+      await tester.enterText(campo('Horas contratadas'), '3h30');
+      final salvar = find.text('Salvar');
+      await tester.ensureVisible(salvar);
+      await tester.tap(salvar);
+      await tester.pumpAndSettle();
+
+      expect(configuracoes, [
+        {'duracaoContratadaMinutos': 210, 'intervaloPausaRelogio': false}
+      ]);
+    });
   });
 
   group('ao recarregar a página', () {
