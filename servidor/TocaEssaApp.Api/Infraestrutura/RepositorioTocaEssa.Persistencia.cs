@@ -79,6 +79,7 @@ public sealed partial class RepositorioTocaEssa
                 apresentacao.ArtistaId);
             if (LerPedidosASeguir(apresentacao.PedidosASeguir) is { Count: > 0 } aSeguir)
                 _pedidosASeguir[apresentacao.Id] = aSeguir;
+            CarregarRelogio(apresentacao);
         }
 
         foreach (var pedido in banco.Pedidos.AsNoTracking())
@@ -288,7 +289,8 @@ public sealed partial class RepositorioTocaEssa
         }
 
         IEnumerable<object> apresentacoes = _apresentacoes.Values.Select(item =>
-            new ApresentacaoRegistro
+        {
+            var registro = new ApresentacaoRegistro
             {
                 Id = item.Id,
                 ArtistaId = item.ArtistaId,
@@ -301,7 +303,10 @@ public sealed partial class RepositorioTocaEssa
                 Tipo = item.Tipo,
                 FotoRetrospectivaUrl = item.FotoRetrospectivaUrl,
                 PedidosASeguir = EscreverPedidosASeguir(item.Id)
-            });
+            };
+            EscreverRelogio(registro);
+            return registro;
+        });
 
         IEnumerable<object> pedidos = _pedidos.Values.Select(item =>
             new PedidoMusicalRegistro

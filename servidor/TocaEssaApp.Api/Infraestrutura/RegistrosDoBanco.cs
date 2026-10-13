@@ -34,6 +34,12 @@ internal sealed class ApresentacaoRegistro
     public string? FotoRetrospectivaUrl { get; set; }
     // ids dos pedidos marcados para tocar a seguir, em ordem, separados por vírgula
     public string? PedidosASeguir { get; set; }
+    // Cronômetro do show, visto só pelo artista
+    public int? DuracaoContratadaMinutos { get; set; }
+    public bool IntervaloPausaRelogio { get; set; }
+    public DateTimeOffset? IniciadaEm { get; set; }
+    public DateTimeOffset? EmIntervaloDesde { get; set; }
+    public int SegundosEmIntervalo { get; set; }
 }
 
 internal sealed class PedidoMusicalRegistro

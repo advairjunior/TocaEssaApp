@@ -249,6 +249,16 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     ADD COLUMN IF NOT EXISTS "DestinatarioAlo" character varying(120) NULL;
                 ALTER TABLE "Apresentacoes"
                     ADD COLUMN IF NOT EXISTS "PedidosASeguir" text NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "DuracaoContratadaMinutos" integer NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "IntervaloPausaRelogio" boolean NOT NULL DEFAULT false;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "IniciadaEm" timestamp with time zone NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "EmIntervaloDesde" timestamp with time zone NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "SegundosEmIntervalo" integer NOT NULL DEFAULT 0;
                 CREATE TABLE IF NOT EXISTS "AvaliacoesPedidos" (
                     "PedidoId" uuid NOT NULL,
                     "IdentificadorAvaliador" character varying(160) NOT NULL,
@@ -538,6 +548,16 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
         // Depois da migração de propriedade, que pode reconstruir a tabela.
         AdicionarColunaSqliteSeNecessario(
             comando, "Apresentacoes", "PedidosASeguir", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "DuracaoContratadaMinutos", "INTEGER NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "IntervaloPausaRelogio", "INTEGER NOT NULL DEFAULT 0");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "IniciadaEm", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "EmIntervaloDesde", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "SegundosEmIntervalo", "INTEGER NOT NULL DEFAULT 0");
     }
 
     private void MigrarPropriedadePostgres()

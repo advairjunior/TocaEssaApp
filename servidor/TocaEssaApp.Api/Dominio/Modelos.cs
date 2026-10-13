@@ -133,6 +133,21 @@ public sealed record EditarApresentacao(
 
 public sealed record AlterarStatusApresentacao(StatusApresentacao Status);
 
+/// Cronômetro do show, visto só pelo artista dono. `Agora` é a hora do
+/// servidor, para os aparelhos da banda contarem a partir do mesmo relógio.
+public sealed record RelogioDoShow(
+    int? DuracaoContratadaMinutos,
+    bool IntervaloPausaRelogio,
+    DateTimeOffset? IniciadaEm,
+    DateTimeOffset? EmIntervaloDesde,
+    int SegundosEmIntervalo,
+    int MusicasComecadas,
+    int MusicasRestantes,
+    DateTimeOffset Agora);
+
+public sealed record ConfigurarRelogioDoShow(
+    int? DuracaoContratadaMinutos, bool IntervaloPausaRelogio = false);
+
 public sealed record ApresentacaoCriada(Apresentacao Apresentacao, string LinkPublico);
 
 public enum StatusPedidoMusical

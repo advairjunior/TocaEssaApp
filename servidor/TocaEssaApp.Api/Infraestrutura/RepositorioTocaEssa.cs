@@ -91,6 +91,8 @@ public sealed class IdentificacaoPublicaObrigatoriaException : Exception { }
 public sealed class AvaliacaoInvalidaException : Exception { }
 
 public sealed class PedidoAindaNaoTocadoException : Exception { }
+
+public sealed class ShowNaoIniciadoException : Exception { }
 public sealed class ApoioPixIndisponivelException : Exception { }
 
 public sealed class EmailArtistaJaCadastradoException : Exception { }
