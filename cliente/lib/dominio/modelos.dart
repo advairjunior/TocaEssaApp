@@ -2,6 +2,7 @@ part 'modelos_estatisticas.dart';
 part 'modelos_resenha.dart';
 part 'modelos_cifras.dart';
 part 'modelos_repertorio.dart';
+part 'modelos_relogio.dart';
 
 class PerfilArtistico {
   const PerfilArtistico(
