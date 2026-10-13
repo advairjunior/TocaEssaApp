@@ -29,6 +29,20 @@ mixin _ApiCifrasPerfil on _ApiTocaEssaBase {
         .toList();
   }
 
+  /// Para cada música do repertório: se tem cifra colada, o link e a pesquisa.
+  Future<List<CifraDaMusicaDoRepertorio>> listarCifrasDoRepertorio(
+      String repertorioId) async {
+    final resposta = await _cliente.get(
+      Uri.parse('$_enderecoBase/api/artista/repertorios/$repertorioId/cifras'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((item) =>
+            CifraDaMusicaDoRepertorio.deJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Salva a letra e cifra coladas no app; texto vazio apaga.
   Future<ResultadoCifraDoArtista> salvarCifraEmTexto(
       String musica, String? artista, String texto) async {

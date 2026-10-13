@@ -148,13 +148,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   }
 
   Future<void> _editarCifra(String? textoAtual) async {
-    final texto = await showDialog<String>(
-      context: context,
-      builder: (_) => _DialogoDaCifra(
-        titulo: _pagina.titulo,
-        texto: textoAtual ?? '',
-      ),
-    );
+    final texto = await pedirCifraEmTexto(context,
+        titulo: _pagina.titulo, texto: textoAtual);
     if (texto == null || !mounted) return;
     try {
       await _sequencia.salvarCifraEmTexto(_pagina, texto);
@@ -453,6 +448,17 @@ class _BarraDoLeitor extends StatelessWidget {
         ),
       );
 }
+
+/// Caixa para colar ou corrigir a cifra; responde o texto ou nulo se cancelar.
+Future<String?> pedirCifraEmTexto(
+  BuildContext context, {
+  required String titulo,
+  String? texto,
+}) =>
+    showDialog<String>(
+      context: context,
+      builder: (_) => _DialogoDaCifra(titulo: titulo, texto: texto ?? ''),
+    );
 
 class _DialogoDaCifra extends StatefulWidget {
   const _DialogoDaCifra({required this.titulo, required this.texto});

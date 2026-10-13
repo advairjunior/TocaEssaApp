@@ -58,3 +58,27 @@ class ResultadoCifraDoArtista {
         texto: json['texto'] as String?,
       );
 }
+
+/// Situação da cifra de uma música do repertório: se já tem cifra colada,
+/// o link salvo e a pesquisa pronta para achar a cifra.
+class CifraDaMusicaDoRepertorio {
+  const CifraDaMusicaDoRepertorio({
+    required this.musicaId,
+    required this.temTexto,
+    required this.urlPesquisa,
+    this.url,
+  });
+
+  final String musicaId;
+  final bool temTexto;
+  final String? url;
+  final String urlPesquisa;
+
+  factory CifraDaMusicaDoRepertorio.deJson(Map<String, dynamic> json) =>
+      CifraDaMusicaDoRepertorio(
+        musicaId: json['musicaId'] as String,
+        temTexto: json['temTexto'] as bool,
+        url: json['url'] as String?,
+        urlPesquisa: json['urlPesquisa'] as String,
+      );
+}

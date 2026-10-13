@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../dominio/modelos.dart';
+import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
+import 'colar_cifras.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
 
 class GerenciarRepertorios extends StatefulWidget {
-  const GerenciarRepertorios({super.key, required this.api});
+  const GerenciarRepertorios({
+    super.key,
+    required this.api,
+    this.abrirUrl = abrirNaAbaDaCifra,
+  });
   final ApiTocaEssa api;
+  final Future<void> Function(Uri url) abrirUrl;
 
   @override
   State<GerenciarRepertorios> createState() => _GerenciarRepertoriosState();
@@ -55,7 +63,8 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
     Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => _DetalheRepertorio(api: widget.api, repertorio: rep),
+        builder: (_) => _DetalheRepertorio(
+            api: widget.api, repertorio: rep, abrirUrl: widget.abrirUrl),
       ),
     ).then((_) {
       if (mounted) _carregar();
@@ -156,9 +165,14 @@ class _LinhaRepertorio extends StatelessWidget {
 }
 
 class _DetalheRepertorio extends StatefulWidget {
-  const _DetalheRepertorio({required this.api, required this.repertorio});
+  const _DetalheRepertorio({
+    required this.api,
+    required this.repertorio,
+    required this.abrirUrl,
+  });
   final ApiTocaEssa api;
   final Repertorio repertorio;
+  final Future<void> Function(Uri url) abrirUrl;
 
   @override
   State<_DetalheRepertorio> createState() => _DetalheRepertorioState();
@@ -168,11 +182,58 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
   late List<MusicaDoRepertorio> _musicas;
   late String _nome = widget.repertorio.nome;
   bool _salvando = false;
+  // musicaId → situação da cifra; vazio enquanto não carregou.
+  Map<String, CifraDaMusicaDoRepertorio> _cifras = {};
 
   @override
   void initState() {
     super.initState();
     _musicas = List.from(widget.repertorio.musicas);
+    _carregarCifras();
+  }
+
+  Future<void> _carregarCifras() async {
+    try {
+      final cifras =
+          await widget.api.listarCifrasDoRepertorio(widget.repertorio.id);
+      if (mounted) {
+        setState(() => _cifras = {for (final c in cifras) c.musicaId: c});
+      }
+    } catch (_) {
+      // Sem a situação das cifras, o repertório segue normal.
+    }
+  }
+
+  List<MusicaParaColar> get _semCifra => [
+        for (final musica in _musicas)
+          if (_cifras[musica.id] case final cifra? when !cifra.temTexto)
+            (musica: musica, cifra: cifra),
+      ];
+
+  Future<void> _abrirCifra(MusicaDoRepertorio musica) async {
+    try {
+      final atual =
+          await widget.api.consultarCifra(musica.titulo, musica.artista);
+      if (!mounted) return;
+      final texto = await pedirCifraEmTexto(context,
+          titulo: musica.titulo, texto: atual.texto);
+      if (texto == null || !mounted) return;
+      await widget.api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
+      await _carregarCifras();
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    }
+  }
+
+  Future<void> _colarAgora() async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => ColarCifras(
+        api: widget.api,
+        musicas: _semCifra,
+        abrirUrl: widget.abrirUrl,
+      ),
+    ));
+    await _carregarCifras();
   }
 
   Future<void> _renomearRepertorio() async {
@@ -401,6 +462,11 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
+                          if (_semCifra.isNotEmpty)
+                            _AvisoSemCifra(
+                              quantidade: _semCifra.length,
+                              colarAgora: _colarAgora,
+                            ),
                           Padding(
                             padding: const EdgeInsets.only(
                                 bottom: EspacoTocaEssa.medio),
@@ -429,6 +495,8 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
                                 child: _LinhaMusica(
                                   indice: indice,
                                   musica: musica,
+                                  cifra: _cifras[musica.id],
+                                  abrirCifra: () => _abrirCifra(musica),
                                   salvando: _salvando,
                                   editar: () => _editarMusica(musica),
                                   remover: () => _removerMusica(musica),
@@ -492,6 +560,44 @@ class _CelulaDoGrupo extends StatelessWidget {
   }
 }
 
+/// "2 músicas sem cifra · Colar agora", no topo do repertório.
+class _AvisoSemCifra extends StatelessWidget {
+  const _AvisoSemCifra({required this.quantidade, required this.colarAgora});
+
+  final int quantidade;
+  final VoidCallback colarAgora;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: EspacoTocaEssa.medio),
+        padding: const EdgeInsets.fromLTRB(
+          EspacoTocaEssa.base,
+          EspacoTocaEssa.pequeno,
+          EspacoTocaEssa.pequeno,
+          EspacoTocaEssa.pequeno,
+        ),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.atencao.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.menu_book_rounded, color: CoresTocaEssa.atencao),
+            const SizedBox(width: EspacoTocaEssa.pequeno),
+            Expanded(
+              child: Text(
+                quantidade == 1
+                    ? '1 música sem cifra'
+                    : '$quantidade músicas sem cifra',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            TextButton(onPressed: colarAgora, child: const Text('Colar agora')),
+          ],
+        ),
+      );
+}
+
 class _LinhaMusica extends StatelessWidget {
   const _LinhaMusica({
     required this.indice,
@@ -500,8 +606,13 @@ class _LinhaMusica extends StatelessWidget {
     required this.editar,
     required this.remover,
     required this.alca,
+    required this.cifra,
+    required this.abrirCifra,
   });
 
+  // Nula enquanto a situação das cifras não carregou.
+  final CifraDaMusicaDoRepertorio? cifra;
+  final VoidCallback abrirCifra;
   final int indice;
   final MusicaDoRepertorio musica;
   final bool salvando;
@@ -561,6 +672,19 @@ class _LinhaMusica extends StatelessWidget {
             ),
           ),
         ),
+        if (cifra case final situacao?)
+          IconButton(
+            tooltip:
+                situacao.temTexto ? 'Ver ou corrigir cifra' : 'Colar cifra',
+            icon: Icon(
+              Icons.menu_book_rounded,
+              size: 20,
+              color: situacao.temTexto
+                  ? CoresTocaEssa.sucesso
+                  : CoresTocaEssa.atencao,
+            ),
+            onPressed: salvando ? null : abrirCifra,
+          ),
         IconButton(
           tooltip: 'Remover',
           icon: const Icon(Icons.remove_circle_outline_rounded,
