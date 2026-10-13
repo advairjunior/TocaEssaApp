@@ -32,6 +32,12 @@
 
   <title>TocaEssa</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Fundo do tema já no carregamento: sem ele, a tela fica branca até o
+       Flutter abrir, o que demora com a internet fraca de um show. -->
+  <style>
+    html, body { margin: 0; background-color: #0B080F; }
+  </style>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
