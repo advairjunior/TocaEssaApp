@@ -43,6 +43,9 @@ arquivo.
 
 **Público (sem conta, pelo código ou QR Code)**
 - Entra no evento, faz Pedido Musical, acompanha a fila e avalia músicas tocadas.
+- Sem conta, o nome é obrigatório (pelo menos 2 letras) para pedir música ou
+  alô; a rota pública responde 400 "Informe seu nome." (contrato alterado com
+  autorização em 2026-10-13). O nome fica salvo no aparelho.
 - Pix do artista (copia e cola ou chave), contagem de quem abriu o evento.
 - Resenha entre Amigos: conta com foto, histórico em linha do tempo,
   retrospectiva do ano e cartões compartilháveis com foto do encontro.
