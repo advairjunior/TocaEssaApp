@@ -20,6 +20,7 @@ import 'instalar_app.dart';
 import 'componentes_memoria.dart';
 import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';
+import 'stories_do_show.dart';
 import 'perfil_participante.dart';
 
 part 'area_do_publico_estado.dart';

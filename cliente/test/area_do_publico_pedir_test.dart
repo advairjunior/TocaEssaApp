@@ -15,7 +15,8 @@ Finder campo(String rotulo) => find.descendant(
       matching: find.byType(TextField),
     );
 
-Future<List<http.Request>> _abrirArea(WidgetTester tester) async {
+Future<List<http.Request>> _abrirArea(WidgetTester tester,
+    {String status = 'EmAndamento'}) async {
   final requisicoes = <http.Request>[];
   final cliente = MockClient((requisicao) async {
     requisicoes.add(requisicao);
@@ -29,7 +30,8 @@ Future<List<http.Request>> _abrirArea(WidgetTester tester) async {
         201,
       );
     }
-    return http.Response(_apresentacaoJson, 200);
+    return http.Response(
+        _apresentacaoJson.replaceFirst('"EmAndamento"', '"$status"'), 200);
   });
   await tester.pumpWidget(MaterialApp(
     home: AreaDoPublico(
@@ -59,6 +61,22 @@ void main() {
           of: topo, matching: find.textContaining('Noite Acústica')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('show ao vivo ou encerrado oferece enviar vídeo ou foto',
+      (tester) async {
+    await _abrirArea(tester);
+    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await _abrirArea(tester, status: 'Encerrada');
+    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
+  });
+
+  testWidgets('show agendado ainda não recebe vídeo nem foto', (tester) async {
+    await _abrirArea(tester, status: 'Agendada');
+
+    expect(find.text('Enviar vídeo ou foto'), findsNothing);
   });
 
   testWidgets('pedir usa pergunta direta, campos leves e sem card',

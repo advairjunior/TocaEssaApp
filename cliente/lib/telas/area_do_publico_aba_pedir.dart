@@ -7,6 +7,15 @@ extension _ConstrucaoAbaPedir on _AreaDoPublicoState {
   ) =>
       [
         const SizedBox(height: 16),
+        // Stories só com o show começado; o servidor fecha 24 h após o fim.
+        if (apresentacao.status != StatusApresentacao.agendada) ...[
+          EnviarStory(
+            api: _api,
+            codigo: apresentacao.codigo,
+            nome: _perfilPublico?.nome ?? _nome.text,
+          ),
+          const SizedBox(height: EspacoTocaEssa.grande),
+        ],
         if (apresentacao.pedidosAbertos &&
             (apresentacao.tipo == TipoApresentacao.publica ||
                 _perfilPublico != null))
