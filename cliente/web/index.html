@@ -40,6 +40,17 @@
   </style>
 </head>
 <body>
+  <!-- Chrome e Android avisam que dá para instalar antes de o Flutter abrir:
+       o pedido fica guardado para o "Instalar no celular" dos perfis. -->
+  <script>
+    window.addEventListener('beforeinstallprompt', function (evento) {
+      evento.preventDefault();
+      window.pedidoDeInstalacaoDoTocaEssa = evento;
+    });
+    window.addEventListener('appinstalled', function () {
+      window.pedidoDeInstalacaoDoTocaEssa = null;
+    });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -16,6 +16,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'instalar_app.dart';
 import 'componentes_memoria.dart';
 import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';

@@ -9,6 +9,7 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
+import 'package:toca_essa_app/telas/instalar_app.dart';
 
 import 'apoio/camera_falsa.dart';
 
@@ -102,6 +103,7 @@ void main() {
     expect(find.text('Sair'), findsOneWidget);
     await tester.tap(find.text('Perfil artístico'));
     await tester.pumpAndSettle();
+    expect(find.byType(LinhaInstalarApp, skipOffstage: false), findsOneWidget);
 
     expect(find.text('Identidade artística'), findsOneWidget);
     expect(find.text('Conquistas'), findsOneWidget);

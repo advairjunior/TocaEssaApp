@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
+import 'package:toca_essa_app/telas/instalar_app.dart';
 
 const _apresentacaoJson =
     '{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica","data":"2026-09-03","local":"Café Central","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"EmAndamento","tipo":"Publica"}';
@@ -89,5 +90,6 @@ void main() {
     expect(find.text('Minhas resenhas'), findsOneWidget);
     expect(find.text('ana@example.com'), findsOneWidget);
     expect(find.text('Sair'), findsOneWidget);
+    expect(find.byType(LinhaInstalarApp, skipOffstage: false), findsOneWidget);
   });
 }

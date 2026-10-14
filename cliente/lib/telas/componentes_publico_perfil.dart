@@ -162,6 +162,7 @@ class PerfilPublicoAtivo extends StatelessWidget {
                 ],
               ),
             ),
+            LinhaInstalarApp(),
           ],
         ),
       ],

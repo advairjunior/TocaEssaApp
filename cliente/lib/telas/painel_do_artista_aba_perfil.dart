@@ -216,6 +216,7 @@ extension _ConstrucaoPerfilDoArtista on _PainelDoArtistaState {
               ],
             ),
           ),
+          LinhaInstalarApp(),
         ],
       ),
     ];

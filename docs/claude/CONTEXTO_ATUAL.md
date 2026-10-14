@@ -154,6 +154,12 @@ O proprietário testa e usa no iPhone. Testes de widget não pegam:
 - A aba de cifra aberta em branco antes da resposta do servidor podia ficar
   branca no palco: cifra já buscada abre direto no toque; a espera mostra
   aviso escuro (`pagina_de_espera_da_cifra.dart`).
+- Site não instalado pode ter os dados do aparelho apagados pelo Safari
+  depois de dias sem uso; instalado na Tela de Início, não. "Instalar no
+  celular" no grupo Conta dos perfis do artista e do público
+  (`instalar_app.dart`): some quando aberto pelo ícone; no Chrome/Android usa
+  o `beforeinstallprompt` guardado no `index.html`; no iPhone (sem instalação
+  automática) mostra o passo a passo do Compartilhar.
 
 ### Investigações registradas
 
