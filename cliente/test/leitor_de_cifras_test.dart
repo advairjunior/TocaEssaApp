@@ -382,10 +382,8 @@ void main() {
   testWidgets('pinça aumenta a letra e o tamanho fica guardado',
       (tester) async {
     await _abrir(tester);
-    double tamanho() => tester
-        .widget<Text>(find.text('Quando eu digo que deixei de te amar'))
-        .style!
-        .fontSize!;
+    double tamanho() =>
+        tester.widget<Text>(find.text('É porque eu te amo')).style!.fontSize!;
     final antes = tamanho();
 
     final centro = tester.getCenter(find.text('Quando eu digo que deixei de te amar'));
@@ -404,6 +402,14 @@ void main() {
     expect(tamanho(), greaterThan(antes));
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getDouble('leitor_escala'), greaterThan(1));
+    // Letra grande quebra a linha em vez de sumir pela direita.
+    expect(find.text('Quando eu digo que deixei de te amar'), findsNothing);
+    expect(find.text('Quando eu digo que'), findsOneWidget);
+    expect(find.text('deixei de te amar'), findsOneWidget);
+    expect(
+        find.byWidgetPredicate((w) =>
+            w is SingleChildScrollView && w.scrollDirection == Axis.horizontal),
+        findsNothing);
   });
 
   test('reconhece linhas de acordes de uma cifra real do Cifra Club', () {

@@ -110,6 +110,9 @@ arquivo.
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
   cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
   tom (guardado por música no aparelho) e rolagem automática (1x a 5x).
+  Com a pinça, linha que não cabe quebra em vez de rolar para o lado
+  (`quebrar_cifra.dart`): acordes e letra quebram juntos no mesmo ponto e o
+  acorde segue na sílaba; tablatura também quebra.
   O "Tom: E" da cifra colada preenche o tom vazio no acervo e na setlist;
   trocar o "Tom:" depois leva junto o tom que veio da cifra, e o tom
   escolhido à mão fica. Setlist e repertório recarregam o tom ao salvar.

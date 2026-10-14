@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/desenho_de_acorde.dart';
 import '../dominio/modelos.dart';
+import '../dominio/quebrar_cifra.dart';
 import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
@@ -20,13 +21,17 @@ const _chaveVelocidade = 'leitor_velocidade';
 // Pixels por segundo de cada velocidade da rolagem automática (1x a 5x).
 const _velocidades = [12.0, 20.0, 30.0, 45.0, 65.0];
 
-/// Tamanho da fonte para a linha mais larga caber em [largura]. A fonte de
-/// largura fixa ocupa 0,6 da altura por caractere.
+/// A fonte de largura fixa ocupa 0,6 da altura por caractere.
+const _larguraDaLetra = .6;
+
+/// Tamanho da fonte para a linha mais larga caber em [largura].
 double tamanhoDaFonteDaCifra({
   required double largura,
   required int maiorLinha,
 }) =>
-    maiorLinha == 0 ? 24 : (largura / (maiorLinha * .6)).clamp(10, 24);
+    maiorLinha == 0
+        ? 24
+        : (largura / (maiorLinha * _larguraDaLetra)).clamp(10, 24);
 
 /// Leitor de cifras do show: só a cifra na tela, setas para trocar de
 /// música (sem marcar nada) e Tocar sempre à mão. Pedal Bluetooth de virar
@@ -401,34 +406,31 @@ class _Cifra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final linhas = texto.split('\n');
-    final maiorLinha = linhas.fold<int>(
+    final maiorLinha = texto.split('\n').fold<int>(
         0, (maior, linha) => linha.length > maior ? linha.length : maior);
     return LayoutBuilder(
       builder: (context, limites) {
         const margem = EspacoTocaEssa.base;
-        final tamanho = tamanhoDaFonteDaCifra(
-              largura: limites.maxWidth - margem * 2,
-              maiorLinha: maiorLinha,
-            ) *
-            escala;
+        final largura = limites.maxWidth - margem * 2;
+        final tamanho =
+            tamanhoDaFonteDaCifra(largura: largura, maiorLinha: maiorLinha) *
+                escala;
+        // Letra grande pela pinça quebra a linha em vez de sumir pela
+        // direita; acordes e letra quebram juntos.
+        final linhas = quebrarCifra(
+            texto, (largura / (tamanho * _larguraDaLetra)).floor());
         return SingleChildScrollView(
           // Margem de baixo: o fim da cifra rola acima do botão de rolagem.
           controller: controlador,
           padding: const EdgeInsets.fromLTRB(margem, margem, margem, 80),
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            // Letra grande demais pela pinça rola para o lado.
-            scrollDirection: Axis.horizontal,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final linha in linhas)
-                  linha.trim().isEmpty
-                      ? SizedBox(height: tamanho * .9)
-                      : _linha(context, linha, tamanho),
-              ],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final linha in linhas)
+                linha.trim().isEmpty
+                    ? SizedBox(height: tamanho * .9)
+                    : _linha(context, linha, tamanho),
+            ],
           ),
         );
       },
