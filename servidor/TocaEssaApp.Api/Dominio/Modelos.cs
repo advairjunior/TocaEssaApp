@@ -349,7 +349,8 @@ public sealed record StoryDoShow(
     string? Nome,
     DateTimeOffset CriadoEm,
     string Chave,
-    string TipoDeConteudo);
+    string TipoDeConteudo,
+    bool DoArtista = false);
 
 /// Envio como o artista vê: inclui os escondidos por denúncia.
 public sealed record EnvioDoShow(
@@ -360,7 +361,8 @@ public sealed record EnvioDoShow(
     DateTimeOffset ExpiraEm,
     bool Escondido,
     string Chave,
-    string TipoDeConteudo);
+    string TipoDeConteudo,
+    bool DoArtista = false);
 
 public sealed record EnviosDoShow(
     IReadOnlyList<EnvioDoShow> Envios,

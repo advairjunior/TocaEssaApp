@@ -355,6 +355,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 );
                 CREATE INDEX IF NOT EXISTS "IX_EnviosDoPublico_ApresentacaoId"
                     ON "EnviosDoPublico" ("ApresentacaoId");
+                ALTER TABLE "EnviosDoPublico"
+                    ADD COLUMN IF NOT EXISTS "DoArtista" boolean NOT NULL DEFAULT FALSE;
                 CREATE TABLE IF NOT EXISTS "Repertorios" (
                     "Id" uuid NOT NULL,
                     "ArtistaId" uuid NOT NULL,
@@ -598,6 +600,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             comando, "PedidosMusicais", "Recado", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(
             comando, "PedidosMusicais", "Tipo", "INTEGER NOT NULL DEFAULT 0");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "EnviosDoPublico", "DoArtista", "INTEGER NOT NULL DEFAULT 0");
         AdicionarColunaSqliteSeNecessario(
             comando, "PedidosMusicais", "DestinatarioAlo", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(

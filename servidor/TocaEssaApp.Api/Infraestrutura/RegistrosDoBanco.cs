@@ -208,4 +208,6 @@ internal sealed class EnvioDoPublicoRegistro
     public bool Escondido { get; set; }
     // Aparelhos que denunciaram, um por linha; zera quando o artista mostra.
     public string Denuncias { get; set; } = string.Empty;
+    // Postado pelo artista dono: destaque para o público e sem denúncia.
+    public bool DoArtista { get; set; }
 }

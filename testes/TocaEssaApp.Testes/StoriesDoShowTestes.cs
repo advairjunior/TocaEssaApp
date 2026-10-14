@@ -33,11 +33,70 @@ public class StoriesDoShowTestes
     }
 
     [Fact]
-    public void ShowAgendadoNaoRecebeEnvio()
+    public void ShowAgendadoJaRecebeEMostraStories()
     {
         var cenario = CriarCenario();
 
-        Assert.Throws<StoriesFechadosException>(() => cenario.Enviar("aparelho-1"));
+        cenario.Enviar("aparelho-1");
+
+        Assert.Single(cenario.Repo.ListarStoriesDoShow(cenario.Show.Codigo));
+    }
+
+    [Fact]
+    public void PublicoNaoVeStoryDepoisDos7DiasMesmoComOShowAgendado()
+    {
+        var cenario = CriarCenario();
+        cenario.Enviar("aparelho-1");
+
+        cenario.Agora = Inicio.AddDays(7).AddMinutes(1);
+
+        Assert.Empty(cenario.Repo.ListarStoriesDoShow(cenario.Show.Codigo));
+    }
+
+    [Fact]
+    public void ArtistaPostaStoryQueOPublicoVeComDestaque()
+    {
+        var cenario = CriarCenario();
+        var envio = cenario.Repo.CriarEnvioDoArtista(cenario.Token, cenario.Show.Id,
+            new PedidoDeEnvio(TipoDeStory.Video, "video/quicktime", 30 * MB, null, string.Empty));
+
+        cenario.Repo.ConfirmarEnvioDoArtista(cenario.Token, cenario.Show.Id, envio.Id, 30 * MB);
+
+        var story = Assert.Single(cenario.Repo.ListarStoriesDoShow(cenario.Show.Codigo));
+        Assert.True(story.DoArtista);
+        Assert.Equal("Duo Aurora", story.Nome);
+        Assert.True(Assert.Single(cenario.Repo
+            .ListarEnviosDoShow(cenario.Token, cenario.Show.Id).Envios).DoArtista);
+    }
+
+    [Fact]
+    public void StoryDoArtistaNaoContaNoLimiteDoAparelhoNemSomePorDenuncia()
+    {
+        var cenario = CriarCenario();
+        for (var i = 0; i < 12; i++)
+        {
+            var envio = cenario.Repo.CriarEnvioDoArtista(cenario.Token, cenario.Show.Id,
+                new PedidoDeEnvio(TipoDeStory.Foto, "image/jpeg", MB, null, string.Empty));
+            cenario.Repo.ConfirmarEnvioDoArtista(cenario.Token, cenario.Show.Id, envio.Id, MB);
+        }
+        var primeiro = cenario.Repo.ListarStoriesDoShow(cenario.Show.Codigo)[0].Id;
+
+        for (var i = 1; i <= 3; i++)
+            cenario.Repo.DenunciarStory(cenario.Show.Codigo, primeiro, $"denuncia-{i}");
+
+        Assert.Equal(12, cenario.Repo.ListarStoriesDoShow(cenario.Show.Codigo).Count);
+        cenario.Enviar("aparelho-1");
+    }
+
+    [Fact]
+    public void OutroArtistaNaoPostaNoShowDeQuemNaoE()
+    {
+        var cenario = CriarCenario();
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+
+        Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
+            cenario.Repo.CriarEnvioDoArtista(tokenBia, cenario.Show.Id,
+                new PedidoDeEnvio(TipoDeStory.Foto, "image/jpeg", MB, null, string.Empty)));
     }
 
     [Fact]
@@ -236,6 +295,40 @@ public class StoriesDoShowTestes
             migrado.ConfirmarEnvio(cenario.Show.Codigo, novo.Id, MB);
             Assert.Single(new RepositorioTocaEssa(arquivo) { Agora = () => Inicio }
                 .ListarStoriesDoShow(cenario.Show.Codigo));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            foreach (var caminho in new[] { arquivo, $"{arquivo}-shm", $"{arquivo}-wal" })
+                if (File.Exists(caminho)) File.Delete(caminho);
+        }
+    }
+
+    [Fact]
+    public void TabelaDeStoriesSemAColunaDoArtistaGanhaAColunaSemPerderEnvios()
+    {
+        var arquivo = Path.Combine(Path.GetTempPath(), $"tocaessa-stories-coluna-{Guid.NewGuid():N}.db");
+        try
+        {
+            var cenario = CriarCenario(arquivo);
+            var story = cenario.Enviar("aparelho-1");
+            using (var conexao = new SqliteConnection($"Data Source={arquivo};Pooling=False"))
+            {
+                conexao.Open();
+                using var comando = conexao.CreateCommand();
+                comando.CommandText = "ALTER TABLE \"EnviosDoPublico\" DROP COLUMN \"DoArtista\"";
+                comando.ExecuteNonQuery();
+            }
+
+            var migrado = new RepositorioTocaEssa(arquivo) { Agora = () => Inicio };
+            var doPublico = Assert.Single(migrado.ListarStoriesDoShow(cenario.Show.Codigo));
+            Assert.Equal(story, doPublico.Id);
+            Assert.False(doPublico.DoArtista);
+            var envio = migrado.CriarEnvioDoArtista(cenario.Token, cenario.Show.Id,
+                new PedidoDeEnvio(TipoDeStory.Foto, "image/jpeg", MB, null, string.Empty));
+            migrado.ConfirmarEnvioDoArtista(cenario.Token, cenario.Show.Id, envio.Id, MB);
+            Assert.Contains(new RepositorioTocaEssa(arquivo) { Agora = () => Inicio }
+                .ListarStoriesDoShow(cenario.Show.Codigo), item => item.DoArtista);
         }
         finally
         {

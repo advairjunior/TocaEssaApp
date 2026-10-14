@@ -85,6 +85,35 @@ public class StoriesDoShowApiTestes
     }
 
     [Fact]
+    public async Task ArtistaDonoPostaStoryEOPublicoVeComDestaque()
+    {
+        await using var ambiente = await Ambiente.Criar();
+        var rota = $"/api/apresentacoes/{ambiente.ShowId}/envios";
+        var corpo = new { tipo = "Foto", tipoDeConteudo = "image/jpeg", tamanho = Foto.Length };
+
+        Assert.Equal(HttpStatusCode.NotFound, (await ambiente.Bia.PostAsJsonAsync(rota, corpo)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await ambiente.Publico.PostAsJsonAsync(rota, corpo)).StatusCode);
+
+        var pedido = await ambiente.Ana.PostAsJsonAsync(rota, corpo);
+        Assert.Equal(HttpStatusCode.OK, pedido.StatusCode);
+        using var envio = JsonDocument.Parse(await pedido.Content.ReadAsStringAsync());
+        var id = envio.RootElement.GetProperty("id").GetGuid();
+        var arquivo = new ByteArrayContent(Foto);
+        arquivo.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+        await ambiente.Publico.PutAsync(envio.RootElement.GetProperty("urlDeEnvio").GetString(), arquivo);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await ambiente.Bia.PostAsync($"{rota}/{id}/confirmar", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK,
+            (await ambiente.Ana.PostAsync($"{rota}/{id}/confirmar", null)).StatusCode);
+
+        using var lista = JsonDocument.Parse(await ambiente.Publico.GetStringAsync(
+            $"/api/publico/apresentacoes/{ambiente.Codigo}/stories"));
+        var story = Assert.Single(lista.RootElement.EnumerateArray());
+        Assert.True(story.GetProperty("doArtista").GetBoolean());
+        Assert.Equal("Duo Aurora", story.GetProperty("nome").GetString());
+    }
+
+    [Fact]
     public async Task ArquivoDiferenteDoDeclaradoERecusadoNaConfirmacao()
     {
         await using var ambiente = await Ambiente.Criar();
@@ -149,6 +178,9 @@ public class StoriesDoShowApiTestes
             });
         Assert.Equal(HttpStatusCode.BadRequest, grande.StatusCode);
         Assert.Contains("100 MB", await grande.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, (await ambiente.Publico.PostAsJsonAsync(
+            $"/api/publico/apresentacoes/{ambiente.Codigo}/envios",
+            new { tipo = "Foto", tipoDeConteudo = "image/jpeg", tamanho = 10 })).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await ambiente.Publico.GetAsync(
             "/api/publico/apresentacoes/ZZZZZZ/stories")).StatusCode);
     }

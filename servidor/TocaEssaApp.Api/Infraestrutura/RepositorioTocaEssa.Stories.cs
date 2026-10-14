@@ -32,93 +32,124 @@ public sealed partial class RepositorioTocaEssa
     public EnvioCriado CriarEnvio(string codigo, PedidoDeEnvio pedido)
     {
         lock (_sincronizacao)
+            return CriarEnvio(ObterShowDosStories(codigo), pedido, doArtista: false);
+    }
+
+    /// Story do próprio artista: aparece com o nome artístico e destaque;
+    /// não conta no limite por aparelho e não some por denúncia.
+    public EnvioCriado CriarEnvioDoArtista(string token, Guid apresentacaoId, PedidoDeEnvio pedido)
+    {
+        lock (_sincronizacao)
+            return CriarEnvio(ObterApresentacaoDoArtista(token, apresentacaoId), pedido, doArtista: true);
+    }
+
+    private EnvioCriado CriarEnvio(Apresentacao show, PedidoDeEnvio pedido, bool doArtista)
+    {
+        if (!RecebeStories(show)) throw new StoriesFechadosException();
+        var tipoDeConteudo = pedido.TipoDeConteudo.Trim().ToLowerInvariant();
+        var aparelho = doArtista ? "artista" : (pedido.Aparelho ?? string.Empty).Trim();
+        // Nome artístico longo é cortado para caber; o do público é recusado.
+        var nome = doArtista
+            ? show.PerfilArtistico.NomeArtistico[..Math.Min(40, show.PerfilArtistico.NomeArtistico.Length)]
+            : string.IsNullOrWhiteSpace(pedido.Nome) ? null : pedido.Nome.Trim();
+        if (!TiposAceitos.TryGetValue(tipoDeConteudo, out var aceito) ||
+            aceito.Tipo != pedido.Tipo ||
+            pedido.Tamanho <= 0 ||
+            pedido.Tamanho > (pedido.Tipo == TipoDeStory.Video
+                ? TamanhoMaximoDoVideo
+                : TamanhoMaximoDaFoto) ||
+            aparelho.Length is 0 or > 64 ||
+            nome?.Length > 40)
+            throw new EnvioInvalidoException();
+
+        DescartarNaoConfirmados(show.Id);
+        var doShow = _enviosDoPublico.Values
+            .Where(envio => envio.ApresentacaoId == show.Id)
+            .ToArray();
+        if ((!doArtista &&
+             doShow.Count(envio => !envio.DoArtista &&
+                                   envio.IdentificadorDoAparelho == aparelho) >= EnviosPorAparelho) ||
+            doShow.Length >= EnviosPorShow ||
+            doShow.Sum(envio => envio.Tamanho) + pedido.Tamanho > TamanhoMaximoPorShow)
+            throw new LimiteDeEnviosException();
+
+        var agora = Agora();
+        var id = Guid.NewGuid();
+        var registro = new EnvioDoPublicoRegistro
         {
-            var show = ObterShowDosStories(codigo);
-            if (!RecebeStories(show)) throw new StoriesFechadosException();
-            var tipoDeConteudo = pedido.TipoDeConteudo.Trim().ToLowerInvariant();
-            var aparelho = pedido.Aparelho.Trim();
-            var nome = string.IsNullOrWhiteSpace(pedido.Nome) ? null : pedido.Nome.Trim();
-            if (!TiposAceitos.TryGetValue(tipoDeConteudo, out var aceito) ||
-                aceito.Tipo != pedido.Tipo ||
-                pedido.Tamanho <= 0 ||
-                pedido.Tamanho > (pedido.Tipo == TipoDeStory.Video
-                    ? TamanhoMaximoDoVideo
-                    : TamanhoMaximoDaFoto) ||
-                aparelho.Length is 0 or > 64 ||
-                nome?.Length > 40)
-                throw new EnvioInvalidoException();
-
-            DescartarNaoConfirmados(show.Id);
-            var doShow = _enviosDoPublico.Values
-                .Where(envio => envio.ApresentacaoId == show.Id)
-                .ToArray();
-            if (doShow.Count(envio => envio.IdentificadorDoAparelho == aparelho) >= EnviosPorAparelho ||
-                doShow.Length >= EnviosPorShow ||
-                doShow.Sum(envio => envio.Tamanho) + pedido.Tamanho > TamanhoMaximoPorShow)
-                throw new LimiteDeEnviosException();
-
-            var agora = Agora();
-            var id = Guid.NewGuid();
-            var registro = new EnvioDoPublicoRegistro
-            {
-                Id = id,
-                ApresentacaoId = show.Id,
-                ArtistaId = show.ArtistaId,
-                Chave = $"envios/{show.Id}/{id}.{aceito.Extensao}",
-                Tipo = pedido.Tipo,
-                TipoDeConteudo = tipoDeConteudo,
-                Tamanho = pedido.Tamanho,
-                Nome = nome,
-                IdentificadorDoAparelho = aparelho,
-                CriadoEm = agora,
-                ExpiraEm = agora + ValidadeParaOArtista
-            };
-            _enviosDoPublico[id] = registro;
-            SalvarEstado();
-            return new EnvioCriado(id, registro.Chave, tipoDeConteudo);
-        }
+            Id = id,
+            ApresentacaoId = show.Id,
+            ArtistaId = show.ArtistaId,
+            Chave = $"envios/{show.Id}/{id}.{aceito.Extensao}",
+            Tipo = pedido.Tipo,
+            TipoDeConteudo = tipoDeConteudo,
+            Tamanho = pedido.Tamanho,
+            Nome = nome,
+            IdentificadorDoAparelho = aparelho,
+            CriadoEm = agora,
+            ExpiraEm = agora + ValidadeParaOArtista,
+            DoArtista = doArtista
+        };
+        _enviosDoPublico[id] = registro;
+        SalvarEstado();
+        return new EnvioCriado(id, registro.Chave, tipoDeConteudo);
     }
 
     /// Chave do arquivo de um envio ainda não confirmado, para conferir no
     /// armazenamento antes de confirmar.
-    public string ObterChaveDoEnvioPendente(string codigo, Guid envioId)
-    {
-        var show = ObterShowDosStories(codigo);
-        return _enviosDoPublico.TryGetValue(envioId, out var envio) &&
-               envio.ApresentacaoId == show.Id && !envio.Confirmado
-            ? envio.Chave
-            : throw new EnvioNaoEncontradoException();
-    }
+    public string ObterChaveDoEnvioPendente(string codigo, Guid envioId) =>
+        ObterEnvioPendente(ObterShowDosStories(codigo), envioId).Chave;
+
+    public string ObterChaveDoEnvioPendenteDoArtista(
+        string token, Guid apresentacaoId, Guid envioId) =>
+        ObterEnvioPendente(ObterApresentacaoDoArtista(token, apresentacaoId), envioId).Chave;
 
     /// [tamanhoGuardado] é o que o armazenamento tem na chave (nulo se nada
     /// chegou). Diferente do declarado: o envio é descartado.
     public StoryDoShow ConfirmarEnvio(string codigo, Guid envioId, long? tamanhoGuardado)
     {
         lock (_sincronizacao)
-        {
-            var show = ObterShowDosStories(codigo);
-            if (!_enviosDoPublico.TryGetValue(envioId, out var envio) ||
-                envio.ApresentacaoId != show.Id || envio.Confirmado)
-                throw new EnvioNaoEncontradoException();
-            if (tamanhoGuardado != envio.Tamanho)
-            {
-                _enviosDoPublico.TryRemove(envioId, out _);
-                SalvarEstado();
-                throw new EnvioInvalidoException();
-            }
-            envio.Confirmado = true;
-            SalvarEstado();
-            return ParaStory(envio);
-        }
+            return ConfirmarEnvio(ObterShowDosStories(codigo), envioId, tamanhoGuardado);
     }
+
+    public StoryDoShow ConfirmarEnvioDoArtista(
+        string token, Guid apresentacaoId, Guid envioId, long? tamanhoGuardado)
+    {
+        lock (_sincronizacao)
+            return ConfirmarEnvio(
+                ObterApresentacaoDoArtista(token, apresentacaoId), envioId, tamanhoGuardado);
+    }
+
+    private StoryDoShow ConfirmarEnvio(Apresentacao show, Guid envioId, long? tamanhoGuardado)
+    {
+        var envio = ObterEnvioPendente(show, envioId);
+        if (tamanhoGuardado != envio.Tamanho)
+        {
+            _enviosDoPublico.TryRemove(envioId, out _);
+            SalvarEstado();
+            throw new EnvioInvalidoException();
+        }
+        envio.Confirmado = true;
+        SalvarEstado();
+        return ParaStory(envio);
+    }
+
+    private EnvioDoPublicoRegistro ObterEnvioPendente(Apresentacao show, Guid envioId) =>
+        _enviosDoPublico.TryGetValue(envioId, out var envio) &&
+        envio.ApresentacaoId == show.Id && !envio.Confirmado
+            ? envio
+            : throw new EnvioNaoEncontradoException();
 
     public IReadOnlyList<StoryDoShow> ListarStoriesDoShow(string codigo)
     {
         var show = ObterShowDosStories(codigo);
-        if (!MostraStories(show)) return [];
+        if (!RecebeStories(show)) return [];
+        // O arquivo some do armazenamento em 7 dias, mesmo com o show agendado.
+        var agora = Agora();
         return _enviosDoPublico.Values
             .Where(envio => envio.ApresentacaoId == show.Id &&
-                            envio.Confirmado && !envio.Escondido)
+                            envio.Confirmado && !envio.Escondido &&
+                            envio.ExpiraEm > agora)
             .OrderBy(envio => envio.CriadoEm)
             .Select(ParaStory)
             .ToArray();
@@ -136,6 +167,8 @@ public sealed partial class RepositorioTocaEssa
                 throw new EnvioNaoEncontradoException();
             var quem = aparelho.Trim();
             if (quem.Length is 0 or > 64) throw new EnvioInvalidoException();
+            // Story do artista só ele apaga.
+            if (envio.DoArtista) return;
             var denuncias = envio.Denuncias
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .ToList();
@@ -166,7 +199,7 @@ public sealed partial class RepositorioTocaEssa
                     .OrderBy(envio => envio.CriadoEm)
                     .Select(envio => new EnvioDoShow(
                         envio.Id, envio.Tipo, envio.Nome, envio.CriadoEm, envio.ExpiraEm,
-                        envio.Escondido, envio.Chave, envio.TipoDeConteudo))
+                        envio.Escondido, envio.Chave, envio.TipoDeConteudo, envio.DoArtista))
                     .ToArray(),
                 vencidos.Select(envio => envio.Chave).ToArray());
         }
@@ -209,17 +242,15 @@ public sealed partial class RepositorioTocaEssa
     private Apresentacao ObterShowDosStories(string codigo) =>
         ObterApresentacaoPublica(codigo) ?? throw new ApresentacaoNaoEncontradaException();
 
-    /// Em andamento, ou encerrado há até 24 h.
+    /// Desde que o show é criado até 24 h depois do fim: o que se posta
+    /// antes também é sobre o evento.
     private bool RecebeStories(Apresentacao show) => show.Status switch
     {
-        StatusApresentacao.EmAndamento => true,
         StatusApresentacao.Encerrada =>
             EstadoDoRelogioDe(show.Id).EncerradaEm is { } fim &&
             Agora() < fim + StoriesDepoisDoFim,
-        _ => false
+        _ => true
     };
-
-    private bool MostraStories(Apresentacao show) => RecebeStories(show);
 
     private void DescartarNaoConfirmados(Guid apresentacaoId)
     {
@@ -232,5 +263,6 @@ public sealed partial class RepositorioTocaEssa
     }
 
     private static StoryDoShow ParaStory(EnvioDoPublicoRegistro envio) =>
-        new(envio.Id, envio.Tipo, envio.Nome, envio.CriadoEm, envio.Chave, envio.TipoDeConteudo);
+        new(envio.Id, envio.Tipo, envio.Nome, envio.CriadoEm, envio.Chave, envio.TipoDeConteudo,
+            envio.DoArtista);
 }

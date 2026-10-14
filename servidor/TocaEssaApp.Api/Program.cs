@@ -789,8 +789,39 @@ app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/envios", async (
         envio.ExpiraEm,
         envio.Escondido,
         envio.TipoDeConteudo,
+        envio.DoArtista,
         url = await armazenamento.UrlDeLeitura(envio.Chave)
     })));
+});
+
+app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/envios", async (
+    Guid apresentacaoId, PedidoDeEnvio pedido, HttpRequest http, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento) =>
+{
+    var envio = repositorio.CriarEnvioDoArtista(
+        ObterToken(http) ?? string.Empty, apresentacaoId, pedido);
+    var (url, cabecalhos) = await armazenamento.UrlDeEnvio(envio.Chave, envio.TipoDeConteudo);
+    return Results.Ok(new { id = envio.Id, urlDeEnvio = url, cabecalhos });
+});
+
+app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/envios/{envioId:guid}/confirmar", async (
+    Guid apresentacaoId, Guid envioId, HttpRequest http, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento, CancellationToken cancelamento) =>
+{
+    var token = ObterToken(http) ?? string.Empty;
+    var chave = repositorio.ObterChaveDoEnvioPendenteDoArtista(token, apresentacaoId, envioId);
+    var tamanho = await armazenamento.TamanhoGuardado(chave, cancelamento);
+    StoryDoShow story;
+    try
+    {
+        story = repositorio.ConfirmarEnvioDoArtista(token, apresentacaoId, envioId, tamanho);
+    }
+    catch (EnvioInvalidoException)
+    {
+        if (tamanho is not null) await armazenamento.Apagar(chave, cancelamento);
+        throw;
+    }
+    return Results.Ok(await ParaStoryPublico(story, armazenamento));
 });
 
 app.MapDelete("/api/apresentacoes/{apresentacaoId:guid}/envios/{envioId:guid}", async (
@@ -848,6 +879,7 @@ static async Task<object> ParaStoryPublico(StoryDoShow story, ArmazenamentoDeSto
     story.Nome,
     story.CriadoEm,
     story.TipoDeConteudo,
+    story.DoArtista,
     url = await armazenamento.UrlDeLeitura(story.Chave)
 };
 
