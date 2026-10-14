@@ -109,7 +109,8 @@ arquivo.
   setas sempre visíveis que só trocam de música, Tocar no meio ("Tocando ✓"),
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
   cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
-  tom (guardado por música no aparelho) e rolagem automática (1x a 5x).
+  tom (guardado por música no aparelho) e rolagem automática (0,5x, 0,75x
+  e 1x a 5x).
   Com a pinça, linha que não cabe quebra em vez de rolar para o lado
   (`quebrar_cifra.dart`): acordes e letra quebram juntos no mesmo ponto e o
   acorde segue na sílaba; tablatura também quebra.

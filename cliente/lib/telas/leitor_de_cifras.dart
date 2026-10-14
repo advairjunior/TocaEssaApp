@@ -17,9 +17,30 @@ import 'sequencia_do_palco.dart';
 export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
 
 const _chaveEscala = 'leitor_escala';
-const _chaveVelocidade = 'leitor_velocidade';
-// Pixels por segundo de cada velocidade da rolagem automática (1x a 5x).
-const _velocidades = [12.0, 20.0, 30.0, 45.0, 65.0];
+const _chaveVelocidade = 'leitor_velocidade_vezes';
+// Antes das velocidades lentas, guardava só 1 a 5 (1x a 5x).
+const _chaveVelocidadeAntiga = 'leitor_velocidade';
+// Cada velocidade da rolagem automática e os pixels por segundo dela.
+const _velocidades = [
+  (vezes: .5, pixels: 6.0),
+  (vezes: .75, pixels: 9.0),
+  (vezes: 1.0, pixels: 12.0),
+  (vezes: 2.0, pixels: 20.0),
+  (vezes: 3.0, pixels: 30.0),
+  (vezes: 4.0, pixels: 45.0),
+  (vezes: 5.0, pixels: 65.0),
+];
+const _velocidadeInicial = 2; // 1x
+
+int _indiceDaVelocidade(num vezes) {
+  final indice = _velocidades.indexWhere((v) => v.vezes == vezes);
+  return indice < 0 ? _velocidadeInicial : indice;
+}
+
+/// "0,5x", "0,75x" ou "2x".
+String _rotuloDaVelocidade(double vezes) => vezes == vezes.roundToDouble()
+    ? '${vezes.round()}x'
+    : '${'$vezes'.replaceAll('.', ',')}x';
 
 /// A fonte de largura fixa ocupa 0,6 da altura por caractere.
 const _larguraDaLetra = .6;
@@ -65,7 +86,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   double _escalaInicial = 1;
   final _rolagem = ScrollController(keepScrollOffset: false);
   Timer? _rolando;
-  int _velocidade = 1;
+  // Posição em [_velocidades].
+  int _velocidade = _velocidadeInicial;
 
   SequenciaDoPalco get _sequencia => widget.sequencia;
 
@@ -94,12 +116,15 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     try {
       final preferencias = await SharedPreferences.getInstance();
       final salva = preferencias.getDouble(_chaveEscala);
-      final velocidade = preferencias.getInt(_chaveVelocidade);
+      final velocidade = preferencias.getDouble(_chaveVelocidade) ??
+          preferencias.getInt(_chaveVelocidadeAntiga);
       if (mounted) {
         setState(() {
           _preferencias = preferencias;
           if (salva != null) _escala = salva;
-          if (velocidade != null) _velocidade = velocidade.clamp(1, 5);
+          if (velocidade != null) {
+            _velocidade = _indiceDaVelocidade(velocidade);
+          }
         });
       }
     } catch (_) {
@@ -176,7 +201,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
       if (!_rolagem.hasClients) return;
       final posicao = _rolagem.position;
       final destino = posicao.pixels +
-          _velocidades[_velocidade - 1] * passo.inMilliseconds / 1000;
+          _velocidades[_velocidade].pixels * passo.inMilliseconds / 1000;
       if (destino >= posicao.maxScrollExtent) {
         _rolagem.jumpTo(posicao.maxScrollExtent);
         _pararRolagem();
@@ -195,9 +220,11 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   }
 
   Future<void> _mudarVelocidade(int passo) async {
-    setState(() => _velocidade = (_velocidade + passo).clamp(1, 5));
+    setState(() => _velocidade =
+        (_velocidade + passo).clamp(0, _velocidades.length - 1));
     try {
-      await _preferencias?.setInt(_chaveVelocidade, _velocidade);
+      await _preferencias?.setDouble(
+          _chaveVelocidade, _velocidades[_velocidade].vezes);
     } catch (_) {
       // A velocidade só não fica guardada para a próxima vez.
     }
@@ -563,6 +590,7 @@ class _ControleDaRolagem extends StatelessWidget {
   });
 
   final bool rolando;
+  // Posição em [_velocidades].
   final int velocidade;
   final VoidCallback iniciar;
   final VoidCallback pausar;
@@ -589,14 +617,16 @@ class _ControleDaRolagem extends StatelessWidget {
           IconButton(
             tooltip: 'Mais devagar',
             visualDensity: VisualDensity.compact,
-            onPressed: velocidade > 1 ? () => mudarVelocidade(-1) : null,
+            onPressed: velocidade > 0 ? () => mudarVelocidade(-1) : null,
             icon: const Icon(Icons.remove_rounded),
           ),
-          Text('${velocidade}x'),
+          Text(_rotuloDaVelocidade(_velocidades[velocidade].vezes)),
           IconButton(
             tooltip: 'Mais rápido',
             visualDensity: VisualDensity.compact,
-            onPressed: velocidade < 5 ? () => mudarVelocidade(1) : null,
+            onPressed: velocidade < _velocidades.length - 1
+                ? () => mudarVelocidade(1)
+                : null,
             icon: const Icon(Icons.add_rounded),
           ),
           IconButton(

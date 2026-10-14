@@ -361,7 +361,50 @@ void main() {
       await tester.tap(find.byTooltip('Pausar rolagem'));
       await tester.pump();
       final preferencias = await SharedPreferences.getInstance();
-      expect(preferencias.getInt('leitor_velocidade'), 2);
+      expect(preferencias.getDouble('leitor_velocidade_vezes'), 2);
+    });
+
+    testWidgets('mais devagar vai a 0,75x e 0,5x e rola menos que 1x',
+        (tester) async {
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump(const Duration(seconds: 2));
+      final emUmX = rolagem(tester);
+
+      await tester.tap(find.byTooltip('Mais devagar'));
+      await tester.pump();
+      expect(find.text('0,75x'), findsOneWidget);
+      await tester.tap(find.byTooltip('Mais devagar'));
+      await tester.pump();
+      expect(find.text('0,5x'), findsOneWidget);
+      final maisDevagar = tester.widget<IconButton>(find.ancestor(
+          of: find.byTooltip('Mais devagar'),
+          matching: find.byType(IconButton)));
+      expect(maisDevagar.onPressed, isNull);
+
+      final antes = rolagem(tester);
+      await tester.pump(const Duration(seconds: 2));
+      expect(rolagem(tester) - antes, greaterThan(0));
+      expect(rolagem(tester) - antes, lessThan(emUmX));
+
+      await tester.tap(find.byTooltip('Pausar rolagem'));
+      await tester.pump();
+      final preferencias = await SharedPreferences.getInstance();
+      expect(preferencias.getDouble('leitor_velocidade_vezes'), .5);
+    });
+
+    testWidgets('velocidade guardada antes das lentas continua valendo',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'leitor_velocidade': 3});
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump();
+
+      expect(find.text('3x'), findsOneWidget);
+      await tester.tap(find.byTooltip('Pausar rolagem'));
+      await tester.pump();
     });
 
     testWidgets('trocar de música pausa e volta ao topo', (tester) async {
