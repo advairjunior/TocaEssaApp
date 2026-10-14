@@ -78,6 +78,30 @@ public class CifraEmTextoTestes
     }
 
     [Fact]
+    public void TrocarOTomDaCifraAtualizaOTomQueVeioDelaMasNaoOEscolhidoAMao()
+    {
+        var (repo, token) = CriarConta();
+        repo.SalvarPerfilDaConta(token, new SalvarPerfilArtistico("Duo", null));
+        var show = repo.CriarApresentacao(token, "Firma", new DateOnly(2026, 12, 12), "Salão");
+        var repertorio = repo.CriarRepertorio(token, "Sertanejo");
+        var semTom = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Deus e Eu no Sertão", null);
+        var comTom = repo.AdicionarMusicaAoRepertorio(token, repertorio.Id, "Evidências", null, "G");
+        repo.AdicionarMusicasAoSetlist(token, show.Id, [semTom.Id, comTom.Id]);
+        repo.SalvarCifraEmTexto(token, "Deus e Eu no Sertão", null, "Tom: E\nE9  C#m");
+        repo.SalvarCifraEmTexto(token, "Evidências", null, "Tom: A\nA  E");
+
+        repo.SalvarCifraEmTexto(token, "Deus e Eu no Sertão", null, "Tom: D\nD9  Bm");
+        repo.SalvarCifraEmTexto(token, "Evidências", null, "Tom: B\nB  F#");
+
+        var musicas = repo.ListarRepertorios(token).Single().Musicas.ToDictionary(m => m.Titulo);
+        Assert.Equal("D", musicas["Deus e Eu no Sertão"].Tom);
+        Assert.Equal("G", musicas["Evidências"].Tom);
+        var setlist = repo.ObterSetlist(token, show.Id).ToDictionary(i => i.Titulo);
+        Assert.Equal("D", setlist["Deus e Eu no Sertão"].Tom);
+        Assert.Equal("G", setlist["Evidências"].Tom);
+    }
+
+    [Fact]
     public void TomComCapotrastePegaOTomQueSoa()
     {
         var (repo, token) = CriarConta();

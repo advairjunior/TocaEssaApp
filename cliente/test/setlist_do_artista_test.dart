@@ -150,6 +150,15 @@ Future<List<http.Request>> _abrir(
     if (caminho.endsWith('/cifras/texto')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
       textos[corpo['musica'] as String] = corpo['texto'] as String;
+      // Como o servidor: o "Tom:" da cifra passa para a música da setlist.
+      final tom = RegExp(r'^Tom: (\S+)', multiLine: true)
+          .firstMatch(corpo['texto'] as String)
+          ?.group(1);
+      if (tom != null) {
+        for (final (i, item) in lista.indexed.toList()) {
+          if (item['titulo'] == corpo['musica']) lista[i] = {...item, 'tom': tom};
+        }
+      }
       return http.Response(
         jsonEncode({
           'cifra': null,
@@ -332,6 +341,24 @@ void main() {
         'texto': 'C   G\nNova letra',
       });
       expect(find.byTooltip('Cifra no app'), findsOneWidget);
+    });
+
+    testWidgets('trocar o "Tom:" da cifra mostra o tom novo na linha',
+        (tester) async {
+      await _abrir(tester);
+      expect(find.text('Banda 2 · Tom G'), findsOneWidget);
+
+      await tester.drag(find.text('Velha Infância'), const Offset(-300, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cifra'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Colar ou corrigir cifra'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Tom: A\nA   E\nLetra');
+      await tester.tap(find.text('Salvar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Banda 2 · Tom A'), findsOneWidget);
     });
 
     testWidgets('Link do site continua como opção', (tester) async {

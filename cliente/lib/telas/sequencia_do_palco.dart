@@ -252,6 +252,8 @@ class SequenciaDoPalco extends ChangeNotifier {
         await api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
     _cifras = {..._cifras, _chave(musica.titulo, musica.artista): resultado};
     _avisar();
+    // O "Tom:" da cifra pode ter mudado o tom da música no servidor.
+    await recarregar();
   }
 
   List<MusicaDoPalco> _sequenciaRestante() => [

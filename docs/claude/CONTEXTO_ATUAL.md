@@ -108,6 +108,9 @@ arquivo.
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
   cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
   tom (guardado por música no aparelho) e rolagem automática (1x a 5x).
+  O "Tom: E" da cifra colada preenche o tom vazio no acervo e na setlist;
+  trocar o "Tom:" depois leva junto o tom que veio da cifra, e o tom
+  escolhido à mão fica. Setlist e repertório recarregam o tom ao salvar.
   Sem internet (2026-10-13): `ClienteHttpComReserva` guarda no aparelho as
   leituras do artista (separadas por token) e responde com elas sem rede,
   inclusive ao recarregar; marcar tocada sem rede vai para uma fila que sobe

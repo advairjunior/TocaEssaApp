@@ -85,6 +85,7 @@ public sealed partial class RepositorioTocaEssa
             }
             else
             {
+                var tomAnterior = TomDaCifra(_cifrasEmTexto.GetValueOrDefault(chave)?.Conteudo);
                 var registro = _cifrasEmTexto.GetValueOrDefault(chave) ?? new CifraEmTextoRegistro
                 {
                     Id = Guid.NewGuid(),
@@ -97,7 +98,7 @@ public sealed partial class RepositorioTocaEssa
                 registro.Conteudo = conteudo;
                 registro.AtualizadaEm = DateTimeOffset.UtcNow;
                 _cifrasEmTexto[chave] = registro;
-                PreencherTomVazio(conta.Id, musica, artista, conteudo);
+                AcompanharTomDaCifra(conta.Id, musica, artista, tomAnterior, conteudo);
             }
             SalvarEstado();
             return ObterCifraDoArtista(token, musica, artista);
@@ -121,18 +122,26 @@ public sealed partial class RepositorioTocaEssa
     private static readonly Regex TomDoCabecalho =
         new(@"^\s*Tom:\s*([A-G][#b]?m?)(?![\w#])", RegexOptions.Multiline);
 
+    private static string? TomDaCifra(string? conteudo) =>
+        conteudo is not null && TomDoCabecalho.Match(conteudo) is { Success: true } achado
+            ? achado.Groups[1].Value
+            : null;
+
     /// "Tom: E" da cifra colada preenche o tom das músicas do artista que
-    /// ainda estão sem tom, no acervo e na setlist. Tom já escolhido fica.
-    private void PreencherTomVazio(Guid artistaId, string musica, string? artista, string conteudo)
+    /// ainda estão sem tom, no acervo e na setlist. Trocar o "Tom:" depois
+    /// leva junto o tom que veio da cifra; tom escolhido à mão fica.
+    private void AcompanharTomDaCifra(
+        Guid artistaId, string musica, string? artista, string? tomAnterior, string conteudo)
     {
-        if (TomDoCabecalho.Match(conteudo) is not { Success: true } achado) return;
-        var tom = achado.Groups[1].Value;
+        if (TomDaCifra(conteudo) is not { } tom) return;
+        bool VeioDaCifra(string? atual) =>
+            string.IsNullOrWhiteSpace(atual) || (tomAnterior is not null && atual == tomAnterior);
         foreach (var item in _musicasDoRepertorio.Values.Where(m =>
-                     m.ArtistaId == artistaId && string.IsNullOrWhiteSpace(m.Tom) &&
+                     m.ArtistaId == artistaId && VeioDaCifra(m.Tom) &&
                      MesmaMusica(m.Titulo, m.Artista, musica, artista)))
             item.Tom = tom;
         foreach (var item in _itensDoSetlist.Values.Where(i =>
-                     i.ArtistaId == artistaId && string.IsNullOrWhiteSpace(i.Tom) &&
+                     i.ArtistaId == artistaId && VeioDaCifra(i.Tom) &&
                      MesmaMusica(i.Titulo, i.Artista, musica, artista)))
             item.Tom = tom;
     }
