@@ -62,6 +62,16 @@ void main() {
     expect(instalacao.pedidos, 0);
     expect(find.textContaining('Compartilhar'), findsOneWidget);
     expect(find.textContaining('Adicionar à Tela de Início'), findsOneWidget);
+    expect(find.textContaining('entre de novo na sua conta'), findsOneWidget);
+  });
+
+  testWidgets('fora do iPhone, não pede para entrar de novo', (tester) async {
+    await _abrir(tester, _InstalacaoFalsa());
+
+    await tester.tap(find.text('Instalar no celular'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('entre de novo na sua conta'), findsNothing);
   });
 
   testWidgets('sem o pedido do navegador, ensina o caminho pelo menu',

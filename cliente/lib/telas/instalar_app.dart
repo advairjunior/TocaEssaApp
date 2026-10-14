@@ -116,6 +116,35 @@ class _PassoAPasso extends StatelessWidget {
                   ],
                 ),
               ),
+            // No iPhone, o app instalado guarda os dados separado do Safari.
+            if (iPhone) ...[
+              const SizedBox(height: EspacoTocaEssa.pequeno),
+              Container(
+                padding: const EdgeInsets.all(EspacoTocaEssa.medio),
+                decoration: BoxDecoration(
+                  color: CoresTocaEssa.superficie,
+                  borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+                  border: Border.all(color: CoresTocaEssa.borda),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline_rounded,
+                        size: 20, color: CoresTocaEssa.roxoClaro),
+                    const SizedBox(width: EspacoTocaEssa.pequeno),
+                    Expanded(
+                      child: Text(
+                        'Na primeira vez pelo ícone, entre de novo na sua '
+                        'conta. As cifras ficam guardadas para usar sem '
+                        'internet depois de abrir a setlist uma vez com '
+                        'internet.',
+                        style: texto.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
