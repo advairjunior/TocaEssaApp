@@ -145,6 +145,23 @@ public class RelogioDoShowTestes
     }
 
     [Fact]
+    public void PoutPourriContaCadaMusicaSeparadaPorBarra()
+    {
+        var cenario = CriarCenario();
+        var repertorio = cenario.Repo.CriarRepertorio(cenario.Token, "Casamentos");
+        foreach (var titulo in new[] { "Evidências / Página Virada", "Pense em Mim/Fio de Cabelo/Saudade", "24/7" })
+            cenario.Repo.AdicionarMusicaAoRepertorio(cenario.Token, repertorio.Id, titulo, null);
+        var setlist = cenario.Repo.ImportarRepertorioParaSetlist(
+            cenario.Token, cenario.Show.Id, repertorio.Id).ToArray();
+        cenario.Repo.MarcarItemDoSetlist(cenario.Token, cenario.Show.Id, setlist[0].Id, tocada: true);
+
+        var relogio = cenario.Repo.ObterRelogio(cenario.Token, cenario.Show.Id);
+
+        Assert.Equal(2, relogio.MusicasComecadas);
+        Assert.Equal(4, relogio.MusicasRestantes);
+    }
+
+    [Fact]
     public void SemShowsEncerradosNaoHaRitmoMedio()
     {
         var cenario = CriarCenario();

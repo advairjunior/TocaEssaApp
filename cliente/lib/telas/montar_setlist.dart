@@ -273,8 +273,13 @@ class _MontarSetlistState extends State<MontarSetlist> {
   Widget _construirRodape(BuildContext context) {
     final texto = Theme.of(context).textTheme;
     final total = _naSetlist.length + _selecionadas.length;
-    final estimada =
-        _relogio?.duracaoEstimada(total) ?? RelogioDoShow.ritmoPadrao * total;
+    // O tempo conta cada música do pout-pourri.
+    final musicas = [
+      for (final item in _naSetlist) item.titulo,
+      for (final musica in _selecionadas) musica.titulo,
+    ].fold(0, (soma, titulo) => soma + musicasNoTitulo(titulo));
+    final estimada = _relogio?.duracaoEstimada(musicas) ??
+        RelogioDoShow.ritmoPadrao * musicas;
     final contrato =
         _relogio == null ? null : compararComContrato(_relogio!, estimada);
     final resumo = '${_selecionadas.isEmpty ? '' : '+${_selecionadas.length} '

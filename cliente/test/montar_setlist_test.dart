@@ -191,6 +191,17 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('rodapé conta o tempo de cada música do pout-pourri',
+      (tester) async {
+    await _abrir(tester,
+        naSetlist: [_item('i1', 'Evidências / Página Virada')], duracao: 240);
+
+    await tester.tap(find.text('Tempo Perdido'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('+1 selecionada · 2 músicas ≈ 9 min'), findsOneWidget);
+  });
+
   testWidgets('música avulsa entra na setlist e pode ficar no acervo',
       (tester) async {
     final requisicoes = await _abrir(tester);

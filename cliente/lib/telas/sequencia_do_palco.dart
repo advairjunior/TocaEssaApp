@@ -222,8 +222,10 @@ class SequenciaDoPalco extends ChangeNotifier {
   /// Pedidos marcados para tocar a seguir vêm antes do setlist.
   MusicaDoPalco? get proxima => _sequenciaRestante().firstOrNull;
 
-  /// Músicas que ainda faltam: pedidos a seguir e setlist não tocado.
-  int get musicasNaSequencia => _sequenciaRestante().length;
+  /// Músicas que ainda faltam: pedidos a seguir e setlist não tocado, cada
+  /// música do pout-pourri contando uma.
+  int get musicasNaSequencia => _sequenciaRestante()
+      .fold(0, (soma, musica) => soma + musicasNoTitulo(musica.titulo));
 
   /// Páginas do leitor de cifras na ordem do show: o setlist já tocado, o
   /// pedido tocando agora, os pedidos a seguir e o setlist que falta.

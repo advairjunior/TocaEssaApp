@@ -123,8 +123,10 @@ public sealed partial class RepositorioTocaEssa
             .Where(item => item.ApresentacaoId == apresentacaoId)
             .ToArray();
         var pedidosASeguir = (_pedidosASeguir.GetValueOrDefault(apresentacaoId) ?? [])
-            .Count(id => _pedidos.TryGetValue(id, out var pedido) &&
-                         !StatusComecados.Contains(pedido.Status));
+            .Sum(id => _pedidos.TryGetValue(id, out var pedido) &&
+                       !StatusComecados.Contains(pedido.Status)
+                ? MusicasNoTitulo(pedido.Musica)
+                : 0);
         return new RelogioDoShow(
             estado.DuracaoContratadaMinutos,
             estado.IntervaloPausaRelogio,
@@ -132,18 +134,26 @@ public sealed partial class RepositorioTocaEssa
             estado.EmIntervaloDesde,
             estado.SegundosEmIntervalo,
             ContarMusicasComecadas(apresentacaoId),
-            setlist.Count(item => !item.Tocada) + pedidosASeguir,
+            setlist.Where(item => !item.Tocada).Sum(item => MusicasNoTitulo(item.Titulo)) +
+                pedidosASeguir,
             Agora(),
             estado.EncerradaEm,
             CalcularRitmoMedio(apresentacaoId));
     }
 
     private int ContarMusicasComecadas(Guid apresentacaoId) =>
-        _itensDoSetlist.Values.Count(item =>
-            item.ApresentacaoId == apresentacaoId && item.Tocada) +
+        _itensDoSetlist.Values
+            .Where(item => item.ApresentacaoId == apresentacaoId && item.Tocada)
+            .Sum(item => MusicasNoTitulo(item.Titulo)) +
         ListarGruposDePedidosDoArtista(apresentacaoId)
-            .Count(grupo => grupo.Tipo == TipoPedido.Musica &&
-                            StatusComecados.Contains(grupo.Status));
+            .Where(grupo => grupo.Tipo == TipoPedido.Musica &&
+                            StatusComecados.Contains(grupo.Status))
+            .Sum(grupo => MusicasNoTitulo(grupo.Musica));
+
+    /// Pout-pourri "Evidências / Página Virada" conta cada música separada
+    /// por barra; partes sem letra, como em "24/7", não separam.
+    internal static int MusicasNoTitulo(string titulo) =>
+        Math.Max(1, titulo.Split('/').Count(parte => parte.Any(char.IsLetter)));
 
     /// Tempo tocado (sem intervalo) somado dos shows encerrados do mesmo
     /// artista, dividido pelo total de músicas começadas neles.

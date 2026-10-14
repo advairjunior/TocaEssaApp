@@ -120,6 +120,15 @@ class RelogioDoShow {
   }
 }
 
+/// Pout-pourri "Evidências / Página Virada" conta cada música separada por
+/// barra; partes sem letra, como em "24/7", não separam. Igual ao servidor.
+int musicasNoTitulo(String titulo) {
+  final partes = titulo.split('/').where((parte) => parte.contains(_letra));
+  return partes.isEmpty ? 1 : partes.length;
+}
+
+final _letra = RegExp(r'\p{L}', unicode: true);
+
 /// Lê as horas contratadas como a banda escreve: "4", "3h30", "3:30", "3,5"
 /// ou "45 min". Vazio significa sem cronômetro.
 int? lerDuracaoContratada(String texto) {

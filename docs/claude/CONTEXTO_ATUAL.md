@@ -96,7 +96,9 @@ arquivo.
   privadas `/api/apresentacoes/{id}/relogio` e `.../relogio/intervalo`.
   Antes de medir, usa o ritmo médio dos shows encerrados do artista; na
   setlist de show agendado, cartão com a duração estimada e a comparação
-  com as horas contratadas.
+  com as horas contratadas. Pout-pourri ("Evidências / Página Virada")
+  conta cada música separada por barra em todas essas contas (servidor e
+  app); partes sem letra, como "24/7", não separam.
 - Recarregar a página com show em andamento volta à apresentação e à aba
   onde o artista estava (guardado no aparelho).
 - Leitor de cifras (`leitor_de_cifras.dart`, desenho em

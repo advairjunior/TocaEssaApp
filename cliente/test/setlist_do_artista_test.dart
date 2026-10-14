@@ -848,6 +848,21 @@ void main() {
           findsOneWidget);
     });
 
+    testWidgets('pout-pourri conta o tempo de cada música separada por barra',
+        (tester) async {
+      await _abrir(tester,
+          status: StatusApresentacao.agendada,
+          itens: [
+            _item('1', 'Evidências / Página Virada', 1),
+            _item('2', 'Pense em Mim/Fio de Cabelo/Saudade', 2),
+            _item('3', '24/7', 3),
+          ],
+          relogio: relogio());
+
+      expect(find.text('0 de 3 tocadas'), findsOneWidget);
+      expect(find.text(' · faltam ~18 min'), findsOneWidget);
+    });
+
     testWidgets('sem horas contratadas, a legenda mostra só o ritmo',
         (tester) async {
       await _abrir(tester,
