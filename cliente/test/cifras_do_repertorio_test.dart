@@ -24,12 +24,16 @@ class _Acervo {
   // título → cifra colada no servidor falso
   final textos = <String, String>{'Evidências': 'A  E\nLetra antiga'};
   String? areaDeTransferencia;
+  // músicas adicionadas durante o teste: id → título
+  final adicionadas = <String, String>{};
 
   List<Map<String, Object?>> cifras() => [
         for (final (id, titulo, link) in [
           ('m1', 'Evidências', null),
           ('m2', 'Sozinho', _linkSozinho),
           ('m3', 'Trem-Bala', null),
+          for (final MapEntry(key: id, value: titulo) in adicionadas.entries)
+            (id, titulo, null),
         ])
           {
             'musicaId': id,
@@ -66,6 +70,22 @@ Future<_Acervo> _abrir(WidgetTester tester) async {
           jsonEncode({'urlPesquisa': 'x', 'texto': corpo['texto']}), 200,
           headers: _json);
     }
+    if (requisicao.method == 'POST' && caminho.endsWith('/r1/musicas')) {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      final id = 'm${4 + acervo.adicionadas.length}';
+      acervo.adicionadas[id] = corpo['titulo'] as String;
+      return http.Response(
+          jsonEncode({
+            'id': id,
+            'repertorioId': 'r1',
+            'titulo': corpo['titulo'],
+            'artista': corpo['artista'],
+            'tom': corpo['tom'],
+            'ordem': 3 + acervo.adicionadas.length,
+          }),
+          200,
+          headers: _json);
+    }
     if (caminho.endsWith('/cifras/consulta')) {
       final musica = requisicao.url.queryParameters['musica'];
       return http.Response(
@@ -99,6 +119,21 @@ void main() {
     expect(find.text('2 músicas sem cifra'), findsOneWidget);
     expect(find.byTooltip('Ver ou corrigir cifra'), findsOneWidget);
     expect(find.byTooltip('Colar cifra'), findsNWidgets(2));
+  });
+
+  testWidgets('música recém-adicionada já oferece colar cifra',
+      (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.byTooltip('Adicionar música'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Tocando em Frente');
+    await tester.tap(find.text('Adicionar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tocando em Frente'), findsOneWidget);
+    expect(find.byTooltip('Colar cifra'), findsNWidgets(3));
+    expect(find.text('3 músicas sem cifra'), findsOneWidget);
   });
 
   testWidgets('ícone abre a cifra da música para corrigir', (tester) async {

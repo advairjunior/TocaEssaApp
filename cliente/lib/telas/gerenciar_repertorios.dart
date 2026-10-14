@@ -275,6 +275,8 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
       );
       if (!mounted) return;
       setState(() => _musicas = [..._musicas, nova]);
+      // A música nova só oferece a cifra depois de conhecer a situação dela.
+      await _carregarCifras();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {
