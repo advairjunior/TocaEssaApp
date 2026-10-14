@@ -38,7 +38,7 @@ Future<void> enviarArquivo(Uri url, Map<String, String> cabecalhos,
   final resposta = await window.fetch(arquivo.path.toJS).toDart;
   final conteudo = await resposta.blob().toDart;
   final pedido = XMLHttpRequest()..open('PUT', url.toString());
-  cabecalhos.forEach(pedido.setRequestHeader);
+  cabecalhos.forEach((nome, valor) => pedido.setRequestHeader(nome, valor));
   final terminou = Completer<void>();
   pedido.upload.onprogress = ((ProgressEvent evento) {
     if (evento.lengthComputable && evento.total > 0) {
