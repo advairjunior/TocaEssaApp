@@ -23,6 +23,7 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<SessaoArtistaRegistro> SessoesArtistas => Set<SessaoArtistaRegistro>();
     internal DbSet<CifraDoArtistaRegistro> CifrasDoArtista => Set<CifraDoArtistaRegistro>();
     internal DbSet<CifraEmTextoRegistro> CifrasEmTexto => Set<CifraEmTextoRegistro>();
+    internal DbSet<EnvioDoPublicoRegistro> EnviosDoPublico => Set<EnvioDoPublicoRegistro>();
     internal DbSet<RepertorioRegistro> Repertorios => Set<RepertorioRegistro>();
     internal DbSet<MusicaDoRepertorioRegistro> MusicasDoRepertorio => Set<MusicaDoRepertorioRegistro>();
     internal DbSet<ItemDoSetlistRegistro> ItensDoSetlist => Set<ItemDoSetlistRegistro>();
@@ -176,6 +177,17 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.Property(item => item.ArtistaNormalizado).HasMaxLength(200);
         });
 
+        modelo.Entity<EnvioDoPublicoRegistro>(entidade =>
+        {
+            entidade.ToTable("EnviosDoPublico");
+            entidade.HasKey(item => item.Id);
+            entidade.HasIndex(item => item.ApresentacaoId);
+            entidade.Property(item => item.Chave).HasMaxLength(200);
+            entidade.Property(item => item.TipoDeConteudo).HasMaxLength(40);
+            entidade.Property(item => item.Nome).HasMaxLength(40);
+            entidade.Property(item => item.IdentificadorDoAparelho).HasMaxLength(64);
+        });
+
         modelo.Entity<CifraDoArtistaRegistro>(entidade =>
         {
             entidade.ToTable("CifrasDoArtista");
@@ -324,6 +336,25 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                 );
                 CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasEmTexto_Chave"
                     ON "CifrasEmTexto" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+                CREATE TABLE IF NOT EXISTS "EnviosDoPublico" (
+                    "Id" uuid NOT NULL,
+                    "ApresentacaoId" uuid NOT NULL,
+                    "ArtistaId" uuid NOT NULL,
+                    "Chave" character varying(200) NOT NULL,
+                    "Tipo" integer NOT NULL,
+                    "TipoDeConteudo" character varying(40) NOT NULL,
+                    "Tamanho" bigint NOT NULL,
+                    "Nome" character varying(40) NULL,
+                    "IdentificadorDoAparelho" character varying(64) NOT NULL,
+                    "CriadoEm" timestamp with time zone NOT NULL,
+                    "ExpiraEm" timestamp with time zone NOT NULL,
+                    "Confirmado" boolean NOT NULL DEFAULT FALSE,
+                    "Escondido" boolean NOT NULL DEFAULT FALSE,
+                    "Denuncias" text NOT NULL DEFAULT '',
+                    CONSTRAINT "PK_EnviosDoPublico" PRIMARY KEY ("Id")
+                );
+                CREATE INDEX IF NOT EXISTS "IX_EnviosDoPublico_ApresentacaoId"
+                    ON "EnviosDoPublico" ("ApresentacaoId");
                 CREATE TABLE IF NOT EXISTS "Repertorios" (
                     "Id" uuid NOT NULL,
                     "ArtistaId" uuid NOT NULL,
@@ -482,6 +513,24 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             );
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasEmTexto_Chave"
                 ON "CifrasEmTexto" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+            CREATE TABLE IF NOT EXISTS "EnviosDoPublico" (
+                "Id" TEXT NOT NULL CONSTRAINT "PK_EnviosDoPublico" PRIMARY KEY,
+                "ApresentacaoId" TEXT NOT NULL,
+                "ArtistaId" TEXT NOT NULL,
+                "Chave" TEXT NOT NULL,
+                "Tipo" INTEGER NOT NULL,
+                "TipoDeConteudo" TEXT NOT NULL,
+                "Tamanho" INTEGER NOT NULL,
+                "Nome" TEXT NULL,
+                "IdentificadorDoAparelho" TEXT NOT NULL,
+                "CriadoEm" TEXT NOT NULL,
+                "ExpiraEm" TEXT NOT NULL,
+                "Confirmado" INTEGER NOT NULL DEFAULT 0,
+                "Escondido" INTEGER NOT NULL DEFAULT 0,
+                "Denuncias" TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS "IX_EnviosDoPublico_ApresentacaoId"
+                ON "EnviosDoPublico" ("ApresentacaoId");
             CREATE TABLE IF NOT EXISTS "Repertorios" (
                 "Id" TEXT NOT NULL CONSTRAINT "PK_Repertorios" PRIMARY KEY,
                 "ArtistaId" TEXT NOT NULL,

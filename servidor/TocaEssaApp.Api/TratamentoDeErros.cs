@@ -140,6 +140,35 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "Informe um link público HTTP ou HTTPS válido."
             });
         }
+        catch (StoriesFechadosException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Os stories deste show estão fechados."
+            });
+        }
+        catch (EnvioInvalidoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Envie um vídeo de até 100 MB ou uma foto de até 15 MB."
+            });
+        }
+        catch (LimiteDeEnviosException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Este show já recebeu o máximo de vídeos e fotos."
+            });
+        }
+        catch (EnvioNaoEncontradoException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status404NotFound;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = "Story não encontrado." });
+        }
         catch (DadosDeCifraInvalidosException)
         {
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;

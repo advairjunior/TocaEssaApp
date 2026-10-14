@@ -15,5 +15,6 @@ build/
 **/dados/tocaessa.db-shm
 **/dados/tocaessa.db-wal
 **/dados/fotos/
+**/dados/stories/
 .vs/
 .claude/settings.local.json

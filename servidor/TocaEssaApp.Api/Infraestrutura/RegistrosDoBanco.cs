@@ -188,3 +188,24 @@ internal sealed class ItemDoSetlistRegistro
     public bool Tocada { get; set; }
     public int Ordem { get; set; }
 }
+
+// Vídeo ou foto do público para os stories do show. O arquivo fica no
+// armazenamento (R2) na Chave; aqui só os dados.
+internal sealed class EnvioDoPublicoRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ApresentacaoId { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string Chave { get; set; } = string.Empty;
+    public TipoDeStory Tipo { get; set; }
+    public string TipoDeConteudo { get; set; } = string.Empty;
+    public long Tamanho { get; set; }
+    public string? Nome { get; set; }
+    public string IdentificadorDoAparelho { get; set; } = string.Empty;
+    public DateTimeOffset CriadoEm { get; set; }
+    public DateTimeOffset ExpiraEm { get; set; }
+    public bool Confirmado { get; set; }
+    public bool Escondido { get; set; }
+    // Aparelhos que denunciaram, um por linha; zera quando o artista mostra.
+    public string Denuncias { get; set; } = string.Empty;
+}

@@ -26,6 +26,7 @@ public sealed partial class RepositorioTocaEssa
         CifraDoArtistaRegistro> _cifrasDoArtista = new();
     private readonly ConcurrentDictionary<(Guid ArtistaId, string Musica, string Artista),
         CifraEmTextoRegistro> _cifrasEmTexto = new();
+    private readonly ConcurrentDictionary<Guid, EnvioDoPublicoRegistro> _enviosDoPublico = new();
     private readonly ConcurrentDictionary<Guid, RepertorioRegistro> _repertorios = new();
     private readonly ConcurrentDictionary<Guid, MusicaDoRepertorioRegistro> _musicasDoRepertorio = new();
     private readonly ConcurrentDictionary<Guid, ItemDoSetlistRegistro> _itensDoSetlist = new();
@@ -130,3 +131,11 @@ public sealed class RecursoDisponivelSomenteNaResenhaException : Exception { }
 public sealed class DestinatarioAloObrigatorioException : Exception { }
 
 public sealed class IdentificacaoAvaliadorObrigatoriaException : Exception { }
+
+public sealed class StoriesFechadosException : Exception { }
+
+public sealed class EnvioInvalidoException : Exception { }
+
+public sealed class LimiteDeEnviosException : Exception { }
+
+public sealed class EnvioNaoEncontradoException : Exception { }

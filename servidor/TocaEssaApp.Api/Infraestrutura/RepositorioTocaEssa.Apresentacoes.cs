@@ -174,6 +174,11 @@ public sealed partial class RepositorioTocaEssa
                          .Where(chave => chave.ApresentacaoId == apresentacaoId)
                          .ToArray())
                 _acessosAoEvento.TryRemove(acesso, out _);
+            // Os arquivos no armazenamento somem pela regra de 7 dias.
+            foreach (var envio in _enviosDoPublico.Values
+                         .Where(envio => envio.ApresentacaoId == apresentacaoId)
+                         .ToArray())
+                _enviosDoPublico.TryRemove(envio.Id, out _);
             SalvarEstado();
             _notificador?.Publicar(item.Key);
         }

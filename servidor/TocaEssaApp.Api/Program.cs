@@ -22,6 +22,8 @@ builder.Services.AddSingleton(new RepositorioTocaEssa(
     conexaoPostgres ?? arquivoBanco, arquivoJsonLegado, notificadorTempoReal));
 builder.Services.AddSingleton(new ArmazenamentoDeImagens(
     builder.Configuration, conexaoPostgres ?? arquivoBanco));
+builder.Services.AddSingleton(new ArmazenamentoDeStories(
+    builder.Configuration, Path.Combine(Path.GetDirectoryName(arquivoBanco)!, "stories")));
 builder.Services.ConfigureHttpJsonOptions(opcoes =>
     opcoes.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddCors(opcoes => opcoes.AddDefaultPolicy(politica => politica
@@ -716,6 +718,138 @@ static Dictionary<string, string[]> ValidarPerfilPublico(
 static Dictionary<string, string[]> ValidarConta(
     string nome, string email, string senha) =>
     ValidarPerfilPublico(nome, email, senha);
+
+// Stories do show: o público envia e assiste sem conta; o arquivo vai
+// direto para o armazenamento por URL assinada.
+app.MapPost("/api/publico/apresentacoes/{codigo}/envios", async (
+    string codigo, PedidoDeEnvio pedido, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento) =>
+{
+    var envio = repositorio.CriarEnvio(codigo, pedido);
+    var (url, cabecalhos) = await armazenamento.UrlDeEnvio(envio.Chave, envio.TipoDeConteudo);
+    return Results.Ok(new { id = envio.Id, urlDeEnvio = url, cabecalhos });
+});
+
+app.MapPost("/api/publico/apresentacoes/{codigo}/envios/{envioId:guid}/confirmar", async (
+    string codigo, Guid envioId, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento, CancellationToken cancelamento) =>
+{
+    var chave = repositorio.ObterChaveDoEnvioPendente(codigo, envioId);
+    var tamanho = await armazenamento.TamanhoGuardado(chave, cancelamento);
+    StoryDoShow story;
+    try
+    {
+        story = repositorio.ConfirmarEnvio(codigo, envioId, tamanho);
+    }
+    catch (EnvioInvalidoException)
+    {
+        if (tamanho is not null) await armazenamento.Apagar(chave, cancelamento);
+        throw;
+    }
+    return Results.Ok(await ParaStoryPublico(story, armazenamento));
+});
+
+app.MapGet("/api/publico/apresentacoes/{codigo}/stories", async (
+    string codigo, RepositorioTocaEssa repositorio, ArmazenamentoDeStories armazenamento) =>
+{
+    var stories = repositorio.ListarStoriesDoShow(codigo);
+    return Results.Ok(await Task.WhenAll(
+        stories.Select(story => ParaStoryPublico(story, armazenamento))));
+});
+
+app.MapPost("/api/publico/apresentacoes/{codigo}/stories/{envioId:guid}/denuncia", (
+    string codigo, Guid envioId, DenunciaDeStory denuncia, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.DenunciarStory(codigo, envioId, denuncia.Aparelho);
+    return Results.NoContent();
+});
+
+app.MapGet("/api/apresentacoes/{apresentacaoId:guid}/envios", async (
+    Guid apresentacaoId, HttpRequest http, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento, CancellationToken cancelamento) =>
+{
+    var lista = repositorio.ListarEnviosDoShow(ObterToken(http) ?? string.Empty, apresentacaoId);
+    foreach (var chave in lista.ChavesExpiradas)
+    {
+        try
+        {
+            await armazenamento.Apagar(chave, cancelamento);
+        }
+        catch (Exception)
+        {
+            // A regra de 7 dias do armazenamento apaga depois.
+        }
+    }
+    return Results.Ok(await Task.WhenAll(lista.Envios.Select(async envio => new
+    {
+        envio.Id,
+        envio.Tipo,
+        envio.Nome,
+        envio.CriadoEm,
+        envio.ExpiraEm,
+        envio.Escondido,
+        envio.TipoDeConteudo,
+        url = await armazenamento.UrlDeLeitura(envio.Chave)
+    })));
+});
+
+app.MapDelete("/api/apresentacoes/{apresentacaoId:guid}/envios/{envioId:guid}", async (
+    Guid apresentacaoId, Guid envioId, HttpRequest http, RepositorioTocaEssa repositorio,
+    ArmazenamentoDeStories armazenamento, CancellationToken cancelamento) =>
+{
+    var chave = repositorio.ApagarEnvio(ObterToken(http) ?? string.Empty, apresentacaoId, envioId);
+    await armazenamento.Apagar(chave, cancelamento);
+    return Results.NoContent();
+});
+
+app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/envios/{envioId:guid}/mostrar", (
+    Guid apresentacaoId, Guid envioId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    repositorio.MostrarEnvio(ObterToken(http) ?? string.Empty, apresentacaoId, envioId);
+    return Results.NoContent();
+});
+
+// Sem R2 (local e testes): a própria API guarda e serve os arquivos, só
+// com a URL assinada por esta execução.
+var armazenamentoDeStories = app.Services.GetRequiredService<ArmazenamentoDeStories>();
+if (!armazenamentoDeStories.UsaR2)
+{
+    app.MapPut($"{ArmazenamentoDeStories.RotaLocal}/{{**chave}}", async (
+        string chave, long expira, string? assinatura, HttpRequest http,
+        ArmazenamentoDeStories armazenamento, CancellationToken cancelamento) =>
+    {
+        if (!armazenamento.AssinaturaLocalValida(chave, expira, assinatura))
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        var caminho = armazenamento.CaminhoLocal(chave);
+        Directory.CreateDirectory(Path.GetDirectoryName(caminho)!);
+        await using (var arquivo = File.Create(caminho))
+            await http.Body.CopyToAsync(arquivo, cancelamento);
+        return Results.Ok();
+    }).WithMetadata(new Microsoft.AspNetCore.Mvc.RequestSizeLimitAttribute(110L * 1024 * 1024));
+
+    app.MapGet($"{ArmazenamentoDeStories.RotaLocal}/{{**chave}}", (
+        string chave, long expira, string? assinatura, ArmazenamentoDeStories armazenamento) =>
+    {
+        if (!armazenamento.AssinaturaLocalValida(chave, expira, assinatura))
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        var caminho = armazenamento.CaminhoLocal(chave);
+        new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider()
+            .TryGetContentType(caminho, out var tipo);
+        return File.Exists(caminho)
+            ? Results.File(caminho, tipo ?? "application/octet-stream", enableRangeProcessing: true)
+            : Results.NotFound();
+    });
+}
+
+static async Task<object> ParaStoryPublico(StoryDoShow story, ArmazenamentoDeStories armazenamento) => new
+{
+    story.Id,
+    story.Tipo,
+    story.Nome,
+    story.CriadoEm,
+    story.TipoDeConteudo,
+    url = await armazenamento.UrlDeLeitura(story.Chave)
+};
 
 app.MapFallbackToFile("index.html");
 
