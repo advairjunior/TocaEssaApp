@@ -126,6 +126,15 @@ arquivo.
   de show encerrado entre 30 min e 12 h. Horas contratadas e ritmo nunca
   entram no cartão. Limite: quem pede sem conta e muda o nome conta como
   outra pessoa.
+- Cartão da retrospectiva no jeito do Strava (2026-10-13): a selfie com o
+  público é a estrela; a foto do perfil não entra. Sem selfie, um convite
+  por cima (fora da imagem compartilhada) lembra de tirar. Números só quando
+  valorizam: tempo, músicas e nota; público no app, atendimento e alôs não
+  entram. Fecham o cartão a mais pedida e o convite para o próximo show. A
+  resenha usa o mesmo visual, sem a contagem de gente no app.
+- Encerrar o show sem selfie oferece tirar uma antes: a câmera abre com a
+  prévia do cartão, a foto é guardada e o show é encerrado. Encerrar sem foto
+  continua possível; desistir da câmera não encerra.
 
 ### Lições do iPhone/Safari
 
