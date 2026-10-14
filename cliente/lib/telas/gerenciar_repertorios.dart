@@ -204,6 +204,19 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
     }
   }
 
+  /// O "Tom:" da cifra colada pode ter mudado o tom das músicas no servidor.
+  Future<void> _recarregarDepoisDaCifra() async {
+    await _carregarCifras();
+    try {
+      final repertorios = await widget.api.listarRepertorios();
+      final atual =
+          repertorios.where((r) => r.id == widget.repertorio.id).firstOrNull;
+      if (atual != null && mounted) setState(() => _musicas = atual.musicas);
+    } catch (_) {
+      // Sem a lista nova, o tom aparece ao abrir o repertório de novo.
+    }
+  }
+
   List<MusicaParaColar> get _semCifra => [
         for (final musica in _musicas)
           if (_cifras[musica.id] case final cifra? when !cifra.temTexto)
@@ -224,7 +237,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
           titulo: musica.titulo, texto: atual.texto);
       if (texto == null || !mounted) return;
       await widget.api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
-      await _carregarCifras();
+      await _recarregarDepoisDaCifra();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -238,7 +251,7 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
         abrirUrl: widget.abrirUrl,
       ),
     ));
-    await _carregarCifras();
+    await _recarregarDepoisDaCifra();
   }
 
   Future<void> _renomearRepertorio() async {
@@ -304,6 +317,8 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
       if (!mounted) return;
       setState(() => _musicas =
           _musicas.map((m) => m.id == editada.id ? editada : m).toList());
+      // Com outro nome, a música pode ter outra cifra.
+      await _carregarCifras();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     } finally {

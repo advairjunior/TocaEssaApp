@@ -11,12 +11,16 @@ import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 const _json = {'content-type': 'application/json; charset=utf-8'};
 const _linkSozinho = 'https://www.cifraclub.com.br/caetano/sozinho/';
 
-const _repertorios =
-    '[{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":['
-    '{"id":"m1","repertorioId":"r1","titulo":"Evidências","artista":"Chitãozinho & Xororó","tom":"A","ordem":1},'
-    '{"id":"m2","repertorioId":"r1","titulo":"Sozinho","artista":null,"tom":null,"ordem":2},'
-    '{"id":"m3","repertorioId":"r1","titulo":"Trem-Bala","artista":null,"tom":null,"ordem":3}'
-    ']}]';
+Map<String, Object?> _musica(String id, String titulo, int ordem,
+        {String? artista, String? tom}) =>
+    {
+      'id': id,
+      'repertorioId': 'r1',
+      'titulo': titulo,
+      'artista': artista,
+      'tom': tom,
+      'ordem': ordem,
+    };
 
 class _Acervo {
   final requisicoes = <http.Request>[];
@@ -24,24 +28,38 @@ class _Acervo {
   // título → cifra colada no servidor falso
   final textos = <String, String>{'Evidências': 'A  E\nLetra antiga'};
   String? areaDeTransferencia;
-  // músicas adicionadas durante o teste: id → título
-  final adicionadas = <String, String>{};
+  // músicas do repertório no servidor falso
+  final musicas = [
+    _musica('m1', 'Evidências', 1, artista: 'Chitãozinho & Xororó', tom: 'A'),
+    _musica('m2', 'Sozinho', 2),
+    _musica('m3', 'Trem-Bala', 3),
+  ];
+
+  List<Map<String, Object?>> repertorios() => [
+        {'id': 'r1', 'artistaId': 'a1', 'nome': 'Barzinho', 'musicas': musicas},
+      ];
 
   List<Map<String, Object?>> cifras() => [
-        for (final (id, titulo, link) in [
-          ('m1', 'Evidências', null),
-          ('m2', 'Sozinho', _linkSozinho),
-          ('m3', 'Trem-Bala', null),
-          for (final MapEntry(key: id, value: titulo) in adicionadas.entries)
-            (id, titulo, null),
-        ])
+        for (final musica in musicas)
           {
-            'musicaId': id,
-            'temTexto': textos.containsKey(titulo),
-            'url': link,
-            'urlPesquisa': 'https://www.google.com/search?q=$titulo',
+            'musicaId': musica['id'],
+            'temTexto': textos.containsKey(musica['titulo']),
+            'url': musica['titulo'] == 'Sozinho' ? _linkSozinho : null,
+            'urlPesquisa':
+                'https://www.google.com/search?q=${musica['titulo']}',
           },
       ];
+
+  /// Como o servidor: o "Tom:" da cifra colada passa para a música.
+  void salvarTexto(String titulo, String texto) {
+    textos[titulo] = texto;
+    final tom =
+        RegExp(r'^Tom: (\S+)', multiLine: true).firstMatch(texto)?.group(1);
+    if (tom == null) return;
+    for (final (i, musica) in musicas.indexed.toList()) {
+      if (musica['titulo'] == titulo) musicas[i] = {...musica, 'tom': tom};
+    }
+  }
 }
 
 Future<_Acervo> _abrir(WidgetTester tester) async {
@@ -65,25 +83,30 @@ Future<_Acervo> _abrir(WidgetTester tester) async {
     }
     if (caminho.endsWith('/cifras/texto')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
-      acervo.textos[corpo['musica'] as String] = corpo['texto'] as String;
+      acervo.salvarTexto(corpo['musica'] as String, corpo['texto'] as String);
       return http.Response(
           jsonEncode({'urlPesquisa': 'x', 'texto': corpo['texto']}), 200,
           headers: _json);
     }
     if (requisicao.method == 'POST' && caminho.endsWith('/r1/musicas')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
-      final id = 'm${4 + acervo.adicionadas.length}';
-      acervo.adicionadas[id] = corpo['titulo'] as String;
-      return http.Response(
-          jsonEncode({
-            'id': id,
-            'repertorioId': 'r1',
-            'titulo': corpo['titulo'],
-            'artista': corpo['artista'],
-            'tom': corpo['tom'],
-            'ordem': 3 + acervo.adicionadas.length,
-          }),
-          200,
+      final nova = _musica('m${acervo.musicas.length + 1}',
+          corpo['titulo'] as String, acervo.musicas.length + 1,
+          artista: corpo['artista'] as String?, tom: corpo['tom'] as String?);
+      acervo.musicas.add(nova);
+      return http.Response(jsonEncode(nova), 200, headers: _json);
+    }
+    if (requisicao.method == 'PUT' && caminho.contains('/r1/musicas/')) {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      final i = acervo.musicas
+          .indexWhere((m) => caminho.endsWith('/${m['id']}'));
+      acervo.musicas[i] = {
+        ...acervo.musicas[i],
+        'titulo': corpo['titulo'],
+        'artista': corpo['artista'],
+        'tom': corpo['tom'],
+      };
+      return http.Response(jsonEncode(acervo.musicas[i]), 200,
           headers: _json);
     }
     if (caminho.endsWith('/cifras/consulta')) {
@@ -93,7 +116,8 @@ Future<_Acervo> _abrir(WidgetTester tester) async {
           200,
           headers: _json);
     }
-    return http.Response(_repertorios, 200, headers: _json);
+    return http.Response(jsonEncode(acervo.repertorios()), 200,
+        headers: _json);
   });
   await tester.pumpWidget(MaterialApp(
     home: GerenciarRepertorios(
@@ -134,6 +158,35 @@ void main() {
     expect(find.text('Tocando em Frente'), findsOneWidget);
     expect(find.byTooltip('Colar cifra'), findsNWidgets(3));
     expect(find.text('3 músicas sem cifra'), findsOneWidget);
+  });
+
+  testWidgets('"Tom:" da cifra colada aparece na linha da música',
+      (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.byTooltip('Colar cifra').first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Tom: D\nD   G\nLetra');
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tom D'), findsOneWidget);
+  });
+
+  testWidgets('trocar o nome da música mostra a cifra do nome novo',
+      (tester) async {
+    final acervo = await _abrir(tester);
+    acervo.textos['Tocando em Frente'] = 'D  G\nAndo devagar';
+
+    await tester.tap(find.text('Trem-Bala'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'Tocando em Frente');
+    await tester.tap(find.text('Salvar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tocando em Frente'), findsOneWidget);
+    expect(find.byTooltip('Ver ou corrigir cifra'), findsNWidgets(2));
+    expect(find.text('1 música sem cifra'), findsOneWidget);
   });
 
   testWidgets('ícone abre a cifra da música para corrigir', (tester) async {
