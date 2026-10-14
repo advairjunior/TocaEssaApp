@@ -273,6 +273,17 @@ void main() {
     expect(find.text('Iniciar'), findsNothing);
   });
 
+  testWidgets('aba Mais do show deixa o artista postar nos stories',
+      (tester) async {
+    await _abrirApresentacaoComStatus(tester, status: 'Agendada');
+
+    await tester.tap(find.text('Mais'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stories do show'), findsOneWidget);
+    expect(find.text('Postar nos stories do show'), findsOneWidget);
+  });
+
   testWidgets('apresentação ao vivo pode voltar para agendada',
       (tester) async {
     final alteracoes =

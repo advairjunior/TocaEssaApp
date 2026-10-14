@@ -185,7 +185,7 @@ void main() {
 
     await tester.tap(find.text('Enviar vídeo ou foto'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Todo mundo do show vai ver por 24 h'),
+    expect(find.textContaining('Todo mundo do show vai ver até 24 h depois do fim'),
         findsOneWidget);
     await tester.tap(find.text('Entendi'));
     await tester.pumpAndSettle();
@@ -260,6 +260,46 @@ void main() {
     await _escolher(tester, 'Escolher da galeria');
 
     expect(find.text('Os stories deste show estão fechados.'), findsOneWidget);
+  });
+
+  testWidgets('artista posta pelas rotas dele, com o token e sem o aviso',
+      (tester) async {
+    final servidor = _Servidor();
+    final enviador = _EnviadorFalso();
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: EnviarStory.doArtista(
+          api: ApiTocaEssa(cliente: servidor.cliente, enderecoBase: 'http://teste')
+            ..definirTokenArtista('TOKEN'),
+          apresentacaoId: 'show-1',
+          seletor: _SeletorFalso(_foto()),
+          enviador: enviador,
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Postar nos stories do show'), findsOneWidget);
+    await tester.tap(find.text('Postar nos stories do show'));
+    await tester.pumpAndSettle();
+    expect(find.text('Entendi'), findsNothing);
+    await tester.tap(find.text('Tirar foto'));
+    await tester.pumpAndSettle();
+
+    final abertura = servidor.doCaminho('/envios').single;
+    expect(abertura.url.path, '/api/apresentacoes/show-1/envios');
+    expect(abertura.headers['Authorization'], 'Bearer TOKEN');
+    expect(jsonDecode(abertura.body), {
+      'tipo': 'Foto',
+      'tipoDeConteudo': 'image/jpeg',
+      'tamanho': 1000,
+    });
+    final confirmacao = servidor.doCaminho('/envios/e1/confirmar').single;
+    expect(confirmacao.url.path, '/api/apresentacoes/show-1/envios/e1/confirmar');
+    expect(confirmacao.headers['Authorization'], 'Bearer TOKEN');
+    expect(enviador.enviados, hasLength(1));
+    expect(find.text('Postado! O público já vê nos stories do show.'),
+        findsOneWidget);
   });
 
   testWidgets('desistir da câmera não envia nada', (tester) async {

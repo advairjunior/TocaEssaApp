@@ -28,6 +28,42 @@ mixin _ApiStories on _ApiTocaEssaBase {
       }),
     );
     _validar(resposta);
+    return _lerEnvioAberto(resposta);
+  }
+
+  /// Story do próprio artista: rota privada, com o token dele.
+  Future<EnvioAberto> abrirEnvioDeStoryDoArtista(
+    String apresentacaoId, {
+    required TipoDeStory tipo,
+    required String tipoDeConteudo,
+    required int tamanho,
+  }) async {
+    final resposta = await _cliente.post(
+      Uri.parse('$_enderecoBase/api/apresentacoes/$apresentacaoId/envios'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({
+        'tipo': tipo.valorApi,
+        'tipoDeConteudo': tipoDeConteudo,
+        'tamanho': tamanho,
+      }),
+    );
+    _validar(resposta);
+    return _lerEnvioAberto(resposta);
+  }
+
+  Future<StoryDoShow> confirmarEnvioDeStoryDoArtista(
+      String apresentacaoId, String id) async {
+    final resposta = await _cliente.post(
+      Uri.parse(
+          '$_enderecoBase/api/apresentacoes/$apresentacaoId/envios/$id/confirmar'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    _validar(resposta);
+    return StoryDoShow.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>, _base);
+  }
+
+  EnvioAberto _lerEnvioAberto(http.Response resposta) {
     final json = jsonDecode(resposta.body) as Map<String, dynamic>;
     return EnvioAberto(
       id: json['id'] as String,

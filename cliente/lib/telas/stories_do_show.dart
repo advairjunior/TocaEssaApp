@@ -34,12 +34,29 @@ class EnviarStory extends StatefulWidget {
     this.aoEnviar,
     SeletorDeMidia? seletor,
     EnviadorDeArquivo? enviador,
-  })  : seletor = seletor ?? SeletorDoAparelho(),
+  })  : apresentacaoIdDoArtista = null,
+        seletor = seletor ?? SeletorDoAparelho(),
+        enviador = enviador ?? EnviadorDoAparelho();
+
+  /// O artista posta nos stories do próprio show, com o token dele: o
+  /// público vê e se anima a postar também.
+  EnviarStory.doArtista({
+    super.key,
+    required this.api,
+    required String apresentacaoId,
+    this.aoEnviar,
+    SeletorDeMidia? seletor,
+    EnviadorDeArquivo? enviador,
+  })  : apresentacaoIdDoArtista = apresentacaoId,
+        codigo = '',
+        nome = null,
+        seletor = seletor ?? SeletorDoAparelho(),
         enviador = enviador ?? EnviadorDoAparelho();
 
   final ApiTocaEssa api;
   final String codigo;
   final String? nome;
+  final String? apresentacaoIdDoArtista;
   final VoidCallback? aoEnviar;
   final SeletorDeMidia seletor;
   final EnviadorDeArquivo enviador;
@@ -58,19 +75,20 @@ class _EnviarStoryState extends State<EnviarStory> {
   var _falhou = false;
 
   bool get _ocupado => _midia != null;
+  String? get _doArtista => widget.apresentacaoIdDoArtista;
 
   Future<void> _comecar() async {
     if (_ocupado) return;
     final preferencias = await SharedPreferences.getInstance();
     if (!mounted) return;
-    if (preferencias.getBool(_chaveAvisoVisto) != true) {
+    if (_doArtista == null && preferencias.getBool(_chaveAvisoVisto) != true) {
       final entendeu = await showDialog<bool>(
         context: context,
         builder: (contexto) => AlertDialog(
           title: const Text('Stories do show'),
           content: const Text(
-              'Todo mundo do show vai ver por 24 h, e o artista guarda por '
-              '7 dias. Não envie quem não quer aparecer.'),
+              'Todo mundo do show vai ver até 24 h depois do fim, e o artista '
+              'guarda por 7 dias. Não envie quem não quer aparecer.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(contexto, false),
@@ -149,14 +167,24 @@ class _EnviarStoryState extends State<EnviarStory> {
       if (_envio == null ||
           aberto == null ||
           DateTime.now().difference(aberto) > _validadeDoEnvio) {
-        _envio = await widget.api.abrirEnvioDeStory(
-          widget.codigo,
-          tipo: midia.tipo,
-          tipoDeConteudo: midia.tipoDeConteudo,
-          tamanho: midia.tamanho,
-          nome: widget.nome?.trim().isEmpty == true ? null : widget.nome?.trim(),
-          aparelho: await _aparelho(),
-        );
+        final doArtista = _doArtista;
+        _envio = doArtista != null
+            ? await widget.api.abrirEnvioDeStoryDoArtista(
+                doArtista,
+                tipo: midia.tipo,
+                tipoDeConteudo: midia.tipoDeConteudo,
+                tamanho: midia.tamanho,
+              )
+            : await widget.api.abrirEnvioDeStory(
+                widget.codigo,
+                tipo: midia.tipo,
+                tipoDeConteudo: midia.tipoDeConteudo,
+                tamanho: midia.tamanho,
+                nome: widget.nome?.trim().isEmpty == true
+                    ? null
+                    : widget.nome?.trim(),
+                aparelho: await _aparelho(),
+              );
         _abertoEm = DateTime.now();
       }
     } on FalhaNaApi catch (erro) {
@@ -179,7 +207,10 @@ class _EnviarStoryState extends State<EnviarStory> {
       return;
     }
     try {
-      await widget.api.confirmarEnvioDeStory(widget.codigo, envio.id);
+      final doArtista = _doArtista;
+      await (doArtista != null
+          ? widget.api.confirmarEnvioDeStoryDoArtista(doArtista, envio.id)
+          : widget.api.confirmarEnvioDeStory(widget.codigo, envio.id));
     } on FalhaNaApi catch (erro) {
       _terminar();
       if (mounted) mostrarErro(context, erro);
@@ -190,8 +221,10 @@ class _EnviarStoryState extends State<EnviarStory> {
     }
     _terminar();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Enviado! Já aparece nos stories do show.')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(_doArtista != null
+            ? 'Postado! O público já vê nos stories do show.'
+            : 'Enviado! Já aparece nos stories do show.')));
     widget.aoEnviar?.call();
   }
 
@@ -252,9 +285,15 @@ class _EnviarStoryState extends State<EnviarStory> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Enviar vídeo ou foto',
+                            Text(
+                                _doArtista != null
+                                    ? 'Postar nos stories do show'
+                                    : 'Enviar vídeo ou foto',
                                 style: texto.bodyLarge),
-                            Text('Todo mundo do show vê por 24 h',
+                            Text(
+                                _doArtista != null
+                                    ? 'O público vê e se anima a postar também'
+                                    : 'Todo mundo do show vê os stories',
                                 style: secundario),
                           ],
                         ),

@@ -63,20 +63,13 @@ void main() {
     );
   });
 
-  testWidgets('show ao vivo ou encerrado oferece enviar vídeo ou foto',
+  testWidgets('antes, durante e depois do show oferece enviar vídeo ou foto',
       (tester) async {
-    await _abrirArea(tester);
-    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
-
-    await tester.pumpWidget(const SizedBox());
-    await _abrirArea(tester, status: 'Encerrada');
-    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
-  });
-
-  testWidgets('show agendado ainda não recebe vídeo nem foto', (tester) async {
-    await _abrirArea(tester, status: 'Agendada');
-
-    expect(find.text('Enviar vídeo ou foto'), findsNothing);
+    for (final status in ['Agendada', 'EmAndamento', 'Encerrada']) {
+      await tester.pumpWidget(const SizedBox());
+      await _abrirArea(tester, status: status);
+      expect(find.text('Enviar vídeo ou foto'), findsOneWidget, reason: status);
+    }
   });
 
   testWidgets('pedir usa pergunta direta, campos leves e sem card',

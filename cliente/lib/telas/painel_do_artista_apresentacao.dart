@@ -106,6 +106,9 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
     Apresentacao apresentacao,
   ) =>
       [
+        const TituloGrupo('Stories do show'),
+        EnviarStory.doArtista(api: _api, apresentacaoId: apresentacao.id),
+        const SizedBox(height: EspacoTocaEssa.grande),
         const TituloGrupo('Detalhes'),
         GrupoDeLinhas(
           linhas: [

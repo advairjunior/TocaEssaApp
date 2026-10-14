@@ -34,6 +34,7 @@ class StoryDoShow {
     required this.criadoEm,
     required this.tipoDeConteudo,
     required this.url,
+    this.doArtista = false,
   });
 
   factory StoryDoShow.deJson(Map<String, dynamic> json, Uri base) =>
@@ -44,6 +45,7 @@ class StoryDoShow {
         criadoEm: DateTime.parse(json['criadoEm'] as String),
         tipoDeConteudo: json['tipoDeConteudo'] as String,
         url: base.resolve(json['url'] as String),
+        doArtista: json['doArtista'] as bool? ?? false,
       );
 
   final String id;
@@ -52,4 +54,7 @@ class StoryDoShow {
   final DateTime criadoEm;
   final String tipoDeConteudo;
   final Uri url;
+
+  /// Postado pelo artista: aparece com destaque.
+  final bool doArtista;
 }

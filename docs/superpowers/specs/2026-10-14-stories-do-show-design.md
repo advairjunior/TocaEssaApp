@@ -8,7 +8,8 @@ depois para ter feedback e salva no celular o que gostar. Sem curtidas nem
 comentários.
 
 Decisões do proprietário: envio **sem conta**; **vídeos e fotos**; o
-público vê **durante o show e até 24 h depois**; o artista guarda **7 dias**;
+público vê **desde a criação do show até 24 h depois do fim** (cada story
+no máximo 7 dias); o artista guarda **7 dias**; o **artista também posta**;
 envio **aparece na hora**, com **denúncia** do público e apagar do artista.
 
 ## Para o público
@@ -28,8 +29,8 @@ envio **aparece na hora**, com **denúncia** do público e apagar do artista.
   à esquerda volta, arrastar para baixo fecha. Nome de quem mandou e hora.
 - **Denunciar** no menu do story: com 3 denúncias de aparelhos diferentes
   o story some para o público até o artista olhar.
-- Visível para o público enquanto o show está em andamento e até 24 h
-  depois do fim.
+- Visível para o público desde a criação do show até 24 h depois do fim;
+  cada story no máximo 7 dias (quando o arquivo some).
 
 ### Enviar
 
@@ -38,12 +39,20 @@ envio **aparece na hora**, com **denúncia** do público e apagar do artista.
 - Nome opcional ("Ana, mesa 4"), lembrado no aparelho como nos pedidos.
 - Barra de progresso; se a internet cair, **Tentar de novo** sem escolher o
   arquivo outra vez.
-- Janela de envio: show **em andamento** ou **encerrado há até 24 h**
-  (dá para mandar em casa, no Wi-Fi). Show agendado não recebe.
-- Aviso antes do primeiro envio: "Todo mundo do show vai ver por 24 h, e o
-  artista guarda por 7 dias. Não envie quem não quer aparecer."
+- Janela de envio: show **agendado**, **em andamento** ou **encerrado há até**
+  **24 h** (o que se posta antes também é sobre o evento; dá para mandar
+  em casa, no Wi-Fi). Revisão de 2026-10-14.
+- Aviso antes do primeiro envio: "Todo mundo do show vai ver até 24 h depois
+  do fim, e o artista guarda por 7 dias. Não envie quem não quer
+  aparecer."
 
 ## Para o artista
+
+- **Posta nos stories** pela aba Mais do show ("Postar nos stories do show"):
+  aparece para o público com o nome artístico e destaque, fora do limite
+  por aparelho e sem sumir por denúncia (revisão de 2026-10-14: o público
+  vê e se anima a postar também). Rotas privadas
+  `POST /api/apresentacoes/{id}/envios` e `.../envios/{envioId}/confirmar`.
 
 ```
  Stories do show · 12          expiram em 6 dias
@@ -106,7 +115,7 @@ idempotente, nada existente muda):
 Tabela nova `DenunciasDeEnvio` (`EnvioId`, `IdentificadorDoAparelho`,
 `CriadaEm`; um aparelho denuncia uma vez).
 
-Para o público, o story vale enquanto o show está em andamento e até
+Para o público, o story vale desde a criação do show até
 `EncerradaEm + 24 h` (campo que o show já tem).
 
 ## Rotas
@@ -141,7 +150,7 @@ pública já tem; sem tempo real, a lista é buscada ao abrir e a cada minuto.
 - Tipos aceitos: `video/mp4`, `video/quicktime`, `image/jpeg`, `image/png`,
   `image/heic`.
 - Por aparelho: 10 envios por show. Por show: 300 envios ou 3 GB.
-- Fora da janela (agendado ou encerrado há mais de 24 h): recusado.
+- Fora da janela (encerrado há mais de 24 h): recusado.
 - Público vê na hora; 3 denúncias escondem; o artista apaga com um toque;
   some para o público 24 h após o show e para o artista em 7 dias.
 - Risco aceito pelo proprietário: entre o envio e a denúncia ou o apagar,
