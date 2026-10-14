@@ -60,9 +60,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(instalacao.pedidos, 0);
-    expect(find.textContaining('Compartilhar'), findsOneWidget);
+    // Janela no jeito do iOS: ícone e nome do app, passos e a seta.
+    expect(find.byKey(const Key('icone-do-app')), findsOneWidget);
+    expect(find.text('Instale no seu iPhone'), findsOneWidget);
+    expect(find.textContaining('Compartilhar'), findsWidgets);
     expect(find.textContaining('Adicionar à Tela de Início'), findsOneWidget);
     expect(find.textContaining('entre de novo na sua conta'), findsOneWidget);
+    expect(find.bySemanticsLabel('Seta apontando para a barra do Safari'),
+        findsOneWidget);
+  });
+
+  testWidgets('janela do iPhone cabe num iPhone pequeno com fonte grande',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _abrir(tester, _InstalacaoFalsa(iPhone: true));
+
+    await tester.tap(find.text('Instalar no celular'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Instale no seu iPhone'), findsOneWidget);
   });
 
   testWidgets('fora do iPhone, não pede para entrar de novo', (tester) async {
