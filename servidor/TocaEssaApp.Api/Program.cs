@@ -23,7 +23,8 @@ builder.Services.AddSingleton(new RepositorioTocaEssa(
 builder.Services.AddSingleton(new ArmazenamentoDeImagens(
     builder.Configuration, conexaoPostgres ?? arquivoBanco));
 builder.Services.AddSingleton(new ArmazenamentoDeStories(
-    builder.Configuration, Path.Combine(Path.GetDirectoryName(arquivoBanco)!, "stories")));
+    builder.Configuration, Path.Combine(Path.GetDirectoryName(arquivoBanco)!, "stories"),
+    exigeR2: builder.Environment.IsProduction()));
 builder.Services.ConfigureHttpJsonOptions(opcoes =>
     opcoes.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddCors(opcoes => opcoes.AddDefaultPolicy(politica => politica
@@ -725,6 +726,7 @@ app.MapPost("/api/publico/apresentacoes/{codigo}/envios", async (
     string codigo, PedidoDeEnvio pedido, RepositorioTocaEssa repositorio,
     ArmazenamentoDeStories armazenamento) =>
 {
+    armazenamento.GarantirDisponivel();
     var envio = repositorio.CriarEnvio(codigo, pedido);
     var (url, cabecalhos) = await armazenamento.UrlDeEnvio(envio.Chave, envio.TipoDeConteudo);
     return Results.Ok(new { id = envio.Id, urlDeEnvio = url, cabecalhos });
@@ -798,6 +800,7 @@ app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/envios", async (
     Guid apresentacaoId, PedidoDeEnvio pedido, HttpRequest http, RepositorioTocaEssa repositorio,
     ArmazenamentoDeStories armazenamento) =>
 {
+    armazenamento.GarantirDisponivel();
     var envio = repositorio.CriarEnvioDoArtista(
         ObterToken(http) ?? string.Empty, apresentacaoId, pedido);
     var (url, cabecalhos) = await armazenamento.UrlDeEnvio(envio.Chave, envio.TipoDeConteudo);
@@ -840,10 +843,10 @@ app.MapPost("/api/apresentacoes/{apresentacaoId:guid}/envios/{envioId:guid}/most
     return Results.NoContent();
 });
 
-// Sem R2 (local e testes): a própria API guarda e serve os arquivos, só
-// com a URL assinada por esta execução.
+// Sem R2, fora de produção (local e testes): a própria API guarda e serve
+// os arquivos, só com a URL assinada por esta execução.
 var armazenamentoDeStories = app.Services.GetRequiredService<ArmazenamentoDeStories>();
-if (!armazenamentoDeStories.UsaR2)
+if (armazenamentoDeStories.UsaPastaLocal)
 {
     app.MapPut($"{ArmazenamentoDeStories.RotaLocal}/{{**chave}}", async (
         string chave, long expira, string? assinatura, HttpRequest http,

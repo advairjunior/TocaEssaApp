@@ -148,6 +148,14 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "Os stories deste show estão fechados."
             });
         }
+        catch (StoriesIndisponiveisException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Stories indisponíveis no momento."
+            });
+        }
         catch (EnvioInvalidoException)
         {
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;

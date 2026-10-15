@@ -10,7 +10,8 @@ namespace TocaEssaApp.Api.Infraestrutura;
 /// Arquivos dos stories. Com o R2 configurado, o celular manda e assiste
 /// direto no R2 por URLs assinadas, sem o vídeo passar pelo servidor. Sem
 /// R2 (local e testes), os arquivos ficam numa pasta e as URLs assinadas
-/// apontam para rotas da própria API.
+/// apontam para rotas da própria API. Em produção a pasta não serve: o disco
+/// do servidor é apagado a cada reinício.
 public sealed partial class ArmazenamentoDeStories : IDisposable
 {
     public const string RotaLocal = "/api/stories-locais";
@@ -20,12 +21,14 @@ public sealed partial class ArmazenamentoDeStories : IDisposable
     private readonly string? _bucket;
     private readonly AmazonS3Client? _clienteR2;
     private readonly string _pastaLocal;
+    private readonly bool _exigeR2;
     // Chave só desta execução: URL local assinada não vale depois de reiniciar.
     private readonly byte[] _segredoLocal = RandomNumberGenerator.GetBytes(32);
 
-    public ArmazenamentoDeStories(IConfiguration configuracao, string pastaLocal)
+    public ArmazenamentoDeStories(IConfiguration configuracao, string pastaLocal, bool exigeR2 = false)
     {
         _pastaLocal = pastaLocal;
+        _exigeR2 = exigeR2;
         _bucket = configuracao["Armazenamento:R2:NomeDoBucket"];
         var endpoint = configuracao["Armazenamento:R2:Endpoint"];
         var chave = configuracao["Armazenamento:R2:IdentificadorDaChave"];
@@ -44,6 +47,15 @@ public sealed partial class ArmazenamentoDeStories : IDisposable
     }
 
     public bool UsaR2 => _clienteR2 is not null;
+
+    /// Pasta local só fora de produção.
+    public bool UsaPastaLocal => !UsaR2 && !_exigeR2;
+
+    /// Recusa o envio quando não há onde guardar o arquivo de verdade.
+    public void GarantirDisponivel()
+    {
+        if (!UsaR2 && _exigeR2) throw new StoriesIndisponiveisException();
+    }
 
     /// URL para o celular mandar o arquivo com PUT, e os cabeçalhos que ele
     /// precisa repetir.
@@ -135,3 +147,5 @@ public sealed partial class ArmazenamentoDeStories : IDisposable
     [GeneratedRegex(@"^envios/[0-9a-f-]{36}/[0-9a-f-]{36}\.(mp4|mov|jpg|png|heic)$")]
     private static partial Regex FormatoDaChave();
 }
+
+public sealed class StoriesIndisponiveisException : Exception { }

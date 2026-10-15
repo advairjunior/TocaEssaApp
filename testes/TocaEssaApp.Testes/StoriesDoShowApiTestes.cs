@@ -185,6 +185,43 @@ public class StoriesDoShowApiTestes
             "/api/publico/apresentacoes/ZZZZZZ/stories")).StatusCode);
     }
 
+    /// Em produção o disco do servidor é apagado a cada reinício: sem R2, o
+    /// envio é recusado em vez de guardar um arquivo que vai sumir.
+    [Fact]
+    public async Task EmProducaoSemR2OEnvioERecusadoEAssistirContinua()
+    {
+        await using var ambiente = await Ambiente.Criar(exigeR2: true);
+
+        var publico = await ambiente.Publico.PostAsJsonAsync(
+            $"/api/publico/apresentacoes/{ambiente.Codigo}/envios", new
+            {
+                tipo = "Foto", tipoDeConteudo = "image/jpeg", tamanho = Foto.Length,
+                aparelho = "aparelho-1"
+            });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, publico.StatusCode);
+        Assert.Contains("Stories indisponíveis no momento.",
+            await publico.Content.ReadAsStringAsync());
+
+        var doArtista = await ambiente.Ana.PostAsJsonAsync(
+            $"/api/apresentacoes/{ambiente.ShowId}/envios", new
+            {
+                tipo = "Foto", tipoDeConteudo = "image/jpeg", tamanho = Foto.Length
+            });
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, doArtista.StatusCode);
+
+        // Nenhum envio pela metade ficou registrado.
+        Assert.Equal("[]", await ambiente.Ana.GetStringAsync(
+            $"/api/apresentacoes/{ambiente.ShowId}/envios"));
+        // Rota pública de assistir continua respondendo sem token.
+        Assert.Equal("[]", await ambiente.Publico.GetStringAsync(
+            $"/api/publico/apresentacoes/{ambiente.Codigo}/stories"));
+        // A pasta local não existe em produção.
+        var local = await ambiente.Publico.GetAsync(
+            "/api/stories-locais/envios/00000000-0000-0000-0000-000000000000/" +
+            "00000000-0000-0000-0000-000000000000.jpg?expira=1&assinatura=x");
+        Assert.Equal(HttpStatusCode.NotFound, local.StatusCode);
+    }
+
     private sealed class Ambiente : IAsyncDisposable
     {
         private readonly string _banco;
@@ -203,7 +240,7 @@ public class StoriesDoShowApiTestes
         public Guid ShowId { get; private set; }
         public string Codigo { get; private set; } = string.Empty;
 
-        public static async Task<Ambiente> Criar()
+        public static async Task<Ambiente> Criar(bool exigeR2 = false)
         {
             var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-stories-{Guid.NewGuid():N}.db");
             var fabrica = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -222,7 +259,7 @@ public class StoriesDoShowApiTestes
                     servicos.AddSingleton(new RepositorioTocaEssa(banco, $"{banco}.json"));
                     servicos.RemoveAll<ArmazenamentoDeStories>();
                     servicos.AddSingleton(new ArmazenamentoDeStories(
-                        new ConfigurationBuilder().Build(), $"{banco}-stories"));
+                        new ConfigurationBuilder().Build(), $"{banco}-stories", exigeR2));
                 });
             });
             var ambiente = new Ambiente(banco, fabrica);
