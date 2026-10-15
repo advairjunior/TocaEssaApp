@@ -73,6 +73,24 @@ mixin _ApiStories on _ApiTocaEssaBase {
     );
   }
 
+  Future<List<StoryDoShow>> listarStoriesDoShow(String codigo) async {
+    final resposta = await _cliente.get(_rotaDosStories(codigo, '/stories'));
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((json) => StoryDoShow.deJson(json as Map<String, dynamic>, _base))
+        .toList();
+  }
+
+  Future<void> denunciarStory(String codigo, String id,
+      {required String aparelho}) async {
+    final resposta = await _cliente.post(
+      _rotaDosStories(codigo, '/stories/$id/denuncia'),
+      headers: _cabecalhos(json: true),
+      body: jsonEncode({'aparelho': aparelho}),
+    );
+    _validar(resposta);
+  }
+
   Future<StoryDoShow> confirmarEnvioDeStory(String codigo, String id) async {
     final resposta = await _cliente.post(
       _rotaDosStories(codigo, '/envios/$id/confirmar'),

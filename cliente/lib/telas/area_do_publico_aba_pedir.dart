@@ -9,7 +9,7 @@ extension _ConstrucaoAbaPedir on _AreaDoPublicoState {
         const SizedBox(height: 16),
         // Stories do evento desde antes do show; o servidor fecha 24 h após
         // o fim.
-        EnviarStory(
+        StoriesDoShow(
           api: _api,
           codigo: apresentacao.codigo,
           nome: _perfilPublico?.nome ?? _nome.text,

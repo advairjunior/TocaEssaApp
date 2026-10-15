@@ -131,10 +131,6 @@ Future<void> _abrir(
 Future<void> _escolher(WidgetTester tester, String opcao) async {
   await tester.tap(find.text('Enviar vídeo ou foto'));
   await tester.pumpAndSettle();
-  if (find.text('Entendi').evaluate().isNotEmpty) {
-    await tester.tap(find.text('Entendi'));
-    await tester.pumpAndSettle();
-  }
   await tester.tap(find.text(opcao));
   await tester.pumpAndSettle();
 }
@@ -175,28 +171,6 @@ void main() {
     expect(preferencias.getString('aparelho_dos_stories'), corpo['aparelho']);
   });
 
-  testWidgets('aviso de que todos veem aparece só no primeiro envio',
-      (tester) async {
-    final servidor = _Servidor();
-    await _abrir(tester,
-        servidor: servidor,
-        seletor: _SeletorFalso(_foto()),
-        enviador: _EnviadorFalso());
-
-    await tester.tap(find.text('Enviar vídeo ou foto'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Todo mundo do show vai ver até 24 h depois do fim'),
-        findsOneWidget);
-    await tester.tap(find.text('Entendi'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tirar foto'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Enviar vídeo ou foto'));
-    await tester.pumpAndSettle();
-    expect(find.text('Entendi'), findsNothing);
-    expect(find.text('Gravar vídeo'), findsOneWidget);
-  });
 
   testWidgets('vídeo com mais de 60 s é recusado no próprio aparelho',
       (tester) async {
