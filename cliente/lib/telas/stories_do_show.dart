@@ -243,16 +243,29 @@ class _StoriesDoShowState extends State<StoriesDoShow> {
       ).then((_) => _carregar());
 
   @override
-  Widget build(BuildContext context) => FileiraDeStories(
-        enviar: EnviarStory(
-          api: widget.api,
-          codigo: widget.codigo,
-          nome: widget.nome,
-          aoEnviar: _carregar,
-        ),
-        grupos: _grupos,
-        vistos: _vistos,
-        aoAbrir: _abrir,
+  Widget build(BuildContext context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Curtindo o show? Grave um pedaço para a galera e o artista.',
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          FileiraDeStories(
+            enviar: EnviarStory(
+              api: widget.api,
+              codigo: widget.codigo,
+              nome: widget.nome,
+              aoEnviar: _carregar,
+            ),
+            grupos: _grupos,
+            vistos: _vistos,
+            aoAbrir: _abrir,
+          ),
+        ],
       );
 }
 

@@ -112,6 +112,7 @@ void main() {
     final lista = servidor.doCaminho('GET', '/envios').single;
     expect(lista.url.path, '/api/apresentacoes/show-1/envios');
     expect(lista.headers['Authorization'], 'Bearer TOKEN');
+    expect(find.textContaining('Curtindo o show'), findsNothing);
     expect(find.text('Postar'), findsOneWidget);
     expect(
         tester

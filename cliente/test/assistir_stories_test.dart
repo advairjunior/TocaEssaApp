@@ -118,6 +118,15 @@ int _barrinhas(WidgetTester tester) => find
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  testWidgets('frase convida a gravar um pedaço do show', (tester) async {
+    await _abrir(tester, _Servidor([]));
+
+    final frase = find.text('Curtindo o show? Grave um pedaço para a galera e o artista.');
+    expect(frase, findsOneWidget);
+    expect(tester.getTopLeft(frase).dy,
+        lessThan(tester.getTopLeft(find.text('Enviar')).dy));
+  });
+
   testWidgets('sem stories a fileira tem só o enviar', (tester) async {
     await _abrir(tester, _Servidor([]));
 
