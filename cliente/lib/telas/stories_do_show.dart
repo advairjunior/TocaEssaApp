@@ -44,7 +44,123 @@ Future<String> aparelhoDosStories() async {
   return novo;
 }
 
-/// Fileira de stories do show e o envio, na tela pública.
+/// Stories já vistos neste aparelho.
+Future<Set<String>> lerStoriesVistos() async {
+  final preferencias = await SharedPreferences.getInstance();
+  return (preferencias.getStringList(_chaveVistos) ?? const []).toSet();
+}
+
+Future<void> guardarStoryVisto(String id) async {
+  final preferencias = await SharedPreferences.getInstance();
+  final vistos = preferencias.getStringList(_chaveVistos) ?? const [];
+  if (vistos.contains(id)) return;
+  final novos = [...vistos, id];
+  // Os mais antigos saem: o story some em 7 dias.
+  await preferencias.setStringList(
+      _chaveVistos, novos.sublist(max(0, novos.length - 500)));
+}
+
+/// Os stories de uma pessoa: uma bolinha na fileira.
+class GrupoDeStories {
+  const GrupoDeStories(this.stories);
+
+  final List<StoryDoShow> stories;
+
+  StoryDoShow get _primeiro => stories.first;
+  String get chave => chaveDoGrupo(_primeiro);
+  bool get doArtista => _primeiro.doArtista;
+  String get nome => _primeiro.nome?.trim().isNotEmpty == true
+      ? _primeiro.nome!.trim()
+      : 'Público';
+  bool get temEscondido => stories.any((story) => story.escondido);
+  bool novo(Set<String> vistos) =>
+      stories.any((story) => !vistos.contains(story.id));
+}
+
+/// Uma bolinha por pessoa: o artista primeiro, depois quem tem story ainda
+/// não visto e por fim quem já foi visto, cada parte na ordem de chegada.
+List<GrupoDeStories> agruparStories(
+    List<StoryDoShow> stories, Set<String> vistos) {
+  final porPessoa = <String, List<StoryDoShow>>{};
+  final ordenados = [...stories]
+    ..sort((a, b) => a.criadoEm.compareTo(b.criadoEm));
+  for (final story in ordenados) {
+    porPessoa.putIfAbsent(chaveDoGrupo(story), () => []).add(story);
+  }
+  final grupos = porPessoa.values.map(GrupoDeStories.new).toList();
+  int ordem(GrupoDeStories grupo) =>
+      grupo.doArtista ? 0 : (grupo.novo(vistos) ? 1 : 2);
+  return [
+    for (final parte in [0, 1, 2]) ...grupos.where((g) => ordem(g) == parte),
+  ];
+}
+
+/// Abre a tela cheia na pessoa tocada, no primeiro story que ela ainda não
+/// viu; ao acabar, segue para as próximas pessoas da fileira.
+Future<void> abrirStoriesDoGrupo(
+  BuildContext context, {
+  required List<GrupoDeStories> grupos,
+  required GrupoDeStories grupo,
+  required Set<String> vistos,
+  required ValueChanged<StoryDoShow> aoVer,
+  required List<AcaoDoStory> Function(StoryDoShow story) acoes,
+  required ConstrutorDeVideo construtorDeVideo,
+}) {
+  final todos = [for (final g in grupos) ...g.stories];
+  final naoVisto =
+      grupo.stories.where((story) => !vistos.contains(story.id)).firstOrNull;
+  final inicio = todos.indexOf(naoVisto ?? grupo.stories.first);
+  return Navigator.of(context).push(
+    PageRouteBuilder<void>(
+      pageBuilder: (_, __, ___) => TelaDeStories(
+        stories: todos,
+        inicio: inicio,
+        aoVer: aoVer,
+        acoes: acoes,
+        construtorDeVideo: construtorDeVideo,
+      ),
+      transitionsBuilder: (_, animacao, __, filho) =>
+          FadeTransition(opacity: animacao, child: filho),
+    ),
+  );
+}
+
+/// Fileira de stories: a bolinha de enviar e uma bolinha por pessoa.
+class FileiraDeStories extends StatelessWidget {
+  const FileiraDeStories({
+    super.key,
+    required this.enviar,
+    required this.grupos,
+    required this.vistos,
+    required this.aoAbrir,
+  });
+
+  final Widget enviar;
+  final List<GrupoDeStories> grupos;
+  final Set<String> vistos;
+  final ValueChanged<GrupoDeStories> aoAbrir;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        height: 96,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            enviar,
+            for (final grupo in grupos) ...[
+              const SizedBox(width: EspacoTocaEssa.medio),
+              BolinhaDeStory(
+                grupo: grupo,
+                novo: grupo.novo(vistos),
+                aoTocar: () => aoAbrir(grupo),
+              ),
+            ],
+          ],
+        ),
+      );
+}
+
+/// Fileira de stories do show na tela pública.
 class StoriesDoShow extends StatefulWidget {
   const StoriesDoShow({
     super.key,
@@ -64,7 +180,7 @@ class StoriesDoShow extends StatefulWidget {
 }
 
 class _StoriesDoShowState extends State<StoriesDoShow> {
-  List<StoryDoShow> _stories = [];
+  List<GrupoDeStories> _grupos = [];
   Set<String> _vistos = {};
   Timer? _atualizacao;
 
@@ -85,168 +201,191 @@ class _StoriesDoShowState extends State<StoriesDoShow> {
   Future<void> _carregar() async {
     try {
       final stories = await widget.api.listarStoriesDoShow(widget.codigo);
-      final preferencias = await SharedPreferences.getInstance();
-      final vistos = preferencias.getStringList(_chaveVistos) ?? const [];
+      final vistos = await lerStoriesVistos();
       if (!mounted) return;
       setState(() {
-        // O artista vem primeiro; o resto na ordem de chegada.
-        _stories = [
-          ...stories.where((story) => story.doArtista),
-          ...stories.where((story) => !story.doArtista),
-        ];
-        _vistos = vistos.toSet();
+        _vistos = vistos;
+        _grupos = agruparStories(stories, vistos);
       });
     } catch (_) {
-      // Sem a lista, a fileira só não aparece.
+      // Sem a lista, a fileira mostra só o enviar.
     }
   }
 
-  Future<void> _marcarVisto(StoryDoShow story) async {
+  void _marcarVisto(StoryDoShow story) {
     if (_vistos.contains(story.id)) return;
-    setState(() => _vistos = {..._vistos, story.id});
-    final preferencias = await SharedPreferences.getInstance();
-    final vistos = [
-      ...?preferencias.getStringList(_chaveVistos),
-      story.id,
-    ];
-    // Os mais antigos saem: o story some em 7 dias.
-    await preferencias.setStringList(_chaveVistos,
-        vistos.sublist(max(0, vistos.length - 500)));
+    // A ordem da fileira só muda ao carregar: não pula na frente de quem vê.
+    if (mounted) setState(() => _vistos = {..._vistos, story.id});
+    guardarStoryVisto(story.id);
   }
 
-  Future<void> _abrir(int inicio) => Navigator.of(context).push(
-        PageRouteBuilder<void>(
-          opaque: false,
-          pageBuilder: (_, __, ___) => TelaDeStories(
-            stories: _stories,
-            inicio: inicio,
-            aoVer: _marcarVisto,
-            // Story do artista só ele apaga.
-            acoes: (story) => [
-              if (!story.doArtista)
-                AcaoDoStory(
-                  'Denunciar',
-                  () async => widget.api.denunciarStory(
-                      widget.codigo, story.id,
-                      aparelho: await aparelhoDosStories()),
-                  mensagem: 'Denúncia enviada.',
-                  depois: DepoisDaAcao.avancar,
-                ),
-            ],
-            construtorDeVideo: widget.construtorDeVideo,
-          ),
-          transitionsBuilder: (_, animacao, __, filho) =>
-              FadeTransition(opacity: animacao, child: filho),
-        ),
-      );
+  Future<void> _abrir(GrupoDeStories grupo) => abrirStoriesDoGrupo(
+        context,
+        grupos: _grupos,
+        grupo: grupo,
+        vistos: _vistos,
+        aoVer: _marcarVisto,
+        // Story do artista só ele apaga.
+        acoes: (story) => [
+          if (!story.doArtista)
+            AcaoDoStory(
+              'Denunciar',
+              () async {
+                await widget.api.denunciarStory(widget.codigo, story.id,
+                    aparelho: await aparelhoDosStories());
+                return null;
+              },
+              mensagem: 'Denúncia enviada.',
+              depois: DepoisDaAcao.remover,
+            ),
+        ],
+        construtorDeVideo: widget.construtorDeVideo,
+      ).then((_) => _carregar());
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_stories.isNotEmpty) ...[
-            SizedBox(
-              height: 92,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _stories.length,
-                separatorBuilder: (_, __) =>
-                    const SizedBox(width: EspacoTocaEssa.medio),
-                itemBuilder: (_, indice) => BolinhaDeStory(
-                  story: _stories[indice],
-                  novo: !_vistos.contains(_stories[indice].id),
-                  aoTocar: () => _abrir(indice),
-                ),
-              ),
-            ),
-            const SizedBox(height: EspacoTocaEssa.medio),
-          ],
-          EnviarStory(
-            api: widget.api,
-            codigo: widget.codigo,
-            nome: widget.nome,
-            aoEnviar: _carregar,
-          ),
-        ],
+  Widget build(BuildContext context) => FileiraDeStories(
+        enviar: EnviarStory(
+          api: widget.api,
+          codigo: widget.codigo,
+          nome: widget.nome,
+          aoEnviar: _carregar,
+        ),
+        grupos: _grupos,
+        vistos: _vistos,
+        aoAbrir: _abrir,
       );
 }
 
-/// Bolinha da fileira: anel roxo enquanto não foi vista neste aparelho.
+/// Círculo de 64 px da fileira, com o rótulo embaixo.
+class _BolinhaComRotulo extends StatelessWidget {
+  const _BolinhaComRotulo({
+    required this.anel,
+    required this.miolo,
+    required this.rotulo,
+    required this.destaque,
+    this.aoTocar,
+    this.selo,
+  });
+
+  /// Gradiente do anel; nulo deixa só uma borda discreta.
+  final Gradient? anel;
+  final Widget miolo;
+  final String rotulo;
+  final bool destaque;
+  final VoidCallback? aoTocar;
+  final Widget? selo;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: aoTocar,
+        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+        child: SizedBox(
+          width: 72,
+          child: Column(
+            children: [
+              SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: anel,
+                        border: anel == null
+                            ? Border.all(color: CoresTocaEssa.borda, width: 2)
+                            : null,
+                      ),
+                      child: miolo,
+                    ),
+                    if (selo != null) selo!,
+                  ],
+                ),
+              ),
+              const SizedBox(height: EspacoTocaEssa.mini),
+              Text(
+                rotulo,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: destaque
+                        ? CoresTocaEssa.texto
+                        : CoresTocaEssa.textoSecundario),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+const _anelNovo =
+    LinearGradient(colors: [CoresTocaEssa.roxo, CoresTocaEssa.rosa]);
+
+/// Miolo redondo das bolinhas.
+Widget _miolo(Widget filho, {Color cor = CoresTocaEssa.superficieElevada}) =>
+    Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: cor,
+        border: Border.all(color: CoresTocaEssa.fundo, width: 2),
+      ),
+      alignment: Alignment.center,
+      child: filho,
+    );
+
+/// Bolinha de uma pessoa: anel roxo enquanto tem story não visto neste
+/// aparelho.
 class BolinhaDeStory extends StatelessWidget {
   const BolinhaDeStory({
     super.key,
-    required this.story,
+    required this.grupo,
     required this.novo,
     required this.aoTocar,
   });
 
-  final StoryDoShow story;
+  final GrupoDeStories grupo;
   final bool novo;
   final VoidCallback aoTocar;
 
   @override
-  Widget build(BuildContext context) {
-    final nome = story.nome;
-    return InkWell(
-      onTap: aoTocar,
-      borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
-      child: SizedBox(
-        width: 68,
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: novo
-                    ? const LinearGradient(
-                        colors: [CoresTocaEssa.roxo, CoresTocaEssa.rosa])
-                    : null,
-                border: novo
-                    ? null
-                    : Border.all(color: CoresTocaEssa.borda, width: 2),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: story.doArtista
-                      ? CoresTocaEssa.destaqueFundo
-                      : CoresTocaEssa.superficieElevada,
-                  border: Border.all(color: CoresTocaEssa.fundo, width: 2),
+  Widget build(BuildContext context) => _BolinhaComRotulo(
+        anel: novo ? _anelNovo : null,
+        destaque: novo,
+        rotulo: grupo.nome,
+        aoTocar: aoTocar,
+        miolo: grupo.doArtista
+            ? _miolo(
+                const Icon(Icons.mic_rounded,
+                    color: CoresTocaEssa.ouro, size: 26),
+                cor: CoresTocaEssa.destaqueFundo)
+            : _miolo(grupo.chave == '#publico'
+                ? const Icon(Icons.person_rounded,
+                    color: CoresTocaEssa.textoSecundario)
+                : Text(grupo.nome.characters.first.toUpperCase(),
+                    style: Theme.of(context).textTheme.titleLarge)),
+        selo: grupo.temEscondido
+            ? const Positioned(
+                right: -2,
+                bottom: -2,
+                child: Tooltip(
+                  message: 'Escondido por denúncias',
+                  child: CircleAvatar(
+                    radius: 11,
+                    backgroundColor: CoresTocaEssa.perigo,
+                    child: Icon(Icons.visibility_off_rounded,
+                        size: 13, color: CoresTocaEssa.fundo),
+                  ),
                 ),
-                alignment: Alignment.center,
-                child: story.doArtista
-                    ? const Icon(Icons.mic_rounded,
-                        color: CoresTocaEssa.ouro, size: 26)
-                    : nome == null || nome.isEmpty
-                        ? const Icon(Icons.person_rounded,
-                            color: CoresTocaEssa.textoSecundario)
-                        : Text(nome.characters.first.toUpperCase(),
-                            style: Theme.of(context).textTheme.titleLarge),
-              ),
-            ),
-            const SizedBox(height: EspacoTocaEssa.mini),
-            Text(
-              nome ?? 'Público',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: novo
-                      ? CoresTocaEssa.texto
-                      : CoresTocaEssa.textoSecundario),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              )
+            : null,
+      );
 }
 
-/// "Enviar vídeo ou foto" para os stories do show: escolhe na câmera ou na
-/// galeria, manda direto para o armazenamento com progresso e, se a
-/// internet cair, tenta de novo sem escolher outra vez.
+/// Bolinha "+" da fileira: escolhe na câmera ou na galeria, manda direto
+/// para o armazenamento com o progresso no anel e, se a internet cair,
+/// tenta de novo sem escolher outra vez.
 class EnviarStory extends StatefulWidget {
   EnviarStory({
     super.key,
@@ -443,8 +582,8 @@ class _EnviarStoryState extends State<EnviarStory> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(_doArtista != null
-            ? 'Postado! O público já vê nos stories do show.'
-            : 'Enviado! Já aparece nos stories do show.')));
+            ? 'Story postado.'
+            : 'Story enviado.')));
     widget.aoEnviar?.call();
   }
 
@@ -466,70 +605,55 @@ class _EnviarStoryState extends State<EnviarStory> {
 
   @override
   Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: CoresTocaEssa.superficie,
-        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
-        border: Border.all(color: CoresTocaEssa.borda),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: !_ocupado
-            ? InkWell(
-                onTap: _comecar,
-                borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
-                child: Padding(
-                  padding: const EdgeInsets.all(EspacoTocaEssa.base),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.video_camera_front_rounded,
-                          color: CoresTocaEssa.roxoClaro),
-                      const SizedBox(width: EspacoTocaEssa.base),
-                      Expanded(
-                        child: Text(
-                            _doArtista != null
-                                ? 'Postar nos stories do show'
-                                : 'Enviar vídeo ou foto',
-                            style: texto.bodyLarge),
-                      ),
-                      const Icon(Icons.chevron_right_rounded,
-                          color: CoresTocaEssa.textoSecundario),
-                    ],
-                  ),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.all(EspacoTocaEssa.base),
-                child: _falhou
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: Text('Não foi possível enviar.',
-                                style: texto.bodyLarge),
-                          ),
-                          TextButton(
-                            onPressed: _terminar,
-                            child: const Text('Cancelar'),
-                          ),
-                          FilledButton(
-                            onPressed: _enviar,
-                            child: const Text('Tentar de novo'),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            'Enviando… ${((_progresso ?? 0) * 100).round()}%',
-                            style: texto.bodyLarge,
-                          ),
-                          const SizedBox(height: EspacoTocaEssa.pequeno),
-                          LinearProgressIndicator(value: _progresso),
-                        ],
-                      ),
-              ),
+    if (!_ocupado) {
+      return _BolinhaComRotulo(
+        anel: null,
+        destaque: true,
+        rotulo: _doArtista != null ? 'Postar' : 'Enviar',
+        aoTocar: _comecar,
+        miolo: _miolo(const Icon(Icons.add_rounded,
+            color: CoresTocaEssa.roxoClaro, size: 30)),
+      );
+    }
+    if (_falhou) {
+      return _BolinhaComRotulo(
+        anel: const LinearGradient(
+            colors: [CoresTocaEssa.perigo, CoresTocaEssa.perigo]),
+        destaque: true,
+        rotulo: 'Reenviar',
+        aoTocar: _enviar,
+        miolo: _miolo(const Icon(Icons.refresh_rounded,
+            color: CoresTocaEssa.perigo, size: 28)),
+        selo: Positioned(
+          right: -8,
+          top: -8,
+          child: IconButton.filledTonal(
+            tooltip: 'Cancelar envio',
+            visualDensity: VisualDensity.compact,
+            iconSize: 14,
+            constraints: const BoxConstraints.tightFor(width: 26, height: 26),
+            padding: EdgeInsets.zero,
+            onPressed: _terminar,
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ),
+      );
+    }
+    return _BolinhaComRotulo(
+      anel: null,
+      destaque: true,
+      rotulo: '${((_progresso ?? 0) * 100).round()}%',
+      miolo: Stack(
+        fit: StackFit.expand,
+        children: [
+          _miolo(const Icon(Icons.arrow_upward_rounded,
+              color: CoresTocaEssa.roxoClaro)),
+          CircularProgressIndicator(
+            value: _progresso,
+            strokeWidth: 3,
+            color: CoresTocaEssa.roxoClaro,
+          ),
+        ],
       ),
     );
   }

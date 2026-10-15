@@ -70,4 +70,16 @@ class StoryDoShow {
 
   /// Só na lista do artista: quando o arquivo some.
   final DateTime? expiraEm;
+
+  StoryDoShow copiar({bool? escondido}) => StoryDoShow(
+        id: id,
+        tipo: tipo,
+        nome: nome,
+        criadoEm: criadoEm,
+        tipoDeConteudo: tipoDeConteudo,
+        url: url,
+        doArtista: doArtista,
+        escondido: escondido ?? this.escondido,
+        expiraEm: expiraEm,
+      );
 }

@@ -132,7 +132,7 @@ Future<void> _abrir(
 }
 
 Future<void> _escolher(WidgetTester tester, String opcao) async {
-  await tester.tap(find.text('Enviar vídeo ou foto'));
+  await tester.tap(find.text('Enviar'));
   await tester.pumpAndSettle();
   await tester.tap(find.text(opcao));
   await tester.pumpAndSettle();
@@ -166,7 +166,7 @@ void main() {
         'http://teste/api/stories-locais/envios/x/e1.jpg?assinatura=a');
     expect(cabecalhos, {'Content-Type': 'image/jpeg'});
     expect(servidor.doCaminho('/envios/e1/confirmar'), hasLength(1));
-    expect(find.text('Enviado! Já aparece nos stories do show.'),
+    expect(find.text('Story enviado.'),
         findsOneWidget);
 
     // O mesmo aparelho manda sempre o mesmo identificador.
@@ -213,15 +213,15 @@ void main() {
         servidor: servidor, seletor: seletor, enviador: enviador);
 
     await _escolher(tester, 'Escolher da galeria');
-    expect(find.text('Não foi possível enviar.'), findsOneWidget);
+    expect(find.byTooltip('Cancelar envio'), findsOneWidget);
 
-    await tester.tap(find.text('Tentar de novo'));
+    await tester.tap(find.text('Reenviar'));
     await tester.pumpAndSettle();
 
     expect(seletor.pedidos, ['galeria']);
     expect(servidor.doCaminho('/envios'), hasLength(1));
     expect(enviador.enviados, hasLength(1));
-    expect(find.text('Enviado! Já aparece nos stories do show.'),
+    expect(find.text('Story enviado.'),
         findsOneWidget);
   });
 
@@ -256,8 +256,8 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('Postar nos stories do show'), findsOneWidget);
-    await tester.tap(find.text('Postar nos stories do show'));
+    expect(find.text('Postar'), findsOneWidget);
+    await tester.tap(find.text('Postar'));
     await tester.pumpAndSettle();
     expect(find.text('Entendi'), findsNothing);
     await tester.tap(find.text('Escolher da galeria'));
@@ -275,7 +275,7 @@ void main() {
     expect(confirmacao.url.path, '/api/apresentacoes/show-1/envios/e1/confirmar');
     expect(confirmacao.headers['Authorization'], 'Bearer TOKEN');
     expect(enviador.enviados, hasLength(1));
-    expect(find.text('Postado! O público já vê nos stories do show.'),
+    expect(find.text('Story postado.'),
         findsOneWidget);
   });
 
@@ -332,5 +332,21 @@ void main() {
 
     expect(seletor.pedidos, ['foto']);
     expect(servidor.doCaminho('/envios'), hasLength(1));
+  });
+
+  testWidgets('cancelar depois da falha volta ao enviar', (tester) async {
+    final servidor = _Servidor();
+    await _abrir(tester,
+        servidor: servidor,
+        seletor: _SeletorFalso(_foto()),
+        enviador: _EnviadorFalso(falhasAntes: 1));
+
+    await _escolher(tester, 'Escolher da galeria');
+    expect(find.text('Reenviar'), findsOneWidget);
+    await tester.tap(find.byTooltip('Cancelar envio'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enviar'), findsOneWidget);
+    expect(find.text('Reenviar'), findsNothing);
   });
 }

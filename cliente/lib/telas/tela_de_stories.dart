@@ -17,7 +17,17 @@ typedef ConstrutorDeVideo = Widget Function({
 
 const _tempoDaFoto = Duration(seconds: 5);
 
-enum DepoisDaAcao { continuar, avancar, fechar }
+/// De quem é o story: o artista, a pessoa pelo nome ou o público sem nome.
+String chaveDoGrupo(StoryDoShow story) => story.doArtista
+    ? '#artista'
+    : switch (story.nome?.trim()) {
+        final String nome when nome.isNotEmpty => nome.toLowerCase(),
+        _ => '#publico',
+      };
+
+/// O que a tela faz com o story depois da ação: segue nele ou o tira da
+/// sequência e mostra o seguinte.
+enum DepoisDaAcao { continuar, remover }
 
 /// Opção do menu do story: denunciar, para o público; salvar, mostrar de
 /// novo e apagar, para o artista.
@@ -31,7 +41,9 @@ class AcaoDoStory {
   });
 
   final String rotulo;
-  final Future<void> Function() executar;
+
+  /// Devolve o story atualizado, quando a ação o muda.
+  final Future<StoryDoShow?> Function() executar;
 
   /// Pergunta feita antes de executar.
   final String? confirmar;
@@ -41,9 +53,11 @@ class AcaoDoStory {
   final DepoisDaAcao depois;
 }
 
-/// Stories em tela cheia: foto passa em 5 s e vídeo quando acaba; toque à
-/// direita avança, à esquerda volta, segurar pausa e arrastar para baixo
-/// fecha.
+/// Stories em tela cheia, no jeito das redes sociais: as barrinhas são da
+/// pessoa atual e, quando acabam, vem a próxima pessoa. Foto passa em 5 s e
+/// vídeo quando acaba; toque à direita avança, à esquerda volta, arrastar
+/// para o lado pula de pessoa, segurar pausa e arrastar para baixo fecha.
+/// [stories] chega com os de cada pessoa juntos.
 class TelaDeStories extends StatefulWidget {
   const TelaDeStories({
     super.key,
@@ -66,6 +80,7 @@ class TelaDeStories extends StatefulWidget {
 
 class _TelaDeStoriesState extends State<TelaDeStories>
     with SingleTickerProviderStateMixin {
+  late final List<StoryDoShow> _stories = [...widget.stories];
   late int _atual = widget.inicio;
   late final AnimationController _tempo =
       AnimationController(vsync: this, duration: _tempoDaFoto)
@@ -76,7 +91,22 @@ class _TelaDeStoriesState extends State<TelaDeStories>
   var _pausado = false;
   var _fechando = false;
 
-  StoryDoShow get _story => widget.stories[_atual];
+  StoryDoShow get _story => _stories[_atual];
+
+  /// Primeiro e último índice dos stories da pessoa em [indice].
+  (int, int) _faixaDe(int indice) {
+    final chave = chaveDoGrupo(_stories[indice]);
+    var inicio = indice;
+    while (inicio > 0 && chaveDoGrupo(_stories[inicio - 1]) == chave) {
+      inicio--;
+    }
+    var fim = indice;
+    while (fim + 1 < _stories.length &&
+        chaveDoGrupo(_stories[fim + 1]) == chave) {
+      fim++;
+    }
+    return (inicio, fim);
+  }
 
   @override
   void initState() {
@@ -100,19 +130,25 @@ class _TelaDeStoriesState extends State<TelaDeStories>
     if (story.tipo == TipoDeStory.foto && !_pausado) _tempo.forward();
   }
 
-  void _avancar() {
+  void _irPara(int indice) {
     if (_fechando) return;
-    if (_atual + 1 >= widget.stories.length) {
+    if (indice < 0 || indice >= _stories.length) {
       _fechar();
       return;
     }
-    setState(() => _atual++);
+    setState(() => _atual = indice);
     _mostrar();
   }
 
-  void _voltar() {
-    if (_atual > 0) setState(() => _atual--);
-    _mostrar();
+  void _avancar() => _irPara(_atual + 1);
+
+  void _voltar() => _irPara(_atual > 0 ? _atual - 1 : 0);
+
+  void _proximaPessoa() => _irPara(_faixaDe(_atual).$2 + 1);
+
+  void _pessoaAnterior() {
+    final (inicio, _) = _faixaDe(_atual);
+    _irPara(inicio == 0 ? 0 : _faixaDe(inicio - 1).$1);
   }
 
   void _fechar() {
@@ -127,6 +163,13 @@ class _TelaDeStoriesState extends State<TelaDeStories>
     setState(() => _pausado = pausado);
     if (_story.tipo != TipoDeStory.foto) return;
     pausado ? _tempo.stop() : _tempo.forward();
+  }
+
+  /// Tira o story da sequência e mostra o seguinte; sem seguinte, fecha.
+  void _remover() {
+    _stories.removeAt(_atual);
+    _pausado = false;
+    _irPara(_atual);
   }
 
   Future<void> _executar(AcaoDoStory acao) async {
@@ -155,8 +198,10 @@ class _TelaDeStoriesState extends State<TelaDeStories>
       }
     }
     final mensageiro = ScaffoldMessenger.of(context);
+    final story = _story;
+    final StoryDoShow? atualizado;
     try {
-      await acao.executar();
+      atualizado = await acao.executar();
     } catch (erro) {
       mensageiro.showSnackBar(SnackBar(content: Text('$erro')));
       if (mounted) _pausar(false);
@@ -166,22 +211,19 @@ class _TelaDeStoriesState extends State<TelaDeStories>
     if (mensagem != null) {
       mensageiro.showSnackBar(SnackBar(content: Text(mensagem)));
     }
-    if (!mounted) return;
+    if (!mounted || _fechando || _story.id != story.id) return;
     switch (acao.depois) {
       case DepoisDaAcao.continuar:
+        if (atualizado != null) setState(() => _stories[_atual] = atualizado!);
         _pausar(false);
-      case DepoisDaAcao.avancar:
-        _pausado = false;
-        _avancar();
-      case DepoisDaAcao.fechar:
-        _fechar();
+      case DepoisDaAcao.remover:
+        _remover();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final story = _story;
-    final indice = _atual;
     return Scaffold(
       backgroundColor: Colors.black,
       body: LayoutBuilder(
@@ -195,6 +237,11 @@ class _TelaDeStoriesState extends State<TelaDeStories>
           onLongPressEnd: (_) => _pausar(false),
           onVerticalDragEnd: (detalhes) {
             if ((detalhes.primaryVelocity ?? 0) > 300) _fechar();
+          },
+          onHorizontalDragEnd: (detalhes) {
+            final velocidade = detalhes.primaryVelocity ?? 0;
+            if (velocidade < -300) _proximaPessoa();
+            if (velocidade > 300) _pessoaAnterior();
           },
           child: Stack(
             children: [
@@ -226,7 +273,9 @@ class _TelaDeStoriesState extends State<TelaDeStories>
                           aoProgredir: (fracao) =>
                               _progressoDoVideo.value = fracao,
                           aoTerminar: () {
-                            if (indice == _atual) _avancar();
+                            if (!_fechando && _story.id == story.id) {
+                              _avancar();
+                            }
                           },
                         ),
                       ),
@@ -250,33 +299,36 @@ class _TelaDeStoriesState extends State<TelaDeStories>
     );
   }
 
-  Widget _construirBarras(StoryDoShow story) => AnimatedBuilder(
-        animation: Listenable.merge([_tempo, _progressoDoVideo]),
-        builder: (_, __) => Row(
-          children: [
-            for (var i = 0; i < widget.stories.length; i++) ...[
-              if (i > 0) const SizedBox(width: 3),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: LinearProgressIndicator(
-                    minHeight: 3,
-                    backgroundColor: Colors.white24,
-                    color: Colors.white,
-                    value: i < _atual
-                        ? 1
-                        : i > _atual
-                            ? 0
-                            : story.tipo == TipoDeStory.foto
-                                ? _tempo.value
-                                : _progressoDoVideo.value,
-                  ),
+  Widget _construirBarras(StoryDoShow story) {
+    final (inicio, fim) = _faixaDe(_atual);
+    return AnimatedBuilder(
+      animation: Listenable.merge([_tempo, _progressoDoVideo]),
+      builder: (_, __) => Row(
+        children: [
+          for (var i = inicio; i <= fim; i++) ...[
+            if (i > inicio) const SizedBox(width: 3),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  minHeight: 3,
+                  backgroundColor: Colors.white24,
+                  color: Colors.white,
+                  value: i < _atual
+                      ? 1
+                      : i > _atual
+                          ? 0
+                          : story.tipo == TipoDeStory.foto
+                              ? _tempo.value
+                              : _progressoDoVideo.value,
                 ),
               ),
-            ],
+            ),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 
   Widget _construirCabecalho(BuildContext context, StoryDoShow story) {
     final hora = story.criadoEm.toLocal();
@@ -304,9 +356,25 @@ class _TelaDeStoriesState extends State<TelaDeStories>
         ),
         if (story.expiraEm case final expiraEm?) ...[
           const SizedBox(width: EspacoTocaEssa.pequeno),
-          Text(
-            _quandoSome(expiraEm),
-            style: texto.bodySmall?.copyWith(color: Colors.white70),
+          Flexible(
+            child: Text(
+              _quandoSome(expiraEm),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: texto.bodySmall?.copyWith(color: Colors.white70),
+            ),
+          ),
+        ],
+        if (story.escondido) ...[
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: CoresTocaEssa.perigo,
+              borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+            ),
+            child: Text('Escondido',
+                style: texto.labelSmall?.copyWith(color: CoresTocaEssa.fundo)),
           ),
         ],
         const Spacer(),
@@ -337,6 +405,7 @@ String _quandoSome(DateTime expiraEm) {
   if (dias < 1) return 'some hoje';
   return 'some em $dias ${dias == 1 ? 'dia' : 'dias'}';
 }
+
 
 /// Vídeo do story no reprodutor do aparelho. Começa com som; se o
 /// navegador não deixar tocar com som sem um toque, toca mudo e o botão de

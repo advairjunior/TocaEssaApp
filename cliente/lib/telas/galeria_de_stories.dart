@@ -4,51 +4,26 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/api_toca_essa.dart';
-import '../tema/tema_toca_essa.dart';
 import 'stories_do_show.dart';
 
 typedef SalvarStory = Future<void> Function(
     BuildContext context, StoryDoShow story);
 
-String _chaveDaVisita(String apresentacaoId) =>
-    'stories_vistos_pelo_artista_$apresentacaoId';
-
-/// Quantos stories do público chegaram desde a última visita à galeria de
-/// cada show.
+/// Stories do público que o artista ainda não assistiu, por show.
 final _novosPorShow = <String, ValueNotifier<int>>{};
 
 ValueNotifier<int> _novosDo(String apresentacaoId) =>
     _novosPorShow.putIfAbsent(apresentacaoId, () => ValueNotifier(0));
 
-/// Usa a hora do servidor: o relógio do celular pode estar errado.
-Future<int> _contarNovos(
-    String apresentacaoId, List<StoryDoShow> stories) async {
-  final preferencias = await SharedPreferences.getInstance();
-  final visita = preferencias.getString(_chaveDaVisita(apresentacaoId));
-  final desde = visita == null ? null : DateTime.parse(visita);
-  return stories
-      .where((story) =>
-          !story.doArtista && (desde == null || story.criadoEm.isAfter(desde)))
-      .length;
-}
+int _contarNovos(List<StoryDoShow> stories, Set<String> vistos) => stories
+    .where((story) => !story.doArtista && !vistos.contains(story.id))
+    .length;
 
-Future<void> _marcarVisita(
-    String apresentacaoId, List<StoryDoShow> stories) async {
-  _novosDo(apresentacaoId).value = 0;
-  if (stories.isEmpty) return;
-  final ultimo = stories
-      .map((story) => story.criadoEm)
-      .reduce((a, b) => a.isAfter(b) ? a : b);
-  final preferencias = await SharedPreferences.getInstance();
-  await preferencias.setString(
-      _chaveDaVisita(apresentacaoId), ultimo.toUtc().toIso8601String());
-}
-
-/// Ícone com o selo de stories novos, para a aba onde a galeria fica.
+/// Ícone com o selo de stories não assistidos, para a aba onde a fileira do
+/// artista fica.
 class IconeDosStoriesNovos extends StatefulWidget {
   const IconeDosStoriesNovos({
     super.key,
@@ -85,8 +60,8 @@ class _IconeDosStoriesNovosState extends State<IconeDosStoriesNovos> {
   Future<void> _contar() async {
     try {
       final stories = await widget.api.listarEnviosDoShow(widget.apresentacaoId);
-      final novos = await _contarNovos(widget.apresentacaoId, stories);
-      _novosDo(widget.apresentacaoId).value = novos;
+      final vistos = await lerStoriesVistos();
+      _novosDo(widget.apresentacaoId).value = _contarNovos(stories, vistos);
     } catch (_) {
       // Sem a lista, fica sem selo.
     }
@@ -104,8 +79,9 @@ class _IconeDosStoriesNovosState extends State<IconeDosStoriesNovos> {
       );
 }
 
-/// Stories do show para o artista: grade com tudo o que chegou, inclusive o
-/// escondido por denúncias, e o botão de postar.
+/// Stories do show para o artista: a mesma fileira do público, com o
+/// postar, os escondidos por denúncias marcados e, na tela cheia, salvar,
+/// mostrar de novo e apagar.
 class StoriesDoArtista extends StatefulWidget {
   const StoriesDoArtista({
     super.key,
@@ -126,6 +102,9 @@ class StoriesDoArtista extends StatefulWidget {
 
 class _StoriesDoArtistaState extends State<StoriesDoArtista> {
   List<StoryDoShow> _stories = [];
+  List<GrupoDeStories> _grupos = [];
+  Set<String> _vistos = {};
+  Timer? _atualizacao;
 
   String get _id => widget.apresentacaoId;
 
@@ -133,28 +112,51 @@ class _StoriesDoArtistaState extends State<StoriesDoArtista> {
   void initState() {
     super.initState();
     _carregar();
+    _atualizacao =
+        Timer.periodic(const Duration(minutes: 1), (_) => _carregar());
+  }
+
+  @override
+  void dispose() {
+    _atualizacao?.cancel();
+    super.dispose();
   }
 
   Future<void> _carregar() async {
     try {
       final stories = await widget.api.listarEnviosDoShow(_id);
+      final vistos = await lerStoriesVistos();
       if (!mounted) return;
-      setState(() => _stories = stories);
-      await _marcarVisita(_id, stories);
+      setState(() {
+        _stories = stories;
+        _vistos = vistos;
+        _grupos = agruparStories(stories, vistos);
+      });
+      _novosDo(_id).value = _contarNovos(stories, vistos);
     } catch (_) {
-      // Sem a lista, a grade só não aparece.
+      // Sem a lista, a fileira mostra só o postar.
     }
   }
 
+  void _marcarVisto(StoryDoShow story) {
+    if (_vistos.contains(story.id)) return;
+    if (mounted) setState(() => _vistos = {..._vistos, story.id});
+    _novosDo(_id).value = _contarNovos(_stories, _vistos);
+    guardarStoryVisto(story.id);
+  }
+
   List<AcaoDoStory> _acoes(StoryDoShow story) => [
-        AcaoDoStory(
-            'Salvar no celular', () => widget.salvar(context, story)),
+        AcaoDoStory('Salvar no celular', () async {
+          await widget.salvar(context, story);
+          return null;
+        }),
         if (story.escondido)
           AcaoDoStory(
             'Mostrar de novo',
             () async {
               await widget.api.mostrarEnvioDoShow(_id, story.id);
-              await _carregar();
+              unawaited(_carregar());
+              return story.copiar(escondido: false);
             },
             mensagem: 'O público vê de novo.',
           ),
@@ -162,141 +164,35 @@ class _StoriesDoArtistaState extends State<StoriesDoArtista> {
           'Apagar',
           () async {
             await widget.api.apagarEnvioDoShow(_id, story.id);
-            await _carregar();
+            unawaited(_carregar());
+            return null;
           },
           confirmar: 'Apagar este story?',
-          depois: DepoisDaAcao.fechar,
+          depois: DepoisDaAcao.remover,
         ),
       ];
 
-  Future<void> _abrir(int inicio) => Navigator.of(context).push(
-        PageRouteBuilder<void>(
-          pageBuilder: (_, __, ___) => TelaDeStories(
-            stories: _stories,
-            inicio: inicio,
-            aoVer: (_) {},
-            acoes: _acoes,
-            construtorDeVideo: widget.construtorDeVideo,
-          ),
-          transitionsBuilder: (_, animacao, __, filho) =>
-              FadeTransition(opacity: animacao, child: filho),
-        ),
-      );
+  Future<void> _abrir(GrupoDeStories grupo) => abrirStoriesDoGrupo(
+        context,
+        grupos: _grupos,
+        grupo: grupo,
+        vistos: _vistos,
+        aoVer: _marcarVisto,
+        acoes: _acoes,
+        construtorDeVideo: widget.construtorDeVideo,
+      ).then((_) => _carregar());
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_stories.isNotEmpty) ...[
-            GridView.count(
-              crossAxisCount: 3,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: EspacoTocaEssa.pequeno,
-              crossAxisSpacing: EspacoTocaEssa.pequeno,
-              childAspectRatio: 9 / 14,
-              children: [
-                for (var i = 0; i < _stories.length; i++)
-                  BlocoDeStory(story: _stories[i], aoTocar: () => _abrir(i)),
-              ],
-            ),
-            const SizedBox(height: EspacoTocaEssa.medio),
-          ],
-          EnviarStory.doArtista(
-            api: widget.api,
-            apresentacaoId: _id,
-            aoEnviar: _carregar,
-          ),
-        ],
-      );
-}
-
-/// Item da grade: a foto (ou um vídeo), quem mandou e se está escondido.
-class BlocoDeStory extends StatelessWidget {
-  const BlocoDeStory({super.key, required this.story, required this.aoTocar});
-
-  final StoryDoShow story;
-  final VoidCallback aoTocar;
-
-  @override
-  Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
-      child: Material(
-        color: CoresTocaEssa.superficieElevada,
-        child: InkWell(
-          onTap: aoTocar,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (story.tipo == TipoDeStory.foto)
-                Image.network(
-                  story.url.toString(),
-                  fit: BoxFit.cover,
-                  cacheWidth: 300,
-                  webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
-                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-                )
-              else
-                const Center(
-                  child: Icon(Icons.play_circle_rounded,
-                      color: Colors.white70, size: 40),
-                ),
-              // Faixa escura para o nome aparecer sobre qualquer foto.
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.center,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black87],
-                  ),
-                ),
-              ),
-              Positioned(
-                left: EspacoTocaEssa.pequeno,
-                right: EspacoTocaEssa.pequeno,
-                bottom: EspacoTocaEssa.pequeno,
-                child: Row(
-                  children: [
-                    if (story.doArtista) ...[
-                      const Icon(Icons.mic_rounded,
-                          color: CoresTocaEssa.ouro, size: 14),
-                      const SizedBox(width: 2),
-                    ],
-                    Expanded(
-                      child: Text(
-                        story.nome ?? 'Público',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: texto.bodySmall?.copyWith(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (story.escondido)
-                Positioned(
-                  top: EspacoTocaEssa.pequeno,
-                  left: EspacoTocaEssa.pequeno,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: CoresTocaEssa.perigo,
-                      borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
-                    ),
-                    child: Text('Escondido',
-                        style: texto.labelSmall
-                            ?.copyWith(color: CoresTocaEssa.fundo)),
-                  ),
-                ),
-            ],
-          ),
+  Widget build(BuildContext context) => FileiraDeStories(
+        enviar: EnviarStory.doArtista(
+          api: widget.api,
+          apresentacaoId: _id,
+          aoEnviar: _carregar,
         ),
-      ),
-    );
-  }
+        grupos: _grupos,
+        vistos: _vistos,
+        aoAbrir: _abrir,
+      );
 }
 
 /// Baixa o story e abre o compartilhar do sistema ("Salvar imagem" ou

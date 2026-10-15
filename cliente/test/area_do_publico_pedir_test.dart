@@ -68,7 +68,7 @@ void main() {
     for (final status in ['Agendada', 'EmAndamento', 'Encerrada']) {
       await tester.pumpWidget(const SizedBox());
       await _abrirArea(tester, status: status);
-      expect(find.text('Enviar vídeo ou foto'), findsOneWidget, reason: status);
+      expect(find.text('Enviar'), findsOneWidget, reason: status);
     }
   });
 

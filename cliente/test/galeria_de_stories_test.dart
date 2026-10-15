@@ -14,7 +14,7 @@ Map<String, dynamic> _envio(String id,
         {String? nome,
         bool escondido = false,
         bool doArtista = false,
-        String criadoEm = '2026-10-17T21:04:00Z',
+        String criadoEm = '2026-10-17T21:04:00',
         Duration expiraEm = const Duration(days: 6, hours: 1)}) =>
     {
       'id': id,
@@ -65,16 +65,20 @@ Future<void> _assentar(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 350));
 }
 
-Future<List<StoryDoShow>> _abrir(WidgetTester tester, _Servidor servidor) async {
+Future<List<StoryDoShow>> _abrir(WidgetTester tester, _Servidor servidor,
+    {Widget? acima}) async {
   final salvos = <StoryDoShow>[];
   await tester.pumpWidget(MaterialApp(
     home: Scaffold(
-      body: SingleChildScrollView(
-        child: StoriesDoArtista(
-          api: _api(servidor),
-          apresentacaoId: 'show-1',
-          salvar: (_, story) async => salvos.add(story),
-        ),
+      body: Column(
+        children: [
+          if (acima != null) acima,
+          StoriesDoArtista(
+            api: _api(servidor),
+            apresentacaoId: 'show-1',
+            salvar: (_, story) async => salvos.add(story),
+          ),
+        ],
       ),
     ),
   ));
@@ -82,9 +86,10 @@ Future<List<StoryDoShow>> _abrir(WidgetTester tester, _Servidor servidor) async 
   return salvos;
 }
 
-Future<void> _menu(WidgetTester tester, String nome, String opcao) async {
-  await tester.tap(find.text(nome));
-  await _assentar(tester);
+Finder _naTela(String texto) =>
+    find.descendant(of: find.byType(TelaDeStories), matching: find.text(texto));
+
+Future<void> _menu(WidgetTester tester, String opcao) async {
   await tester.tap(find.byTooltip('Mais'));
   await _assentar(tester);
   await tester.tap(find.text(opcao));
@@ -94,29 +99,35 @@ Future<void> _menu(WidgetTester tester, String nome, String opcao) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('lista os stories do show com o token do artista',
+  testWidgets('fileira compacta com postar e uma bolinha por pessoa',
       (tester) async {
     final servidor = _Servidor([
       _envio('a', nome: 'Ana'),
       _envio('b'),
-      _envio('c', nome: 'Duo Aurora', doArtista: true),
+      _envio('c', nome: 'Ana'),
+      _envio('d', nome: 'Duo Aurora', doArtista: true),
     ]);
     await _abrir(tester, servidor);
 
     final lista = servidor.doCaminho('GET', '/envios').single;
     expect(lista.url.path, '/api/apresentacoes/show-1/envios');
     expect(lista.headers['Authorization'], 'Bearer TOKEN');
-    expect(find.byType(BlocoDeStory), findsNWidgets(3));
-    expect(find.text('Ana'), findsOneWidget);
-    expect(find.text('Público'), findsOneWidget);
-    expect(find.text('Postar nos stories do show'), findsOneWidget);
+    expect(find.text('Postar'), findsOneWidget);
+    expect(
+        tester
+            .widgetList<BolinhaDeStory>(find.byType(BolinhaDeStory))
+            .map((bolinha) => bolinha.grupo.nome),
+        ['Duo Aurora', 'Ana', 'Público']);
+    // Uma fileira só, da altura de uma bolinha.
+    expect(tester.getSize(find.byType(StoriesDoArtista)).height,
+        lessThan(120));
   });
 
-  testWidgets('sem stories mostra só o botão de postar', (tester) async {
+  testWidgets('sem stories mostra só o postar', (tester) async {
     await _abrir(tester, _Servidor([]));
 
-    expect(find.byType(BlocoDeStory), findsNothing);
-    expect(find.text('Postar nos stories do show'), findsOneWidget);
+    expect(find.byType(BolinhaDeStory), findsNothing);
+    expect(find.text('Postar'), findsOneWidget);
   });
 
   testWidgets('tela cheia mostra quanto falta para sumir', (tester) async {
@@ -128,13 +139,17 @@ void main() {
     expect(find.text('some em 6 dias'), findsOneWidget);
   });
 
-  testWidgets('apagar pede confirmação, apaga e some da grade',
-      (tester) async {
-    final servidor =
-        _Servidor([_envio('a', nome: 'Ana'), _envio('b', nome: 'Leo')]);
+  testWidgets('apagar continua no story seguinte', (tester) async {
+    final servidor = _Servidor([
+      _envio('a', nome: 'Ana'),
+      _envio('b', nome: 'Ana', criadoEm: '2026-10-17T21:06:00'),
+      _envio('c', nome: 'Leo'),
+    ]);
     await _abrir(tester, servidor);
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
 
-    await _menu(tester, 'Ana', 'Apagar');
+    await _menu(tester, 'Apagar');
     await tester.tap(find.widgetWithText(FilledButton, 'Apagar'));
     await _assentar(tester);
     await _assentar(tester);
@@ -142,88 +157,129 @@ void main() {
     final apagar = servidor.doCaminho('DELETE', '/envios/a').single;
     expect(apagar.url.path, '/api/apresentacoes/show-1/envios/a');
     expect(apagar.headers['Authorization'], 'Bearer TOKEN');
+    expect(find.byType(TelaDeStories), findsOneWidget);
+    expect(_naTela('Ana'), findsOneWidget);
+    expect(find.text('21:06'), findsOneWidget);
+
+    // O último da pessoa apagado leva à próxima pessoa.
+    await _menu(tester, 'Apagar');
+    await tester.tap(find.widgetWithText(FilledButton, 'Apagar'));
+    await _assentar(tester);
+    await _assentar(tester);
+    expect(_naTela('Leo'), findsOneWidget);
+
+    // Apagar o único que sobrou fecha e a fileira fica vazia.
+    await _menu(tester, 'Apagar');
+    await tester.tap(find.widgetWithText(FilledButton, 'Apagar'));
+    await _assentar(tester);
+    await _assentar(tester);
     expect(find.byType(TelaDeStories), findsNothing);
-    expect(find.byType(BlocoDeStory), findsOneWidget);
-    expect(find.text('Ana'), findsNothing);
+    expect(find.byType(BolinhaDeStory), findsNothing);
   });
 
-  testWidgets('escondido por denúncia aparece marcado e volta ao público',
+  testWidgets('cancelar o apagar não apaga', (tester) async {
+    final servidor = _Servidor([_envio('a', nome: 'Ana')]);
+    await _abrir(tester, servidor);
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+
+    await _menu(tester, 'Apagar');
+    await tester.tap(find.text('Cancelar'));
+    await _assentar(tester);
+
+    expect(servidor.doCaminho('DELETE', '/envios/a'), isEmpty);
+    expect(_naTela('Ana'), findsOneWidget);
+  });
+
+  testWidgets('escondido aparece marcado e volta ao público na hora',
       (tester) async {
     final servidor = _Servidor([_envio('a', nome: 'Ana', escondido: true)]);
     await _abrir(tester, servidor);
-    expect(find.text('Escondido'), findsOneWidget);
+    expect(find.byTooltip('Escondido por denúncias'), findsOneWidget);
 
-    await _menu(tester, 'Ana', 'Mostrar de novo');
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+    expect(_naTela('Escondido'), findsOneWidget);
+    await _menu(tester, 'Mostrar de novo');
 
     final mostrar = servidor.doCaminho('POST', '/mostrar').single;
     expect(mostrar.url.path, '/api/apresentacoes/show-1/envios/a/mostrar');
     expect(mostrar.headers['Authorization'], 'Bearer TOKEN');
+    expect(_naTela('Escondido'), findsNothing);
+    await tester.tap(find.byTooltip('Mais'));
+    await _assentar(tester);
+    expect(find.text('Mostrar de novo'), findsNothing);
+    await tester.tapAt(Offset.zero);
+    await _assentar(tester);
+
     await tester.tap(find.byTooltip('Fechar'));
     await _assentar(tester);
-    expect(find.text('Escondido'), findsNothing);
+    expect(find.byTooltip('Escondido por denúncias'), findsNothing);
   });
 
-  testWidgets('mostrar de novo só aparece no escondido', (tester) async {
+  testWidgets('menu do artista: salvar e apagar, sem denunciar',
+      (tester) async {
     await _abrir(tester, _Servidor([_envio('a', nome: 'Ana')]));
     await tester.tap(find.text('Ana'));
     await _assentar(tester);
     await tester.tap(find.byTooltip('Mais'));
     await _assentar(tester);
 
+    expect(find.text('Salvar no celular'), findsOneWidget);
+    expect(find.text('Apagar'), findsOneWidget);
     expect(find.text('Mostrar de novo'), findsNothing);
     expect(find.text('Denunciar'), findsNothing);
-    expect(find.text('Salvar no celular'), findsOneWidget);
   });
 
-  testWidgets('salvar no celular entrega o story escolhido', (tester) async {
+  testWidgets('salvar no celular entrega o story aberto', (tester) async {
     final servidor =
         _Servidor([_envio('a', nome: 'Ana'), _envio('b', nome: 'Leo')]);
     final salvos = await _abrir(tester, servidor);
+    await tester.tap(find.text('Leo'));
+    await _assentar(tester);
 
-    await _menu(tester, 'Leo', 'Salvar no celular');
+    await _menu(tester, 'Salvar no celular');
 
     expect(salvos.map((story) => story.id), ['b']);
     expect(find.byType(TelaDeStories), findsOneWidget);
   });
 
-  testWidgets('selo conta os stories do público chegados desde a visita',
+  testWidgets('selo conta os stories do público ainda não assistidos',
       (tester) async {
     final servidor = _Servidor([
-      _envio('a', nome: 'Ana', criadoEm: '2026-10-17T21:00:00Z'),
-      _envio('b', nome: 'Leo', criadoEm: '2026-10-17T21:05:00Z'),
-      _envio('c', doArtista: true, criadoEm: '2026-10-17T21:10:00Z'),
+      _envio('a', nome: 'Ana'),
+      _envio('b', nome: 'Leo'),
+      _envio('c', doArtista: true),
     ]);
-    Future<void> mostrarSelo() async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: IconeDosStoriesNovos(
-            api: _api(servidor),
-            apresentacaoId: 'show-1',
-            icone: const Icon(Icons.more_horiz_rounded),
-          ),
-        ),
-      ));
-      await _assentar(tester);
-    }
+    final selo = IconeDosStoriesNovos(
+      api: _api(servidor),
+      apresentacaoId: 'show-1',
+      icone: const Icon(Icons.more_horiz_rounded),
+    );
+    Badge badge() => tester.widget<Badge>(find.byType(Badge));
 
-    await mostrarSelo();
+    await _abrir(tester, servidor, acima: selo);
     expect(find.text('2'), findsOneWidget);
 
-    // Abrir a galeria zera o selo.
-    await _abrir(tester, servidor);
-    await mostrarSelo();
-    expect(find.byType(Badge), findsOneWidget);
-    expect(find.text('2'), findsNothing);
-    expect(tester.widget<Badge>(find.byType(Badge)).isLabelVisible, isFalse);
+    // Assistir a Ana desconta um; só abrir a aba não zera.
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+    await tester.tap(find.byTooltip('Fechar'));
+    await _assentar(tester);
+    expect(find.text('1'), findsOneWidget);
 
-    servidor.envios = [
-      ...servidor.envios,
-      _envio('d', nome: 'Bia', criadoEm: '2026-10-17T21:20:00Z'),
-    ];
+    await tester.tap(find.text('Leo'));
+    await _assentar(tester);
+    await tester.tap(find.byTooltip('Fechar'));
+    await _assentar(tester);
+    expect(badge().isLabelVisible, isFalse);
+
     // Com o painel aberto, o selo se atualiza sozinho.
+    servidor.envios = [...servidor.envios, _envio('d', nome: 'Bia')];
     await tester.pump(const Duration(minutes: 1));
     await _assentar(tester);
     expect(find.text('1'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
   });
 
   testWidgets('falha ao buscar não mostra erro', (tester) async {
@@ -237,8 +293,8 @@ void main() {
     ));
     await _assentar(tester);
 
-    expect(find.byType(BlocoDeStory), findsNothing);
+    expect(find.byType(BolinhaDeStory), findsNothing);
     expect(find.byType(SnackBar), findsNothing);
-    expect(find.text('Postar nos stories do show'), findsOneWidget);
+    expect(find.text('Postar'), findsOneWidget);
   });
 }

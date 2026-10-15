@@ -282,7 +282,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Stories do show'), findsOneWidget);
-    expect(find.text('Postar nos stories do show'), findsOneWidget);
+    expect(find.text('Postar'), findsOneWidget);
     expect(find.byType(StoriesDoArtista), findsOneWidget);
     expect(find.byType(IconeDosStoriesNovos), findsOneWidget);
   });

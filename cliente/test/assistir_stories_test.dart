@@ -11,12 +11,15 @@ import 'package:toca_essa_app/telas/stories_do_show.dart';
 const _json = {'content-type': 'application/json; charset=utf-8'};
 
 Map<String, dynamic> _story(String id,
-        {String tipo = 'Foto', String? nome, bool doArtista = false}) =>
+        {String tipo = 'Foto',
+        String? nome,
+        bool doArtista = false,
+        String criadoEm = '2026-10-17T21:04:00'}) =>
     {
       'id': id,
       'tipo': tipo,
       'nome': nome,
-      'criadoEm': '2026-10-17T21:04:00',
+      'criadoEm': criadoEm,
       'tipoDeConteudo': tipo == 'Foto' ? 'image/jpeg' : 'video/mp4',
       'url': 'http://teste/arquivo/$id',
       'doArtista': doArtista,
@@ -90,69 +93,134 @@ Future<void> _tocarNaEsquerda(WidgetTester tester) async {
   await _assentar(tester);
 }
 
+Finder _naTela(String texto) =>
+    find.descendant(of: find.byType(TelaDeStories), matching: find.text(texto));
+
+/// Quem aparece na fileira, na ordem.
+List<String> _fileira(WidgetTester tester) => tester
+    .widgetList<BolinhaDeStory>(find.byType(BolinhaDeStory))
+    .map((bolinha) => bolinha.grupo.nome)
+    .toList();
+
+bool _novo(WidgetTester tester, String nome) => tester
+    .widgetList<BolinhaDeStory>(find.byType(BolinhaDeStory))
+    .singleWhere((bolinha) => bolinha.grupo.nome == nome)
+    .novo;
+
+/// Quantas barrinhas de progresso a tela cheia mostra.
+int _barrinhas(WidgetTester tester) => find
+    .descendant(
+        of: find.byType(TelaDeStories),
+        matching: find.byType(LinearProgressIndicator))
+    .evaluate()
+    .length;
+
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('sem stories mostra só o envio', (tester) async {
+  testWidgets('sem stories a fileira tem só o enviar', (tester) async {
     await _abrir(tester, _Servidor([]));
 
     expect(find.byType(BolinhaDeStory), findsNothing);
-    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
+    expect(find.text('Enviar'), findsOneWidget);
   });
 
-  testWidgets('envio sem explicações nem aviso', (tester) async {
-    await _abrir(tester, _Servidor([]));
+  testWidgets('enviar é a primeira bolinha e abre câmera e galeria',
+      (tester) async {
+    await _abrir(tester, _Servidor([_story('a', nome: 'Leo')]));
 
-    expect(find.text('Todo mundo do show vê os stories'), findsNothing);
-    await tester.tap(find.text('Enviar vídeo ou foto'));
+    final enviar = tester.getTopLeft(find.text('Enviar')).dx;
+    expect(enviar, lessThan(tester.getTopLeft(find.text('Leo')).dx));
+    await tester.tap(find.text('Enviar'));
     await _assentar(tester);
-    expect(find.text('Entendi'), findsNothing);
     expect(find.text('Gravar vídeo'), findsOneWidget);
   });
 
-  testWidgets('fileira mostra quem postou, com o artista primeiro',
+  testWidgets('uma bolinha por pessoa, com o artista primeiro',
       (tester) async {
     final servidor = _Servidor([
       _story('a', nome: 'Ana'),
       _story('b'),
-      _story('c', nome: 'Duo Aurora', doArtista: true),
+      _story('c', nome: 'Ana'),
+      _story('d', nome: 'Duo Aurora', doArtista: true),
+      _story('e', nome: 'Leo'),
     ]);
     await _abrir(tester, servidor);
 
     expect(servidor.doCaminho('/api/publico/apresentacoes/ABC123/stories'),
         hasLength(1));
-    final nomes = tester
-        .widgetList<BolinhaDeStory>(find.byType(BolinhaDeStory))
-        .map((bolinha) => bolinha.story.id)
-        .toList();
-    expect(nomes, ['c', 'a', 'b']);
-    expect(find.text('Duo Aurora'), findsOneWidget);
-    expect(find.text('Ana'), findsOneWidget);
+    expect(_fileira(tester), ['Duo Aurora', 'Ana', 'Público', 'Leo']);
   });
 
-  testWidgets('tocar abre em tela cheia, avança, volta e fecha no fim',
+  testWidgets('a pessoa mostra só as barrinhas dela e passa para a próxima',
       (tester) async {
-    await _abrir(tester,
-        _Servidor([_story('a', nome: 'Ana'), _story('b', nome: 'Leo')]));
+    await _abrir(
+        tester,
+        _Servidor([
+          _story('a', nome: 'Ana'),
+          _story('b', nome: 'Ana'),
+          _story('c', nome: 'Leo'),
+        ]));
 
     await tester.tap(find.text('Ana'));
     await _assentar(tester);
-    expect(find.byType(TelaDeStories), findsOneWidget);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Ana')),
-        findsOneWidget);
+    expect(_naTela('Ana'), findsOneWidget);
+    expect(_barrinhas(tester), 2);
     expect(find.text('21:04'), findsOneWidget);
 
     await _tocarNaDireita(tester);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Leo')),
-        findsOneWidget);
+    expect(_naTela('Ana'), findsOneWidget);
+    await _tocarNaDireita(tester);
+    expect(_naTela('Leo'), findsOneWidget);
+    expect(_barrinhas(tester), 1);
 
     await _tocarNaEsquerda(tester);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Ana')),
-        findsOneWidget);
+    expect(_naTela('Ana'), findsOneWidget);
 
     await _tocarNaDireita(tester);
     await _tocarNaDireita(tester);
     expect(find.byType(TelaDeStories), findsNothing);
+  });
+
+  testWidgets('arrastar para o lado pula de pessoa', (tester) async {
+    await _abrir(
+        tester,
+        _Servidor([
+          _story('a', nome: 'Ana'),
+          _story('b', nome: 'Ana'),
+          _story('c', nome: 'Leo'),
+        ]));
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+
+    await tester.fling(
+        find.byType(TelaDeStories), const Offset(-300, 0), 1500);
+    await _assentar(tester);
+    expect(_naTela('Leo'), findsOneWidget);
+
+    await tester.fling(find.byType(TelaDeStories), const Offset(300, 0), 1500);
+    await _assentar(tester);
+    expect(_naTela('Ana'), findsOneWidget);
+  });
+
+  testWidgets('abre a pessoa no primeiro story ainda não visto',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'stories_vistos': ['a'],
+    });
+    final videos = _Videos();
+    await _abrir(
+        tester,
+        _Servidor([
+          _story('a', nome: 'Ana', tipo: 'Video'),
+          _story('b', nome: 'Ana', tipo: 'Video'),
+        ]),
+        videos: videos);
+
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+
+    expect(find.text('vídeo http://teste/arquivo/b'), findsOneWidget);
   });
 
   testWidgets('foto passa sozinha em 5 s', (tester) async {
@@ -162,12 +230,10 @@ void main() {
     await _assentar(tester);
 
     await tester.pump(const Duration(seconds: 4));
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Ana')),
-        findsOneWidget);
+    expect(_naTela('Ana'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
     await _assentar(tester);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Leo')),
-        findsOneWidget);
+    expect(_naTela('Leo'), findsOneWidget);
   });
 
   testWidgets('vídeo passa quando termina e pausa ao segurar',
@@ -198,8 +264,7 @@ void main() {
 
     videos.terminar['http://teste/arquivo/a']!();
     await _assentar(tester);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Leo')),
-        findsOneWidget);
+    expect(_naTela('Leo'), findsOneWidget);
   });
 
   testWidgets('arrastar para baixo fecha', (tester) async {
@@ -213,34 +278,35 @@ void main() {
     expect(find.byType(TelaDeStories), findsNothing);
   });
 
-  testWidgets('story visto perde o anel neste aparelho', (tester) async {
+  testWidgets('pessoa vista perde o anel e vai para o fim da fileira',
+      (tester) async {
     await _abrir(tester,
         _Servidor([_story('a', nome: 'Ana'), _story('b', nome: 'Leo')]));
-    bool novo(String id) => tester
-        .widgetList<BolinhaDeStory>(find.byType(BolinhaDeStory))
-        .singleWhere((bolinha) => bolinha.story.id == id)
-        .novo;
-    expect(novo('a'), isTrue);
+    expect(_novo(tester, 'Ana'), isTrue);
 
     await tester.tap(find.text('Ana'));
     await _assentar(tester);
     await tester.tap(find.byTooltip('Fechar'));
     await _assentar(tester);
 
-    expect(novo('a'), isFalse);
-    expect(novo('b'), isTrue);
+    expect(_novo(tester, 'Ana'), isFalse);
+    expect(_novo(tester, 'Leo'), isTrue);
 
-    // Continua visto depois de abrir a tela de novo.
+    // Continua vista depois de abrir a tela de novo, e quem falta ver vem
+    // antes.
     await tester.pumpWidget(const SizedBox());
     await _abrir(tester,
         _Servidor([_story('a', nome: 'Ana'), _story('b', nome: 'Leo')]));
-    expect(novo('a'), isFalse);
+    expect(_novo(tester, 'Ana'), isFalse);
+    expect(_fileira(tester), ['Leo', 'Ana']);
   });
 
-  testWidgets('denunciar manda o aparelho e passa para o próximo',
+  testWidgets('denunciar tira o story da tela e mostra o seguinte',
       (tester) async {
-    final servidor =
-        _Servidor([_story('a', nome: 'Ana'), _story('b', nome: 'Leo')]);
+    final servidor = _Servidor([
+      _story('a', nome: 'Ana'),
+      _story('b', nome: 'Ana', criadoEm: '2026-10-17T21:06:00'),
+    ]);
     await _abrir(tester, servidor);
     await tester.tap(find.text('Ana'));
     await _assentar(tester);
@@ -251,26 +317,13 @@ void main() {
     await _assentar(tester);
 
     final denuncia = servidor.doCaminho('/stories/a/denuncia').single;
-    expect(denuncia.url.path, '/api/publico/apresentacoes/ABC123/stories/a/denuncia');
+    expect(denuncia.url.path,
+        '/api/publico/apresentacoes/ABC123/stories/a/denuncia');
     expect(denuncia.headers['Authorization'], isNull);
     expect((jsonDecode(denuncia.body) as Map)['aparelho'], isNotEmpty);
     expect(find.text('Denúncia enviada.'), findsWidgets);
-    expect(find.descendant(of: find.byType(TelaDeStories), matching: find.text('Leo')),
-        findsOneWidget);
-  });
-
-  testWidgets('foto usa a imagem do navegador se o download direto falhar',
-      (tester) async {
-    // Sem CORS no armazenamento ou com foto HEIC do iPhone, só a <img> do
-    // navegador mostra a foto.
-    await _abrir(tester, _Servidor([_story('a', nome: 'Ana')]));
-    await tester.tap(find.text('Ana'));
-    await _assentar(tester);
-
-    final imagem = tester.widget<Image>(find.descendant(
-        of: find.byType(TelaDeStories), matching: find.byType(Image)));
-    expect((imagem.image as NetworkImage).webHtmlElementStrategy,
-        WebHtmlElementStrategy.fallback);
+    expect(find.text('21:06'), findsOneWidget);
+    expect(_barrinhas(tester), 1);
   });
 
   testWidgets('story do artista não tem denúncia', (tester) async {
@@ -294,6 +347,20 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('foto usa a imagem do navegador se o download direto falhar',
+      (tester) async {
+    // Sem CORS no armazenamento ou com foto HEIC do iPhone, só a <img> do
+    // navegador mostra a foto.
+    await _abrir(tester, _Servidor([_story('a', nome: 'Ana')]));
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+
+    final imagem = tester.widget<Image>(find.descendant(
+        of: find.byType(TelaDeStories), matching: find.byType(Image)));
+    expect((imagem.image as NetworkImage).webHtmlElementStrategy,
+        WebHtmlElementStrategy.fallback);
+  });
+
   testWidgets('falha ao buscar não mostra erro', (tester) async {
     final api = ApiTocaEssa(
         cliente: MockClient((_) async => http.Response('', 500)),
@@ -307,6 +374,6 @@ void main() {
 
     expect(find.byType(BolinhaDeStory), findsNothing);
     expect(find.byType(SnackBar), findsNothing);
-    expect(find.text('Enviar vídeo ou foto'), findsOneWidget);
+    expect(find.text('Enviar'), findsOneWidget);
   });
 }
