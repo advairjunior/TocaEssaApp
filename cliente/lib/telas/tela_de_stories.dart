@@ -148,6 +148,10 @@ class _TelaDeStoriesState extends State<TelaDeStories>
                         story.url.toString(),
                         key: ValueKey(story.id),
                         fit: BoxFit.contain,
+                        // Sem CORS no armazenamento ou com foto HEIC do
+                        // iPhone, só a imagem do próprio navegador mostra.
+                        webHtmlElementStrategy:
+                            WebHtmlElementStrategy.fallback,
                         loadingBuilder: (_, filho, carregando) =>
                             carregando == null
                                 ? filho

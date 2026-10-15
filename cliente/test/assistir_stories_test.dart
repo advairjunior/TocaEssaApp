@@ -259,6 +259,20 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('foto usa a imagem do navegador se o download direto falhar',
+      (tester) async {
+    // Sem CORS no armazenamento ou com foto HEIC do iPhone, só a <img> do
+    // navegador mostra a foto.
+    await _abrir(tester, _Servidor([_story('a', nome: 'Ana')]));
+    await tester.tap(find.text('Ana'));
+    await _assentar(tester);
+
+    final imagem = tester.widget<Image>(find.descendant(
+        of: find.byType(TelaDeStories), matching: find.byType(Image)));
+    expect((imagem.image as NetworkImage).webHtmlElementStrategy,
+        WebHtmlElementStrategy.fallback);
+  });
+
   testWidgets('story do artista não tem denúncia', (tester) async {
     await _abrir(tester,
         _Servidor([_story('c', nome: 'Duo Aurora', doArtista: true)]));
