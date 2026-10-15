@@ -17,6 +17,30 @@ typedef ConstrutorDeVideo = Widget Function({
 
 const _tempoDaFoto = Duration(seconds: 5);
 
+enum DepoisDaAcao { continuar, avancar, fechar }
+
+/// Opção do menu do story: denunciar, para o público; salvar, mostrar de
+/// novo e apagar, para o artista.
+class AcaoDoStory {
+  const AcaoDoStory(
+    this.rotulo,
+    this.executar, {
+    this.confirmar,
+    this.mensagem,
+    this.depois = DepoisDaAcao.continuar,
+  });
+
+  final String rotulo;
+  final Future<void> Function() executar;
+
+  /// Pergunta feita antes de executar.
+  final String? confirmar;
+
+  /// Aviso depois de executar.
+  final String? mensagem;
+  final DepoisDaAcao depois;
+}
+
 /// Stories em tela cheia: foto passa em 5 s e vídeo quando acaba; toque à
 /// direita avança, à esquerda volta, segurar pausa e arrastar para baixo
 /// fecha.
@@ -26,14 +50,14 @@ class TelaDeStories extends StatefulWidget {
     required this.stories,
     required this.inicio,
     required this.aoVer,
-    this.aoDenunciar,
+    this.acoes,
     this.construtorDeVideo = VideoDoStory.construir,
   });
 
   final List<StoryDoShow> stories;
   final int inicio;
   final ValueChanged<StoryDoShow> aoVer;
-  final Future<void> Function(StoryDoShow story)? aoDenunciar;
+  final List<AcaoDoStory> Function(StoryDoShow story)? acoes;
   final ConstrutorDeVideo construtorDeVideo;
 
   @override
@@ -105,21 +129,53 @@ class _TelaDeStoriesState extends State<TelaDeStories>
     pausado ? _tempo.stop() : _tempo.forward();
   }
 
-  Future<void> _denunciar(StoryDoShow story) async {
+  Future<void> _executar(AcaoDoStory acao) async {
+    final pergunta = acao.confirmar;
+    if (pergunta != null) {
+      final confirmou = await showDialog<bool>(
+        context: context,
+        builder: (contexto) => AlertDialog(
+          title: Text(pergunta),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(contexto, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(contexto, true),
+              child: Text(acao.rotulo),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      if (confirmou != true) {
+        _pausar(false);
+        return;
+      }
+    }
     final mensageiro = ScaffoldMessenger.of(context);
     try {
-      await widget.aoDenunciar!(story);
-    } catch (_) {
-      mensageiro.showSnackBar(
-          const SnackBar(content: Text('Não foi possível denunciar.')));
-      _pausar(false);
+      await acao.executar();
+    } catch (erro) {
+      mensageiro.showSnackBar(SnackBar(content: Text('$erro')));
+      if (mounted) _pausar(false);
       return;
     }
-    mensageiro
-        .showSnackBar(const SnackBar(content: Text('Denúncia enviada.')));
+    final mensagem = acao.mensagem;
+    if (mensagem != null) {
+      mensageiro.showSnackBar(SnackBar(content: Text(mensagem)));
+    }
     if (!mounted) return;
-    _pausado = false;
-    _avancar();
+    switch (acao.depois) {
+      case DepoisDaAcao.continuar:
+        _pausar(false);
+      case DepoisDaAcao.avancar:
+        _pausado = false;
+        _avancar();
+      case DepoisDaAcao.fechar:
+        _fechar();
+    }
   }
 
   @override
@@ -225,6 +281,7 @@ class _TelaDeStoriesState extends State<TelaDeStories>
   Widget _construirCabecalho(BuildContext context, StoryDoShow story) {
     final hora = story.criadoEm.toLocal();
     final texto = Theme.of(context).textTheme;
+    final acoes = widget.acoes?.call(story) ?? const <AcaoDoStory>[];
     return Row(
       children: [
         if (story.doArtista) ...[
@@ -245,16 +302,24 @@ class _TelaDeStoriesState extends State<TelaDeStories>
           '${hora.minute.toString().padLeft(2, '0')}',
           style: texto.bodySmall?.copyWith(color: Colors.white70),
         ),
+        if (story.expiraEm case final expiraEm?) ...[
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          Text(
+            _quandoSome(expiraEm),
+            style: texto.bodySmall?.copyWith(color: Colors.white70),
+          ),
+        ],
         const Spacer(),
-        if (!story.doArtista && widget.aoDenunciar != null)
-          PopupMenuButton<StoryDoShow>(
+        if (acoes.isNotEmpty)
+          PopupMenuButton<AcaoDoStory>(
             tooltip: 'Mais',
             icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
             onOpened: () => _pausar(true),
             onCanceled: () => _pausar(false),
-            onSelected: _denunciar,
+            onSelected: _executar,
             itemBuilder: (_) => [
-              PopupMenuItem(value: story, child: const Text('Denunciar')),
+              for (final acao in acoes)
+                PopupMenuItem(value: acao, child: Text(acao.rotulo)),
             ],
           ),
         IconButton(
@@ -265,6 +330,12 @@ class _TelaDeStoriesState extends State<TelaDeStories>
       ],
     );
   }
+}
+
+String _quandoSome(DateTime expiraEm) {
+  final dias = expiraEm.difference(DateTime.now()).inDays;
+  if (dias < 1) return 'some hoje';
+  return 'some em $dias ${dias == 1 ? 'dia' : 'dias'}';
 }
 
 /// Vídeo do story no reprodutor do aparelho. Começa com som; se o

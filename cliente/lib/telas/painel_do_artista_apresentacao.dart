@@ -36,23 +36,29 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
             onDestinationSelected: (indice) =>
                 _selecionarAba(_abasDaApresentacao[indice]),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-            destinations: const [
-              NavigationDestination(
+            destinations: [
+              const NavigationDestination(
                 icon: Icon(Icons.queue_music_outlined),
                 selectedIcon: Icon(Icons.queue_music_rounded),
                 label: 'Fila',
               ),
-              NavigationDestination(
+              const NavigationDestination(
                 icon: Icon(Icons.playlist_play_rounded),
                 label: 'Setlist',
               ),
-              NavigationDestination(
+              const NavigationDestination(
                 icon: Icon(Icons.insights_outlined),
                 selectedIcon: Icon(Icons.insights_rounded),
                 label: 'Estatísticas',
               ),
+              // Os stories ficam na aba Mais: o selo conta os novos.
               NavigationDestination(
-                icon: Icon(Icons.more_horiz_rounded),
+                icon: IconeDosStoriesNovos(
+                  key: ValueKey('stories-novos-${apresentacao.id}'),
+                  api: _api,
+                  apresentacaoId: apresentacao.id,
+                  icone: const Icon(Icons.more_horiz_rounded),
+                ),
                 label: 'Mais',
               ),
             ],
@@ -107,7 +113,7 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
   ) =>
       [
         const TituloGrupo('Stories do show'),
-        EnviarStory.doArtista(api: _api, apresentacaoId: apresentacao.id),
+        StoriesDoArtista(api: _api, apresentacaoId: apresentacao.id),
         const SizedBox(height: EspacoTocaEssa.grande),
         const TituloGrupo('Detalhes'),
         GrupoDeLinhas(

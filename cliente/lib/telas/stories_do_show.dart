@@ -12,6 +12,7 @@ import 'camera_do_cartao.dart';
 import 'componentes.dart';
 import 'tela_de_stories.dart';
 
+export 'galeria_de_stories.dart';
 export 'tela_de_stories.dart';
 
 const _chaveAparelho = 'aparelho_dos_stories';
@@ -120,9 +121,18 @@ class _StoriesDoShowState extends State<StoriesDoShow> {
             stories: _stories,
             inicio: inicio,
             aoVer: _marcarVisto,
-            aoDenunciar: (story) async => widget.api.denunciarStory(
-                widget.codigo, story.id,
-                aparelho: await aparelhoDosStories()),
+            // Story do artista só ele apaga.
+            acoes: (story) => [
+              if (!story.doArtista)
+                AcaoDoStory(
+                  'Denunciar',
+                  () async => widget.api.denunciarStory(
+                      widget.codigo, story.id,
+                      aparelho: await aparelhoDosStories()),
+                  mensagem: 'Denúncia enviada.',
+                  depois: DepoisDaAcao.avancar,
+                ),
+            ],
             construtorDeVideo: widget.construtorDeVideo,
           ),
           transitionsBuilder: (_, animacao, __, filho) =>

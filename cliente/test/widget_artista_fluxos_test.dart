@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
+import 'package:toca_essa_app/telas/stories_do_show.dart';
 
 const _contaArtistaJson =
     '{"id":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa","nome":"Ana","email":"ana@artista.com","criadoEm":"2026-09-03T20:00:00Z"}';
@@ -282,6 +283,8 @@ void main() {
 
     expect(find.text('Stories do show'), findsOneWidget);
     expect(find.text('Postar nos stories do show'), findsOneWidget);
+    expect(find.byType(StoriesDoArtista), findsOneWidget);
+    expect(find.byType(IconeDosStoriesNovos), findsOneWidget);
   });
 
   testWidgets('apresentação ao vivo pode voltar para agendada',

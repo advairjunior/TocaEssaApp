@@ -35,6 +35,8 @@ class StoryDoShow {
     required this.tipoDeConteudo,
     required this.url,
     this.doArtista = false,
+    this.escondido = false,
+    this.expiraEm,
   });
 
   factory StoryDoShow.deJson(Map<String, dynamic> json, Uri base) =>
@@ -46,6 +48,11 @@ class StoryDoShow {
         tipoDeConteudo: json['tipoDeConteudo'] as String,
         url: base.resolve(json['url'] as String),
         doArtista: json['doArtista'] as bool? ?? false,
+        escondido: json['escondido'] as bool? ?? false,
+        expiraEm: switch (json['expiraEm']) {
+          final String valor => DateTime.parse(valor),
+          _ => null,
+        },
       );
 
   final String id;
@@ -57,4 +64,10 @@ class StoryDoShow {
 
   /// Postado pelo artista: aparece com destaque.
   final bool doArtista;
+
+  /// Só na lista do artista: escondido do público por denúncias.
+  final bool escondido;
+
+  /// Só na lista do artista: quando o arquivo some.
+  final DateTime? expiraEm;
 }

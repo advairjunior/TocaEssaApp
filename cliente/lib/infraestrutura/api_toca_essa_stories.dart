@@ -63,6 +63,34 @@ mixin _ApiStories on _ApiTocaEssaBase {
         jsonDecode(resposta.body) as Map<String, dynamic>, _base);
   }
 
+  Uri _rotaDosEnvios(String apresentacaoId, [String complemento = '']) =>
+      Uri.parse('$_enderecoBase/api/apresentacoes/$apresentacaoId/envios'
+          '$complemento');
+
+  /// Todos os stories do show para o artista, inclusive os escondidos.
+  Future<List<StoryDoShow>> listarEnviosDoShow(String apresentacaoId) async {
+    final resposta = await _cliente.get(_rotaDosEnvios(apresentacaoId),
+        headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((json) => StoryDoShow.deJson(json as Map<String, dynamic>, _base))
+        .toList();
+  }
+
+  Future<void> apagarEnvioDoShow(String apresentacaoId, String id) async {
+    final resposta = await _cliente.delete(_rotaDosEnvios(apresentacaoId, '/$id'),
+        headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+  }
+
+  /// Desfaz o esconder por denúncias.
+  Future<void> mostrarEnvioDoShow(String apresentacaoId, String id) async {
+    final resposta = await _cliente.post(
+        _rotaDosEnvios(apresentacaoId, '/$id/mostrar'),
+        headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+  }
+
   EnvioAberto _lerEnvioAberto(http.Response resposta) {
     final json = jsonDecode(resposta.body) as Map<String, dynamic>;
     return EnvioAberto(
