@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/camera_do_app.dart';
 import '../infraestrutura/midia_do_story.dart';
 import '../tema/tema_toca_essa.dart';
+import 'camera_do_cartao.dart';
 import 'componentes.dart';
 import 'tela_de_stories.dart';
 
@@ -319,7 +321,7 @@ class _EnviarStoryState extends State<EnviarStory> {
     if (origem == null || !mounted) return;
     final midia = await switch (origem) {
       _Origem.video => widget.seletor.gravarVideo(),
-      _Origem.foto => widget.seletor.tirarFoto(),
+      _Origem.foto => _tirarFoto(),
       _Origem.galeria => widget.seletor.escolherDaGaleria(),
     };
     if (midia == null || !mounted) return;
@@ -338,6 +340,30 @@ class _EnviarStoryState extends State<EnviarStory> {
     }
     setState(() => _midia = midia);
     await _enviar();
+  }
+
+  /// Câmera do app: a selfie sai como aparece na prévia, sem a câmera do
+  /// iPhone desvirar o espelho depois da foto. Sem ela, a do celular.
+  Future<MidiaEscolhida?> _tirarFoto() async {
+    final resposta = await Navigator.push<RespostaDaCamera>(
+      context,
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => CameraDoCartao(
+          camera: fabricaDeCamera(),
+          lenteInicial: LenteDaCamera.traseira,
+          cartao: (_, fundo) => fundo,
+        ),
+      ),
+    );
+    if (resposta == null) return null;
+    final foto = resposta.foto;
+    if (foto == null) return widget.seletor.tirarFoto();
+    return MidiaEscolhida(
+      arquivo: XFile.fromData(foto, name: 'foto.jpg', mimeType: 'image/jpeg'),
+      tipoDeConteudo: 'image/jpeg',
+      tamanho: foto.length,
+    );
   }
 
   Future<void> _enviar() async {

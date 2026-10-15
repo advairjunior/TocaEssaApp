@@ -7,8 +7,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
 import 'package:toca_essa_app/infraestrutura/midia_do_story.dart';
 import 'package:toca_essa_app/telas/stories_do_show.dart';
+
+import 'apoio/camera_falsa.dart';
 
 const _json = {'content-type': 'application/json; charset=utf-8'};
 
@@ -257,7 +260,7 @@ void main() {
     await tester.tap(find.text('Postar nos stories do show'));
     await tester.pumpAndSettle();
     expect(find.text('Entendi'), findsNothing);
-    await tester.tap(find.text('Tirar foto'));
+    await tester.tap(find.text('Escolher da galeria'));
     await tester.pumpAndSettle();
 
     final abertura = servidor.doCaminho('/envios').single;
@@ -286,5 +289,48 @@ void main() {
     await _escolher(tester, 'Gravar vídeo');
 
     expect(servidor.requisicoes, isEmpty);
+  });
+
+  testWidgets('tirar foto usa a câmera do app, com a selfie como na prévia',
+      (tester) async {
+    final camera = CameraFalsa();
+    fabricaDeCamera = () => camera;
+    addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+    final servidor = _Servidor();
+    final seletor = _SeletorFalso(_foto());
+    final enviador = _EnviadorFalso();
+    await _abrir(tester,
+        servidor: servidor, seletor: seletor, enviador: enviador);
+
+    await _escolher(tester, 'Tirar foto');
+    expect(camera.iniciadas, [LenteDaCamera.traseira]);
+    await tester.tap(find.byTooltip('Tirar foto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar foto'));
+    await tester.pumpAndSettle();
+
+    expect(seletor.pedidos, isEmpty);
+    final corpo = jsonDecode(servidor.doCaminho('/envios').single.body)
+        as Map<String, dynamic>;
+    expect(corpo['tipo'], 'Foto');
+    expect(corpo['tamanho'], pngMinimo.length);
+    expect(enviador.enviados, hasLength(1));
+  });
+
+  testWidgets('sem a câmera do app, tirar foto usa a do celular',
+      (tester) async {
+    fabricaDeCamera = () => CameraFalsa(falharAoIniciar: true);
+    addTearDown(() => fabricaDeCamera = CameraDoPlugin.new);
+    final servidor = _Servidor();
+    final seletor = _SeletorFalso(_foto());
+    await _abrir(tester,
+        servidor: servidor, seletor: seletor, enviador: _EnviadorFalso());
+
+    await _escolher(tester, 'Tirar foto');
+    await tester.tap(find.text('Usar a câmera do celular'));
+    await tester.pumpAndSettle();
+
+    expect(seletor.pedidos, ['foto']);
+    expect(servidor.doCaminho('/envios'), hasLength(1));
   });
 }
