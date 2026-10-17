@@ -247,6 +247,20 @@ void main() {
     expect(find.text('1 música sem cifra'), findsOneWidget);
   });
 
+  testWidgets('colar e próxima tira tabulação e caractere invisível do site',
+      (tester) async {
+    final acervo = await _abrir(tester);
+    await tester.tap(find.text('Colar agora'));
+    await tester.pumpAndSettle();
+
+    acervo.areaDeTransferencia = 'C7M\tD11​\r\nFecho os olhos ';
+    await tester.tap(find.text('Colar e próxima'));
+    await tester.pumpAndSettle();
+
+    expect(jsonDecode(_salvas(acervo).single.body)['texto'],
+        'C7M     D11\nFecho os olhos');
+  });
+
   testWidgets('repertório com cifras cabe em celular de 360px', (tester) async {
     addTearDown(tester.view.reset);
     tester.view.devicePixelRatio = 3;

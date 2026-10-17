@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../dominio/ajustar_cifra.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
@@ -67,8 +68,8 @@ class _ColarCifrasState extends State<ColarCifras> {
     setState(() => _salvando = true);
     try {
       final musica = _atual;
-      await widget.api
-          .salvarCifraEmTexto(musica.titulo, musica.artista, copiado);
+      await widget.api.salvarCifraEmTexto(
+          musica.titulo, musica.artista, ajustarCifraColada(copiado));
       if (mounted) _avancar();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
