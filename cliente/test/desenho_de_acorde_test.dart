@@ -16,6 +16,23 @@ void main() {
     }
   });
 
+  test('sétima maior escrita como no Brasil tem desenho', () {
+    for (final acorde in ['C7M', 'G7M(9)', 'F7M/A']) {
+      expect(posicoesDoAcorde(acorde), isNotEmpty, reason: acorde);
+    }
+  });
+
+  test('extensão sem desenho mostra pelo menos o acorde base', () {
+    expect(posicoesDoAcorde('D11'), isNotEmpty);
+    expect(posicoesDoAcorde('Am7(11)'), isNotEmpty);
+  });
+
+  test('toque em acorde com parênteses pega o acorde inteiro', () {
+    expect(acordeNaPosicao('G7(9)  E7(9)', 1), 'G7(9)');
+    expect(acordeNaPosicao('(E  C#m)', 0), 'E');
+    expect(acordeNaPosicao('(E  C#m)', 6), 'C#m');
+  });
+
   test('acorde desconhecido não tem desenho', () {
     expect(posicoesDoAcorde('Xyz'), isNull);
     expect(posicoesDoAcorde(''), isNull);
