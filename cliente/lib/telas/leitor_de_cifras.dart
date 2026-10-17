@@ -12,9 +12,11 @@ import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'editor_de_cifra.dart';
 import 'sequencia_do_palco.dart';
 
 export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
+export 'editor_de_cifra.dart' show pedirCifraEmTexto;
 
 const _chaveEscala = 'leitor_escala';
 const _chaveVelocidade = 'leitor_velocidade_vezes';
@@ -766,65 +768,5 @@ class _BarraDoLeitor extends StatelessWidget {
             ],
           ),
         ),
-      );
-}
-
-/// Caixa para colar ou corrigir a cifra; responde o texto ou nulo se cancelar.
-Future<String?> pedirCifraEmTexto(
-  BuildContext context, {
-  required String titulo,
-  String? texto,
-}) =>
-    showDialog<String>(
-      context: context,
-      builder: (_) => _DialogoDaCifra(titulo: titulo, texto: texto ?? ''),
-    );
-
-class _DialogoDaCifra extends StatefulWidget {
-  const _DialogoDaCifra({required this.titulo, required this.texto});
-
-  final String titulo;
-  final String texto;
-
-  @override
-  State<_DialogoDaCifra> createState() => _DialogoDaCifraState();
-}
-
-class _DialogoDaCifraState extends State<_DialogoDaCifra> {
-  late final _texto = TextEditingController(text: widget.texto);
-
-  @override
-  void dispose() {
-    _texto.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text('Cifra de ${widget.titulo}'),
-        content: SizedBox(
-          width: 600,
-          child: TextField(
-            controller: _texto,
-            autofocus: true,
-            minLines: 8,
-            maxLines: 14,
-            keyboardType: TextInputType.multiline,
-            style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 13),
-            decoration: const InputDecoration(
-              hintText: 'Cole aqui a letra com os acordes',
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, _texto.text),
-            child: const Text('Salvar'),
-          ),
-        ],
       );
 }
