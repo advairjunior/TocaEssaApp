@@ -101,6 +101,24 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void EscalarTodosOsHinosEscalaCadaHinoComLetra()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.EscolherParteDoLouvor(cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id, 0, ["Ana"]);
+
+        var louvor = cenario.Repo.EscalarTodosOsHinosDoLouvor(cenario.Token, cenario.Show.Id);
+
+        Assert.All(louvor.Hinos[0].Partes, parte => Assert.True(parte.Definida));
+        Assert.Equal(["João"], louvor.Hinos[0].Partes[0].Cantores);
+        Assert.Equal([new PlacarDoCantor("João", 3), new PlacarDoCantor("Ana", 2)], louvor.Placar);
+
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
+            cenario.Repo.EscalarTodosOsHinosDoLouvor(tokenBia, cenario.Show.Id));
+    }
+
+    [Fact]
     public void ParteTrocadaAMaoFicaELimparDeixaSemNinguem()
     {
         var cenario = CriarCenario();
@@ -359,6 +377,9 @@ public sealed class LouvorTestes
                 .GetProperty("solistas")[0].GetProperty("instrumento").GetString());
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/solistas",
                 new { solistas = new[] { new { nome = "Bia", instrumento = "sax" } } })).StatusCode);
+            var todos = await ana.PostAsync($"{rota}/escalar", null);
+            Assert.Equal(HttpStatusCode.OK, todos.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.PostAsync($"{rota}/escalar", null)).StatusCode);
             var escalado = await ana.PostAsync($"{rota}/hinos/{itemId}/escalar", null);
             Assert.Equal(HttpStatusCode.OK, escalado.StatusCode);
             Assert.True((await escalado.Content.ReadFromJsonAsync<JsonElement>())

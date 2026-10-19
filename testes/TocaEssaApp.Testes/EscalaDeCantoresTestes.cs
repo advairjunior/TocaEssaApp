@@ -98,6 +98,21 @@ public sealed class EscalaDeCantoresTestes
     }
 
     [Fact]
+    public void EscalarTodosVaiHinoAHinoNaOrdemERefazTudo()
+    {
+        var escolhas = EscalaDeCantores.EscalarTodos(
+            [Hino(HinoA, estrofes: 2), new HinoParaEscala(Guid.NewGuid(), []), Hino(HinoB, estrofes: 2)],
+            ["João", "Ana", "Pedro"],
+            [new EscolhaAMao(HinoA, 0, ["Pedro"]), new EscolhaAMao(HinoB, 1, ["Pedro"])]);
+
+        Assert.Equal(["João", "Ana", "Pedro", "Todos"],
+            Quem(escolhas.Where(escolha => escolha.ItemId == HinoA)));
+        Assert.Equal(["João", "Ana", "Pedro", "Todos"],
+            Quem(escolhas.Where(escolha => escolha.ItemId == HinoB)));
+        Assert.Equal(8, escolhas.Count);
+    }
+
+    [Fact]
     public void HinoSemCoroTemTodasAsEstrofesEscaladas()
     {
         var hino = new HinoParaEscala(HinoA,

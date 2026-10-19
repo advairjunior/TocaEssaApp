@@ -140,6 +140,21 @@ public static class EscalaDeCantores
         return resultado;
     }
 
+    /// Botão "Escalar todos os hinos": escala um hino de cada vez, na ordem da
+    /// lista, cada um pelos pontos dos anteriores. Refaz tudo, inclusive as
+    /// trocas à mão.
+    public static IReadOnlyList<EscolhaAMao> EscalarTodos(
+        IReadOnlyList<HinoParaEscala> hinos,
+        IReadOnlyList<string> cantores,
+        IReadOnlyCollection<EscolhaAMao> escolhas,
+        IReadOnlyList<Solista>? solistas = null)
+    {
+        var escaladas = new List<EscolhaAMao>();
+        foreach (var hino in hinos)
+            escaladas.AddRange(EscalarHino(hinos, hino.ItemId, cantores, escaladas, solistas));
+        return escaladas;
+    }
+
     private static Dictionary<(Guid, int), EscolhaAMao> EscolhasValidas(
         IReadOnlyList<HinoParaEscala> hinos, IReadOnlyCollection<EscolhaAMao> escolhas)
     {

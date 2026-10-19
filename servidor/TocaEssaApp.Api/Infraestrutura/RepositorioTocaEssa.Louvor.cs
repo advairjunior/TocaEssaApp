@@ -153,6 +153,23 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    /// Botão "Escalar todos os hinos": refaz a escala da lista inteira, na
+    /// ordem, cada hino pelos pontos dos anteriores.
+    public LouvorDoArtista EscalarTodosOsHinosDoLouvor(string token, Guid apresentacaoId)
+    {
+        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        lock (_sincronizacao)
+        {
+            _escolhasDoLouvor[apresentacaoId] = EscalaDeCantores.EscalarTodos(
+                HinosParaEscala(apresentacao),
+                _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+                _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? []);
+            SalvarEstado();
+            return MontarLouvor(apresentacao);
+        }
+    }
+
     private List<HinoParaEscala> HinosParaEscala(Apresentacao apresentacao) =>
         ItensDaSetlist(apresentacao.Id)
             .Select(item => new HinoParaEscala(
