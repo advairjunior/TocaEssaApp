@@ -104,6 +104,9 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### Tela de carregamento e servidor acordando
 
+- **Status:** ✅ entregue em 2026-10-19. O QR do público era o pior caso: a
+  área do show abria direto num carregando sem explicação. Hoje o aviso
+  aparece no QR do público, no painel com sessão salva e no login.
 - **Problema:** no plano free do Render o servidor dorme sem uso. O primeiro
   acesso (o público escaneando o QR no começo do show, ou o artista abrindo o
   painel) fica uns 30 a 60 s numa tela preta ou com o botão parado, e parece

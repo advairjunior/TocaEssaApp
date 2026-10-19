@@ -37,9 +37,33 @@
        Flutter abrir, o que demora com a internet fraca de um show. -->
   <style>
     html, body { margin: 0; background-color: #0B080F; }
+    #carregando-toca-essa {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 14px; padding: 24px;
+      text-align: center; font-family: system-ui, sans-serif; color: #C8C2D0;
+    }
+    #carregando-toca-essa b { font-size: 18px; color: #FFFFFF; font-weight: 600; }
+    #carregando-toca-essa .roda {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 3px solid #34303E; border-top-color: #B781FF;
+      animation: gira 0.9s linear infinite;
+    }
+    @keyframes gira { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+  <!-- Enquanto o Flutter carrega (e o servidor acorda, se estava dormindo). -->
+  <div id="carregando-toca-essa">
+    <div class="roda"></div>
+    <b>Carregando o aplicativo TocaEssa, aguarde…</b>
+    <span>Na primeira vez do dia pode levar até 1 minuto.</span>
+  </div>
+  <script>
+    window.addEventListener('flutter-first-frame', function () {
+      var aviso = document.getElementById('carregando-toca-essa');
+      if (aviso) aviso.remove();
+    });
+  </script>
   <!-- Chrome e Android avisam que dá para instalar antes de o Flutter abrir:
        o pedido fica guardado para o "Instalar no celular" dos perfis. -->
   <script>

@@ -30,6 +30,7 @@ class _AcessoDoArtistaState extends State<AcessoDoArtista> {
   @override
   void initState() {
     super.initState();
+    widget.api.acordar();
     _restaurarSessao();
   }
 
@@ -124,7 +125,11 @@ class _AcessoDoArtistaState extends State<AcessoDoArtista> {
   @override
   Widget build(BuildContext context) {
     if (_carregando) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(
+          child: AvisoDeDemora(antes: CircularProgressIndicator()),
+        ),
+      );
     }
     if (_conta != null) {
       return PainelDoArtista(
@@ -207,6 +212,7 @@ class _AcessoDoArtistaState extends State<AcessoDoArtista> {
                                 ? 'Criar conta e entrar'
                                 : 'Entrar'),
                       ),
+                      if (_autenticando) const AvisoDeDemora(),
                       const SizedBox(height: 6),
                       TextButton(
                         onPressed: _autenticando

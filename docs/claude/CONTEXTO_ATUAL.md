@@ -123,6 +123,11 @@ arquivo.
   quando a internet volta; o login só sai se o servidor recusar o token;
   faixa "Sem internet · dados salvos às HH:MM" no topo (`aviso_sem_internet.dart`).
   Pedidos e mudanças na setlist continuam exigindo rede.
+  Servidor dormindo (2026-10-19): o `web/index.html` mostra "Carregando o
+  aplicativo TocaEssa, aguarde…" até o `flutter-first-frame`; início e
+  acesso do artista chamam `api.acordar()` (`/api/saude`, sem esperar); o
+  `AvisoDeDemora` (`componentes.dart`) repete o aviso quando o QR do
+  público, o painel com sessão ou o login passam de 3 s.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e leitor.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para

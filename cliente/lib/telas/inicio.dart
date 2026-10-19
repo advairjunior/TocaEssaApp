@@ -26,6 +26,7 @@ class _InicioState extends State<Inicio> {
     // Habilita "Entrar" assim que o código fica completo.
     _codigo.addListener(() => setState(() {}));
     _verificarSessaoDoArtista();
+    widget.api.acordar();
   }
 
   @override

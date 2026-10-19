@@ -36,6 +36,16 @@ abstract class _ApiTocaEssaBase {
         _ => _sempreComInternet,
       };
 
+  /// No plano gratuito o servidor dorme sem uso: cutucar logo ao abrir o app
+  /// adianta o despertar enquanto a pessoa digita o código ou o e-mail.
+  Future<void> acordar() async {
+    try {
+      await _cliente.get(Uri.parse('$_enderecoBase/api/saude'));
+    } catch (_) {
+      // Só um cutucão: quem precisa da resposta são os pedidos seguintes.
+    }
+  }
+
   String enderecoTempoReal(String codigo) =>
       '$_enderecoBase/api/tempo-real/${codigo.trim().toUpperCase()}';
 

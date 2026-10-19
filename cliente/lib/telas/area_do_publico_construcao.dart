@@ -110,7 +110,9 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done &&
                   !snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: AvisoDeDemora(antes: CircularProgressIndicator()),
+                );
               }
               if (snapshot.hasError) {
                 return _MensagemPublica(

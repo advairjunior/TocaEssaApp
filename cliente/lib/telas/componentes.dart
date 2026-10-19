@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../tema/tema_toca_essa.dart';
 
 class ConteudoMobile extends StatelessWidget {
   const ConteudoMobile({super.key, required this.filho});
@@ -217,6 +218,62 @@ class _FotoPerfilAmpliada extends StatelessWidget {
           ),
         ),
       );
+}
+
+/// O servidor pode estar dormindo: passado um tempo, explica a demora no
+/// lugar de [antes].
+class AvisoDeDemora extends StatefulWidget {
+  const AvisoDeDemora({super.key, this.antes = const SizedBox.shrink()});
+
+  static const paciencia = Duration(seconds: 3);
+
+  final Widget antes;
+
+  @override
+  State<AvisoDeDemora> createState() => _AvisoDeDemoraState();
+}
+
+class _AvisoDeDemoraState extends State<AvisoDeDemora> {
+  late final Timer _relogio;
+  bool _demorando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _relogio = Timer(AvisoDeDemora.paciencia, () {
+      if (mounted) setState(() => _demorando = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _relogio.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_demorando) return widget.antes;
+    return const Padding(
+      padding: EdgeInsets.all(EspacoTocaEssa.base),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 3),
+          ),
+          SizedBox(height: EspacoTocaEssa.medio),
+          Text(
+            'Carregando o aplicativo TocaEssa, aguarde…',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: CoresTocaEssa.roxoClaro),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String formatarData(DateTime data) =>
