@@ -8,10 +8,15 @@ import 'como_marcar_hinos.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'editor_de_cifra.dart';
+import 'trechos_do_louvor.dart';
 
-/// Escala do louvor, vista pelo artista: quem canta no microfone, o placar
-/// de estrofes e quem canta cada parte de cada hino. O app escala sozinho;
-/// tocar numa parte troca à mão.
+enum _AbaDaEscala { hinos, pessoas }
+
+/// Escala do louvor, vista pelo artista. Na aba Hinos, cada hino é um cartão
+/// fechado com a ordem, o tom e o resumo de quem participa; tocar abre as
+/// partes, o botão "Escalar automático" e a troca à mão. "Ver por pessoa"
+/// destaca as partes de alguém. Na aba Pessoas ficam cantores, solistas e o
+/// sumário das marcações.
 class EscalaDoLouvor extends StatefulWidget {
   const EscalaDoLouvor({
     super.key,
@@ -34,6 +39,10 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
   LouvorDoArtista? _louvor;
   Object? _erro;
   bool _salvando = false;
+  // Sem ninguém cadastrado, começa em Pessoas.
+  _AbaDaEscala? _aba;
+  final _abertos = <String>{};
+  String? _filtro;
 
   String get _id => widget.apresentacao.id;
 
@@ -46,7 +55,14 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
   Future<void> _carregar() async {
     try {
       final louvor = await widget.api.obterLouvor(_id);
-      if (mounted) setState(() => _louvor = louvor);
+      if (mounted) {
+        setState(() {
+          _louvor = louvor;
+          _aba ??= louvor.participantes.isEmpty
+              ? _AbaDaEscala.pessoas
+              : _AbaDaEscala.hinos;
+        });
+      }
     } catch (erro) {
       if (mounted) setState(() => _erro = erro);
     }
@@ -135,230 +151,495 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
               descricao: '$_erro',
             );
     }
+    final aba = _aba ?? _AbaDaEscala.hinos;
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+              EspacoTocaEssa.base, EspacoTocaEssa.base, EspacoTocaEssa.base, 0),
+          child: SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<_AbaDaEscala>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(
+                  value: _AbaDaEscala.hinos,
+                  icon: Icon(Icons.library_music_outlined),
+                  label: Text('Por hino'),
+                ),
+                ButtonSegment(
+                  value: _AbaDaEscala.pessoas,
+                  icon: Icon(Icons.groups_outlined),
+                  label: Text('Pessoas'),
+                ),
+              ],
+              selected: {aba},
+              onSelectionChanged: (escolhida) =>
+                  setState(() => _aba = escolhida.single),
+            ),
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _carregar,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                  EspacoTocaEssa.base,
+                  EspacoTocaEssa.base,
+                  EspacoTocaEssa.base,
+                  EspacoTocaEssa.enorme),
+              children: aba == _AbaDaEscala.hinos
+                  ? _construirHinos(louvor)
+                  : _construirPessoas(louvor),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _construirHinos(LouvorDoArtista louvor) {
+    final texto = Theme.of(context).textTheme;
+    final filtro = _filtro;
+    // O hino de agora é o último tocado, como no roteiro.
+    final agora = louvor.hinos.where((hino) => hino.tocado).lastOrNull?.itemId;
+    if (louvor.hinos.isEmpty) {
+      return const [
+        EstadoVazio(
+          icone: Icons.library_music_outlined,
+          titulo: 'Nenhum hino ainda',
+          descricao: 'Monte a lista de hinos na aba Hinos, embaixo.',
+        ),
+      ];
+    }
+    return [
+      if (louvor.participantes.isNotEmpty) ...[
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              ChoiceChip(
+                label: const Text('Sem filtro'),
+                selected: filtro == null,
+                onSelected: (_) => setState(() => _filtro = null),
+              ),
+              for (final nome in louvor.participantes) ...[
+                const SizedBox(width: EspacoTocaEssa.pequeno),
+                ChoiceChip(
+                  label: Text(nome),
+                  selected: filtro == nome,
+                  onSelected: (_) => setState(() => _filtro = nome),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (filtro != null) ...[
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(_resumoDaPessoa(louvor, filtro),
+              style: texto.titleSmall?.copyWith(color: CoresTocaEssa.ouro)),
+        ],
+        const SizedBox(height: EspacoTocaEssa.medio),
+      ],
+      for (final (indice, hino) in louvor.hinos.indexed) ...[
+        _CartaoDoHino(
+          ordem: indice + 1,
+          hino: hino,
+          cantores: louvor.cantores,
+          filtro: filtro,
+          aberto: _abertos.contains(hino.itemId),
+          ehAgora: hino.itemId == agora,
+          alternar: () => setState(() => _abertos.contains(hino.itemId)
+              ? _abertos.remove(hino.itemId)
+              : _abertos.add(hino.itemId)),
+          escolherParte: _salvando
+              ? null
+              : (indice, rotulo) => _escolherParte(hino, indice, rotulo),
+          colarLetra: _salvando ? null : () => _colarLetra(hino),
+          escalar: _salvando
+              ? null
+              : () => _salvar(
+                  () => widget.api.escalarHinoDoLouvor(_id, hino.itemId)),
+        ),
+        const SizedBox(height: EspacoTocaEssa.medio),
+      ],
+    ];
+  }
+
+  /// "Ana: 3 partes em 2 hinos".
+  static String _resumoDaPessoa(LouvorDoArtista louvor, String nome) {
+    final hinos = louvor.hinos.where(
+        (hino) => hino.partes.any((parte) => parte.cantores.contains(nome)));
+    final partes =
+        hinos.fold<int>(0, (total, hino) => total + hino.partesDe(nome));
+    return '$nome: $partes ${partes == 1 ? 'parte' : 'partes'} em '
+        '${hinos.length} ${hinos.length == 1 ? 'hino' : 'hinos'}';
+  }
+
+  List<Widget> _construirPessoas(LouvorDoArtista louvor) {
+    final explicacao = Theme.of(context)
+        .textTheme
+        .bodySmall
+        ?.copyWith(color: CoresTocaEssa.textoSecundario);
     final pontos = {
       for (final item in louvor.placar) item.nome: item.pontos,
     };
     final solos = {
       for (final item in louvor.placarDosSolos) item.nome: item.solos,
     };
-    return RefreshIndicator(
-      onRefresh: _carregar,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(EspacoTocaEssa.base,
-            EspacoTocaEssa.base, EspacoTocaEssa.base, EspacoTocaEssa.enorme),
+    return [
+      const TituloGrupo('Quem canta no microfone'),
+      Wrap(
+        spacing: EspacoTocaEssa.pequeno,
+        runSpacing: EspacoTocaEssa.pequeno,
         children: [
-          const TituloGrupo('Quem canta no microfone'),
-          Wrap(
-            spacing: EspacoTocaEssa.pequeno,
-            runSpacing: EspacoTocaEssa.pequeno,
-            children: [
-              for (final nome in louvor.cantores)
-                InputChip(
-                  label: Text('$nome · ${pontos[nome] ?? 0}'),
-                  deleteButtonTooltipMessage: 'Tirar $nome',
-                  onDeleted: _salvando
-                      ? null
-                      : () => _definirCantores([
-                            for (final outro in louvor.cantores)
-                              if (outro != nome) outro,
-                          ]),
-                ),
-              ActionChip(
-                avatar: const Icon(Icons.person_add_alt_1_rounded, size: 18),
-                label: const Text('Adicionar'),
-                onPressed: _salvando ? null : _adicionarCantor,
-              ),
-            ],
-          ),
-          const SizedBox(height: EspacoTocaEssa.pequeno),
-          Text(
-            louvor.cantores.isEmpty
-                ? 'Coloque quem vai cantar no microfone. Em cada hino, '
-                    '"Escalar automático" divide as partes entre eles.'
-                : 'O número é de pontos: cada estrofe ou coro cantado vale 1. '
-                    'Toque numa parte para trocar quem canta.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: CoresTocaEssa.textoSecundario),
-          ),
-          const SizedBox(height: EspacoTocaEssa.grande),
-          const TituloGrupo('Quem toca os solos'),
-          Wrap(
-            spacing: EspacoTocaEssa.pequeno,
-            runSpacing: EspacoTocaEssa.pequeno,
-            children: [
-              for (final solista in louvor.solistas)
-                InputChip(
-                  label: Text([
-                    solista.nome,
-                    if (solista.instrumento.isNotEmpty) solista.instrumento,
-                    '${solos[solista.nome] ?? 0}',
-                  ].join(' · ')),
-                  deleteButtonTooltipMessage: 'Tirar ${solista.nome} dos solos',
-                  onDeleted: _salvando
-                      ? null
-                      : () => _definirSolistas([
-                            for (final outro in louvor.solistas)
-                              if (outro.nome != solista.nome) outro,
-                          ]),
-                ),
-              ActionChip(
-                avatar: const Icon(Icons.music_note_rounded, size: 18),
-                label: const Text('Adicionar solista'),
-                onPressed: _salvando ? null : _adicionarSolista,
-              ),
-            ],
-          ),
-          const SizedBox(height: EspacoTocaEssa.pequeno),
-          Text(
-            'O app dá cada "(Solo sax)" para quem toca o instrumento, '
-            'revezando quando tem mais de um. O número é de solos.',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: CoresTocaEssa.textoSecundario),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => mostrarComoMarcarAsPartes(context),
-              icon: const Icon(Icons.help_outline_rounded),
-              label: const Text('Como marcar as partes'),
-            ),
-          ),
-          const SizedBox(height: EspacoTocaEssa.base),
-          if (louvor.hinos.isEmpty)
-            const EstadoVazio(
-              icone: Icons.library_music_outlined,
-              titulo: 'Nenhum hino ainda',
-              descricao: 'Monte a lista de hinos na aba Hinos.',
-            ),
-          for (final hino in louvor.hinos) ...[
-            _CartaoDoHino(
-              hino: hino,
-              escolherParte: _salvando
+          for (final nome in louvor.cantores)
+            InputChip(
+              label: Text('$nome · ${pontos[nome] ?? 0}'),
+              deleteButtonTooltipMessage: 'Tirar $nome',
+              onDeleted: _salvando
                   ? null
-                  : (indice, rotulo) => _escolherParte(hino, indice, rotulo),
-              colarLetra: _salvando ? null : () => _colarLetra(hino),
-              escalar: _salvando
-                  ? null
-                  : () => _salvar(
-                      () => widget.api.escalarHinoDoLouvor(_id, hino.itemId)),
+                  : () => _definirCantores([
+                        for (final outro in louvor.cantores)
+                          if (outro != nome) outro,
+                      ]),
             ),
-            const SizedBox(height: EspacoTocaEssa.medio),
-          ],
+          ActionChip(
+            avatar: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+            label: const Text('Adicionar'),
+            onPressed: _salvando ? null : _adicionarCantor,
+          ),
         ],
       ),
-    );
+      const SizedBox(height: EspacoTocaEssa.pequeno),
+      Text(
+        louvor.cantores.isEmpty
+            ? 'Coloque quem vai cantar no microfone. Em cada hino, '
+                '"Escalar automático" divide as partes entre eles.'
+            : 'O número é de pontos: cada estrofe ou coro cantado vale 1.',
+        style: explicacao,
+      ),
+      const SizedBox(height: EspacoTocaEssa.grande),
+      const TituloGrupo('Quem toca os solos'),
+      Wrap(
+        spacing: EspacoTocaEssa.pequeno,
+        runSpacing: EspacoTocaEssa.pequeno,
+        children: [
+          for (final solista in louvor.solistas)
+            InputChip(
+              label: Text([
+                solista.nome,
+                if (solista.instrumento.isNotEmpty) solista.instrumento,
+                '${solos[solista.nome] ?? 0}',
+              ].join(' · ')),
+              deleteButtonTooltipMessage: 'Tirar ${solista.nome} dos solos',
+              onDeleted: _salvando
+                  ? null
+                  : () => _definirSolistas([
+                        for (final outro in louvor.solistas)
+                          if (outro.nome != solista.nome) outro,
+                      ]),
+            ),
+          ActionChip(
+            avatar: const Icon(Icons.music_note_rounded, size: 18),
+            label: const Text('Adicionar solista'),
+            onPressed: _salvando ? null : _adicionarSolista,
+          ),
+        ],
+      ),
+      const SizedBox(height: EspacoTocaEssa.pequeno),
+      Text(
+        'O app dá cada "(Solo sax)" para quem toca o instrumento, '
+        'revezando quando tem mais de um. O número é de solos.',
+        style: explicacao,
+      ),
+      const SizedBox(height: EspacoTocaEssa.grande),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: () => mostrarComoMarcarAsPartes(context),
+          icon: const Icon(Icons.help_outline_rounded),
+          label: const Text('Como marcar as partes'),
+        ),
+      ),
+    ];
   }
+}
+
+/// "Estrofe 1", "Refrão", "Solo sax tenor · 2x": o nome de cada parte.
+List<String> _rotulosDasPartes(HinoDoLouvor hino) {
+  var estrofe = 0;
+  return [
+    for (final parte in hino.partes)
+      () {
+        final nome = switch (parte.tipo) {
+          TipoDaParte.estrofe => 'Estrofe ${++estrofe}',
+          TipoDaParte.instrumental => parte.nome ?? parte.tipo.rotulo,
+          TipoDaParte.refrao => parte.tipo.rotulo,
+        };
+        return parte.vezes > 1 ? '$nome · ${parte.vezes}x' : nome;
+      }(),
+  ];
+}
+
+/// "João · Ana · solo José · 1 sem escala": quem participa do hino.
+String _resumoDoHino(HinoDoLouvor hino) {
+  final nomes = <String>[];
+  for (final parte in hino.partes) {
+    for (final nome in parte.cantores) {
+      final rotulo =
+          parte.tipo == TipoDaParte.instrumental ? 'solo $nome' : nome;
+      if (!nomes.contains(rotulo)) nomes.add(rotulo);
+    }
+  }
+  final semEscala = hino.partes.where((parte) => !parte.definida).length;
+  return [
+    ...nomes,
+    if (semEscala > 0) '$semEscala sem escala',
+    if (nomes.isEmpty && semEscala == 0) 'Todos',
+  ].join(' · ');
 }
 
 class _CartaoDoHino extends StatelessWidget {
   const _CartaoDoHino({
+    required this.ordem,
     required this.hino,
+    required this.cantores,
+    required this.filtro,
+    required this.aberto,
+    required this.ehAgora,
+    required this.alternar,
     required this.escolherParte,
     required this.colarLetra,
     required this.escalar,
   });
 
+  final int ordem;
   final HinoDoLouvor hino;
+  // Para a cor de cada cantor, a mesma do roteiro.
+  final List<String> cantores;
+  final String? filtro;
+  final bool aberto;
+  final bool ehAgora;
+  final VoidCallback alternar;
   final void Function(int indice, String rotulo)? escolherParte;
   final VoidCallback? colarLetra;
   final VoidCallback? escalar;
 
+  Color _corDa(ParteDoHino parte) => switch (parte) {
+        ParteDoHino(tipo: TipoDaParte.instrumental) => corInstrumental,
+        ParteDoHino(definida: false) => CoresTocaEssa.borda,
+        ParteDoHino(deTodos: true) => CoresTocaEssa.textoSecundario,
+        _ => corDoCantor(cantores, parte.cantores.first),
+      };
+
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    var estrofe = 0;
-    return GrupoDeLinhas(
-      recuoDivisoria: EspacoTocaEssa.base,
-      linhas: [
-        Padding(
-          padding: const EdgeInsets.all(EspacoTocaEssa.base),
+    final rotulos = _rotulosDasPartes(hino);
+    final daPessoa = filtro == null
+        ? const <String>[]
+        : [
+            for (final (indice, parte) in hino.partes.indexed)
+              if (parte.cantores.contains(filtro)) rotulos[indice],
+          ];
+    return Opacity(
+      // Hino já cantado fica apagado.
+      opacity: hino.tocado && !ehAgora ? .55 : 1,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.superficie,
+          borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+          border: Border.all(
+              color: ehAgora ? CoresTocaEssa.sucesso : CoresTocaEssa.borda,
+              width: ehAgora ? 2 : 1),
+        ),
+        child: Material(
+          color: Colors.transparent,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Expanded(child: Text(hino.titulo, style: texto.titleMedium)),
-                  if (hino.tom case final tom?)
-                    Text('Tom $tom',
-                        style: texto.labelLarge
-                            ?.copyWith(color: CoresTocaEssa.roxoClaro)),
-                ],
-              ),
-              if (hino.partes.isNotEmpty) ...[
-                const SizedBox(height: EspacoTocaEssa.pequeno),
-                FilledButton.tonalIcon(
-                  onPressed: escalar,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Escalar automático'),
+              InkWell(
+                onTap: alternar,
+                child: Padding(
+                  padding: const EdgeInsets.all(EspacoTocaEssa.base),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            alignment: Alignment.center,
+                            decoration: const BoxDecoration(
+                              color: CoresTocaEssa.destaqueFundo,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text('$ordem',
+                                style: texto.titleSmall
+                                    ?.copyWith(color: CoresTocaEssa.roxoClaro)),
+                          ),
+                          const SizedBox(width: EspacoTocaEssa.medio),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(hino.titulo, style: texto.titleMedium),
+                                if (hino.partes.isNotEmpty)
+                                  Text(
+                                    _resumoDoHino(hino),
+                                    style: texto.bodySmall?.copyWith(
+                                        color: CoresTocaEssa.textoSecundario),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: EspacoTocaEssa.pequeno),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (hino.tom case final tom?)
+                                Text('Tom $tom',
+                                    style: texto.labelLarge?.copyWith(
+                                        color: CoresTocaEssa.roxoClaro)),
+                              if (ehAgora)
+                                Text('Agora',
+                                    style: texto.labelMedium?.copyWith(
+                                        color: CoresTocaEssa.sucesso)),
+                            ],
+                          ),
+                          Icon(
+                            aberto
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            color: CoresTocaEssa.textoSecundario,
+                          ),
+                        ],
+                      ),
+                      if (hino.partes.isNotEmpty) ...[
+                        const SizedBox(height: EspacoTocaEssa.pequeno),
+                        // Uma bolinha por parte, na cor de quem canta.
+                        Padding(
+                          padding: const EdgeInsets.only(left: 44),
+                          child: Wrap(
+                            spacing: EspacoTocaEssa.mini,
+                            runSpacing: EspacoTocaEssa.mini,
+                            children: [
+                              for (final parte in hino.partes)
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: _corDa(parte),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (daPessoa.isNotEmpty) ...[
+                        const SizedBox(height: EspacoTocaEssa.pequeno),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 44),
+                          child: Text('$filtro: ${daPessoa.join(', ')}',
+                              style: texto.bodySmall
+                                  ?.copyWith(color: CoresTocaEssa.ouro)),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
+              ),
+              if (!hino.temLetra)
+                ListTile(
+                  leading: const Icon(Icons.warning_amber_rounded,
+                      color: CoresTocaEssa.atencao),
+                  title: const Text('Sem letra'),
+                  trailing: TextButton(
+                    onPressed: colarLetra,
+                    child: const Text('Colar letra'),
+                  ),
+                ),
+              if (aberto && hino.partes.isNotEmpty) ...[
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(EspacoTocaEssa.base,
+                      EspacoTocaEssa.medio, EspacoTocaEssa.base, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.tonalIcon(
+                      onPressed: escalar,
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                      label: const Text('Escalar automático'),
+                    ),
+                  ),
+                ),
+                for (final (indice, parte) in hino.partes.indexed)
+                  ListTile(
+                    dense: true,
+                    tileColor: filtro != null && parte.cantores.contains(filtro)
+                        ? CoresTocaEssa.destaqueFundo
+                        : null,
+                    onTap: escolherParte == null
+                        ? null
+                        : () => escolherParte!(indice, rotulos[indice]),
+                    leading: Container(
+                      width: 4,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: _corDa(parte),
+                        borderRadius:
+                            BorderRadius.circular(RaioTocaEssa.pilula),
+                      ),
+                    ),
+                    minLeadingWidth: 4,
+                    title: Text(rotulos[indice]),
+                    subtitle: Text(
+                      // A primeira linha da letra, não a dos acordes.
+                      parte.texto
+                              .split('\n')
+                              .where((linha) =>
+                                  linha.trim().isNotEmpty &&
+                                  !linhaDeAcordes(linha))
+                              .firstOrNull ??
+                          '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          switch (parte) {
+                            ParteDoHino(definida: false) => '—',
+                            ParteDoHino(
+                              tipo: TipoDaParte.instrumental,
+                              deTodos: true
+                            ) =>
+                              'Banda',
+                            _ => parte.quemCanta,
+                          },
+                          style: texto.labelLarge?.copyWith(
+                            color: parte.deTodos
+                                ? CoresTocaEssa.textoSecundario
+                                : CoresTocaEssa.roxoClaro,
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded,
+                            color: CoresTocaEssa.textoSecundario),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: EspacoTocaEssa.pequeno),
               ],
             ],
           ),
         ),
-        if (!hino.temLetra)
-          ListTile(
-            leading: const Icon(Icons.warning_amber_rounded,
-                color: CoresTocaEssa.atencao),
-            title: const Text('Sem letra'),
-            trailing: TextButton(
-              onPressed: colarLetra,
-              child: const Text('Colar letra'),
-            ),
-          ),
-        for (final (indice, parte) in hino.partes.indexed)
-          Builder(builder: (context) {
-            final nome = switch (parte.tipo) {
-              TipoDaParte.estrofe => 'Estrofe ${++estrofe}',
-              TipoDaParte.instrumental => parte.nome ?? parte.tipo.rotulo,
-              TipoDaParte.refrao => parte.tipo.rotulo,
-            };
-            final rotulo = parte.vezes > 1 ? '$nome · ${parte.vezes}x' : nome;
-            return ListTile(
-              onTap: escolherParte == null
-                  ? null
-                  : () => escolherParte!(indice, rotulo),
-              title: Text(rotulo),
-              subtitle: Text(
-                // A primeira linha da letra, não a dos acordes.
-                parte.texto
-                        .split('\n')
-                        .where((linha) =>
-                            linha.trim().isNotEmpty && !linhaDeAcordes(linha))
-                        .firstOrNull ??
-                    '',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    switch (parte) {
-                      ParteDoHino(definida: false) => '—',
-                      ParteDoHino(
-                        tipo: TipoDaParte.instrumental,
-                        deTodos: true
-                      ) =>
-                        'Banda',
-                      _ => parte.quemCanta,
-                    },
-                    style: texto.labelLarge?.copyWith(
-                      color: parte.deTodos
-                          ? CoresTocaEssa.textoSecundario
-                          : CoresTocaEssa.roxoClaro,
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: CoresTocaEssa.textoSecundario),
-                ],
-              ),
-            );
-          }),
-      ],
+      ),
     );
   }
 }

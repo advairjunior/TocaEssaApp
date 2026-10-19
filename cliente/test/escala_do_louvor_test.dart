@@ -12,7 +12,7 @@ import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 const _id = '22222222-2222-2222-2222-222222222222';
 
 final _apresentacao = Apresentacao.deJson(jsonDecode(
-    '{"id":"$_id","nome":"Louvor de sábado","data":"2026-10-24","local":"Casa da Bia","codigo":"ABC123","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Advair","bio":null},"pedidosAbertos":true,"status":"Agendada","tipo":"Louvor"}')
+        '{"id":"$_id","nome":"Louvor de sábado","data":"2026-10-24","local":"Casa da Bia","codigo":"ABC123","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Advair","bio":null},"pedidosAbertos":true,"status":"Agendada","tipo":"Louvor"}')
     as Map<String, dynamic>);
 
 Map<String, Object?> _parte(String tipo, String texto, List<String> cantores,
@@ -25,14 +25,14 @@ Map<String, Object?> _parte(String tipo, String texto, List<String> cantores,
     };
 
 Map<String, Object?> _louvor(List<String> cantores,
-        [List<Map<String, Object?>> solistas = const []]) =>
+        [List<Map<String, Object?>> solistas = const [],
+        Set<String> tocados = const {}]) =>
     {
       'cantores': cantores,
       'solistas': solistas,
       'placarDosSolos': [
         for (final solista in solistas) {'nome': solista['nome'], 'solos': 1},
       ],
-
       'placar': [
         for (final nome in cantores) {'nome': nome, 'pontos': 1},
       ],
@@ -42,10 +42,11 @@ Map<String, Object?> _louvor(List<String> cantores,
           'titulo': '80 · Por Cristo, resgatado',
           'artista': null,
           'tom': 'G',
-          'tocado': false,
+          'tocado': tocados.contains('h1'),
           'temLetra': true,
           'partes': [
-            _parte('Estrofe',
+            _parte(
+                'Estrofe',
                 'G        Bm\nCristo Jesus, o santo Cordeiro\nDeu Sua vida',
                 ['João']),
             _parte('Refrao', 'Por Cristo, resgatado', []),
@@ -67,7 +68,7 @@ Map<String, Object?> _louvor(List<String> cantores,
           'titulo': '234 · O meu ser entrego a Cristo',
           'artista': 'CCB',
           'tom': null,
-          'tocado': false,
+          'tocado': tocados.contains('h2'),
           'temLetra': false,
           'partes': <Object?>[],
         },
@@ -75,7 +76,9 @@ Map<String, Object?> _louvor(List<String> cantores,
     };
 
 Future<List<http.Request>> _abrir(WidgetTester tester,
-    {Future<String?> Function(String titulo)? pedirLetra}) async {
+    {Future<String?> Function(String titulo)? pedirLetra,
+    double largura = 430,
+    Set<String> tocados = const {}}) async {
   final requisicoes = <http.Request>[];
   var cantores = ['João', 'Ana'];
   var solistas = <Map<String, Object?>>[
@@ -102,12 +105,12 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
       }
       final corpo = caminho.endsWith('/cifras/texto')
           ? jsonEncode({'cifra': null, 'urlPesquisa': 'x', 'texto': 'a'})
-          : jsonEncode(_louvor(cantores, solistas));
+          : jsonEncode(_louvor(cantores, solistas, tocados));
       return http.Response(corpo, 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }),
   )..definirTokenArtista('token');
-  tester.view.physicalSize = const Size(430, 1400);
+  tester.view.physicalSize = Size(largura, 1400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(
@@ -127,28 +130,84 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
 Map<String, dynamic> _corpo(http.Request requisicao) =>
     jsonDecode(requisicao.body) as Map<String, dynamic>;
 
+Future<void> _irParaPessoas(WidgetTester tester) async {
+  await tester.tap(find.text('Pessoas'));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _abrirHino(WidgetTester tester) async {
+  await tester.tap(find.text('80 · Por Cristo, resgatado'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
-  testWidgets('mostra o placar e quem canta cada parte dos hinos',
+  testWidgets('os hinos aparecem fechados, com ordem, tom e resumo',
       (tester) async {
     await _abrir(tester);
 
-    expect(find.text('João · 1'), findsOneWidget);
-    expect(find.text('Ana · 1'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
     expect(find.text('80 · Por Cristo, resgatado'), findsOneWidget);
     expect(find.text('Tom G'), findsOneWidget);
+    expect(find.text('João · Ana · 1 sem escala'), findsOneWidget);
+    expect(find.text('Estrofe 1'), findsNothing);
+    expect(find.text('Sem letra'), findsOneWidget);
+    expect(find.text('Quem canta no microfone'), findsNothing);
+  });
+
+  testWidgets('tocar no hino abre as partes e quem canta cada uma',
+      (tester) async {
+    await _abrir(tester);
+    await _abrirHino(tester);
+
     expect(find.text('Estrofe 1'), findsOneWidget);
     expect(find.text('Estrofe 2'), findsOneWidget);
     expect(find.text('Refrão'), findsNWidgets(2));
     expect(find.text('Cristo Jesus, o santo Cordeiro'), findsOneWidget);
-    expect(find.text('João'), findsOneWidget);
-    expect(find.text('Ana'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'João'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Ana'), findsOneWidget);
     expect(find.text('Todos'), findsNWidgets(2));
+    expect(find.text('Solo sax tenor · 2x'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
     expect(find.text('Escalar automático'), findsOneWidget);
-    expect(find.text('Sem letra'), findsOneWidget);
+
+    await _abrirHino(tester);
+    expect(find.text('Estrofe 1'), findsNothing);
+  });
+
+  testWidgets('o hino de agora aparece marcado', (tester) async {
+    await _abrir(tester, tocados: {'h1'});
+
+    expect(find.text('Agora'), findsOneWidget);
+  });
+
+  testWidgets('ver por pessoa mostra as partes de cada um', (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Ana'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ana: 1 parte em 1 hino'), findsOneWidget);
+    expect(find.text('Ana: Estrofe 2'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Sem filtro'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ana:'), findsNothing);
+  });
+
+  testWidgets('pessoas ficam na aba Pessoas, com os pontos', (tester) async {
+    await _abrir(tester);
+    await _irParaPessoas(tester);
+
+    expect(find.text('Quem canta no microfone'), findsOneWidget);
+    expect(find.text('João · 1'), findsOneWidget);
+    expect(find.text('Ana · 1'), findsOneWidget);
+    expect(find.text('80 · Por Cristo, resgatado'), findsNothing);
   });
 
   testWidgets('acrescenta e tira cantores', (tester) async {
     final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
 
     await tester.tap(find.text('Adicionar'));
     await tester.pumpAndSettle();
@@ -172,6 +231,7 @@ void main() {
   testWidgets('escolhe quem canta, deixa com Todos ou limpa a parte',
       (tester) async {
     final requisicoes = await _abrir(tester);
+    await _abrirHino(tester);
     List<http.Request> partes() => requisicoes
         .where((r) => r.url.path == '/api/apresentacoes/$_id/louvor/partes')
         .toList();
@@ -183,8 +243,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Salvar'));
     await tester.pumpAndSettle();
-    expect(_corpo(partes().last),
-        {'itemId': 'h1', 'indice': 0, 'cantores': ['Ana']});
+    expect(_corpo(partes().last), {
+      'itemId': 'h1',
+      'indice': 0,
+      'cantores': ['Ana']
+    });
 
     await tester.tap(find.text('Preso estava na iniquidade'));
     await tester.pumpAndSettle();
@@ -197,8 +260,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, 'Limpar'));
     await tester.pumpAndSettle();
-    expect(_corpo(partes().last),
-        {'itemId': 'h1', 'indice': 2, 'cantores': null});
+    expect(
+        _corpo(partes().last), {'itemId': 'h1', 'indice': 2, 'cantores': null});
   });
 
   testWidgets('cola a letra do hino que ainda não tem', (tester) async {
@@ -212,8 +275,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(pedidoPara, '234 · O meu ser entrego a Cristo');
-    final salvou =
-        requisicoes.singleWhere((r) => r.url.path == '/api/artista/cifras/texto');
+    final salvou = requisicoes
+        .singleWhere((r) => r.url.path == '/api/artista/cifras/texto');
     expect(_corpo(salvou), {
       'musica': '234 · O meu ser entrego a Cristo',
       'artista': 'CCB',
@@ -222,15 +285,9 @@ void main() {
     expect(requisicoes.last.url.path, '/api/apresentacoes/$_id/louvor');
   });
 
-  testWidgets('o solo aparece com o instrumento e sem cantor', (tester) async {
+  testWidgets('o sumário das marcações fica na aba Pessoas', (tester) async {
     await _abrir(tester);
-
-    expect(find.text('Solo sax tenor · 2x'), findsOneWidget);
-    expect(find.text('—'), findsOneWidget);
-  });
-
-  testWidgets('o sumário das marcações fica à mão na escala', (tester) async {
-    await _abrir(tester);
+    await _irParaPessoas(tester);
 
     await tester.tap(find.text('Como marcar as partes'));
     await tester.pumpAndSettle();
@@ -241,6 +298,7 @@ void main() {
 
   testWidgets('mostra, acrescenta e tira quem toca os solos', (tester) async {
     final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
     List<http.Request> solistas() => requisicoes
         .where((r) => r.url.path == '/api/apresentacoes/$_id/louvor/solistas')
         .toList();
@@ -271,6 +329,7 @@ void main() {
 
   testWidgets('no solo, a escolha oferece quem toca os solos', (tester) async {
     await _abrir(tester);
+    await _abrirHino(tester);
 
     await tester.tap(find.text('Solo sax tenor · 2x'));
     await tester.pumpAndSettle();
@@ -281,6 +340,7 @@ void main() {
 
   testWidgets('o botão do hino escala as partes pelos pontos', (tester) async {
     final requisicoes = await _abrir(tester);
+    await _abrirHino(tester);
 
     await tester.tap(find.text('Escalar automático'));
     await tester.pumpAndSettle();
@@ -289,5 +349,15 @@ void main() {
         r.method == 'POST' &&
         r.url.path == '/api/apresentacoes/$_id/louvor/hinos/h1/escalar');
     expect(escalou, hasLength(1));
+  });
+
+  testWidgets('cabe num celular de 360px, aberto e com filtro', (tester) async {
+    await _abrir(tester, largura: 360, tocados: {'h1'});
+    await _abrirHino(tester);
+    await tester.tap(find.widgetWithText(ChoiceChip, 'João'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Escalar automático'), findsOneWidget);
   });
 }

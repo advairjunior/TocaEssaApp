@@ -678,7 +678,8 @@ void main() {
       expect(find.text('Recebendo pedidos'), findsNothing);
       expect(find.text('Iniciar'), findsOneWidget);
       expect(barra.selectedIndex, 0);
-      expect(find.text('Quem canta no microfone'), findsOneWidget);
+      expect(find.text('Por hino'), findsOneWidget);
+      expect(find.text('Pessoas'), findsOneWidget);
     });
 
     testWidgets('louvor ao vivo abre direto nos hinos', (tester) async {
