@@ -174,10 +174,14 @@ arquivo.
   Introdução, interlúdio e final são da banda toda. Solistas também
   aparecem no "Quem é você?". Sumário "Como marcar as partes"
   em `como_marcar_hinos.dart` (editor da letra e aba Escala).
-- `EscalaDeCantores.Montar` reveza as estrofes: refrão e última estrofe são
-  de Todos; menos estrofes primeiro, depois quem está há mais tempo sem
-  cantar; ninguém duas seguidas. Escolhas à mão ficam e contam no placar. A
-  escala não é guardada, é refeita a cada leitura.
+- Nada é escalado sozinho (mudança de 2026-10-19): o hino começa sem
+  ninguém ("—") e o botão "Escalar automático" do hino
+  (`EscalaDeCantores.EscalarHino`, `POST .../louvor/hinos/{itemId}/escalar`)
+  grava quem fica com cada parte. Só o coro final é de Todos; estrofes e
+  coros do meio vão para quem tem menos pontos nos outros hinos (cada parte
+  cantada vale 1), depois quem está há mais tempo sem cantar; ninguém duas
+  seguidas; solos pelo instrumento. A troca à mão continua; "Limpar" deixa
+  a parte sem escala. No roteiro, parte sem escala aparece como Todos.
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
