@@ -292,6 +292,24 @@ app.MapDelete("/api/apresentacoes/{id:guid}/setlist", (
     return Results.NoContent();
 });
 
+// Louvor: quem canta cada parte dos hinos da setlist
+app.MapGet("/api/apresentacoes/{id:guid}/louvor", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ObterLouvor(ObterToken(http) ?? string.Empty, id)));
+
+app.MapPut("/api/apresentacoes/{id:guid}/louvor/cantores", (
+    Guid id, DefinirCantoresDoLouvor requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.DefinirCantoresDoLouvor(
+        ObterToken(http) ?? string.Empty, id, requisicao.Nomes)));
+
+app.MapPut("/api/apresentacoes/{id:guid}/louvor/partes", (
+    Guid id, EscolherParteDoLouvor requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.EscolherParteDoLouvor(
+        ObterToken(http) ?? string.Empty, id, requisicao.ItemId,
+        requisicao.Indice, requisicao.Cantores)));
+
 app.MapGet("/api/perfil-artistico", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
     repositorio.ObterConfiguracaoPerfil(
@@ -504,6 +522,10 @@ app.MapGet("/api/publico/apresentacoes/{codigo}/fila", (
     string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarFilaPublica(
         codigo, http.Headers["X-Identificador-Publico"].FirstOrDefault(), ObterToken(http))));
+
+app.MapGet("/api/publico/apresentacoes/{codigo}/roteiro", (
+    string codigo, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ObterRoteiroDoLouvor(codigo)));
 
 app.MapGet("/api/publico/apresentacoes/{codigo}/participantes", (
     string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>

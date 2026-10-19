@@ -264,5 +264,13 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
             contexto.Response.StatusCode = StatusCodes.Status404NotFound;
             await contexto.Response.WriteAsJsonAsync(new { mensagem = "Item não encontrado no setlist." });
         }
+        catch (EscolhaDoLouvorInvalidaException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status400BadRequest;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "O hino mudou. Atualize a página e tente de novo."
+            });
+        }
     }
 }

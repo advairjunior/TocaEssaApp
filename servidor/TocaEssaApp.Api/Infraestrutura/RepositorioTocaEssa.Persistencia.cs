@@ -80,6 +80,7 @@ public sealed partial class RepositorioTocaEssa
             if (LerPedidosASeguir(apresentacao.PedidosASeguir) is { Count: > 0 } aSeguir)
                 _pedidosASeguir[apresentacao.Id] = aSeguir;
             CarregarRelogio(apresentacao);
+            CarregarLouvor(apresentacao);
         }
 
         foreach (var pedido in banco.Pedidos.AsNoTracking())
@@ -312,6 +313,7 @@ public sealed partial class RepositorioTocaEssa
                 PedidosASeguir = EscreverPedidosASeguir(item.Id)
             };
             EscreverRelogio(registro);
+            EscreverLouvor(registro);
             return registro;
         });
 

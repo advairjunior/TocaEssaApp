@@ -136,16 +136,19 @@ Escolha guardada no aparelho (troca no topo). Depois:
 ## Avançar o hino
 
 O proprietário usa o Tocar que já existe (setlist, barra Próxima e leitor). O
-hino que está tocando é o "agora" do roteiro. Nenhum controle novo.
+"agora" do roteiro é o último hino tocado na ordem da setlist. Nenhum
+controle novo.
 
 ## Dados
 
-Migrações idempotentes, só tabelas novas (criadas se não existirem):
+Duas colunas novas em `Apresentacoes`, no mesmo padrão de `PedidosASeguir`,
+acrescentadas só se não existirem (SQLite e PostgreSQL):
 
-- `CantoresDoLouvor` — `Id`, `ApresentacaoId`, `Nome`, `Ordem`.
-- `PartesEscolhidasAMao` — `ApresentacaoId`, `ItemDoSetlistId`,
-  `IndiceDaParte`, `Cantores` (nomes; vazio = Todos). Parte que deixa de
-  existir após mudar a letra é ignorada.
+- `CantoresDoLouvor` — nomes em ordem, em JSON.
+- `EscolhasDoLouvor` — partes escolhidas à mão (`ItemId`, `Indice`,
+  `Cantores`; vazio = Todos), em JSON. Parte que deixa de existir após mudar
+  a letra é ignorada; quem sai da lista de cantores sai das escolhas, e a
+  parte que fica sem ninguém volta à escala.
 
 A escala automática não é guardada: é calculada a cada leitura.
 

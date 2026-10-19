@@ -126,6 +126,8 @@ public sealed class OrdemDoRepertorioInvalidaException : Exception { }
 
 public sealed class ItemDoSetlistNaoEncontradoException : Exception { }
 
+public sealed class EscolhaDoLouvorInvalidaException : Exception { }
+
 public sealed class RecursoDisponivelSomenteNaResenhaException : Exception { }
 
 public sealed class DestinatarioAloObrigatorioException : Exception { }

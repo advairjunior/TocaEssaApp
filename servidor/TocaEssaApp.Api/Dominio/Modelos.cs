@@ -31,7 +31,8 @@ public enum StatusApresentacao
 public enum TipoApresentacao
 {
     Publica,
-    ResenhaEntreAmigos
+    ResenhaEntreAmigos,
+    Louvor
 }
 
 public sealed record Apresentacao(
@@ -369,3 +370,29 @@ public sealed record EnviosDoShow(
     IReadOnlyList<string> ChavesExpiradas);
 
 public sealed record DenunciaDeStory(string Aparelho);
+
+/// Hino da setlist com a letra separada em partes e quem canta cada uma.
+public sealed record HinoDoLouvor(
+    Guid ItemId,
+    string Titulo,
+    string? Tom,
+    bool Tocado,
+    bool TemLetra,
+    IReadOnlyList<ParteEscalada> Partes);
+
+public sealed record LouvorDoArtista(
+    IReadOnlyList<string> Cantores,
+    IReadOnlyList<PlacarDoCantor> Placar,
+    IReadOnlyList<HinoDoLouvor> Hinos);
+
+/// O que cada participante vê pelo código: hinos, partes e o hino atual.
+public sealed record RoteiroDoLouvor(
+    string Nome,
+    IReadOnlyList<string> Cantores,
+    Guid? HinoAtualId,
+    IReadOnlyList<HinoDoLouvor> Hinos);
+
+public sealed record DefinirCantoresDoLouvor(string[]? Nomes);
+
+/// [Cantores] nulo devolve a parte à escala; vazio quer dizer Todos.
+public sealed record EscolherParteDoLouvor(Guid ItemId, int Indice, string[]? Cantores);

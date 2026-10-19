@@ -34,6 +34,9 @@ internal sealed class ApresentacaoRegistro
     public string? FotoRetrospectivaUrl { get; set; }
     // ids dos pedidos marcados para tocar a seguir, em ordem, separados por vírgula
     public string? PedidosASeguir { get; set; }
+    // Louvor: nomes de quem canta e partes escolhidas à mão, em JSON
+    public string? CantoresDoLouvor { get; set; }
+    public string? EscolhasDoLouvor { get; set; }
     // Cronômetro do show, visto só pelo artista
     public int? DuracaoContratadaMinutos { get; set; }
     public bool IntervaloPausaRelogio { get; set; }
