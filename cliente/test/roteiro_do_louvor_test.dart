@@ -30,7 +30,7 @@ Map<String, Object?> _hino(String id, String titulo,
     };
 
 final _porCristo = _hino('h1', '80 · Por Cristo, resgatado', tom: 'G', partes: [
-  _parte('Estrofe', 'Cristo Jesus, o santo Cordeiro', ['João']),
+  _parte('Estrofe', 'G        Bm\nCristo Jesus, o santo Cordeiro', ['João']),
   _parte('Refrao', 'Por Cristo, resgatado', []),
   _parte('Estrofe', 'Preso estava na iniquidade', ['Ana']),
   _parte('Refrao', 'Por Cristo, resgatado', []),
@@ -97,6 +97,35 @@ void main() {
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getString('louvor_quem_sou_ABC123'), 'Ana');
   });
+  testWidgets('acordes aparecem só para quem pede e mudam de tom', (tester) async {
+    SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': ''});
+    await _abrir(tester);
+
+    expect(find.text('Cristo Jesus, o santo Cordeiro'), findsOneWidget);
+    expect(find.text('G        Bm'), findsNothing);
+    expect(find.byTooltip('Subir meio tom'), findsNothing);
+
+    await tester.tap(find.widgetWithText(FilterChip, 'Acordes'));
+    await tester.pumpAndSettle();
+    expect(find.text('G        Bm'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Subir meio tom'));
+    await tester.tap(find.byTooltip('Subir meio tom'));
+    await tester.pumpAndSettle();
+    expect(find.text('A        C#m'), findsOneWidget);
+    expect(find.text('Tom A (+2)'), findsOneWidget);
+
+    final preferencias = await SharedPreferences.getInstance();
+    expect(preferencias.getBool('louvor_acordes'), isTrue);
+  });
+
+  testWidgets('a parte antes da sua avisa que você é o próximo', (tester) async {
+    SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+    await _abrir(tester);
+
+    expect(find.text('você é o próximo'), findsOneWidget);
+  });
+
 
   testWidgets('quem já escolheu entra direto e pode trocar', (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'João'});
