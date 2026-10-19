@@ -70,7 +70,8 @@ Future<void> mostrarComoMarcarAsPartes(BuildContext context) =>
                 Text(
                   'Escreva cada marcação numa linha sozinha, antes da parte. '
                   'Maiúscula e acento tanto faz; também valem [Estrofe 1], '
-                  'Estrofe 1: e 1ª estrofe.',
+                  'Estrofe 1: e 1ª estrofe. Com as estrofes marcadas, o hino '
+                  'já sai escalado ao colar (se ainda não tinha ninguém).',
                   style: texto.bodyMedium
                       ?.copyWith(color: CoresTocaEssa.textoSecundario),
                 ),

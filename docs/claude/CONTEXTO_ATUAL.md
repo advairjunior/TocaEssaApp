@@ -183,7 +183,9 @@ arquivo.
   seguidas; solos pelo instrumento; introdução para um solista (qualquer
   instrumento). "Escalar todos os hinos" (`EscalarTodos`, `POST
   .../louvor/escalar`, com confirmação) faz a lista inteira na ordem e
-  refaz as trocas à mão. A troca à mão continua; "Limpar" deixa
+  refaz as trocas à mão. Colar a cifra com "(Estrofe N)" marcadas já
+  escala o hino que ainda não tem ninguém (`EscalarHinosDaLetraNova`); hino
+  já escalado não muda. A troca à mão continua; "Limpar" deixa
   a parte sem escala. No roteiro, parte sem escala aparece como Todos.
 - Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (cartão
   fechado por hino com a ordem, tom, resumo "João · Ana · solo José · 1 sem
