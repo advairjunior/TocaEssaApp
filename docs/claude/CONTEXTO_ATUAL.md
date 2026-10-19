@@ -180,7 +180,10 @@ arquivo.
   grava quem fica com cada parte. Só o coro final é de Todos; estrofes e
   coros do meio vão para quem tem menos pontos nos outros hinos (cada parte
   cantada vale 1), depois quem está há mais tempo sem cantar; ninguém duas
-  seguidas; solos pelo instrumento. A troca à mão continua; "Limpar" deixa
+  seguidas; solos pelo instrumento; introdução para um solista (qualquer
+  instrumento). "Escalar todos os hinos" (`EscalarTodos`, `POST
+  .../louvor/escalar`, com confirmação) faz a lista inteira na ordem e
+  refaz as trocas à mão. A troca à mão continua; "Limpar" deixa
   a parte sem escala. No roteiro, parte sem escala aparece como Todos.
 - Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (cartão
   fechado por hino com a ordem, tom, resumo "João · Ana · solo José · 1 sem

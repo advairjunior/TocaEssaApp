@@ -17,7 +17,11 @@ const _marcacoes = [
         'de "Solo", como (Solo trompete). O solo vai para quem toca esse '
         'instrumento em "Quem toca os solos", na aba Escala.'
   ),
-  ('(Introdução)', 'Instrumental antes da primeira estrofe. "(Intro)" vale.'),
+  (
+    '(Introdução)',
+    'Instrumental antes da primeira estrofe, tocado por um dos solistas. '
+        '"(Intro)" vale.'
+  ),
   ('(Interlúdio)', 'Instrumental no meio do hino.'),
   ('(Final)', 'Instrumental no fim do hino.'),
   ('(Coro 2x)', 'O "2x" no fim repete a parte. Vale para todas.'),
