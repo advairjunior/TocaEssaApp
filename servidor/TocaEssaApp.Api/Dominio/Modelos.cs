@@ -384,16 +384,21 @@ public sealed record HinoDoLouvor(
 public sealed record LouvorDoArtista(
     IReadOnlyList<string> Cantores,
     IReadOnlyList<PlacarDoCantor> Placar,
-    IReadOnlyList<HinoDoLouvor> Hinos);
+    IReadOnlyList<HinoDoLouvor> Hinos,
+    IReadOnlyList<Solista> Solistas,
+    IReadOnlyList<PlacarDoSolista> PlacarDosSolos);
 
 /// O que cada participante vê pelo código: hinos, partes e o hino atual.
 public sealed record RoteiroDoLouvor(
     string Nome,
     IReadOnlyList<string> Cantores,
     Guid? HinoAtualId,
-    IReadOnlyList<HinoDoLouvor> Hinos);
+    IReadOnlyList<HinoDoLouvor> Hinos,
+    IReadOnlyList<Solista> Solistas);
 
 public sealed record DefinirCantoresDoLouvor(string[]? Nomes);
+
+public sealed record DefinirSolistasDoLouvor(Solista[]? Solistas);
 
 /// [Cantores] nulo devolve a parte à escala; vazio quer dizer Todos.
 public sealed record EscolherParteDoLouvor(Guid ItemId, int Indice, string[]? Cantores);

@@ -12,6 +12,8 @@ public sealed partial class RepositorioTocaEssa
     // mão. A escala automática não é guardada: é refeita a cada leitura.
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<string>> _cantoresDoLouvor = new();
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<EscolhaAMao>> _escolhasDoLouvor = new();
+    // Quem toca os solos e o instrumento de cada um.
+    private readonly ConcurrentDictionary<Guid, IReadOnlyList<Solista>> _solistasDoLouvor = new();
 
     public LouvorDoArtista ObterLouvor(string token, Guid apresentacaoId)
     {
@@ -30,28 +32,69 @@ public sealed partial class RepositorioTocaEssa
             var cantores = new List<string>();
             foreach (var nome in nomes ?? [])
             {
-                var limpo = string.Join(' ', (nome ?? string.Empty)
-                    .Split(' ', StringSplitOptions.RemoveEmptyEntries));
-                if (limpo.Length > TamanhoMaximoDoNomeDoCantor)
-                    limpo = limpo[..TamanhoMaximoDoNomeDoCantor].TrimEnd();
+                var limpo = Limpar(nome);
                 if (limpo.Length > 0 && !cantores.Any(cantor => MesmoCantor(cantor, limpo)))
                     cantores.Add(limpo);
             }
             _cantoresDoLouvor[apresentacaoId] = cantores;
-
-            // Parte que fica sem nenhum cantor volta à escala, em vez de virar
-            // Todos sem o artista pedir.
-            var escolhas = new List<EscolhaAMao>();
-            foreach (var escolha in _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
-            {
-                var ficam = escolha.Cantores.Where(cantores.Contains).ToList();
-                if (escolha.Cantores.Count == 0 || ficam.Count > 0)
-                    escolhas.Add(escolha with { Cantores = ficam });
-            }
-            _escolhasDoLouvor[apresentacaoId] = escolhas;
+            ManterSoQuemEstaNoLouvor(apresentacaoId);
             SalvarEstado();
             return MontarLouvor(apresentacao);
         }
+    }
+
+    /// Solistas sem nome vazio nem repetido; o instrumento pode ficar vazio
+    /// (toca qualquer "(Solo)"). Quem sai sai também das escolhas à mão.
+    public LouvorDoArtista DefinirSolistasDoLouvor(
+        string token, Guid apresentacaoId, IReadOnlyList<Solista>? solistas)
+    {
+        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        lock (_sincronizacao)
+        {
+            var limpos = new List<Solista>();
+            foreach (var solista in solistas ?? [])
+            {
+                var nome = Limpar(solista?.Nome);
+                if (nome.Length > 0 && !limpos.Any(outro => MesmoCantor(outro.Nome, nome)))
+                    limpos.Add(new Solista(nome, Limpar(solista!.Instrumento)));
+            }
+            _solistasDoLouvor[apresentacaoId] = limpos;
+            ManterSoQuemEstaNoLouvor(apresentacaoId);
+            SalvarEstado();
+            return MontarLouvor(apresentacao);
+        }
+    }
+
+    private static string Limpar(string? valor)
+    {
+        var limpo = string.Join(' ', (valor ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        return limpo.Length > TamanhoMaximoDoNomeDoCantor
+            ? limpo[..TamanhoMaximoDoNomeDoCantor].TrimEnd()
+            : limpo;
+    }
+
+    // Cantores e solistas: quem pode estar numa escolha à mão.
+    private List<string> NomesDoLouvor(Guid apresentacaoId) =>
+    [
+        .. _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+        .. (_solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
+            .Select(solista => solista.Nome)
+    ];
+
+    // Parte que fica sem ninguém volta à escala, em vez de virar Todos sem o
+    // artista pedir.
+    private void ManterSoQuemEstaNoLouvor(Guid apresentacaoId)
+    {
+        var nomes = NomesDoLouvor(apresentacaoId);
+        var escolhas = new List<EscolhaAMao>();
+        foreach (var escolha in _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
+        {
+            var ficam = escolha.Cantores.Where(nomes.Contains).ToList();
+            if (escolha.Cantores.Count == 0 || ficam.Count > 0)
+                escolhas.Add(escolha with { Cantores = ficam });
+        }
+        _escolhasDoLouvor[apresentacaoId] = escolhas;
     }
 
     /// [cantores] nulo devolve a parte à escala; vazio deixa a parte com Todos.
@@ -66,9 +109,9 @@ public sealed partial class RepositorioTocaEssa
                 item.ApresentacaoId != apresentacaoId)
                 throw new ItemDoSetlistNaoEncontradoException();
             var partes = LetraDoHino.Separar(LetraDoItem(apresentacao.ArtistaId, item));
-            var cantoresDoLouvor = _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [];
+            var nomesDoLouvor = NomesDoLouvor(apresentacaoId);
             if (indice < 0 || indice >= partes.Count ||
-                cantores?.Any(nome => !cantoresDoLouvor.Contains(nome)) == true)
+                cantores?.Any(nome => !nomesDoLouvor.Contains(nome)) == true)
                 throw new EscolhaDoLouvorInvalidaException();
 
             var escolhas = (_escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
@@ -76,7 +119,7 @@ public sealed partial class RepositorioTocaEssa
                 .ToList();
             if (cantores is not null)
                 escolhas.Add(new EscolhaAMao(itemId, indice,
-                    cantoresDoLouvor.Where(cantores.Contains).ToList()));
+                    nomesDoLouvor.Distinct().Where(cantores.Contains).ToList()));
             _escolhasDoLouvor[apresentacaoId] = escolhas;
             SalvarEstado();
             return MontarLouvor(apresentacao);
@@ -95,7 +138,8 @@ public sealed partial class RepositorioTocaEssa
             apresentacao.Nome,
             louvor.Cantores,
             louvor.Hinos.LastOrDefault(hino => hino.Tocado)?.ItemId,
-            louvor.Hinos);
+            louvor.Hinos,
+            louvor.Solistas);
     }
 
     private LouvorDoArtista MontarLouvor(Apresentacao apresentacao)
@@ -104,11 +148,13 @@ public sealed partial class RepositorioTocaEssa
         var letras = itens.ToDictionary(
             item => item.Id, item => LetraDoItem(apresentacao.ArtistaId, item));
         var cantores = _cantoresDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [];
+        var solistas = _solistasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [];
         var escala = EscalaDeCantores.Montar(
             itens.Select(item => new HinoParaEscala(
                 item.Id, LetraDoHino.Separar(letras[item.Id]))).ToList(),
             cantores,
-            _escolhasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? []);
+            _escolhasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [],
+            solistas);
         var hinos = itens.Zip(escala.Hinos, (item, escalado) => new HinoDoLouvor(
                 item.Id,
                 item.Titulo,
@@ -118,7 +164,8 @@ public sealed partial class RepositorioTocaEssa
                 !string.IsNullOrWhiteSpace(letras[item.Id]),
                 escalado.Partes))
             .ToList();
-        return new LouvorDoArtista(cantores, escala.Placar, hinos);
+        return new LouvorDoArtista(
+            cantores, escala.Placar, hinos, solistas, escala.PlacarDosSolos);
     }
 
     private string? LetraDoItem(Guid artistaId, ItemDoSetlistRegistro item) =>
@@ -134,6 +181,8 @@ public sealed partial class RepositorioTocaEssa
             _cantoresDoLouvor[registro.Id] = cantores;
         if (LerJson<List<EscolhaAMao>>(registro.EscolhasDoLouvor) is { Count: > 0 } escolhas)
             _escolhasDoLouvor[registro.Id] = escolhas;
+        if (LerJson<List<Solista>>(registro.SolistasDoLouvor) is { Count: > 0 } solistas)
+            _solistasDoLouvor[registro.Id] = solistas;
     }
 
     private void EscreverLouvor(ApresentacaoRegistro registro)
@@ -145,6 +194,10 @@ public sealed partial class RepositorioTocaEssa
         registro.EscolhasDoLouvor =
             _escolhasDoLouvor.GetValueOrDefault(registro.Id) is { Count: > 0 } escolhas
                 ? JsonSerializer.Serialize(escolhas)
+                : null;
+        registro.SolistasDoLouvor =
+            _solistasDoLouvor.GetValueOrDefault(registro.Id) is { Count: > 0 } solistas
+                ? JsonSerializer.Serialize(solistas)
                 : null;
     }
 

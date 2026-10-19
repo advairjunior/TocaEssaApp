@@ -179,6 +179,59 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void SolistasTocamOsSolosDoInstrumentoDeles()
+    {
+        var cenario = CriarCenario();
+        var hinos = cenario.Repo.AdicionarMusicaAvulsaAoSetlist(
+            cenario.Token, cenario.Show.Id, "12 · Hino com solo", null, "G", null);
+        var hinoComSolo = hinos.Single(item => item.Titulo == "12 · Hino com solo");
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "12 · Hino com solo", null,
+            "(Estrofe 1)\nA1\n(Solo sax tenor)\nG   D\n(Estrofe 2)\nB1");
+
+        var louvor = cenario.Repo.DefinirSolistasDoLouvor(cenario.Token, cenario.Show.Id,
+        [
+            new Solista(" José ", " sax tenor "),
+            new Solista("josé", "trompete"),
+            new Solista("  ", "sax"),
+            new Solista("Pedro", "")
+        ]);
+
+        Assert.Equal([new Solista("José", "sax tenor"), new Solista("Pedro", "")],
+            louvor.Solistas);
+        var solo = louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1];
+        Assert.Equal(TipoDaParte.Instrumental, solo.Tipo);
+        Assert.Equal(["José"], solo.Cantores);
+        Assert.Equal(
+            [new PlacarDoSolista("José", 1), new PlacarDoSolista("Pedro", 0)],
+            louvor.PlacarDosSolos);
+        Assert.Equal(louvor.Solistas,
+            cenario.Repo.ObterRoteiroDoLouvor(cenario.Show.Codigo).Solistas);
+
+        var aMao = cenario.Repo.EscolherParteDoLouvor(
+            cenario.Token, cenario.Show.Id, hinoComSolo.Id, 1, ["Pedro"]);
+        Assert.Equal(["Pedro"],
+            aMao.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1].Cantores);
+
+        var semPedro = cenario.Repo.DefinirSolistasDoLouvor(
+            cenario.Token, cenario.Show.Id, [new Solista("José", "sax tenor")]);
+        var devolvido = semPedro.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1];
+        Assert.False(devolvido.EscolhidaAMao);
+        Assert.Equal(["José"], devolvido.Cantores);
+    }
+
+    [Fact]
+    public void OutroArtistaNaoMexeNosSolistas()
+    {
+        var cenario = CriarCenario();
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+
+        Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
+            cenario.Repo.DefinirSolistasDoLouvor(
+                tokenBia, cenario.Show.Id, [new Solista("Bia", "sax")]));
+        Assert.Empty(cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Solistas);
+    }
+
+    [Fact]
     public void OutroArtistaNaoVeNemAlteraOLouvor()
     {
         var cenario = CriarCenario();
@@ -207,13 +260,15 @@ public sealed class LouvorTestes
                 using var comando = conexao.CreateCommand();
                 comando.CommandText =
                     "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"CantoresDoLouvor\";" +
-                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"EscolhasDoLouvor\"";
+                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"EscolhasDoLouvor\";" +
+                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"SolistasDoLouvor\"";
                 comando.ExecuteNonQuery();
             }
 
             var migrado = new RepositorioTocaEssa(arquivo);
             Assert.Empty(migrado.ObterLouvor(cenario.Token, cenario.Show.Id).Cantores);
             migrado.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+            migrado.DefinirSolistasDoLouvor(cenario.Token, cenario.Show.Id, [new Solista("José", "sax")]);
             migrado.EscolherParteDoLouvor(
                 cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id, 0, ["Ana"]);
 
@@ -221,6 +276,7 @@ public sealed class LouvorTestes
             var louvor = reiniciado.ObterLouvor(cenario.Token, cenario.Show.Id);
 
             Assert.Equal(["João", "Ana"], louvor.Cantores);
+            Assert.Equal([new Solista("José", "sax")], louvor.Solistas);
             Assert.Equal(["Ana"], louvor.Hinos[0].Partes[0].Cantores);
             Assert.True(louvor.Hinos[0].Partes[0].EscolhidaAMao);
             Assert.Equal(TipoApresentacao.Louvor,
@@ -284,6 +340,13 @@ public sealed class LouvorTestes
             var cantores = await ana.PutAsJsonAsync($"{rota}/cantores",
                 new { nomes = new[] { "João", "Ana" } });
             Assert.Equal(HttpStatusCode.OK, cantores.StatusCode);
+            var solistas = await ana.PutAsJsonAsync($"{rota}/solistas",
+                new { solistas = new[] { new { nome = "José", instrumento = "sax" } } });
+            Assert.Equal(HttpStatusCode.OK, solistas.StatusCode);
+            Assert.Equal("sax", (await solistas.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("solistas")[0].GetProperty("instrumento").GetString());
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/solistas",
+                new { solistas = new[] { new { nome = "Bia", instrumento = "sax" } } })).StatusCode);
             var escolha = await ana.PutAsJsonAsync($"{rota}/partes",
                 new { itemId, indice = 0, cantores = new[] { "Ana" } });
             Assert.Equal(HttpStatusCode.OK, escolha.StatusCode);

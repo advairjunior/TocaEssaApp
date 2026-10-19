@@ -303,6 +303,12 @@ app.MapPut("/api/apresentacoes/{id:guid}/louvor/cantores", (
     Results.Ok(repositorio.DefinirCantoresDoLouvor(
         ObterToken(http) ?? string.Empty, id, requisicao.Nomes)));
 
+app.MapPut("/api/apresentacoes/{id:guid}/louvor/solistas", (
+    Guid id, DefinirSolistasDoLouvor requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.DefinirSolistasDoLouvor(
+        ObterToken(http) ?? string.Empty, id, requisicao.Solistas)));
+
 app.MapPut("/api/apresentacoes/{id:guid}/louvor/partes", (
     Guid id, EscolherParteDoLouvor requisicao,
     HttpRequest http, RepositorioTocaEssa repositorio) =>

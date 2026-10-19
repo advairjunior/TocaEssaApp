@@ -294,6 +294,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
                     ADD COLUMN IF NOT EXISTS "CantoresDoLouvor" text NULL;
                 ALTER TABLE "Apresentacoes"
                     ADD COLUMN IF NOT EXISTS "EscolhasDoLouvor" text NULL;
+                ALTER TABLE "Apresentacoes"
+                    ADD COLUMN IF NOT EXISTS "SolistasDoLouvor" text NULL;
                 CREATE TABLE IF NOT EXISTS "AvaliacoesPedidos" (
                     "PedidoId" uuid NOT NULL,
                     "IdentificadorAvaliador" character varying(160) NOT NULL,
@@ -665,6 +667,8 @@ internal sealed class BancoTocaEssa(string destinoBanco) : DbContext
             comando, "Apresentacoes", "CantoresDoLouvor", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(
             comando, "Apresentacoes", "EscolhasDoLouvor", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "Apresentacoes", "SolistasDoLouvor", "TEXT NULL");
     }
 
     private void MigrarPropriedadePostgres()
