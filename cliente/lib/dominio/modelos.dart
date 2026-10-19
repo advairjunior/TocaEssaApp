@@ -3,6 +3,7 @@ part 'modelos_resenha.dart';
 part 'modelos_cifras.dart';
 part 'modelos_repertorio.dart';
 part 'modelos_relogio.dart';
+part 'modelos_louvor.dart';
 
 class PerfilArtistico {
   const PerfilArtistico(
@@ -193,30 +194,39 @@ enum StatusApresentacao {
 
 enum TipoApresentacao {
   publica,
-  resenhaEntreAmigos;
+  resenhaEntreAmigos,
+  louvor;
 
-  factory TipoApresentacao.deJson(String valor) =>
-      valor == 'ResenhaEntreAmigos' ? resenhaEntreAmigos : publica;
+  factory TipoApresentacao.deJson(String valor) => switch (valor) {
+        'ResenhaEntreAmigos' => resenhaEntreAmigos,
+        'Louvor' => louvor,
+        _ => publica,
+      };
 
   String get paraJson => switch (this) {
         publica => 'Publica',
         resenhaEntreAmigos => 'ResenhaEntreAmigos',
+        louvor => 'Louvor',
       };
 
   String get rotulo => switch (this) {
         publica => 'Apresentação Pública',
         resenhaEntreAmigos => 'Resenha entre Amigos',
+        louvor => 'Louvor',
       };
 
   String get rotuloCurto => switch (this) {
         publica => 'Pública',
         resenhaEntreAmigos => 'Resenha',
+        louvor => 'Louvor',
       };
 
   String get descricao => switch (this) {
         publica => 'Entrada rápida pelo código, sem cadastro.',
         resenhaEntreAmigos =>
           'Encontro identificado, preparado para perfis e histórico entre amigos.',
+        louvor =>
+          'Hinos com revezamento: cada um acompanha a letra e a sua vez.',
       };
 }
 
