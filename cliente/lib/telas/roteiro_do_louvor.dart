@@ -1,0 +1,464 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../dominio/modelos.dart';
+import '../infraestrutura/api_toca_essa.dart';
+import '../infraestrutura/assinatura_tempo_real.dart';
+import '../infraestrutura/atualizacao_espalhada.dart';
+import '../infraestrutura/tela_acesa.dart';
+import '../tema/tema_toca_essa.dart';
+import 'componentes.dart';
+import 'componentes_lista.dart';
+
+/// Roteiro do louvor no telefone de cada participante, pelo código: a letra
+/// do hino com quem canta cada parte, a vez da pessoa em destaque e o hino
+/// de agora acompanhando o Tocar do artista.
+class RoteiroDoLouvorTela extends StatefulWidget {
+  const RoteiroDoLouvorTela({
+    super.key,
+    required this.api,
+    required this.codigo,
+    this.manterTelaAcesa = manterTelaAcesaNoAparelho,
+  });
+
+  final ApiTocaEssa api;
+  final String codigo;
+  final LiberarTelaAcesa Function() manterTelaAcesa;
+
+  @override
+  State<RoteiroDoLouvorTela> createState() => _RoteiroDoLouvorTelaState();
+}
+
+class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
+  RoteiroDoLouvor? _roteiro;
+  Object? _erro;
+  // Nulo: ainda não escolheu; vazio: só acompanha, sem parte no microfone.
+  String? _quemSou;
+  bool _escolhendo = false;
+  // Hino aberto pela pessoa; nulo segue o hino de agora.
+  String? _hinoAbertoId;
+  String? _ultimoAtual;
+  Timer? _atualizacaoPeriodica;
+  AssinaturaTempoReal? _tempoReal;
+  AtualizacaoEspalhada? _atualizacaoPorAviso;
+  late final LiberarTelaAcesa _liberarTela;
+
+  String get _codigo => widget.codigo.trim().toUpperCase();
+  String get _chaveQuemSou => 'louvor_quem_sou_$_codigo';
+
+  @override
+  void initState() {
+    super.initState();
+    _liberarTela = widget.manterTelaAcesa();
+    _restaurarQuemSou();
+    _carregar();
+    _atualizacaoPeriodica =
+        Timer.periodic(const Duration(seconds: 15), (_) => _carregar());
+    _atualizacaoPorAviso = AtualizacaoEspalhada(_carregar);
+    _tempoReal = AssinaturaTempoReal(
+      widget.api.enderecoTempoReal(_codigo),
+      _atualizacaoPorAviso!.solicitar,
+    );
+  }
+
+  @override
+  void dispose() {
+    _atualizacaoPeriodica?.cancel();
+    _tempoReal?.encerrar();
+    _atualizacaoPorAviso?.encerrar();
+    _liberarTela();
+    super.dispose();
+  }
+
+  Future<void> _restaurarQuemSou() async {
+    final preferencias = await SharedPreferences.getInstance();
+    final salvo = preferencias.getString(_chaveQuemSou);
+    if (mounted && salvo != null) setState(() => _quemSou = salvo);
+  }
+
+  Future<void> _escolherQuemSou(String nome) async {
+    setState(() {
+      _quemSou = nome;
+      _escolhendo = false;
+    });
+    final preferencias = await SharedPreferences.getInstance();
+    await preferencias.setString(_chaveQuemSou, nome);
+  }
+
+  Future<void> _carregar() async {
+    try {
+      final roteiro = await widget.api.obterRoteiroDoLouvor(_codigo);
+      if (!mounted) return;
+      setState(() {
+        _roteiro = roteiro;
+        _erro = null;
+        // O artista começou outro hino: todos os telefones vão para ele.
+        if (roteiro.hinoAtualId != _ultimoAtual) {
+          _ultimoAtual = roteiro.hinoAtualId;
+          _hinoAbertoId = null;
+        }
+      });
+    } catch (erro) {
+      // Com o roteiro na tela, a falha fica para a próxima atualização.
+      if (mounted && _roteiro == null) setState(() => _erro = erro);
+    }
+  }
+
+  HinoDoLouvor? get _hinoMostrado {
+    final hinos = _roteiro?.hinos ?? const <HinoDoLouvor>[];
+    if (hinos.isEmpty) return null;
+    final id = _hinoAbertoId ?? _roteiro?.hinoAtualId;
+    return hinos.where((hino) => hino.itemId == id).firstOrNull ?? hinos.first;
+  }
+
+  void _abrirHino(HinoDoLouvor hino) => setState(() => _hinoAbertoId =
+      hino.itemId == _roteiro?.hinoAtualId ? null : hino.itemId);
+
+  void _irPara(int deslocamento) {
+    final hinos = _roteiro!.hinos;
+    final indice = hinos.indexOf(_hinoMostrado!) + deslocamento;
+    if (indice >= 0 && indice < hinos.length) _abrirHino(hinos[indice]);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final roteiro = _roteiro;
+    final escolhendo = roteiro != null && (_quemSou == null || _escolhendo);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(roteiro?.nome ?? 'Louvor'),
+        actions: [
+          if (roteiro != null && !escolhendo) ...[
+            IconButton(
+              tooltip: 'Lista de hinos',
+              icon: const Icon(Icons.format_list_numbered_rounded),
+              onPressed: () => _mostrarLista(roteiro),
+            ),
+            IconButton(
+              tooltip: 'Trocar quem sou eu',
+              icon: const Icon(Icons.person_outline_rounded),
+              onPressed: () => setState(() => _escolhendo = true),
+            ),
+          ],
+        ],
+      ),
+      body: SafeArea(
+        child: switch ((roteiro, _erro)) {
+          (null, final Object erro) => EstadoVazio(
+              icone: Icons.wifi_off_rounded,
+              titulo: 'Não foi possível abrir o louvor',
+              descricao: '$erro',
+            ),
+          (null, _) => const Center(child: CircularProgressIndicator()),
+          (final RoteiroDoLouvor roteiro, _) when escolhendo =>
+            _EscolhaDeQuemSou(
+                cantores: roteiro.cantores, escolher: _escolherQuemSou),
+          (final RoteiroDoLouvor roteiro, _) when roteiro.hinos.isEmpty =>
+            const EstadoVazio(
+              icone: Icons.library_music_outlined,
+              titulo: 'Os hinos ainda não foram separados',
+              descricao: 'Assim que a lista ficar pronta, ela aparece aqui.',
+            ),
+          (final RoteiroDoLouvor roteiro, _) => _construirHino(roteiro),
+        },
+      ),
+    );
+  }
+
+  Widget _construirHino(RoteiroDoLouvor roteiro) {
+    final hino = _hinoMostrado!;
+    final indice = roteiro.hinos.indexOf(hino);
+    final ehAgora = hino.itemId == roteiro.hinoAtualId;
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            key: ValueKey(hino.itemId),
+            padding: const EdgeInsets.fromLTRB(EspacoTocaEssa.base,
+                EspacoTocaEssa.base, EspacoTocaEssa.base, EspacoTocaEssa.enorme),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: _LetraDoHino(
+                    hino: hino, ehAgora: ehAgora, quemSou: _quemSou ?? ''),
+              ),
+            ),
+          ),
+        ),
+        _BarraDosHinos(
+          anterior: indice > 0 ? () => _irPara(-1) : null,
+          proximo: indice < roteiro.hinos.length - 1 ? () => _irPara(1) : null,
+          voltarAoAgora: !ehAgora && roteiro.hinoAtualId != null
+              ? () => setState(() => _hinoAbertoId = null)
+              : null,
+          depois: indice < roteiro.hinos.length - 1
+              ? roteiro.hinos[indice + 1].titulo
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Future<void> _mostrarLista(RoteiroDoLouvor roteiro) =>
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (contexto) => SafeArea(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(contexto).height * .8),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                for (final hino in roteiro.hinos)
+                  ListTile(
+                    selected: hino.itemId == _hinoMostrado?.itemId,
+                    leading: Icon(hino.itemId == roteiro.hinoAtualId
+                        ? Icons.graphic_eq_rounded
+                        : hino.tocado
+                            ? Icons.check_rounded
+                            : Icons.music_note_outlined),
+                    title: Text(hino.titulo),
+                    subtitle: Text([
+                      if (hino.tom case final tom?) 'Tom $tom',
+                      if (_quemSou case final nome? when nome.isNotEmpty)
+                        if (hino.partesDe(nome) case final partes when partes > 0)
+                          'você canta $partes',
+                    ].join(' · ')),
+                    onTap: () {
+                      Navigator.of(contexto).pop();
+                      _abrirHino(hino);
+                    },
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+}
+
+class _EscolhaDeQuemSou extends StatelessWidget {
+  const _EscolhaDeQuemSou({required this.cantores, required this.escolher});
+
+  final List<String> cantores;
+  final ValueChanged<String> escolher;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return ConteudoMobile(
+      filho: Column(
+        children: [
+          const SizedBox(height: EspacoTocaEssa.enorme),
+          const Icon(Icons.mic_none_rounded,
+              size: 40, color: CoresTocaEssa.roxoClaro),
+          const SizedBox(height: EspacoTocaEssa.base),
+          Text('Quem é você?', style: texto.headlineSmall),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(
+            'Suas partes ficam em destaque na letra.',
+            textAlign: TextAlign.center,
+            style: texto.bodyMedium
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          const SizedBox(height: EspacoTocaEssa.grande),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: EspacoTocaEssa.pequeno,
+            runSpacing: EspacoTocaEssa.pequeno,
+            children: [
+              for (final nome in cantores)
+                ChoiceChip(
+                  label: Text(nome),
+                  selected: false,
+                  onSelected: (_) => escolher(nome),
+                ),
+            ],
+          ),
+          const SizedBox(height: EspacoTocaEssa.base),
+          TextButton(
+            onPressed: () => escolher(''),
+            child: const Text('Só acompanhar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LetraDoHino extends StatelessWidget {
+  const _LetraDoHino(
+      {required this.hino, required this.ehAgora, required this.quemSou});
+
+  final HinoDoLouvor hino;
+  final bool ehAgora;
+  final String quemSou;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final minhas = quemSou.isEmpty ? 0 : hino.partesDe(quemSou);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(hino.titulo, style: texto.headlineSmall),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        Wrap(
+          spacing: EspacoTocaEssa.pequeno,
+          runSpacing: EspacoTocaEssa.mini,
+          children: [
+            if (hino.tom case final tom?)
+              _Selo(texto: 'Tom $tom', cor: CoresTocaEssa.roxoClaro),
+            if (ehAgora) const _Selo(texto: 'Agora', cor: CoresTocaEssa.sucesso),
+          ],
+        ),
+        if (minhas > 0) ...[
+          const SizedBox(height: EspacoTocaEssa.medio),
+          Text(
+            'Você canta $minhas ${minhas == 1 ? 'estrofe' : 'estrofes'} neste hino',
+            style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
+          ),
+        ],
+        const SizedBox(height: EspacoTocaEssa.grande),
+        if (!hino.temLetra)
+          Text(
+            'A letra deste hino ainda não foi colada.',
+            style: texto.bodyLarge
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+        for (final parte in hino.partes)
+          _Parte(parte: parte, minha: parte.cantores.contains(quemSou)),
+      ],
+    );
+  }
+}
+
+class _Parte extends StatelessWidget {
+  const _Parte({required this.parte, required this.minha});
+
+  final ParteDoHino parte;
+  final bool minha;
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = minha
+        ? CoresTocaEssa.ouro
+        : parte.deTodos
+            ? CoresTocaEssa.textoSecundario
+            : CoresTocaEssa.roxoClaro;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: EspacoTocaEssa.medio),
+      padding: const EdgeInsets.all(EspacoTocaEssa.medio),
+      decoration: minha
+          ? BoxDecoration(
+              color: CoresTocaEssa.destaqueFundo,
+              borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+              border: Border.all(color: CoresTocaEssa.ouro),
+            )
+          : null,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            [parte.quemCanta.toUpperCase(), if (minha) 'SUA VEZ'].join(' · '),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: cor, letterSpacing: .6, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: EspacoTocaEssa.mini),
+          Text(
+            parte.texto,
+            style: TextStyle(
+              fontSize: 22,
+              height: 1.4,
+              color: parte.tipo == TipoDaParte.refrao
+                  ? CoresTocaEssa.textoSecundario
+                  : CoresTocaEssa.texto,
+              fontStyle: parte.tipo == TipoDaParte.refrao
+                  ? FontStyle.italic
+                  : FontStyle.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Selo extends StatelessWidget {
+  const _Selo({required this.texto, required this.cor});
+
+  final String texto;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: EspacoTocaEssa.medio, vertical: EspacoTocaEssa.mini),
+        decoration: BoxDecoration(
+          color: cor.withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+          border: Border.all(color: cor.withValues(alpha: .5)),
+        ),
+        child: Text(texto,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cor)),
+      );
+}
+
+class _BarraDosHinos extends StatelessWidget {
+  const _BarraDosHinos({
+    required this.anterior,
+    required this.proximo,
+    required this.voltarAoAgora,
+    required this.depois,
+  });
+
+  final VoidCallback? anterior;
+  final VoidCallback? proximo;
+  final VoidCallback? voltarAoAgora;
+  final String? depois;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: const BoxDecoration(
+          color: CoresTocaEssa.superficie,
+          border: Border(top: BorderSide(color: CoresTocaEssa.borda)),
+        ),
+        padding: const EdgeInsets.symmetric(
+            horizontal: EspacoTocaEssa.pequeno, vertical: EspacoTocaEssa.mini),
+        child: Row(
+          children: [
+            IconButton(
+              tooltip: 'Hino anterior',
+              iconSize: 32,
+              icon: const Icon(Icons.chevron_left_rounded),
+              onPressed: anterior,
+            ),
+            Expanded(
+              child: voltarAoAgora != null
+                  ? TextButton(
+                      onPressed: voltarAoAgora,
+                      child: const Text('Voltar ao hino de agora'),
+                    )
+                  : Text(
+                      depois == null ? 'Último hino' : 'Depois: $depois',
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: CoresTocaEssa.textoSecundario),
+                    ),
+            ),
+            IconButton(
+              tooltip: 'Próximo hino',
+              iconSize: 32,
+              icon: const Icon(Icons.chevron_right_rounded),
+              onPressed: proximo,
+            ),
+          ],
+        ),
+      );
+}

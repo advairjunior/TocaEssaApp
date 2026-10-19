@@ -71,6 +71,12 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
         .obterApresentacaoPublica(widget.codigoInicial)
         .then((apresentacao) {
       _tipoApresentacao = apresentacao?.tipo;
+      // No louvor o roteiro faz tudo: pedidos e fila não existem.
+      if (_tipoApresentacao == TipoApresentacao.louvor && mounted) {
+        _atualizacaoAutomatica?.cancel();
+        _tempoReal?.encerrar();
+        setState(() {});
+      }
       return apresentacao;
     });
     _fila = _consulta.then((apresentacao) => apresentacao == null
@@ -113,5 +119,8 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   }
 
   @override
-  Widget build(BuildContext context) => _construirArea(context);
+  Widget build(BuildContext context) =>
+      _tipoApresentacao == TipoApresentacao.louvor
+          ? RoteiroDoLouvorTela(api: _api, codigo: _codigoInicial)
+          : _construirArea(context);
 }
