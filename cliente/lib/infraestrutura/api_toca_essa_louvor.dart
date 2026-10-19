@@ -49,6 +49,14 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
         headers: _cabecalhos(token: _tokenArtista),
       ));
 
+  /// Botão "Escalar todos os hinos": a lista inteira, na ordem.
+  Future<LouvorDoArtista> escalarTodosOsHinosDoLouvor(
+          String apresentacaoId) async =>
+      _lerLouvor(await _cliente.post(
+        _rotaDoLouvor(apresentacaoId, '/escalar'),
+        headers: _cabecalhos(token: _tokenArtista),
+      ));
+
   Future<RoteiroDoLouvor> obterRoteiroDoLouvor(String codigo) async {
     final resposta =
         await _cliente.get(Uri.parse('$_enderecoBase/api/publico/apresentacoes/'

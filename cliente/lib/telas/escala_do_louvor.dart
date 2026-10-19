@@ -129,6 +129,34 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         .escolherParteDoLouvor(_id, hino.itemId, indice, escolha.cantores));
   }
 
+  /// Refaz a escala da lista inteira; pede confirmação porque apaga as
+  /// trocas feitas à mão.
+  Future<void> _escalarTodos() async {
+    final confirmou = await showDialog<bool>(
+          context: context,
+          builder: (contexto) => AlertDialog(
+            title: const Text('Escalar todos os hinos?'),
+            content: const Text(
+                'O app escala os hinos na ordem da lista, cada um pelos pontos '
+                'dos anteriores. A escala de agora, inclusive o que foi '
+                'trocado à mão, é refeita.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(contexto).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(contexto).pop(true),
+                child: const Text('Escalar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmou) return;
+    await _salvar(() => widget.api.escalarTodosOsHinosDoLouvor(_id));
+  }
+
   Future<void> _colarLetra(HinoDoLouvor hino) async {
     final texto = await (widget.pedirLetra?.call(hino.titulo) ??
         pedirCifraEmTexto(context, titulo: hino.titulo, oQue: 'Letra'));
@@ -213,6 +241,14 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
       ];
     }
     return [
+      if (louvor.hinos.any((hino) => hino.partes.isNotEmpty)) ...[
+        FilledButton.icon(
+          onPressed: _salvando ? null : _escalarTodos,
+          icon: const Icon(Icons.auto_awesome_rounded),
+          label: const Text('Escalar todos os hinos'),
+        ),
+        const SizedBox(height: EspacoTocaEssa.medio),
+      ],
       if (louvor.participantes.isNotEmpty) ...[
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

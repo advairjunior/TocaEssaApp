@@ -79,6 +79,7 @@ void main() {
     await api.escalarHinoDoLouvor('a1', 'h1');
     await api.definirSolistasDoLouvor(
         'a1', [const Solista(nome: 'José', instrumento: 'sax tenor')]);
+    await api.escalarTodosOsHinosDoLouvor('a1');
 
     expect(louvor.cantores, ['João', 'Ana']);
     expect(louvor.placar.first.nome, 'João');
@@ -122,6 +123,8 @@ void main() {
     });
     expect(louvor.solistas.single.instrumento, 'sax tenor');
     expect(louvor.placarDosSolos.single.solos, 2);
+    expect(requisicoes.last.method, 'POST');
+    expect(requisicoes.last.url.path, '/api/apresentacoes/a1/louvor/escalar');
   });
 
   test('o roteiro é lido pelo código, sem token', () async {

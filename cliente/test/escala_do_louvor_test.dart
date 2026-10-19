@@ -360,4 +360,25 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('Escalar automático'), findsOneWidget);
   });
+
+  testWidgets('escalar todos os hinos pede confirmação e escala a lista',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    bool escalouTodos() => requisicoes.any((r) =>
+        r.method == 'POST' &&
+        r.url.path == '/api/apresentacoes/$_id/louvor/escalar');
+
+    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Escalar todos os hinos?'), findsOneWidget);
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(escalouTodos(), isFalse);
+
+    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Escalar'));
+    await tester.pumpAndSettle();
+    expect(escalouTodos(), isTrue);
+  });
 }
