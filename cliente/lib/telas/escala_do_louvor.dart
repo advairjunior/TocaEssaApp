@@ -77,16 +77,35 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
     await _definirCantores([..._louvor!.cantores, limpo]);
   }
 
+  Future<void> _definirSolistas(List<Solista> solistas) =>
+      _salvar(() => widget.api.definirSolistasDoLouvor(_id, solistas));
+
+  Future<void> _adicionarSolista() async {
+    final solista = await showDialog<Solista>(
+      context: context,
+      builder: (_) => const _NovoSolista(),
+    );
+    if (solista == null || solista.nome.trim().isEmpty) return;
+    await _definirSolistas([..._louvor!.solistas, solista]);
+  }
+
   Future<void> _escolherParte(
       HinoDoLouvor hino, int indice, String rotulo) async {
+    final parte = hino.partes[indice];
+    // No solo, quem toca; sem solistas cadastrados, todo mundo.
+    final nomes = parte.tipo == TipoDaParte.instrumental
+        ? (_louvor!.solistas.isEmpty
+            ? _louvor!.participantes
+            : [for (final solista in _louvor!.solistas) solista.nome])
+        : _louvor!.cantores;
     final escolha = await showModalBottomSheet<_Escolha>(
       context: context,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _EscolhaDaParte(
         titulo: '$rotulo · ${hino.titulo}',
-        cantores: _louvor!.cantores,
-        atuais: hino.partes[indice].cantores,
+        cantores: nomes,
+        atuais: parte.cantores,
       ),
     );
     if (escolha == null) return;
@@ -118,6 +137,9 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
     }
     final estrofes = {
       for (final item in louvor.placar) item.nome: item.estrofes,
+    };
+    final solos = {
+      for (final item in louvor.placarDosSolos) item.nome: item.solos,
     };
     return RefreshIndicator(
       onRefresh: _carregar,
@@ -155,6 +177,43 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
                     'estrofes entre eles. Refrão e última estrofe são de todos.'
                 : 'O número é de estrofes de cada um. Toque numa parte para '
                     'trocar quem canta.',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: CoresTocaEssa.textoSecundario),
+          ),
+          const SizedBox(height: EspacoTocaEssa.grande),
+          const TituloGrupo('Quem toca os solos'),
+          Wrap(
+            spacing: EspacoTocaEssa.pequeno,
+            runSpacing: EspacoTocaEssa.pequeno,
+            children: [
+              for (final solista in louvor.solistas)
+                InputChip(
+                  label: Text([
+                    solista.nome,
+                    if (solista.instrumento.isNotEmpty) solista.instrumento,
+                    '${solos[solista.nome] ?? 0}',
+                  ].join(' · ')),
+                  deleteButtonTooltipMessage: 'Tirar ${solista.nome} dos solos',
+                  onDeleted: _salvando
+                      ? null
+                      : () => _definirSolistas([
+                            for (final outro in louvor.solistas)
+                              if (outro.nome != solista.nome) outro,
+                          ]),
+                ),
+              ActionChip(
+                avatar: const Icon(Icons.music_note_rounded, size: 18),
+                label: const Text('Adicionar solista'),
+                onPressed: _salvando ? null : _adicionarSolista,
+              ),
+            ],
+          ),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text(
+            'O app dá cada "(Solo sax)" para quem toca o instrumento, '
+            'revezando quando tem mais de um. O número é de solos.',
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
@@ -402,6 +461,57 @@ class _NovoCantorState extends State<_NovoCantor> {
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(hintText: 'Nome'),
           onSubmitted: (_) => _confirmar(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(onPressed: _confirmar, child: const Text('Adicionar')),
+        ],
+      );
+}
+
+class _NovoSolista extends StatefulWidget {
+  const _NovoSolista();
+
+  @override
+  State<_NovoSolista> createState() => _NovoSolistaState();
+}
+
+class _NovoSolistaState extends State<_NovoSolista> {
+  final _nome = TextEditingController();
+  final _instrumento = TextEditingController();
+
+  @override
+  void dispose() {
+    _nome.dispose();
+    _instrumento.dispose();
+    super.dispose();
+  }
+
+  void _confirmar() => Navigator.of(context).pop(
+      Solista(nome: _nome.text.trim(), instrumento: _instrumento.text.trim()));
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Quem toca os solos?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nome,
+              autofocus: true,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Nome'),
+            ),
+            TextField(
+              controller: _instrumento,
+              decoration: const InputDecoration(
+                  labelText: 'Instrumento', hintText: 'sax tenor'),
+              onSubmitted: (_) => _confirmar(),
+            ),
+          ],
         ),
         actions: [
           TextButton(

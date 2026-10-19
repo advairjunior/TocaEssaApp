@@ -24,8 +24,15 @@ Map<String, Object?> _parte(String tipo, String texto, List<String> cantores,
       'escolhidaAMao': aMao,
     };
 
-Map<String, Object?> _louvor(List<String> cantores) => {
+Map<String, Object?> _louvor(List<String> cantores,
+        [List<Map<String, Object?>> solistas = const []]) =>
+    {
       'cantores': cantores,
+      'solistas': solistas,
+      'placarDosSolos': [
+        for (final solista in solistas) {'nome': solista['nome'], 'solos': 1},
+      ],
+
       'placar': [
         for (final nome in cantores) {'nome': nome, 'estrofes': 1},
       ],
@@ -71,11 +78,21 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
     {Future<String?> Function(String titulo)? pedirLetra}) async {
   final requisicoes = <http.Request>[];
   var cantores = ['João', 'Ana'];
+  var solistas = <Map<String, Object?>>[
+    {'nome': 'José', 'instrumento': 'sax tenor'},
+  ];
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
     cliente: MockClient((requisicao) async {
       requisicoes.add(requisicao);
       final caminho = requisicao.url.path;
+      if (caminho.endsWith('/louvor/solistas')) {
+        solistas = [
+          for (final solista in (jsonDecode(requisicao.body)
+              as Map<String, dynamic>)['solistas'] as List<dynamic>)
+            Map<String, Object?>.from(solista as Map),
+        ];
+      }
       if (caminho.endsWith('/louvor/cantores')) {
         cantores = [
           for (final nome in (jsonDecode(requisicao.body)
@@ -85,7 +102,7 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
       }
       final corpo = caminho.endsWith('/cifras/texto')
           ? jsonEncode({'cifra': null, 'urlPesquisa': 'x', 'texto': 'a'})
-          : jsonEncode(_louvor(cantores));
+          : jsonEncode(_louvor(cantores, solistas));
       return http.Response(corpo, 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }),
@@ -220,5 +237,45 @@ void main() {
 
     expect(find.text('(Coro 2x)'), findsOneWidget);
     expect(find.text('(Introdução)'), findsOneWidget);
+  });
+
+  testWidgets('mostra, acrescenta e tira quem toca os solos', (tester) async {
+    final requisicoes = await _abrir(tester);
+    List<http.Request> solistas() => requisicoes
+        .where((r) => r.url.path == '/api/apresentacoes/$_id/louvor/solistas')
+        .toList();
+
+    expect(find.text('Quem toca os solos'), findsOneWidget);
+    expect(find.text('José · sax tenor · 1'), findsOneWidget);
+
+    await tester.tap(find.text('Adicionar solista'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Nome'), 'Pedro');
+    await tester.enterText(
+        find.widgetWithText(TextField, 'Instrumento'), 'trompete');
+    await tester.tap(find.widgetWithText(FilledButton, 'Adicionar'));
+    await tester.pumpAndSettle();
+
+    expect(_corpo(solistas().last)['solistas'], [
+      {'nome': 'José', 'instrumento': 'sax tenor'},
+      {'nome': 'Pedro', 'instrumento': 'trompete'},
+    ]);
+    expect(find.text('Pedro · trompete · 1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Tirar José dos solos'));
+    await tester.pumpAndSettle();
+    expect(_corpo(solistas().last)['solistas'], [
+      {'nome': 'Pedro', 'instrumento': 'trompete'},
+    ]);
+  });
+
+  testWidgets('no solo, a escolha oferece quem toca os solos', (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.text('Solo sax tenor · 2x'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FilterChip, 'José'), findsOneWidget);
+    expect(find.widgetWithText(FilterChip, 'Ana'), findsNothing);
   });
 }
