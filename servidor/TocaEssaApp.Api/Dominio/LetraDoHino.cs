@@ -12,9 +12,12 @@ public enum TipoDaParte
 
 public sealed record ParteDoHino(TipoDaParte Tipo, string Texto);
 
-/// Separa a letra colada de um hino em estrofes e refrão. O hino com refrão
-/// é sempre cantado estrofe + refrão, então o refrão entra depois de toda
-/// estrofe mesmo que a letra não marque "(Refrão)".
+/// Separa a letra (ou cifra) colada de um hino em estrofes e refrão. Com
+/// marcadores como "(Estrofe 1)" e "(Coro)", eles mandam; sem eles, o app
+/// separa pelas linhas em branco e pelo tamanho da primeira estrofe. A linha
+/// "Tom:" nunca vira parte, e os espaços que alinham os acordes ficam. O hino
+/// com refrão é sempre cantado estrofe + refrão, então o refrão entra depois
+/// de toda estrofe mesmo que a letra não o repita.
 public static partial class LetraDoHino
 {
     private enum TipoDoPedaco
@@ -30,11 +33,61 @@ public static partial class LetraDoHino
     {
         if (string.IsNullOrWhiteSpace(texto)) return [];
         var linhas = texto.Replace("\r\n", "\n").Replace('\r', '\n')
-            .Split('\n').Select(linha => linha.Trim()).ToList();
+            .Split('\n')
+            .Select(linha => linha.TrimEnd())
+            .Where(linha => !LinhaDoTom().IsMatch(SemAcento(linha.Trim())))
+            .ToList();
+        if (linhas.Any(linha => MarcadorDeEstrofe().IsMatch(SemAcento(linha.Trim()))))
+            return Montar(PicarPelosMarcadores(linhas));
         var pedacos = Picar(linhas);
         if (!TemLinhaEmBrancoNoMeio(linhas))
             pedacos = CortarPeloTamanhoDaEstrofe(pedacos);
         return Montar(pedacos);
+    }
+
+    /// Cada marcador começa uma parte; o que vem antes do primeiro (título,
+    /// introdução) não é cantado. Refrão marcado sem texto é a repetição.
+    private static List<Pedaco> PicarPelosMarcadores(List<string> linhas)
+    {
+        var pedacos = new List<Pedaco>();
+        Pedaco? atual = null;
+        void Fechar()
+        {
+            if (atual is null) return;
+            var linhasDaParte = atual.Linhas
+                .SkipWhile(linha => linha.Length == 0)
+                .Reverse().SkipWhile(linha => linha.Length == 0).Reverse()
+                .ToList();
+            if (linhasDaParte.Count > 0)
+                pedacos.Add(atual with { Linhas = linhasDaParte });
+            else if (atual.Tipo == TipoDoPedaco.Refrao)
+                pedacos.Add(new Pedaco(TipoDoPedaco.RepeteRefrao, []));
+            atual = null;
+        }
+
+        foreach (var linha in linhas)
+        {
+            var marcador = SemAcento(linha.Trim());
+            if (MarcadorDeEstrofe().IsMatch(marcador))
+            {
+                Fechar();
+                atual = new Pedaco(TipoDoPedaco.Texto, []);
+            }
+            else if (MarcadorDoRefrao().Match(marcador) is { Success: true } refrao)
+            {
+                Fechar();
+                var resto = refrao.Groups["resto"].Success
+                    ? linha.Trim()[(linha.Trim().IndexOf(':') + 1)..].Trim()
+                    : "";
+                atual = new Pedaco(TipoDoPedaco.Refrao, resto.Length > 0 ? [resto] : []);
+            }
+            else
+            {
+                atual?.Linhas.Add(linha);
+            }
+        }
+        Fechar();
+        return pedacos;
     }
 
     private static List<Pedaco> Picar(List<string> linhas)
@@ -47,8 +100,9 @@ public static partial class LetraDoHino
             atual = null;
         }
 
-        foreach (var linha in linhas)
+        foreach (var linhaOriginal in linhas)
         {
+            var linha = linhaOriginal.Trim();
             var marcador = SemAcento(linha);
             if (linha.Length == 0)
             {
@@ -70,7 +124,7 @@ public static partial class LetraDoHino
             else
             {
                 atual ??= new Pedaco(TipoDoPedaco.Texto, []);
-                atual.Linhas.Add(linha);
+                atual.Linhas.Add(linhaOriginal);
             }
         }
         Fechar();
@@ -165,4 +219,15 @@ public static partial class LetraDoHino
 
     [GeneratedRegex(@"^\(\s*(refrao|coro)\s*\)$")]
     private static partial Regex RepeticaoDoRefrao();
+
+    [GeneratedRegex(@"^tom\s*:")]
+    private static partial Regex LinhaDoTom();
+
+    // "(Estrofe 1)", "[Estrofe 2]", "Estrofe 3:", "1ª estrofe", "2a Estrofe".
+    [GeneratedRegex(@"^[\(\[]?\s*(estrofe\s*\d*|\d+\s*[aªoº]?\s*estrofe)\s*[\)\]]?\s*:?$")]
+    private static partial Regex MarcadorDeEstrofe();
+
+    // "(Coro)", "[Refrão]", "Refrão:", "CORO" e "Refrão: primeira linha".
+    [GeneratedRegex(@"^[\(\[]?\s*(refrao|coro)\s*[\)\]]?\s*(:(?<resto>.*\S.*)|:)?$")]
+    private static partial Regex MarcadorDoRefrao();
 }

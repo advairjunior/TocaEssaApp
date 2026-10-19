@@ -122,6 +122,97 @@ public sealed class LetraDoHinoTestes
         Assert.Equal("A1\nA2\nA3", parte.Texto);
     }
 
+    private const string CifraComMarcadores = """
+        Tom:  G
+
+        (Estrofe 1)
+        G        Bm    Am       D7
+        Cristo Jesus, o santo Cordeiro
+        G        Bm    Am       D7
+        Deu Sua vida sobre o madeiro
+        Bm       Em    Am      D7
+        Com o Seu sangue me resgatou
+        Em   A7    D7
+        D'ele agora sou
+
+        (Coro)
+        G           Bm Am D7
+        Por Cristo, resgatado
+                         G
+        Sirvo ao grande Deus
+        Bm         C    Cm
+        Para a Ele pertencer
+        G          D7      G
+        Junto aos santos Seus
+
+        (Estrofe 2)
+        G      Bm  Am       D7
+        Preso estava na iniquidade
+        G         Bm   Am     D7
+        Cristo me trouxe a liberdade
+        Bm     Em  Am      D7
+        Por Sua graça me resgatou
+        Em   A7    D7
+        D'ele agora sou
+
+        (Estrofe 3)
+        G        Bm   Am        D7
+        Tem minha alma grande alegria
+        G       Bm   Am      D7
+        Sem esperança sempre vivia
+        Bm        Em    Am     D7
+        Glória a Jesus que me regatou
+        Em   A7    D7
+        D'ele agora sou
+        """;
+
+    [Fact]
+    public void MarcadoresDeEstrofeECoroSeparamACifraSemOTom()
+    {
+        var partes = LetraDoHino.Separar(CifraComMarcadores);
+
+        Assert.Equal(
+            [TipoDaParte.Estrofe, TipoDaParte.Refrao, TipoDaParte.Estrofe,
+             TipoDaParte.Refrao, TipoDaParte.Estrofe, TipoDaParte.Refrao],
+            partes.Select(parte => parte.Tipo));
+        Assert.Equal("G        Bm    Am       D7\nCristo Jesus, o santo Cordeiro",
+            string.Join('\n', partes[0].Texto.Split('\n').Take(2)));
+        Assert.EndsWith("D'ele agora sou", partes[0].Texto);
+        Assert.Contains("                 G\nSirvo ao grande Deus", partes[1].Texto);
+        Assert.StartsWith("G      Bm  Am       D7\nPreso estava", partes[2].Texto);
+        Assert.Equal(partes[1].Texto, partes[3].Texto);
+        Assert.StartsWith("G        Bm   Am        D7\nTem minha alma", partes[4].Texto);
+        Assert.Equal(partes[1].Texto, partes[5].Texto);
+        Assert.DoesNotContain(partes, parte => parte.Texto.Contains("Tom"));
+    }
+
+    [Theory]
+    [InlineData("[Estrofe 1]", "[Refrão]")]
+    [InlineData("Estrofe 1:", "Coro:")]
+    [InlineData("1ª estrofe", "REFRÃO")]
+    [InlineData("1a Estrofe", "(refrao)")]
+    public void MarcadoresEscritosDeJeitosDiferentes(string estrofe, string refrao)
+    {
+        var partes = LetraDoHino.Separar(
+            $"Título do hino\n{estrofe}\nA1\nA2\n{refrao}\nR1\n{estrofe.Replace('1', '2')}\nB1");
+
+        Assert.Equal(
+            [TipoDaParte.Estrofe, TipoDaParte.Refrao,
+             TipoDaParte.Estrofe, TipoDaParte.Refrao],
+            partes.Select(parte => parte.Tipo));
+        Assert.Equal("A1\nA2", partes[0].Texto);
+        Assert.Equal("R1", partes[1].Texto);
+        Assert.Equal("B1", partes[2].Texto);
+    }
+
+    [Fact]
+    public void LinhaDoTomNuncaViraEstrofeMesmoSemMarcadores()
+    {
+        var partes = LetraDoHino.Separar("Tom: G\n\nA1\nA2\n\nB1");
+
+        Assert.Equal(["A1\nA2", "B1"], partes.Select(parte => parte.Texto));
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
