@@ -395,7 +395,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         : relogio.ritmoAntesDeMedir;
   }
 
-  /// "1 de 3 tocadas · faltam ~6 min" numa linha; antes do show, embaixo da
+  /// "1 de 3 tocadas · faltam ~6 min de músicas" numa linha (sem nada
+  /// tocado, "~24 min de músicas": quanto a lista leva); antes do show, embaixo da
   /// barra, o ritmo usado e a comparação com as horas contratadas.
   Widget _construirProgresso(BuildContext context) {
     final texto = Theme.of(context).textTheme;
@@ -417,10 +418,16 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                 children: [
                   Text('${_sequencia.tocadas} de $total ${_v.tocadas}',
                       style: texto.titleMedium),
+                  // Estimativa da lista, com ou sem horas contratadas:
+                  // antes de começar, quanto ela leva; depois, o que resta.
                   Text(
-                    completa
-                        ? ' · ${_v.setlist} completa'
-                        : ' · faltam ~${formatarTempoDoShow(_ritmo * faltam)}',
+                    switch ((completa, _sequencia.tocadas)) {
+                      (true, _) => ' · ${_v.setlist} completa',
+                      (_, 0) => ' · ~${formatarTempoDoShow(_ritmo * faltam)} '
+                          'de ${_v.musicas}',
+                      _ => ' · faltam ~${formatarTempoDoShow(_ritmo * faltam)} '
+                          'de ${_v.musicas}',
+                    },
                     style: secundario,
                   ),
                 ],

@@ -51,7 +51,6 @@ Map<String, Object?> _cifra(String url) => {
       'atualizadaEm': '2026-09-10T12:00:00Z',
     };
 
-
 const _cifraSalva = 'https://www.cifraclub.com.br/banda-2/velha-infancia/';
 
 // Sequência "tocar a seguir" guardada no servidor falso.
@@ -157,7 +156,9 @@ Future<List<http.Request>> _abrir(
           ?.group(1);
       if (tom != null) {
         for (final (i, item) in lista.indexed.toList()) {
-          if (item['titulo'] == corpo['musica']) lista[i] = {...item, 'tom': tom};
+          if (item['titulo'] == corpo['musica']) {
+            lista[i] = {...item, 'tom': tom};
+          }
         }
       }
       return http.Response(
@@ -186,11 +187,13 @@ Future<List<http.Request>> _abrir(
       return http.Response(jsonEncode(lista), 200, headers: comoJson);
     }
     if (caminho.endsWith('/setlist/ordem')) {
-      final ids = (jsonDecode(requisicao.body)['itemIds'] as List).cast<String>();
+      final ids =
+          (jsonDecode(requisicao.body)['itemIds'] as List).cast<String>();
       final faltam = ids.map((id) => lista.firstWhere((i) => i['id'] == id));
       final fila = faltam.toList();
       final nova = [
-        for (final item in lista) item['tocada'] == true ? item : fila.removeAt(0)
+        for (final item in lista)
+          item['tocada'] == true ? item : fila.removeAt(0)
       ];
       lista
         ..clear()
@@ -247,8 +250,7 @@ void main() {
   });
 
   group('linha da música', () {
-    testWidgets('tocar no círculo marca a música como tocada',
-        (tester) async {
+    testWidgets('tocar no círculo marca a música como tocada', (tester) async {
       final requisicoes = await _abrir(tester);
 
       await tester.tap(find.byTooltip('Marcar como tocada').first);
@@ -282,8 +284,7 @@ void main() {
       expect(requisicoes.where((r) => r.method == 'PATCH'), isEmpty);
     });
 
-    testWidgets('ponto mostra quais músicas têm cifra no app',
-        (tester) async {
+    testWidgets('ponto mostra quais músicas têm cifra no app', (tester) async {
       await _abrir(tester, musicasComTexto: {'Velha Infância'});
 
       expect(find.byTooltip('Cifra no app'), findsOneWidget);
@@ -334,8 +335,8 @@ void main() {
       await tester.tap(find.text('Salvar'));
       await tester.pumpAndSettle();
 
-      final salva = requisicoes
-          .singleWhere((r) => r.url.path.endsWith('/cifras/texto'));
+      final salva =
+          requisicoes.singleWhere((r) => r.url.path.endsWith('/cifras/texto'));
       expect(jsonDecode(salva.body), {
         'musica': 'Velha Infância',
         'artista': 'Banda 2',
@@ -405,15 +406,13 @@ void main() {
 
       final fundo = tester.widget<Material>(find
           .ancestor(
-              of: find.text('Velha Infância'),
-              matching: find.byType(Material))
+              of: find.text('Velha Infância'), matching: find.byType(Material))
           .first);
       expect(fundo.color, Colors.transparent);
       expect(find.text('Próxima'), findsOneWidget);
     });
 
-    testWidgets('selo de pedidos na fila é discreto, sem roxo',
-        (tester) async {
+    testWidgets('selo de pedidos na fila é discreto, sem roxo', (tester) async {
       await _abrir(tester);
 
       final numero = tester.widget<Text>(find.descendant(
@@ -620,8 +619,7 @@ void main() {
     expect(status.body, contains('"status":"Finalizado"'));
   });
 
-  testWidgets('topo limpo: sem modo palco nem botão de leitor',
-      (tester) async {
+  testWidgets('topo limpo: sem modo palco nem botão de leitor', (tester) async {
     await _abrir(tester);
 
     expect(find.text('Modo palco'), findsNothing);
@@ -712,7 +710,11 @@ void main() {
 
   group('editar a setlist', () {
     List<String> titulos(WidgetTester tester) => [
-          for (final titulo in ['Garota de Ipanema', 'Velha Infância', 'Evidências'])
+          for (final titulo in [
+            'Garota de Ipanema',
+            'Velha Infância',
+            'Evidências'
+          ])
             if (find.text(titulo).evaluate().isNotEmpty) titulo
         ]..sort((a, b) => tester
             .getTopLeft(find.text(a).first)
@@ -738,8 +740,7 @@ void main() {
       await tester.tap(find.byTooltip('Remover da setlist').first);
       await tester.pumpAndSettle();
 
-      expect(
-          requisicoes.where((r) => r.method == 'DELETE').single.url.path,
+      expect(requisicoes.where((r) => r.method == 'DELETE').single.url.path,
           '/api/apresentacoes/$_id/setlist/2');
       expect(find.text('Velha Infância'), findsNothing);
       expect(find.text('Evidências'), findsOneWidget);
@@ -751,7 +752,8 @@ void main() {
       await tester.tap(find.text('Editar'));
       await tester.pumpAndSettle();
       // Só as que faltam têm alça.
-      expect(find.bySemanticsLabel('Arrastar para reordenar'), findsNWidgets(2));
+      expect(
+          find.bySemanticsLabel('Arrastar para reordenar'), findsNWidgets(2));
       await tester.tap(find.bySemanticsLabel('Arrastar para reordenar').last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Mover para cima'));
@@ -824,12 +826,28 @@ void main() {
           status: StatusApresentacao.agendada, relogio: relogio(duracao: 240));
 
       expect(find.text('1 de 3 tocadas'), findsOneWidget);
-      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(
           find.text('estimativa: 3 min por música · '
               'contratado 4h → faltam ~3h54 de músicas'),
           findsOneWidget);
       expect(find.textContaining('≈'), findsNothing);
+    });
+
+    testWidgets('sem horas contratadas mostra quanto tempo os hinos levam',
+        (tester) async {
+      await _abrir(tester,
+          status: StatusApresentacao.agendada,
+          tipo: TipoApresentacao.louvor,
+          itens: [
+            for (var i = 1; i <= 8; i++) _item('$i', 'Hino $i', i),
+          ],
+          relogio: relogio());
+
+      expect(find.text('0 de 8 cantados'), findsOneWidget);
+      expect(find.text(' · ~24 min de hinos'), findsOneWidget);
+      expect(find.text('estimativa: 3 min por hino'), findsOneWidget);
+      expect(find.textContaining('faltam'), findsNothing);
     });
 
     testWidgets('com histórico usa o ritmo médio e avisa se passa',
@@ -842,7 +860,7 @@ void main() {
           relogio: relogio(duracao: 60, ritmoMedio: 240));
 
       expect(find.text('0 de 20 tocadas'), findsOneWidget);
-      expect(find.text(' · faltam ~1h20'), findsOneWidget);
+      expect(find.text(' · ~1h20 de músicas'), findsOneWidget);
       expect(
           find.text('seu ritmo médio: 4 min por música · '
               'a setlist passa ~20 min do contratado'),
@@ -861,7 +879,7 @@ void main() {
           relogio: relogio());
 
       expect(find.text('0 de 3 tocadas'), findsOneWidget);
-      expect(find.text(' · faltam ~18 min'), findsOneWidget);
+      expect(find.text(' · ~18 min de músicas'), findsOneWidget);
     });
 
     testWidgets('sem horas contratadas, a legenda mostra só o ritmo',
@@ -869,7 +887,7 @@ void main() {
       await _abrir(tester,
           status: StatusApresentacao.agendada, relogio: relogio());
 
-      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(find.text('estimativa: 3 min por música'), findsOneWidget);
     });
 
@@ -877,7 +895,7 @@ void main() {
         (tester) async {
       await _abrir(tester, relogio: relogio(duracao: 240));
 
-      expect(find.text(' · faltam ~6 min'), findsOneWidget);
+      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(find.textContaining('por música'), findsNothing);
     });
 
