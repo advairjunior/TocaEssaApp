@@ -123,6 +123,73 @@ public sealed class EscalaDeCantoresTestes
             comSolista.Placar);
     }
 
+    [Fact]
+    public void SolosVaoParaQuemTocaOInstrumentoERevezam()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Introdução"),
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax tenor"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo Trompete"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo"),
+            new ParteDoHino(TipoDaParte.Estrofe, "b")
+        ]);
+
+        var escala = EscalaDeCantores.Montar([hino], ["Ana"], [],
+        [
+            new Solista("José", "Sax tenor"),
+            new Solista("Pedro", "trompete"),
+            new Solista("Rui", "sax alto")
+        ]);
+
+        Assert.Equal(
+            ["Todos", "Ana", "José", "Pedro", "Rui", "José", "Todos"],
+            Quem(escala.Hinos[0]));
+        Assert.Equal(
+            [new PlacarDoSolista("José", 2), new PlacarDoSolista("Pedro", 1),
+             new PlacarDoSolista("Rui", 1)],
+            escala.PlacarDosSolos);
+        Assert.Equal([new PlacarDoCantor("Ana", 1)], escala.Placar);
+    }
+
+    [Fact]
+    public void SoloSemQuemTocaOInstrumentoFicaSemNinguem()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo violino")
+        ]);
+
+        var escala = EscalaDeCantores.Montar([hino], [], [],
+            [new Solista("José", "sax tenor")]);
+
+        Assert.Empty(escala.Hinos[0].Partes[1].Cantores);
+        Assert.Equal([new PlacarDoSolista("José", 0)], escala.PlacarDosSolos);
+    }
+
+    [Fact]
+    public void SoloEscolhidoAMaoContaNoPlacarDosSolos()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax")
+        ]);
+
+        var escala = EscalaDeCantores.Montar([hino], [],
+            [new EscolhaAMao(HinoA, 1, ["Rui"])],
+            [new Solista("José", "sax"), new Solista("Rui", "sax")]);
+
+        Assert.Equal(["Todos", "Rui", "José"], Quem(escala.Hinos[0]));
+        Assert.Equal(
+            [new PlacarDoSolista("José", 1), new PlacarDoSolista("Rui", 1)],
+            escala.PlacarDosSolos);
+    }
+
     private static HinoParaEscala Hino(Guid id, int estrofes) =>
         new(id, Enumerable.Range(1, estrofes)
             .SelectMany(numero => new[]
