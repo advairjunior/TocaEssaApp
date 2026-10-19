@@ -4,6 +4,7 @@ import '../dominio/modelos.dart';
 import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
+import 'como_marcar_hinos.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'editor_de_cifra.dart';
@@ -159,7 +160,15 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
                 .bodySmall
                 ?.copyWith(color: CoresTocaEssa.textoSecundario),
           ),
-          const SizedBox(height: EspacoTocaEssa.grande),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => mostrarComoMarcarAsPartes(context),
+              icon: const Icon(Icons.help_outline_rounded),
+              label: const Text('Como marcar as partes'),
+            ),
+          ),
+          const SizedBox(height: EspacoTocaEssa.base),
           if (louvor.hinos.isEmpty)
             const EstadoVazio(
               icone: Icons.library_music_outlined,
@@ -224,9 +233,12 @@ class _CartaoDoHino extends StatelessWidget {
           ),
         for (final (indice, parte) in hino.partes.indexed)
           Builder(builder: (context) {
-            final rotulo = parte.tipo == TipoDaParte.estrofe
-                ? 'Estrofe ${++estrofe}'
-                : parte.tipo.rotulo;
+            final nome = switch (parte.tipo) {
+              TipoDaParte.estrofe => 'Estrofe ${++estrofe}',
+              TipoDaParte.instrumental => parte.nome ?? parte.tipo.rotulo,
+              TipoDaParte.refrao => parte.tipo.rotulo,
+            };
+            final rotulo = parte.vezes > 1 ? '$nome · ${parte.vezes}x' : nome;
             return ListTile(
               onTap: escolherParte == null
                   ? null
@@ -256,7 +268,9 @@ class _CartaoDoHino extends StatelessWidget {
                       ),
                     ),
                   Text(
-                    parte.quemCanta,
+                    parte.tipo == TipoDaParte.instrumental && parte.deTodos
+                        ? '—'
+                        : parte.quemCanta,
                     style: texto.labelLarge?.copyWith(
                       color: parte.deTodos
                           ? CoresTocaEssa.textoSecundario

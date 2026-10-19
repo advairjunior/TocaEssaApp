@@ -4,14 +4,16 @@ import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 import 'package:toca_essa_app/telas/editor_de_cifra.dart';
 
 /// Abre o editor por um botão e guarda o que ele responder.
-Future<List<String?>> _abrir(WidgetTester tester, {String? texto}) async {
+Future<List<String?>> _abrir(WidgetTester tester,
+    {String? texto, String oQue = 'Cifra'}) async {
   final respostas = <String?>[];
   await tester.pumpWidget(MaterialApp(
     home: Builder(
       builder: (context) => Scaffold(
         body: TextButton(
           onPressed: () async => respostas.add(
-              await pedirCifraEmTexto(context, titulo: 'Anjo', texto: texto)),
+              await pedirCifraEmTexto(context,
+                  titulo: 'Anjo', texto: texto, oQue: oQue)),
           child: const Text('abrir'),
         ),
       ),
@@ -100,5 +102,25 @@ void main() {
     expect(
         tester.widget<TextField>(find.byType(TextField)).controller!.text,
         startsWith('C7M        D11'));
+  });
+
+  testWidgets('a letra do louvor tem o sumário das marcações', (tester) async {
+    _celular(tester);
+    await _abrir(tester, oQue: 'Letra');
+
+    expect(find.text('Letra de Anjo'), findsOneWidget);
+    await tester.tap(find.byTooltip('Como marcar as partes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Como marcar as partes'), findsOneWidget);
+    expect(find.text('(Estrofe 1)'), findsOneWidget);
+    expect(find.text('(Solo sax tenor)'), findsOneWidget);
+  });
+
+  testWidgets('a cifra do show não mostra o sumário do louvor', (tester) async {
+    _celular(tester);
+    await _abrir(tester);
+
+    expect(find.byTooltip('Como marcar as partes'), findsNothing);
   });
 }

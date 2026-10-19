@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../dominio/ajustar_cifra.dart';
 import '../dominio/transpor_cifra.dart';
 import '../tema/tema_toca_essa.dart';
+import 'como_marcar_hinos.dart';
 
 const _tamanhoDaLetra = 15.0;
 // Largura de uma letra da JetBrains Mono em relação ao tamanho da fonte.
@@ -58,6 +59,13 @@ class _EditorDeCifraState extends State<_EditorDeCifra> {
           title: Text('${widget.oQue} de ${widget.titulo}',
               maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
+            // Só na letra do louvor: o que cada marcação faz.
+            if (widget.oQue == 'Letra')
+              IconButton(
+                tooltip: 'Como marcar as partes',
+                icon: const Icon(Icons.help_outline_rounded),
+                onPressed: () => mostrarComoMarcarAsPartes(context),
+              ),
             Padding(
               padding: const EdgeInsets.only(right: EspacoTocaEssa.pequeno),
               child: FilledButton(

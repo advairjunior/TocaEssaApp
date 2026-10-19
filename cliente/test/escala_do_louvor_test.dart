@@ -45,6 +45,14 @@ Map<String, Object?> _louvor(List<String> cantores) => {
             _parte('Estrofe', 'Preso estava na iniquidade', ['Ana'],
                 aMao: true),
             _parte('Refrao', 'Por Cristo, resgatado', []),
+            {
+              'tipo': 'Instrumental',
+              'texto': 'G   D',
+              'cantores': <String>[],
+              'escolhidaAMao': false,
+              'nome': 'Solo sax tenor',
+              'vezes': 2,
+            },
           ],
         },
         {
@@ -195,5 +203,22 @@ void main() {
       'texto': 'Estrofe colada',
     });
     expect(requisicoes.last.url.path, '/api/apresentacoes/$_id/louvor');
+  });
+
+  testWidgets('o solo aparece com o instrumento e sem cantor', (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('Solo sax tenor · 2x'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
+  });
+
+  testWidgets('o sumário das marcações fica à mão na escala', (tester) async {
+    await _abrir(tester);
+
+    await tester.tap(find.text('Como marcar as partes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('(Coro 2x)'), findsOneWidget);
+    expect(find.text('(Introdução)'), findsOneWidget);
   });
 }
