@@ -32,35 +32,45 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
         ),
         bottomNavigationBar: OcultoComTecladoAberto(
           child: NavigationBar(
-            selectedIndex: _abasDaApresentacao.indexOf(_aba),
+            selectedIndex: _abasDe(apresentacao).indexOf(_aba),
             onDestinationSelected: (indice) =>
-                _selecionarAba(_abasDaApresentacao[indice]),
+                _selecionarAba(_abasDe(apresentacao)[indice]),
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.queue_music_outlined),
-                selectedIcon: Icon(Icons.queue_music_rounded),
-                label: 'Fila',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.playlist_play_rounded),
-                label: 'Setlist',
-              ),
-              const NavigationDestination(
-                icon: Icon(Icons.insights_outlined),
-                selectedIcon: Icon(Icons.insights_rounded),
-                label: 'Estatísticas',
-              ),
-              // Os stories ficam na aba Mais: o selo conta os novos.
-              NavigationDestination(
-                icon: IconeDosStoriesNovos(
-                  key: ValueKey('stories-novos-${apresentacao.id}'),
-                  api: _api,
-                  apresentacaoId: apresentacao.id,
-                  icone: const Icon(Icons.more_horiz_rounded),
-                ),
-                label: 'Mais',
-              ),
+              for (final aba in _abasDe(apresentacao))
+                switch (aba) {
+                  _AbaPainel.fila => const NavigationDestination(
+                      icon: Icon(Icons.queue_music_outlined),
+                      selectedIcon: Icon(Icons.queue_music_rounded),
+                      label: 'Fila',
+                    ),
+                  _AbaPainel.escala => const NavigationDestination(
+                      icon: Icon(Icons.record_voice_over_outlined),
+                      selectedIcon: Icon(Icons.record_voice_over_rounded),
+                      label: 'Escala',
+                    ),
+                  _AbaPainel.setlist => NavigationDestination(
+                      icon: const Icon(Icons.playlist_play_rounded),
+                      label: apresentacao.tipo == TipoApresentacao.louvor
+                          ? 'Hinos'
+                          : 'Setlist',
+                    ),
+                  _AbaPainel.estatisticas => const NavigationDestination(
+                      icon: Icon(Icons.insights_outlined),
+                      selectedIcon: Icon(Icons.insights_rounded),
+                      label: 'Estatísticas',
+                    ),
+                  // Os stories ficam na aba Mais: o selo conta os novos.
+                  _ => NavigationDestination(
+                      icon: IconeDosStoriesNovos(
+                        key: ValueKey('stories-novos-${apresentacao.id}'),
+                        api: _api,
+                        apresentacaoId: apresentacao.id,
+                        icone: const Icon(Icons.more_horiz_rounded),
+                      ),
+                      label: 'Mais',
+                    ),
+                },
             ],
           ),
         ),
@@ -91,6 +101,8 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
         child: switch (_aba) {
           _AbaPainel.fila => FilaMusicalArtista(
               api: _api, apresentacao: apresentacao, incorporada: true),
+          _AbaPainel.escala =>
+            EscalaDoLouvor(api: _api, apresentacao: apresentacao),
           _AbaPainel.setlist => SetlistDoArtista(
               api: _api,
               apresentacao: apresentacao,

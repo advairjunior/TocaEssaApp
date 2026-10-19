@@ -18,6 +18,7 @@ import 'instalar_app.dart';
 import 'stories_do_show.dart';
 import 'componentes_memoria.dart';
 import 'perfil_participante.dart';
+import 'escala_do_louvor.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'faixa_do_relogio.dart';
 import 'fila_musical_artista.dart';
@@ -47,7 +48,7 @@ const _chaveAbaAberta = 'painel_aba_aberta';
 
 /// Telas do painel: o início e o perfil ficam fora de uma apresentação;
 /// as demais são as abas de uma apresentação aberta.
-enum _AbaPainel { inicio, perfil, fila, setlist, estatisticas, mais }
+enum _AbaPainel { inicio, perfil, fila, escala, setlist, estatisticas, mais }
 
 const _abasDaApresentacao = [
   _AbaPainel.fila,
@@ -55,6 +56,14 @@ const _abasDaApresentacao = [
   _AbaPainel.estatisticas,
   _AbaPainel.mais,
 ];
+
+// No louvor não há pedidos: a escala de quem canta toma o lugar da fila.
+const _abasDoLouvor = [_AbaPainel.escala, _AbaPainel.setlist, _AbaPainel.mais];
+
+List<_AbaPainel> _abasDe(Apresentacao? apresentacao) =>
+    apresentacao?.tipo == TipoApresentacao.louvor
+        ? _abasDoLouvor
+        : _abasDaApresentacao;
 
 class PainelDoArtista extends StatefulWidget {
   const PainelDoArtista({

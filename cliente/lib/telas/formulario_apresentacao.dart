@@ -118,6 +118,12 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
                     descricao: 'Entre amigos, com perfil e histórico.',
                     icone: Icons.celebration_rounded,
                   ),
+                  OpcaoSeletor(
+                    valor: TipoApresentacao.louvor,
+                    titulo: 'Louvor',
+                    descricao: 'Hinos com revezamento de quem canta.',
+                    icone: Icons.church_rounded,
+                  ),
                 ],
               ),
               const SizedBox(height: EspacoTocaEssa.grande),

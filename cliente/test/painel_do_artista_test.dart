@@ -626,4 +626,81 @@ void main() {
       expect(find.text('Olá, Duo Aurora'), findsOneWidget);
     });
   });
+
+  group('louvor', () {
+    final louvorJson = jsonEncode({
+      'cantores': ['João', 'Ana'],
+      'placar': [
+        {'nome': 'João', 'estrofes': 0},
+        {'nome': 'Ana', 'estrofes': 0},
+      ],
+      'hinos': <Object?>[],
+    });
+
+    Future<http.Response?> servirLouvor(http.Request requisicao) async =>
+        requisicao.url.path.endsWith('/louvor')
+            ? http.Response(louvorJson, 200, headers: {
+                'content-type': 'application/json; charset=utf-8',
+              })
+            : null;
+
+    testWidgets('nova apresentação oferece o tipo Louvor', (tester) async {
+      await _abrirPainel(tester);
+
+      await tester.tap(find.text('Nova apresentação'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Louvor'), findsOneWidget);
+    });
+
+    testWidgets('louvor tem as abas Escala, Hinos e Mais, sem pedidos',
+        (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Louvor de sábado',
+          data: '2026-10-24',
+          tipo: 'Louvor',
+        )}]',
+        outras: servirLouvor,
+      );
+      await tester.tap(find.text('Louvor de sábado'));
+      await tester.pumpAndSettle();
+
+      final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(barra.destinations, hasLength(3));
+      expect(find.text('Escala'), findsOneWidget);
+      expect(find.text('Hinos'), findsOneWidget);
+      expect(find.text('Mais'), findsOneWidget);
+      expect(find.text('Fila'), findsNothing);
+      expect(find.text('Estatísticas'), findsNothing);
+      expect(find.text('Recebendo pedidos'), findsNothing);
+      expect(find.text('Iniciar'), findsOneWidget);
+      expect(barra.selectedIndex, 0);
+      expect(find.text('Quem canta no microfone'), findsOneWidget);
+    });
+
+    testWidgets('louvor ao vivo abre direto nos hinos', (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Louvor de hoje',
+          data: '2026-10-24',
+          status: 'EmAndamento',
+          tipo: 'Louvor',
+        )}]',
+        outras: servirLouvor,
+      );
+
+      expect(find.text('Abrir fila'), findsNothing);
+      expect(find.text('Pedidos abertos'), findsNothing);
+      await tester.tap(find.text('Abrir hinos'));
+      await tester.pumpAndSettle();
+
+      final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(barra.selectedIndex, 1);
+    });
+  });
 }

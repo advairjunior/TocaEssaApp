@@ -40,26 +40,31 @@ class _BarraStatusApresentacao extends StatelessWidget
       ),
       child: Row(
         children: [
-          Tooltip(
-            message: 'Receber pedidos',
-            child: Switch(
-              value: apresentacao.pedidosAbertos,
-              onChanged: salvando ? null : (_) => alterarPedidos(),
+          // No louvor não há pedidos para receber ou pausar.
+          if (apresentacao.tipo == TipoApresentacao.louvor)
+            const Spacer()
+          else ...[
+            Tooltip(
+              message: 'Receber pedidos',
+              child: Switch(
+                value: apresentacao.pedidosAbertos,
+                onChanged: salvando ? null : (_) => alterarPedidos(),
+              ),
             ),
-          ),
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-          Expanded(
-            child: Text(
-              apresentacao.pedidosAbertos
-                  ? 'Recebendo pedidos'
-                  : 'Pedidos pausados',
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelLarge
-                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            const SizedBox(width: EspacoTocaEssa.pequeno),
+            Expanded(
+              child: Text(
+                apresentacao.pedidosAbertos
+                    ? 'Recebendo pedidos'
+                    : 'Pedidos pausados',
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
+              ),
             ),
-          ),
+          ],
           const SizedBox(width: EspacoTocaEssa.pequeno),
           agendada
               ? FilledButton(

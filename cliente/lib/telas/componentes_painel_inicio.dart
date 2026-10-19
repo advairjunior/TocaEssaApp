@@ -123,6 +123,7 @@ class _CartaoAoVivo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
+    final louvor = apresentacao.tipo == TipoApresentacao.louvor;
     final raio = BorderRadius.circular(24);
     return Material(
       color: Colors.transparent,
@@ -167,9 +168,11 @@ class _CartaoAoVivo extends StatelessWidget {
                   const SizedBox(width: EspacoTocaEssa.medio),
                   Expanded(
                     child: Text(
-                      apresentacao.pedidosAbertos
-                          ? 'Pedidos abertos'
-                          : 'Pedidos fechados',
+                      louvor
+                          ? ''
+                          : apresentacao.pedidosAbertos
+                              ? 'Pedidos abertos'
+                              : 'Pedidos fechados',
                       textAlign: TextAlign.end,
                       overflow: TextOverflow.ellipsis,
                       style: texto.labelMedium
@@ -191,8 +194,10 @@ class _CartaoAoVivo extends StatelessWidget {
                 width: double.infinity,
                 child: FilledButton.icon(
                   onPressed: abrirFila,
-                  icon: const Icon(Icons.queue_music_rounded),
-                  label: const Text('Abrir fila'),
+                  icon: Icon(louvor
+                      ? Icons.playlist_play_rounded
+                      : Icons.queue_music_rounded),
+                  label: Text(louvor ? 'Abrir hinos' : 'Abrir fila'),
                 ),
               ),
               const SizedBox(height: EspacoTocaEssa.pequeno),

@@ -25,7 +25,8 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   String? _apresentacaoGestaoId;
   _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.proximas;
 
-  bool get _dentroDaApresentacao => _abasDaApresentacao.contains(_aba);
+  bool get _dentroDaApresentacao =>
+      _abasDaApresentacao.contains(_aba) || _abasDoLouvor.contains(_aba);
 
   List<Apresentacao> _comStatus(
     StatusApresentacao status, {
@@ -211,12 +212,14 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     final aba = _AbaPainel.values
         .where((aba) => aba.name == preferencias.getString(_chaveAbaAberta))
         .firstOrNull;
-    if (!mounted || aba == null || !_abasDaApresentacao.contains(aba)) return;
+    if (!mounted || aba == null) return;
     final apresentacao = _apresentacoes
         .where((item) =>
             item.id == id && item.status == StatusApresentacao.emAndamento)
         .firstOrNull;
-    if (apresentacao != null) _abrirApresentacao(apresentacao, aba: aba);
+    if (apresentacao != null && _abasDe(apresentacao).contains(aba)) {
+      _abrirApresentacao(apresentacao, aba: aba);
+    }
   }
 
   Future<void> _lembrarOndeParou() async {
@@ -248,10 +251,13 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       _galera = [];
     });
     _selecionarAba(aba ??
-        switch (apresentacao.status) {
-          StatusApresentacao.encerrada => _AbaPainel.estatisticas,
-          StatusApresentacao.agendada => _AbaPainel.mais,
-          StatusApresentacao.emAndamento => _AbaPainel.fila,
+        switch ((apresentacao.tipo, apresentacao.status)) {
+          (TipoApresentacao.louvor, StatusApresentacao.agendada) =>
+            _AbaPainel.escala,
+          (TipoApresentacao.louvor, _) => _AbaPainel.setlist,
+          (_, StatusApresentacao.encerrada) => _AbaPainel.estatisticas,
+          (_, StatusApresentacao.agendada) => _AbaPainel.mais,
+          (_, StatusApresentacao.emAndamento) => _AbaPainel.fila,
         });
   }
 
