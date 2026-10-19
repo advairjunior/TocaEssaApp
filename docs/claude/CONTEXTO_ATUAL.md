@@ -1,6 +1,6 @@
 # TocaEssaApp — Contexto atual
 
-> Atualizado em: 2026-10-13
+> Atualizado em: 2026-10-19
 
 ## Arquitetura
 
@@ -151,6 +151,30 @@ arquivo.
 - Encerrar o show sem selfie oferece tirar uma antes: a câmera abre com a
   prévia do cartão, a foto é guardada e o show é encerrado. Encerrar sem foto
   continua possível; desistir da câmera não encerra.
+
+**Louvor com revezamento (2026-10-19)** — desenho em
+`docs/superpowers/specs/2026-10-19-louvor-com-revezamento-design.md`.
+- Terceiro tipo de evento, `Louvor` (fim do enum `TipoApresentacao`). Sem
+  pedidos, fila, nota, alô nem Pix. Abas do artista: Escala, Hinos (a setlist)
+  e Mais; ao vivo abre em Hinos.
+- A letra colada (mesma `CifrasEmTexto` das cifras) vira estrofes e refrão
+  em `LetraDoHino.Separar` (marcadores `Refrão:`/`Coro:` e `(Refrão)`; sem
+  linha em branco, o tamanho da estrofe é o da primeira; o refrão entra
+  depois de toda estrofe).
+- `EscalaDeCantores.Montar` reveza as estrofes: refrão e última estrofe são
+  de Todos; menos estrofes primeiro, depois quem está há mais tempo sem
+  cantar; ninguém duas seguidas. Escolhas à mão ficam e contam no placar. A
+  escala não é guardada, é refeita a cada leitura.
+- Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
+  e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
+  (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
+  só para Louvor. O hino de agora é o último tocado na ordem da setlist.
+- Pelo código, cada participante vê o roteiro (`roteiro_do_louvor.dart`):
+  "Quem é você?" guardado no aparelho, partes da pessoa em destaque ("sua
+  vez"), letra grande, tela acesa, segue o Tocar do artista.
+- No louvor as telas da setlist, leitor e montar falam de hinos e letras
+  (`Vocabulario` em `dominio/vocabulario.dart`).
+- Fica para depois: roteiro sem internet.
 
 ### Lições do iPhone/Safari
 
