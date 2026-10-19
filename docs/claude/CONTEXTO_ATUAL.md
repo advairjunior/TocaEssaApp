@@ -182,6 +182,12 @@ arquivo.
   cantada vale 1), depois quem está há mais tempo sem cantar; ninguém duas
   seguidas; solos pelo instrumento. A troca à mão continua; "Limpar" deixa
   a parte sem escala. No roteiro, parte sem escala aparece como Todos.
+- Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (cartão
+  fechado por hino com a ordem, tom, resumo "João · Ana · solo José · 1 sem
+  escala", uma bolinha por parte na cor de quem canta, "Agora" no último
+  tocado e os já tocados apagados; tocar abre as partes e o "Escalar
+  automático"; "Ver por pessoa" destaca as partes de alguém) e "Pessoas"
+  (cantores, solistas e "Como marcar as partes").
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
