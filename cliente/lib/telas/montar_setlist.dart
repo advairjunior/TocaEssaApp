@@ -16,17 +16,20 @@ class MontarSetlist extends StatefulWidget {
     required this.api,
     required this.apresentacaoId,
     required this.naSetlist,
+    this.vocabulario = Vocabulario.musical,
   });
 
   final ApiTocaEssa api;
   final String apresentacaoId;
   final List<ItemDoSetlist> naSetlist;
+  final Vocabulario vocabulario;
 
   @override
   State<MontarSetlist> createState() => _MontarSetlistState();
 }
 
 class _MontarSetlistState extends State<MontarSetlist> {
+  Vocabulario get _v => widget.vocabulario;
   final _busca = TextEditingController();
   List<Repertorio>? _repertorios;
   String? _repertorioId;
@@ -131,7 +134,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
     final avulsa = await showDialog<_MusicaAvulsa>(
       context: context,
       builder: (_) => _DialogoMusicaAvulsa(
-          repertorios: _repertorios ?? const <Repertorio>[]),
+          vocabulario: _v, repertorios: _repertorios ?? const <Repertorio>[]),
     );
     if (avulsa == null || !mounted) return;
     try {
@@ -148,7 +151,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
         _mudou = true;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${avulsa.titulo} entrou na setlist.')));
+          SnackBar(content: Text('${avulsa.titulo} entrou na ${_v.setlist}.')));
       // Salva no acervo: a música nova aparece no repertório escolhido.
       if (avulsa.repertorioId != null) await _carregarRepertorios();
     } catch (erro) {
@@ -172,7 +175,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
           if (!saiu) Navigator.pop(context, _mudou);
         },
         child: Scaffold(
-          appBar: AppBar(title: const Text('Montar setlist')),
+          appBar: AppBar(title: Text('Montar ${_v.setlist}')),
           body: _repertorios == null
               ? const Center(child: CircularProgressIndicator())
               : _construirCorpo(context),
@@ -200,7 +203,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
             child: TextButton.icon(
               onPressed: _adicionarAvulsa,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Música avulsa'),
+              label: Text(_v.avulsa),
             ),
           ),
           if (repertorios.isEmpty)
@@ -250,6 +253,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
                 musica: musica,
                 repertorio: repertorio,
                 naSetlist: _estaNaSetlist(musica),
+                setlist: _v.setlist,
                 selecionada: _selecionada(musica),
                 alternar: () => _alternar(musica),
               ),
@@ -284,7 +288,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
         _relogio == null ? null : compararComContrato(_relogio!, estimada);
     final resumo = '${_selecionadas.isEmpty ? '' : '+${_selecionadas.length} '
             '${_selecionadas.length == 1 ? 'selecionada' : 'selecionadas'} · '}'
-        '$total ${total == 1 ? 'música' : 'músicas'} ≈ '
+        '$total ${total == 1 ? _v.musica : _v.musicas} ≈ '
         '${formatarTempoDoShow(estimada)}';
     return SafeArea(
       child: Container(
@@ -311,7 +315,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
             FilledButton.icon(
               onPressed: _selecionadas.isEmpty || _salvando ? null : _adicionar,
               icon: const Icon(Icons.playlist_add_rounded),
-              label: const Text('Adicionar à setlist'),
+              label: Text('Adicionar à ${_v.setlist}'),
             ),
           ],
         ),
@@ -325,6 +329,7 @@ class _LinhaDoAcervo extends StatelessWidget {
     required this.musica,
     required this.repertorio,
     required this.naSetlist,
+    required this.setlist,
     required this.selecionada,
     required this.alternar,
   });
@@ -333,6 +338,8 @@ class _LinhaDoAcervo extends StatelessWidget {
   // Na busca, de qual repertório a música é.
   final String? repertorio;
   final bool naSetlist;
+  // "setlist" ou, no louvor, "lista de hinos".
+  final String setlist;
   final bool selecionada;
   final VoidCallback alternar;
 
@@ -351,7 +358,7 @@ class _LinhaDoAcervo extends StatelessWidget {
       subtitle: detalhes.isEmpty && !naSetlist
           ? null
           : Text(
-              naSetlist ? 'na setlist' : detalhes,
+              naSetlist ? 'na $setlist' : detalhes,
               style: TextStyle(
                 color: naSetlist
                     ? CoresTocaEssa.sucesso
@@ -370,7 +377,9 @@ typedef _MusicaAvulsa = ({
 });
 
 class _DialogoMusicaAvulsa extends StatefulWidget {
-  const _DialogoMusicaAvulsa({required this.repertorios});
+  const _DialogoMusicaAvulsa(
+      {required this.vocabulario, required this.repertorios});
+  final Vocabulario vocabulario;
   final List<Repertorio> repertorios;
 
   @override
@@ -409,7 +418,7 @@ class _DialogoMusicaAvulsaState extends State<_DialogoMusicaAvulsa> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Música avulsa'),
+        title: Text(widget.vocabulario.avulsa),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -440,7 +449,7 @@ class _DialogoMusicaAvulsaState extends State<_DialogoMusicaAvulsa> {
                   runSpacing: EspacoTocaEssa.pequeno,
                   children: [
                     ChoiceChip(
-                      label: const Text('Só nesta setlist'),
+                      label: Text('Só nesta ${widget.vocabulario.setlist}'),
                       selected: _repertorioId == null,
                       onSelected: (_) => setState(() => _repertorioId = null),
                     ),

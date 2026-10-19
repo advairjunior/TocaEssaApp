@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_guitar_chord/flutter_guitar_chord.dart';
+import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/leitor_de_cifras.dart';
 import 'package:toca_essa_app/telas/sequencia_do_palco.dart';
@@ -45,7 +46,9 @@ class _Palco {
 }
 
 Future<_Palco> _abrir(WidgetTester tester,
-    {String inicial = '2', String? cifraDaVelha}) async {
+    {String inicial = '2',
+    String? cifraDaVelha,
+    Vocabulario vocabulario = Vocabulario.musical}) async {
   final palco = _Palco();
   if (cifraDaVelha != null) palco.textos['Velha Infância'] = cifraDaVelha;
   final cliente = MockClient((requisicao) async {
@@ -98,7 +101,8 @@ Future<_Palco> _abrir(WidgetTester tester,
   });
   final api = ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')
     ..definirTokenArtista('TOKEN');
-  final sequencia = SequenciaDoPalco(api: api, apresentacaoId: _id);
+  final sequencia = SequenciaDoPalco(
+      api: api, apresentacaoId: _id, vocabulario: vocabulario);
   await tester.runAsync(sequencia.carregar);
   await tester.runAsync(() => sequencia.buscarCifras());
   final musica = MusicaDoPalco.doSetlist(
@@ -493,5 +497,17 @@ void main() {
     await _abrir(tester);
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('no louvor o leitor fala de hinos e letras', (tester) async {
+    await _abrir(tester, vocabulario: Vocabulario.louvor);
+
+    await tester.tap(find.byTooltip('Próximo hino'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sem letra no app'), findsOneWidget);
+    expect(find.text('Colar letra'), findsOneWidget);
+    expect(find.text('Fim da lista de hinos'), findsOneWidget);
+    expect(find.byTooltip('Hino anterior'), findsOneWidget);
+    expect(find.byTooltip('Colar ou corrigir letra'), findsOneWidget);
   });
 }

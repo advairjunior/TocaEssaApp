@@ -94,7 +94,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
 
   Future<void> _colarLetra(HinoDoLouvor hino) async {
     final texto = await (widget.pedirLetra?.call(hino.titulo) ??
-        pedirCifraEmTexto(context, titulo: hino.titulo));
+        pedirCifraEmTexto(context, titulo: hino.titulo, oQue: 'Letra'));
     if (texto == null || texto.trim().isEmpty) return;
     await _salvar(() async {
       await widget.api.salvarCifraEmTexto(hino.titulo, hino.artista, texto);
@@ -297,8 +297,8 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
   @override
   Widget build(BuildContext context) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(EspacoTocaEssa.base, 0,
-              EspacoTocaEssa.base, EspacoTocaEssa.base),
+          padding: const EdgeInsets.fromLTRB(
+              EspacoTocaEssa.base, 0, EspacoTocaEssa.base, EspacoTocaEssa.base),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,

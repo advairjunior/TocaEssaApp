@@ -173,7 +173,9 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     if (escolha == 'link') return escolherCifra(musica);
     if (escolha != 'colar') return;
     final texto = await pedirCifraEmTexto(context,
-        titulo: item.titulo, texto: _sequencia.cifraDe(musica)?.texto);
+        titulo: item.titulo,
+        texto: _sequencia.cifraDe(musica)?.texto,
+        oQue: _v.cifraMaiuscula);
     if (texto == null || !mounted) return;
     try {
       await _sequencia.salvarCifraEmTexto(musica, texto);
@@ -188,6 +190,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         api: widget.api,
         apresentacaoId: widget.apresentacao.id,
         naSetlist: _sequencia.itens,
+        vocabulario: _v,
       ),
     ));
     if (mudou == true && mounted) await _carregar();

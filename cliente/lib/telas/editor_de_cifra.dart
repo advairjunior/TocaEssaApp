@@ -15,17 +15,22 @@ Future<String?> pedirCifraEmTexto(
   BuildContext context, {
   required String titulo,
   String? texto,
+  String oQue = 'Cifra',
 }) =>
     Navigator.of(context).push<String>(MaterialPageRoute(
       fullscreenDialog: true,
-      builder: (_) => _EditorDeCifra(titulo: titulo, texto: texto ?? ''),
+      builder: (_) =>
+          _EditorDeCifra(titulo: titulo, texto: texto ?? '', oQue: oQue),
     ));
 
 class _EditorDeCifra extends StatefulWidget {
-  const _EditorDeCifra({required this.titulo, required this.texto});
+  const _EditorDeCifra(
+      {required this.titulo, required this.texto, required this.oQue});
 
   final String titulo;
   final String texto;
+  // "Cifra" ou, no louvor, "Letra".
+  final String oQue;
 
   @override
   State<_EditorDeCifra> createState() => _EditorDeCifraState();
@@ -50,7 +55,7 @@ class _EditorDeCifraState extends State<_EditorDeCifra> {
             icon: const Icon(Icons.close_rounded),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Text('Cifra de ${widget.titulo}',
+          title: Text('${widget.oQue} de ${widget.titulo}',
               maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
             Padding(
@@ -125,8 +130,8 @@ class _CampoSemQuebra extends StatelessWidget {
         builder: (context, limites) => SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: SizedBox(
-            width: _larguraDoTexto(
-                controlador.text.split('\n'), limites.maxWidth),
+            width:
+                _larguraDoTexto(controlador.text.split('\n'), limites.maxWidth),
             height: limites.maxHeight,
             child: TextField(
               controller: controlador,

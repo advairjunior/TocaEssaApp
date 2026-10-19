@@ -68,6 +68,7 @@ Future<List<http.Request>> _abrir(
   WidgetTester tester, {
   List<ItemDoSetlist> naSetlist = const [],
   int? duracao,
+  Vocabulario vocabulario = Vocabulario.musical,
 }) async {
   final requisicoes = <http.Request>[];
   final cliente = MockClient((requisicao) async {
@@ -92,6 +93,7 @@ Future<List<http.Request>> _abrir(
                 ..definirTokenArtista('TOKEN'),
               apresentacaoId: _show,
               naSetlist: naSetlist,
+              vocabulario: vocabulario,
             ),
           )),
           child: const Text('Abrir'),
@@ -236,5 +238,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('no louvor monta a lista de hinos', (tester) async {
+    await _abrir(tester, vocabulario: Vocabulario.louvor);
+
+    expect(find.text('Montar lista de hinos'), findsOneWidget);
+    expect(find.text('Adicionar à lista de hinos'), findsOneWidget);
+    await tester.tap(find.text('Hino avulso'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hino avulso'), findsNWidgets(2));
+    expect(find.text('Só nesta lista de hinos'), findsOneWidget);
   });
 }

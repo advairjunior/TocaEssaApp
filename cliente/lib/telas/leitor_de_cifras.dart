@@ -222,8 +222,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   }
 
   Future<void> _mudarVelocidade(int passo) async {
-    setState(() => _velocidade =
-        (_velocidade + passo).clamp(0, _velocidades.length - 1));
+    setState(() =>
+        _velocidade = (_velocidade + passo).clamp(0, _velocidades.length - 1));
     try {
       await _preferencias?.setDouble(
           _chaveVelocidade, _velocidades[_velocidade].vezes);
@@ -267,7 +267,9 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
 
   Future<void> _editarCifra(String? textoAtual) async {
     final texto = await pedirCifraEmTexto(context,
-        titulo: _pagina.titulo, texto: textoAtual);
+        titulo: _pagina.titulo,
+        texto: textoAtual,
+        oQue: _sequencia.vocabulario.cifraMaiuscula);
     if (texto == null || !mounted) return;
     try {
       await _sequencia.salvarCifraEmTexto(_pagina, texto);
@@ -320,7 +322,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     if (indice < 0) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('A setlist está vazia.')),
+        body: Center(
+            child: Text('A ${_sequencia.vocabulario.setlist} está vazia.')),
       );
     }
     final pagina = paginas[indice];
@@ -366,7 +369,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               onPressed: () => _mudarTom(pagina, 1),
             ),
             IconButton(
-              tooltip: 'Colar ou corrigir cifra',
+              tooltip: 'Colar ou corrigir ${_sequencia.vocabulario.cifra}',
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => _editarCifra(texto),
             ),
@@ -374,6 +377,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
         ),
         body: texto == null
             ? _SemCifra(
+                vocabulario: _sequencia.vocabulario,
                 link: consulta?.cifra?.url,
                 colar: () => _editarCifra(null),
                 abrirNoSite: _abrirNoSite,
@@ -410,6 +414,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                 ],
               ),
         bottomNavigationBar: _BarraDoLeitor(
+          vocabulario: _sequencia.vocabulario,
           temAnterior: indice > 0,
           temProxima: depois != null,
           tocando: _sequencia.estaTocando(pagina),
@@ -645,11 +650,13 @@ class _ControleDaRolagem extends StatelessWidget {
 
 class _SemCifra extends StatelessWidget {
   const _SemCifra({
+    required this.vocabulario,
     required this.link,
     required this.colar,
     required this.abrirNoSite,
   });
 
+  final Vocabulario vocabulario;
   final String? link;
   final VoidCallback colar;
   final ValueChanged<String> abrirNoSite;
@@ -664,13 +671,13 @@ class _SemCifra extends StatelessWidget {
               const Icon(Icons.music_note_rounded,
                   size: 48, color: CoresTocaEssa.textoSecundario),
               const SizedBox(height: EspacoTocaEssa.medio),
-              Text('Sem cifra no app',
+              Text('Sem ${vocabulario.cifra} no app',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: EspacoTocaEssa.base),
               FilledButton.icon(
                 onPressed: colar,
                 icon: const Icon(Icons.content_paste_rounded),
-                label: const Text('Colar cifra'),
+                label: Text('Colar ${vocabulario.cifra}'),
               ),
               if (link case final endereco?) ...[
                 const SizedBox(height: EspacoTocaEssa.pequeno),
@@ -689,6 +696,7 @@ class _SemCifra extends StatelessWidget {
 /// Sempre visível: setas que só trocam a cifra e Tocar no meio.
 class _BarraDoLeitor extends StatelessWidget {
   const _BarraDoLeitor({
+    required this.vocabulario,
     required this.temAnterior,
     required this.temProxima,
     required this.tocando,
@@ -699,6 +707,7 @@ class _BarraDoLeitor extends StatelessWidget {
     required this.tocar,
   });
 
+  final Vocabulario vocabulario;
   final bool temAnterior;
   final bool temProxima;
   final bool tocando;
@@ -727,7 +736,7 @@ class _BarraDoLeitor extends StatelessWidget {
               Row(
                 children: [
                   IconButton.filledTonal(
-                    tooltip: 'Música anterior',
+                    tooltip: vocabulario.anterior,
                     iconSize: 32,
                     onPressed: temAnterior ? anterior : null,
                     icon: const Icon(Icons.chevron_left_rounded),
@@ -748,7 +757,7 @@ class _BarraDoLeitor extends StatelessWidget {
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),
                   IconButton.filledTonal(
-                    tooltip: 'Próxima música',
+                    tooltip: vocabulario.proxima,
                     iconSize: 32,
                     onPressed: temProxima ? proxima : null,
                     icon: const Icon(Icons.chevron_right_rounded),
@@ -757,7 +766,9 @@ class _BarraDoLeitor extends StatelessWidget {
               ),
               const SizedBox(height: EspacoTocaEssa.mini),
               Text(
-                depois == null ? 'Fim da setlist' : 'Depois: $depois',
+                depois == null
+                    ? 'Fim da ${vocabulario.setlist}'
+                    : 'Depois: $depois',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context)
