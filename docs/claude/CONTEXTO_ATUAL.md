@@ -157,10 +157,13 @@ arquivo.
 - Terceiro tipo de evento, `Louvor` (fim do enum `TipoApresentacao`). Sem
   pedidos, fila, nota, alô nem Pix. Abas do artista: Escala, Hinos (a setlist)
   e Mais; ao vivo abre em Hinos.
-- A letra colada (mesma `CifrasEmTexto` das cifras) vira estrofes e refrão
-  em `LetraDoHino.Separar` (marcadores `Refrão:`/`Coro:` e `(Refrão)`; sem
-  linha em branco, o tamanho da estrofe é o da primeira; o refrão entra
-  depois de toda estrofe).
+- A cifra colada (mesma `CifrasEmTexto` das cifras, com acordes) vira
+  estrofes e refrão em `LetraDoHino.Separar`. Marcadores mandam: "(Estrofe
+  1)", "[Estrofe 2]", "Estrofe 3:", "1ª estrofe", "(Coro)", "Refrão:"; o que
+  vem antes do primeiro não é cantado; "(Coro)" com texto define o coro e
+  sem texto o repete. Sem marcadores: linhas em branco e tamanho da primeira
+  estrofe. A linha "Tom:" nunca vira parte; os espaços dos acordes ficam; o
+  refrão entra depois de toda estrofe.
 - `EscalaDeCantores.Montar` reveza as estrofes: refrão e última estrofe são
   de Todos; menos estrofes primeiro, depois quem está há mais tempo sem
   cantar; ninguém duas seguidas. Escolhas à mão ficam e contam no placar. A
@@ -170,8 +173,16 @@ arquivo.
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
   só para Louvor. O hino de agora é o último tocado na ordem da setlist.
 - Pelo código, cada participante vê o roteiro (`roteiro_do_louvor.dart`):
-  "Quem é você?" guardado no aparelho, partes da pessoa em destaque ("sua
-  vez"), letra grande, tela acesa, segue o Tocar do artista.
+  "Quem é você?" guardado no aparelho, segue o Tocar do artista, tela acesa.
+- Cifra no jeito de teleprompter (`cifra_do_palco.dart`, tirada do leitor):
+  cada parte tem uma faixa com o nome de quem canta, presa no topo enquanto
+  a parte passa (`PinnedHeaderSliver` em `SliverMainAxisGroup`); uma cor por
+  cantor (`trechos_do_louvor.dart`); a vez da pessoa em destaque e "você é o
+  próximo" na parte anterior; o refrão escrito de novo. Pinça, rolagem
+  automática e toque no acorde valem no leitor e no roteiro. No roteiro,
+  "Acordes" (guardado no aparelho) mostra a cifra e o −/+ meio tom por hino;
+  sem ele, só a letra. No leitor do artista, "Quem sou eu" destaca as partes
+  dele.
 - No louvor as telas da setlist, leitor e montar falam de hinos e letras
   (`Vocabulario` em `dominio/vocabulario.dart`).
 - Fica para depois: roteiro sem internet.

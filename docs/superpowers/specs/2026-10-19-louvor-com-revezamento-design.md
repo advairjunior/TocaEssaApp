@@ -67,7 +67,14 @@ música e fila. Pedidos, nota, alô e Pix não aparecem.
 
 ## Separar a letra em partes
 
-Regras, na ordem (sem acento nem maiúscula nos marcadores):
+Ajuste de 2026-10-19, depois do primeiro teste do proprietário: a cifra
+colada traz "Tom: G", acordes e marcadores como "(Estrofe 1)" e "(Coro)".
+Com marcadores de estrofe, eles mandam (o que vem antes do primeiro não é
+cantado; "(Coro)" com texto define o coro, sem texto o repete). A linha
+"Tom:" nunca vira parte e os espaços que alinham os acordes ficam. Sem
+marcadores de estrofe, valem as regras abaixo.
+
+Regras sem marcadores de estrofe, na ordem (sem acento nem maiúscula):
 
 1. Linha `Refrão:` ou `Coro:` começa o refrão; o marcador não aparece.
 2. Linha `(Refrão)` ou `(Coro)` repete o refrão com o texto inteiro.
