@@ -25,7 +25,7 @@ class ParteDoHino {
     required this.tipo,
     required this.texto,
     required this.cantores,
-    required this.escolhidaAMao,
+    required this.definida,
     this.nome,
     this.vezes = 1,
   });
@@ -33,7 +33,8 @@ class ParteDoHino {
   final TipoDaParte tipo;
   final String texto;
   final List<String> cantores;
-  final bool escolhidaAMao;
+  // Falso: a parte ainda não foi escalada.
+  final bool definida;
   // Da parte instrumental, como "Solo sax tenor".
   final String? nome;
   // De marcações como "(Coro 2x)".
@@ -47,7 +48,7 @@ class ParteDoHino {
         tipo: TipoDaParte.deJson(json['tipo'] as String? ?? ''),
         texto: json['texto'] as String? ?? '',
         cantores: _textos(json['cantores']),
-        escolhidaAMao: json['escolhidaAMao'] as bool? ?? false,
+        definida: json['definida'] as bool? ?? false,
         nome: json['nome'] as String?,
         vezes: (json['vezes'] as num?)?.toInt() ?? 1,
       );
@@ -91,14 +92,15 @@ class HinoDoLouvor {
 }
 
 class PlacarDoCantor {
-  const PlacarDoCantor({required this.nome, required this.estrofes});
+  const PlacarDoCantor({required this.nome, required this.pontos});
 
   final String nome;
-  final int estrofes;
+  // Cada estrofe ou coro cantado vale um ponto.
+  final int pontos;
 
   factory PlacarDoCantor.deJson(Map<String, dynamic> json) => PlacarDoCantor(
         nome: json['nome'] as String? ?? '',
-        estrofes: (json['estrofes'] as num?)?.toInt() ?? 0,
+        pontos: (json['pontos'] as num?)?.toInt() ?? 0,
       );
 }
 

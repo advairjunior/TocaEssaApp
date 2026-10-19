@@ -15,7 +15,7 @@ Map<String, Object?> _parte(String tipo, String texto, List<String> cantores) =>
       'tipo': tipo,
       'texto': texto,
       'cantores': cantores,
-      'escolhidaAMao': false,
+      'definida': false,
     };
 
 Map<String, Object?> _hino(String id, String titulo,

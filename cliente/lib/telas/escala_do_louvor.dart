@@ -135,8 +135,8 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
               descricao: '$_erro',
             );
     }
-    final estrofes = {
-      for (final item in louvor.placar) item.nome: item.estrofes,
+    final pontos = {
+      for (final item in louvor.placar) item.nome: item.pontos,
     };
     final solos = {
       for (final item in louvor.placarDosSolos) item.nome: item.solos,
@@ -154,7 +154,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
             children: [
               for (final nome in louvor.cantores)
                 InputChip(
-                  label: Text('$nome · ${estrofes[nome] ?? 0}'),
+                  label: Text('$nome · ${pontos[nome] ?? 0}'),
                   deleteButtonTooltipMessage: 'Tirar $nome',
                   onDeleted: _salvando
                       ? null
@@ -173,10 +173,10 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
           const SizedBox(height: EspacoTocaEssa.pequeno),
           Text(
             louvor.cantores.isEmpty
-                ? 'Coloque quem vai cantar no microfone: o app divide as '
-                    'estrofes entre eles. Refrão e última estrofe são de todos.'
-                : 'O número é de estrofes de cada um. Toque numa parte para '
-                    'trocar quem canta.',
+                ? 'Coloque quem vai cantar no microfone. Em cada hino, '
+                    '"Escalar automático" divide as partes entre eles.'
+                : 'O número é de pontos: cada estrofe ou coro cantado vale 1. '
+                    'Toque numa parte para trocar quem canta.',
             style: Theme.of(context)
                 .textTheme
                 .bodySmall
@@ -241,6 +241,10 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
                   ? null
                   : (indice, rotulo) => _escolherParte(hino, indice, rotulo),
               colarLetra: _salvando ? null : () => _colarLetra(hino),
+              escalar: _salvando
+                  ? null
+                  : () => _salvar(
+                      () => widget.api.escalarHinoDoLouvor(_id, hino.itemId)),
             ),
             const SizedBox(height: EspacoTocaEssa.medio),
           ],
@@ -255,11 +259,13 @@ class _CartaoDoHino extends StatelessWidget {
     required this.hino,
     required this.escolherParte,
     required this.colarLetra,
+    required this.escalar,
   });
 
   final HinoDoLouvor hino;
   final void Function(int indice, String rotulo)? escolherParte;
   final VoidCallback? colarLetra;
+  final VoidCallback? escalar;
 
   @override
   Widget build(BuildContext context) {
@@ -270,13 +276,26 @@ class _CartaoDoHino extends StatelessWidget {
       linhas: [
         Padding(
           padding: const EdgeInsets.all(EspacoTocaEssa.base),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text(hino.titulo, style: texto.titleMedium)),
-              if (hino.tom case final tom?)
-                Text('Tom $tom',
-                    style: texto.labelLarge
-                        ?.copyWith(color: CoresTocaEssa.roxoClaro)),
+              Row(
+                children: [
+                  Expanded(child: Text(hino.titulo, style: texto.titleMedium)),
+                  if (hino.tom case final tom?)
+                    Text('Tom $tom',
+                        style: texto.labelLarge
+                            ?.copyWith(color: CoresTocaEssa.roxoClaro)),
+                ],
+              ),
+              if (hino.partes.isNotEmpty) ...[
+                const SizedBox(height: EspacoTocaEssa.pequeno),
+                FilledButton.tonalIcon(
+                  onPressed: escalar,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  label: const Text('Escalar automático'),
+                ),
+              ],
             ],
           ),
         ),
@@ -317,19 +336,16 @@ class _CartaoDoHino extends StatelessWidget {
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (parte.escolhidaAMao)
-                    const Tooltip(
-                      message: 'Escolhida à mão',
-                      child: Padding(
-                        padding: EdgeInsets.only(right: EspacoTocaEssa.pequeno),
-                        child: Icon(Icons.circle,
-                            size: 8, color: CoresTocaEssa.ouro),
-                      ),
-                    ),
                   Text(
-                    parte.tipo == TipoDaParte.instrumental && parte.deTodos
-                        ? '—'
-                        : parte.quemCanta,
+                    switch (parte) {
+                      ParteDoHino(definida: false) => '—',
+                      ParteDoHino(
+                        tipo: TipoDaParte.instrumental,
+                        deTodos: true
+                      ) =>
+                        'Banda',
+                      _ => parte.quemCanta,
+                    },
                     style: texto.labelLarge?.copyWith(
                       color: parte.deTodos
                           ? CoresTocaEssa.textoSecundario
@@ -426,7 +442,7 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
               const SizedBox(height: EspacoTocaEssa.pequeno),
               TextButton(
                 onPressed: () => _responder(null),
-                child: const Text('Automático'),
+                child: const Text('Limpar'),
               ),
             ],
           ),

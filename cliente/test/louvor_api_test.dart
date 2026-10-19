@@ -15,8 +15,8 @@ const _louvorJson = {
     {'nome': 'José', 'solos': 2},
   ],
   'placar': [
-    {'nome': 'João', 'estrofes': 1},
-    {'nome': 'Ana', 'estrofes': 1},
+    {'nome': 'João', 'pontos': 1},
+    {'nome': 'Ana', 'pontos': 1},
   ],
   'hinos': [
     {
@@ -30,19 +30,19 @@ const _louvorJson = {
           'tipo': 'Estrofe',
           'texto': 'Cristo Jesus',
           'cantores': ['João'],
-          'escolhidaAMao': false,
+          'definida': false,
         },
         {
           'tipo': 'Refrao',
           'texto': 'Por Cristo, resgatado',
           'cantores': <String>[],
-          'escolhidaAMao': true,
+          'definida': true,
         },
         {
           'tipo': 'Instrumental',
           'texto': 'G   D',
           'cantores': <String>[],
-          'escolhidaAMao': false,
+          'definida': false,
           'nome': 'Solo sax',
           'vezes': 2,
         },
@@ -76,12 +76,13 @@ void main() {
     await api.definirCantoresDoLouvor('a1', ['João', 'Ana']);
     await api.escolherParteDoLouvor('a1', 'h1', 2, ['Ana']);
     await api.escolherParteDoLouvor('a1', 'h1', 0, null);
+    await api.escalarHinoDoLouvor('a1', 'h1');
     await api.definirSolistasDoLouvor(
         'a1', [const Solista(nome: 'José', instrumento: 'sax tenor')]);
 
     expect(louvor.cantores, ['João', 'Ana']);
     expect(louvor.placar.first.nome, 'João');
-    expect(louvor.placar.first.estrofes, 1);
+    expect(louvor.placar.first.pontos, 1);
     final hino = louvor.hinos.single;
     expect(hino.titulo, '80 · Por Cristo, resgatado');
     expect(hino.tom, 'G');
@@ -90,7 +91,7 @@ void main() {
     expect(hino.partes.first.quemCanta, 'João');
     expect(hino.partes[1].tipo, TipoDaParte.refrao);
     expect(hino.partes[1].quemCanta, 'Todos');
-    expect(hino.partes[1].escolhidaAMao, isTrue);
+    expect(hino.partes[1].definida, isTrue);
     expect(hino.partes.last.tipo, TipoDaParte.instrumental);
     expect(hino.partes.last.nome, 'Solo sax');
     expect(hino.partes.last.vezes, 2);
@@ -110,8 +111,11 @@ void main() {
       'cantores': ['Ana'],
     });
     expect(jsonDecode(requisicoes[3].body)['cantores'], isNull);
-    expect(requisicoes[4].url.path, '/api/apresentacoes/a1/louvor/solistas');
-    expect(jsonDecode(requisicoes[4].body), {
+    expect(requisicoes[4].method, 'POST');
+    expect(requisicoes[4].url.path,
+        '/api/apresentacoes/a1/louvor/hinos/h1/escalar');
+    expect(requisicoes[5].url.path, '/api/apresentacoes/a1/louvor/solistas');
+    expect(jsonDecode(requisicoes[5].body), {
       'solistas': [
         {'nome': 'José', 'instrumento': 'sax tenor'},
       ],

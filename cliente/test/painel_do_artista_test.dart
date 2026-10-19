@@ -631,8 +631,8 @@ void main() {
     final louvorJson = jsonEncode({
       'cantores': ['João', 'Ana'],
       'placar': [
-        {'nome': 'João', 'estrofes': 0},
-        {'nome': 'Ana', 'estrofes': 0},
+        {'nome': 'João', 'pontos': 0},
+        {'nome': 'Ana', 'pontos': 0},
       ],
       'hinos': <Object?>[],
     });

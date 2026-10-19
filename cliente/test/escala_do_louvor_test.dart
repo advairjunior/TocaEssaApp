@@ -16,12 +16,12 @@ final _apresentacao = Apresentacao.deJson(jsonDecode(
     as Map<String, dynamic>);
 
 Map<String, Object?> _parte(String tipo, String texto, List<String> cantores,
-        {bool aMao = false}) =>
+        {bool definida = true}) =>
     {
       'tipo': tipo,
       'texto': texto,
       'cantores': cantores,
-      'escolhidaAMao': aMao,
+      'definida': definida,
     };
 
 Map<String, Object?> _louvor(List<String> cantores,
@@ -34,7 +34,7 @@ Map<String, Object?> _louvor(List<String> cantores,
       ],
 
       'placar': [
-        for (final nome in cantores) {'nome': nome, 'estrofes': 1},
+        for (final nome in cantores) {'nome': nome, 'pontos': 1},
       ],
       'hinos': [
         {
@@ -50,13 +50,13 @@ Map<String, Object?> _louvor(List<String> cantores,
                 ['João']),
             _parte('Refrao', 'Por Cristo, resgatado', []),
             _parte('Estrofe', 'Preso estava na iniquidade', ['Ana'],
-                aMao: true),
+                definida: true),
             _parte('Refrao', 'Por Cristo, resgatado', []),
             {
               'tipo': 'Instrumental',
               'texto': 'G   D',
               'cantores': <String>[],
-              'escolhidaAMao': false,
+              'definida': false,
               'nome': 'Solo sax tenor',
               'vezes': 2,
             },
@@ -143,7 +143,7 @@ void main() {
     expect(find.text('João'), findsOneWidget);
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Todos'), findsNWidgets(2));
-    expect(find.byTooltip('Escolhida à mão'), findsOneWidget);
+    expect(find.text('Escalar automático'), findsOneWidget);
     expect(find.text('Sem letra'), findsOneWidget);
   });
 
@@ -169,7 +169,7 @@ void main() {
     expect(_corpo(tirou)['nomes'], ['Ana', 'Pedro']);
   });
 
-  testWidgets('escolhe quem canta, deixa com Todos ou volta à escala',
+  testWidgets('escolhe quem canta, deixa com Todos ou limpa a parte',
       (tester) async {
     final requisicoes = await _abrir(tester);
     List<http.Request> partes() => requisicoes
@@ -195,7 +195,7 @@ void main() {
 
     await tester.tap(find.text('Preso estava na iniquidade'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Automático'));
+    await tester.tap(find.widgetWithText(TextButton, 'Limpar'));
     await tester.pumpAndSettle();
     expect(_corpo(partes().last),
         {'itemId': 'h1', 'indice': 2, 'cantores': null});
@@ -277,5 +277,17 @@ void main() {
 
     expect(find.widgetWithText(FilterChip, 'José'), findsOneWidget);
     expect(find.widgetWithText(FilterChip, 'Ana'), findsNothing);
+  });
+
+  testWidgets('o botão do hino escala as partes pelos pontos', (tester) async {
+    final requisicoes = await _abrir(tester);
+
+    await tester.tap(find.text('Escalar automático'));
+    await tester.pumpAndSettle();
+
+    final escalou = requisicoes.where((r) =>
+        r.method == 'POST' &&
+        r.url.path == '/api/apresentacoes/$_id/louvor/hinos/h1/escalar');
+    expect(escalou, hasLength(1));
   });
 }

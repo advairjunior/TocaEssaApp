@@ -5,7 +5,7 @@ import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 ParteDoHino _parte(TipoDaParte tipo, String texto, List<String> cantores) =>
     ParteDoHino(
-        tipo: tipo, texto: texto, cantores: cantores, escolhidaAMao: false);
+        tipo: tipo, texto: texto, cantores: cantores, definida: false);
 
 final _hino = HinoDoLouvor(
   itemId: 'h1',
@@ -66,20 +66,20 @@ void main() {
             tipo: TipoDaParte.refrao,
             texto: 'Coro',
             cantores: [],
-            escolhidaAMao: false,
+            definida: false,
             vezes: 2),
         const ParteDoHino(
             tipo: TipoDaParte.instrumental,
             texto: 'G   D',
             cantores: [],
-            escolhidaAMao: false,
+            definida: false,
             nome: 'Solo sax tenor',
             vezes: 2),
         const ParteDoHino(
             tipo: TipoDaParte.instrumental,
             texto: 'C   D',
             cantores: ['José'],
-            escolhidaAMao: true,
+            definida: true,
             nome: 'Solo trompete'),
       ],
     );
