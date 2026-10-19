@@ -74,6 +74,15 @@ cantado; "(Coro)" com texto define o coro, sem texto o repete). A linha
 "Tom:" nunca vira parte e os espaços que alinham os acordes ficam. Sem
 marcadores de estrofe, valem as regras abaixo.
 
+Partes instrumentais (2026-10-19): "(Solo …)" com qualquer instrumento,
+"(Introdução)"/"(Intro)", "(Interlúdio)" e "(Final)". Ninguém é escalado
+nelas e elas não contam no placar; o proprietário pode pôr à mão o nome de
+quem toca o solo, e o telefone dessa pessoa mostra a vez dela. Estrofe e
+coro andam sempre juntos: o coro entra antes do solo que vem depois de uma
+estrofe. "2x" no fim de qualquer marcação ("(Coro 2x)") mostra a repetição
+na faixa. Sem acordes, o solo aparece como "instrumental". O app traz o
+sumário "Como marcar as partes" no editor da letra e na aba Escala.
+
 Regras sem marcadores de estrofe, na ordem (sem acento nem maiúscula):
 
 1. Linha `Refrão:` ou `Coro:` começa o refrão; o marcador não aparece.

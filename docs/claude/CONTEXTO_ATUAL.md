@@ -163,7 +163,12 @@ arquivo.
   vem antes do primeiro não é cantado; "(Coro)" com texto define o coro e
   sem texto o repete. Sem marcadores: linhas em branco e tamanho da primeira
   estrofe. A linha "Tom:" nunca vira parte; os espaços dos acordes ficam; o
-  refrão entra depois de toda estrofe.
+  refrão entra depois de toda estrofe (antes de um solo, inclusive).
+- Partes instrumentais (`TipoDaParte.Instrumental`, com `Nome` e `Vezes`):
+  "(Solo sax tenor)", "(Introdução)", "(Interlúdio)", "(Final)"; "2x" no fim
+  de qualquer marcação. Não são escaladas nem contam no placar; o nome de
+  quem toca o solo pode ser posto à mão. Sumário "Como marcar as partes"
+  em `como_marcar_hinos.dart` (editor da letra e aba Escala).
 - `EscalaDeCantores.Montar` reveza as estrofes: refrão e última estrofe são
   de Todos; menos estrofes primeiro, depois quem está há mais tempo sem
   cantar; ninguém duas seguidas. Escolhas à mão ficam e contam no placar. A
