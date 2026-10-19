@@ -32,6 +32,14 @@ const _louvorJson = {
           'cantores': <String>[],
           'escolhidaAMao': true,
         },
+        {
+          'tipo': 'Instrumental',
+          'texto': 'G   D',
+          'cantores': <String>[],
+          'escolhidaAMao': false,
+          'nome': 'Solo sax',
+          'vezes': 2,
+        },
       ],
     },
   ],
@@ -72,9 +80,13 @@ void main() {
     expect(hino.temLetra, isTrue);
     expect(hino.partes.first.tipo, TipoDaParte.estrofe);
     expect(hino.partes.first.quemCanta, 'João');
-    expect(hino.partes.last.tipo, TipoDaParte.refrao);
-    expect(hino.partes.last.quemCanta, 'Todos');
-    expect(hino.partes.last.escolhidaAMao, isTrue);
+    expect(hino.partes[1].tipo, TipoDaParte.refrao);
+    expect(hino.partes[1].quemCanta, 'Todos');
+    expect(hino.partes[1].escolhidaAMao, isTrue);
+    expect(hino.partes.last.tipo, TipoDaParte.instrumental);
+    expect(hino.partes.last.nome, 'Solo sax');
+    expect(hino.partes.last.vezes, 2);
+    expect(hino.partes.first.vezes, 1);
 
     expect(requisicoes[0].url.path, '/api/apresentacoes/a1/louvor');
     expect(requisicoes[0].headers['Authorization'], 'Bearer token');
@@ -116,6 +128,6 @@ void main() {
     expect(roteiro.nome, 'Louvor de sábado');
     expect(roteiro.hinoAtualId, 'h1');
     expect(roteiro.cantores, ['João', 'Ana']);
-    expect(roteiro.hinos.single.partes, hasLength(2));
+    expect(roteiro.hinos.single.partes, hasLength(3));
   });
 }

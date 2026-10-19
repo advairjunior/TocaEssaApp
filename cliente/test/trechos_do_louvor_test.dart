@@ -53,4 +53,59 @@ void main() {
     expect(trechos[0].aviso, isNull);
     expect(trechos[0].destaque, isFalse);
   });
+
+  group('partes instrumentais', () {
+    final comSolo = HinoDoLouvor(
+      itemId: 'h2',
+      titulo: '5 · Hino com solo',
+      tom: 'G',
+      tocado: false,
+      temLetra: true,
+      partes: [
+        const ParteDoHino(
+            tipo: TipoDaParte.refrao,
+            texto: 'Coro',
+            cantores: [],
+            escolhidaAMao: false,
+            vezes: 2),
+        const ParteDoHino(
+            tipo: TipoDaParte.instrumental,
+            texto: 'G   D',
+            cantores: [],
+            escolhidaAMao: false,
+            nome: 'Solo sax tenor',
+            vezes: 2),
+        const ParteDoHino(
+            tipo: TipoDaParte.instrumental,
+            texto: 'C   D',
+            cantores: ['José'],
+            escolhidaAMao: true,
+            nome: 'Solo trompete'),
+      ],
+    );
+
+    test('mostram o instrumento, quem toca e quantas vezes', () {
+      final trechos = trechosDoHino(comSolo, cantores: ['João', 'José']);
+
+      expect(trechos.map((t) => t.rotulo),
+          ['TODOS · 2X', 'SOLO SAX TENOR · 2X', 'JOSÉ · SOLO TROMPETE']);
+      expect(trechos[1].cor, corInstrumental);
+      expect(trechos[2].cor, corInstrumental);
+    });
+
+    test('sem acordes avisam que é instrumental; com acordes, a cifra', () {
+      expect(trechosDoHino(comSolo, cantores: [])[1].texto, 'instrumental');
+      expect(trechosDoHino(comSolo, cantores: [], acordes: true)[1].texto,
+          'G   D');
+    });
+
+    test('o solista vê a vez dele e o aviso de próximo', () {
+      final trechos =
+          trechosDoHino(comSolo, cantores: ['José'], quemSou: 'José');
+
+      expect(trechos[2].rotulo, 'JOSÉ · SOLO TROMPETE · SUA VEZ');
+      expect(trechos[2].destaque, isTrue);
+      expect(trechos[1].aviso, 'você é o próximo');
+    });
+  });
 }

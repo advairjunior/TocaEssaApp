@@ -25,9 +25,12 @@ Color corDoCantor(List<String> cantores, String nome) {
       : _coresDosCantores[indice % _coresDosCantores.length];
 }
 
-/// Partes do hino como trechos da cifra: nome de quem canta na faixa, a vez
-/// de [quemSou] em destaque e avisada na parte anterior. Sem [acordes], só a
-/// letra; com eles, a cifra no tom escolhido com [semitons].
+/// Faixa dos solos e partes instrumentais, diferente da dos cantores.
+const corInstrumental = CoresTocaEssa.atencao;
+
+/// Partes do hino como trechos da cifra: nome de quem canta (ou do solo) na
+/// faixa, a vez de [quemSou] em destaque e avisada na parte anterior. Sem
+/// [acordes], só a letra; com eles, a cifra no tom escolhido com [semitons].
 List<TrechoDaCifra> trechosDoHino(
   HinoDoLouvor hino, {
   required List<String> cantores,
@@ -37,26 +40,42 @@ List<TrechoDaCifra> trechosDoHino(
 }) {
   bool minha(ParteDoHino parte) =>
       quemSou.isNotEmpty && parte.cantores.contains(quemSou);
+  String rotulo(ParteDoHino parte) => [
+        if (parte.tipo != TipoDaParte.instrumental)
+          parte.quemCanta.toUpperCase()
+        else ...[
+          if (!parte.deTodos) parte.quemCanta.toUpperCase(),
+          (parte.nome ?? parte.tipo.rotulo).toUpperCase(),
+        ],
+        if (parte.vezes > 1) '${parte.vezes}X',
+        if (minha(parte)) 'SUA VEZ',
+      ].join(' · ');
+  String letra(ParteDoHino parte) {
+    final semAcordes = parte.texto
+        .split('\n')
+        .where((linha) => !linhaDeAcordes(linha))
+        .join('\n');
+    return parte.tipo == TipoDaParte.instrumental && semAcordes.trim().isEmpty
+        ? 'instrumental'
+        : semAcordes;
+  }
+
   return [
     for (final (indice, parte) in hino.partes.indexed)
       TrechoDaCifra(
-        rotulo: [parte.quemCanta.toUpperCase(), if (minha(parte)) 'SUA VEZ']
-            .join(' · '),
-        cor: parte.deTodos
-            ? CoresTocaEssa.textoSecundario
-            : corDoCantor(cantores, parte.cantores.first),
+        rotulo: rotulo(parte),
+        cor: parte.tipo == TipoDaParte.instrumental
+            ? corInstrumental
+            : parte.deTodos
+                ? CoresTocaEssa.textoSecundario
+                : corDoCantor(cantores, parte.cantores.first),
         destaque: minha(parte),
         aviso: !minha(parte) &&
                 indice + 1 < hino.partes.length &&
                 minha(hino.partes[indice + 1])
             ? 'você é o próximo'
             : null,
-        texto: acordes
-            ? transporCifra(parte.texto, semitons)
-            : parte.texto
-                .split('\n')
-                .where((linha) => !linhaDeAcordes(linha))
-                .join('\n'),
+        texto: acordes ? transporCifra(parte.texto, semitons) : letra(parte),
       ),
   ];
 }

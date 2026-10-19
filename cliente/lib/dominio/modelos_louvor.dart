@@ -2,30 +2,42 @@ part of 'modelos.dart';
 
 enum TipoDaParte {
   estrofe,
-  refrao;
+  refrao,
+  instrumental;
 
-  factory TipoDaParte.deJson(String valor) =>
-      valor == 'Refrao' ? refrao : estrofe;
+  factory TipoDaParte.deJson(String valor) => switch (valor) {
+        'Refrao' => refrao,
+        'Instrumental' => instrumental,
+        _ => estrofe,
+      };
 
   String get rotulo => switch (this) {
         estrofe => 'Estrofe',
         refrao => 'Refrão',
+        instrumental => 'Instrumental',
       };
 }
 
-/// Parte da letra de um hino e quem a canta; sem cantores é de Todos.
+/// Parte da letra de um hino e quem a canta; sem cantores é de Todos (ou de
+/// ninguém, numa parte instrumental como um solo).
 class ParteDoHino {
   const ParteDoHino({
     required this.tipo,
     required this.texto,
     required this.cantores,
     required this.escolhidaAMao,
+    this.nome,
+    this.vezes = 1,
   });
 
   final TipoDaParte tipo;
   final String texto;
   final List<String> cantores;
   final bool escolhidaAMao;
+  // Da parte instrumental, como "Solo sax tenor".
+  final String? nome;
+  // De marcações como "(Coro 2x)".
+  final int vezes;
 
   bool get deTodos => cantores.isEmpty;
 
@@ -36,6 +48,8 @@ class ParteDoHino {
         texto: json['texto'] as String? ?? '',
         cantores: _textos(json['cantores']),
         escolhidaAMao: json['escolhidaAMao'] as bool? ?? false,
+        nome: json['nome'] as String?,
+        vezes: (json['vezes'] as num?)?.toInt() ?? 1,
       );
 }
 
