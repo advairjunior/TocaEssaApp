@@ -69,7 +69,7 @@ public static class EscalaDeCantores
     /// outros hinos, depois para quem está há mais tempo sem cantar, depois
     /// pela ordem da lista, sem a mesma pessoa em duas partes seguidas. Cada
     /// solo vai, pelo mesmo critério, para quem toca o instrumento dele;
-    /// introdução, interlúdio e final são da banda toda.
+    /// introdução também vai para um solista; interlúdio e final são da banda.
     public static IReadOnlyList<EscolhaAMao> EscalarHino(
         IReadOnlyList<HinoParaEscala> hinos,
         Guid itemId,
@@ -188,12 +188,12 @@ public static class EscalaDeCantores
         return (pontos, solos);
     }
 
-    /// "Solo sax tenor" toca "sax tenor"; "Solo" sozinho, qualquer instrumento
-    /// (vazio). Introdução, interlúdio e final não são solos: nulo.
+    /// "Solo sax tenor" toca "sax tenor"; "Solo" sozinho e a introdução,
+    /// qualquer instrumento (vazio). Interlúdio e final são da banda: nulo.
     private static string? InstrumentoDoSolo(string? nome)
     {
         var normalizado = Normalizar(nome);
-        if (normalizado == "solo") return "";
+        if (normalizado is "solo" or "introducao" or "intro") return "";
         return normalizado.StartsWith("solo ") ? normalizado["solo ".Length..] : null;
     }
 

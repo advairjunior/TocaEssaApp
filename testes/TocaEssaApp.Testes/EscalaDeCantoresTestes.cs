@@ -145,7 +145,7 @@ public sealed class EscalaDeCantoresTestes
     }
 
     [Fact]
-    public void SolosVaoParaQuemTocaOInstrumentoERevezam()
+    public void SolosEIntroducaoVaoParaOsSolistasERevezam()
     {
         var hino = new HinoParaEscala(HinoA,
         [
@@ -168,13 +168,31 @@ public sealed class EscalaDeCantoresTestes
         var escala = EscalaDeCantores.Montar([hino], ["Ana"], escolhas, solistas);
 
         Assert.Equal(
-            ["Todos", "Ana", "José", "Pedro", "Rui", "José", "Ana"],
+            ["José", "Ana", "José", "Pedro", "Rui", "Pedro", "Ana"],
             Quem(escolhas));
         Assert.Equal(
-            [new PlacarDoSolista("José", 2), new PlacarDoSolista("Pedro", 1),
+            [new PlacarDoSolista("José", 2), new PlacarDoSolista("Pedro", 2),
              new PlacarDoSolista("Rui", 1)],
             escala.PlacarDosSolos);
         Assert.Equal([new PlacarDoCantor("Ana", 2)], escala.Placar);
+    }
+
+    [Fact]
+    public void IntroducaoSemSolistasFicaComABandaEInterludioEFinalSempre()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Intro"),
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Interlúdio"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Final")
+        ]);
+
+        Assert.Equal(["Todos", "Ana", "Todos", "Todos"],
+            Quem(EscalaDeCantores.EscalarHino([hino], HinoA, ["Ana"], [])));
+        Assert.Equal(["José", "Ana", "Todos", "Todos"],
+            Quem(EscalaDeCantores.EscalarHino(
+                [hino], HinoA, ["Ana"], [], [new Solista("José", "sax")])));
     }
 
     [Fact]
