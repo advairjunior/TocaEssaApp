@@ -76,7 +76,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   String get _quemSou => _preferencias?.getString(_chaveQuemSou) ?? '';
 
   Future<void> _escolherQuemSou() async {
-    final cantores = _louvor?.cantores ?? const <String>[];
+    final cantores = _louvor?.participantes ?? const <String>[];
     final nome = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,

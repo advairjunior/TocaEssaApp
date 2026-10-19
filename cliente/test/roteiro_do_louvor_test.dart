@@ -49,6 +49,10 @@ final _semLetra = _hino('h3', '15 · Hino sem letra');
 Map<String, Object?> _roteiro({String? atual}) => {
       'nome': 'Louvor de sábado',
       'cantores': ['João', 'Ana'],
+      'solistas': [
+        {'nome': 'José', 'instrumento': 'sax tenor'},
+        {'nome': 'Ana', 'instrumento': 'flauta'},
+      ],
       'hinoAtualId': atual,
       'hinos': [_porCristo, _segundo, _semLetra],
     };
@@ -126,6 +130,13 @@ void main() {
     expect(find.text('você é o próximo'), findsOneWidget);
   });
 
+
+  testWidgets('quem só toca solos também está no Quem é você', (tester) async {
+    await _abrir(tester);
+
+    expect(find.widgetWithText(ChoiceChip, 'José'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Ana'), findsOneWidget);
+  });
 
   testWidgets('quem já escolheu entra direto e pode trocar', (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'João'});

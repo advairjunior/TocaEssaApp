@@ -522,6 +522,9 @@ void main() {
       (tester) async {
     await _abrir(tester, vocabulario: Vocabulario.louvor, louvor: {
       'cantores': ['João', 'Advair'],
+      'solistas': [
+        {'nome': 'José', 'instrumento': 'sax'},
+      ],
       'placar': <Object?>[],
       'hinos': [
         {
@@ -554,6 +557,7 @@ void main() {
 
     await tester.tap(find.byTooltip('Quem sou eu'));
     await tester.pumpAndSettle();
+    expect(find.widgetWithText(ChoiceChip, 'José'), findsOneWidget);
     await tester.tap(find.widgetWithText(ChoiceChip, 'João'));
     await tester.pumpAndSettle();
 

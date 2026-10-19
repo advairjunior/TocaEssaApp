@@ -205,7 +205,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
           (null, _) => const Center(child: CircularProgressIndicator()),
           (final RoteiroDoLouvor roteiro, _) when escolhendo =>
             _EscolhaDeQuemSou(
-                cantores: roteiro.cantores, escolher: _escolherQuemSou),
+                cantores: roteiro.participantes, escolher: _escolherQuemSou),
           (final RoteiroDoLouvor roteiro, _) when roteiro.hinos.isEmpty =>
             const EstadoVazio(
               icone: Icons.library_music_outlined,
