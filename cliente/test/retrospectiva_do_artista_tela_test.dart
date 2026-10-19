@@ -132,11 +132,13 @@ void main() {
     for (final (rotulo, valor) in [
       ('Tempo', '3h12'),
       ('Músicas', '50'),
-      ('Nota', '4,8'),
+      ('A pedido', '32'),
     ]) {
       expect(_noCartao(rotulo), findsOneWidget);
       expect(_noCartao(valor), findsOneWidget);
     }
+    expect(_noCartao('Nota'), findsNothing);
+    expect(_noCartao('4,8'), findsNothing);
     expect(_noCartao('80'), findsNothing);
     expect(_noCartao('A mais pedida da noite'), findsOneWidget);
     expect(_noCartao('Evidências'), findsOneWidget);
@@ -352,7 +354,8 @@ void main() {
         const [],
       );
 
-      expect(texto, contains('Tempo 3h12 · Músicas 50 · Nota 4,8'));
+      expect(texto, contains('Tempo 3h12 · Músicas 50 · A pedido 32'));
+      expect(texto, isNot(contains('Nota')));
       expect(texto, isNot(contains('80')));
       expect(texto, contains('A mais pedida da noite: Evidências'));
       expect(texto, contains('Na próxima, peça a sua música'));

@@ -27,7 +27,6 @@ class PremioDaResenha {
 const _duracaoMinima = Duration(minutes: 30);
 const _tocadosMinimos = 3;
 const _tocadosPorPessoa = .15;
-const _avaliacoesMinimas = 3;
 const _notaMinima = 4.0;
 const _musicasTocadasMinimas = 10;
 const _maximoDeDestaques = 3;
@@ -55,7 +54,7 @@ DadosDaRetrospectiva _validados(EstatisticasDaApresentacao e) =>
     e.retrospectiva ?? _semDadosValidados;
 
 /// Números que entram no cartão do show público, do mais forte ao mais
-/// fraco, sem nunca mostrar show curto, poucas músicas ou nota baixa.
+/// fraco, sem nunca mostrar show curto, poucas músicas nem a nota.
 List<DestaqueDaRetrospectiva> destaquesDoShow(EstatisticasDaApresentacao e) {
   final r = _validados(e);
   final destaques = <DestaqueDaRetrospectiva>[];
@@ -70,12 +69,7 @@ List<DestaqueDaRetrospectiva> destaquesDoShow(EstatisticasDaApresentacao e) {
     destaques.add(DestaqueDaRetrospectiva(
         valor: '${r.musicasTocadas}', rotulo: 'Músicas'));
   }
-  final media = r.mediaDasAvaliacoes;
-  if (media != null &&
-      r.pessoasQueAvaliaram >= _avaliacoesMinimas &&
-      media >= _notaMinima) {
-    destaques.add(DestaqueDaRetrospectiva(valor: _nota(media), rotulo: 'Nota'));
-  }
+  // A nota fica fora: quem vê "4,7" não sabe que é de 5 e lê como nota baixa.
   final aPedido = r.musicasAPedidoTocadas;
   if (aPedido >= _tocadosMinimos &&
       aPedido >= e.pessoasNoEvento * _tocadosPorPessoa) {

@@ -96,11 +96,11 @@ void main() {
       alos: 9,
     );
 
-    test('noite cheia mostra tempo, músicas e nota, como no Strava', () {
+    test('noite cheia mostra tempo, músicas e a pedido, como no Strava', () {
       final destaques =
           destaquesDoShow(_estatisticas(pessoas: 80, retrospectiva: noiteCheia));
 
-      expect(_rotulos(destaques), ['Tempo 3h12', 'Músicas 42', 'Nota 4,8']);
+      expect(_rotulos(destaques), ['Tempo 3h12', 'Músicas 42', 'A pedido 32']);
     });
 
     test('público no app, atendimento e alôs nunca vão para as redes', () {
@@ -131,14 +131,11 @@ void main() {
           isEmpty);
     });
 
-    test('nota baixa ou de poucas pessoas nunca aparece', () {
+    // Quem vê "4,7" no cartão não sabe que é de 5 e lê como nota baixa.
+    test('nota nunca aparece no cartão do show, nem a alta', () {
       expect(
           destaquesDoShow(_estatisticas(
-              retrospectiva: _dados(avaliaram: 20, media: 3.4))),
-          isEmpty);
-      expect(
-          destaquesDoShow(
-              _estatisticas(retrospectiva: _dados(avaliaram: 2, media: 5))),
+              retrospectiva: _dados(avaliaram: 20, media: 4.9))),
           isEmpty);
     });
 
