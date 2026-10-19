@@ -14,7 +14,8 @@ const _marcacoes = [
   (
     '(Solo sax tenor)',
     'Parte instrumental: ninguém canta. Vale qualquer instrumento depois '
-        'de "Solo", como (Solo trompete).'
+        'de "Solo", como (Solo trompete). O solo vai para quem toca esse '
+        'instrumento em "Quem toca os solos", na aba Escala.'
   ),
   ('(Introdução)', 'Instrumental antes da primeira estrofe. "(Intro)" vale.'),
   ('(Interlúdio)', 'Instrumental no meio do hino.'),

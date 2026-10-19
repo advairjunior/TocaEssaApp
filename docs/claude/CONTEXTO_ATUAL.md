@@ -166,8 +166,13 @@ arquivo.
   refrão entra depois de toda estrofe (antes de um solo, inclusive).
 - Partes instrumentais (`TipoDaParte.Instrumental`, com `Nome` e `Vezes`):
   "(Solo sax tenor)", "(Introdução)", "(Interlúdio)", "(Final)"; "2x" no fim
-  de qualquer marcação. Não são escaladas nem contam no placar; o nome de
-  quem toca o solo pode ser posto à mão. Sumário "Como marcar as partes"
+  de qualquer marcação. Não contam no placar de estrofes. "Quem toca os
+  solos" (nome e instrumento, coluna `Apresentacoes.SolistasDoLouvor`, rota
+  `PUT .../louvor/solistas`): cada "(Solo sax tenor)" vai para quem toca o
+  instrumento (exato; senão parecido, como "sax" para "sax tenor"; "(Solo)"
+  sozinho para qualquer solista), revezando, com placar de solos próprio.
+  Introdução, interlúdio e final são da banda toda. Solistas também
+  aparecem no "Quem é você?". Sumário "Como marcar as partes"
   em `como_marcar_hinos.dart` (editor da letra e aba Escala).
 - `EscalaDeCantores.Montar` reveza as estrofes: refrão e última estrofe são
   de Todos; menos estrofes primeiro, depois quem está há mais tempo sem
