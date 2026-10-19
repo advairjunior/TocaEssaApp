@@ -98,6 +98,31 @@ public sealed class EscalaDeCantoresTestes
         Assert.Equal(["Ana", "João", "Todos"], Quem(escala.Hinos[0]));
     }
 
+    [Fact]
+    public void SoloNaoEhEscaladoNemContaNoPlacarMesmoComNomeAMao()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Refrao, "r"),
+            new ParteDoHino(TipoDaParte.Instrumental, "G D", "Solo sax", 2),
+            new ParteDoHino(TipoDaParte.Estrofe, "b"),
+            new ParteDoHino(TipoDaParte.Refrao, "r")
+        ]);
+
+        var automatica = EscalaDeCantores.Montar([hino], ["Ana", "João"], []);
+        Assert.Equal(["Ana", "Todos", "Todos", "Todos", "Todos"], Quem(automatica.Hinos[0]));
+        Assert.Equal("Solo sax", automatica.Hinos[0].Partes[2].Nome);
+        Assert.Equal(2, automatica.Hinos[0].Partes[2].Vezes);
+
+        var comSolista = EscalaDeCantores.Montar(
+            [hino], ["Ana", "João"], [new EscolhaAMao(HinoA, 2, ["João"])]);
+        Assert.Equal(["João"], comSolista.Hinos[0].Partes[2].Cantores);
+        Assert.Equal(
+            [new PlacarDoCantor("Ana", 1), new PlacarDoCantor("João", 0)],
+            comSolista.Placar);
+    }
+
     private static HinoParaEscala Hino(Guid id, int estrofes) =>
         new(id, Enumerable.Range(1, estrofes)
             .SelectMany(numero => new[]

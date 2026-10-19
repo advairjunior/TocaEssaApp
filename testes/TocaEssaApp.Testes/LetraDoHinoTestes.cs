@@ -206,6 +206,69 @@ public sealed class LetraDoHinoTestes
     }
 
     [Fact]
+    public void SolosEPartesInstrumentaisEntramDepoisDeEstrofeECoro()
+    {
+        var partes = LetraDoHino.Separar("""
+            Tom: G
+            (Introdução)
+            G   D
+            (Estrofe 1)
+            A1
+            (Coro)
+            R1
+            (Solo sax tenor 2x)
+            G   Bm
+            (Estrofe 2)
+            B1
+            [Interlúdio]
+            C   D
+            Final:
+            G
+            """);
+
+        Assert.Equal(
+            [TipoDaParte.Instrumental, TipoDaParte.Estrofe, TipoDaParte.Refrao,
+             TipoDaParte.Instrumental, TipoDaParte.Estrofe, TipoDaParte.Refrao,
+             TipoDaParte.Instrumental, TipoDaParte.Instrumental],
+            partes.Select(parte => parte.Tipo));
+        Assert.Equal(
+            ["Introdução", null, null, "Solo sax tenor", null, null, "Interlúdio", "Final"],
+            partes.Select(parte => parte.Nome));
+        Assert.Equal("G   D", partes[0].Texto);
+        Assert.Equal(2, partes[3].Vezes);
+        Assert.Equal("G   Bm", partes[3].Texto);
+        Assert.Equal("R1", partes[5].Texto);
+        Assert.All(partes.Where(parte => parte != partes[3]),
+            parte => Assert.Equal(1, parte.Vezes));
+    }
+
+    [Theory]
+    [InlineData("(Solo trompete)", "Solo trompete")]
+    [InlineData("(SOLO SAX)", "SOLO SAX")]
+    [InlineData("(Intro)", "Intro")]
+    [InlineData("Solo:", "Solo")]
+    public void MarcacoesInstrumentaisEscritasDeJeitosDiferentes(string marcador, string nome)
+    {
+        var partes = LetraDoHino.Separar($"(Estrofe 1)\nA1\n{marcador}\nG   D");
+
+        Assert.Equal(TipoDaParte.Instrumental, partes[^1].Tipo);
+        Assert.Equal(nome, partes[^1].Nome);
+    }
+
+    [Fact]
+    public void CoroComRepeticaoDefineOCoroEGuardaQuantasVezes()
+    {
+        var partes = LetraDoHino.Separar("(Estrofe 1)\nA1\n(Coro 2x)\nR1\n(Estrofe 2)\nB1");
+
+        Assert.Equal(
+            [TipoDaParte.Estrofe, TipoDaParte.Refrao,
+             TipoDaParte.Estrofe, TipoDaParte.Refrao],
+            partes.Select(parte => parte.Tipo));
+        Assert.Equal(2, partes[1].Vezes);
+        Assert.Equal("R1", partes[3].Texto);
+    }
+
+    [Fact]
     public void LinhaDoTomNuncaViraEstrofeMesmoSemMarcadores()
     {
         var partes = LetraDoHino.Separar("Tom: G\n\nA1\nA2\n\nB1");

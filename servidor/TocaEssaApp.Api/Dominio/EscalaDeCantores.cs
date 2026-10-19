@@ -5,9 +5,14 @@ public sealed record HinoParaEscala(Guid ItemId, IReadOnlyList<ParteDoHino> Part
 /// [Cantores] vazio quer dizer Todos.
 public sealed record EscolhaAMao(Guid ItemId, int Indice, IReadOnlyList<string> Cantores);
 
-/// [Cantores] vazio quer dizer Todos.
+/// [Cantores] vazio quer dizer Todos (ou ninguém, numa parte instrumental).
 public sealed record ParteEscalada(
-    TipoDaParte Tipo, string Texto, IReadOnlyList<string> Cantores, bool EscolhidaAMao);
+    TipoDaParte Tipo,
+    string Texto,
+    IReadOnlyList<string> Cantores,
+    bool EscolhidaAMao,
+    string? Nome = null,
+    int Vezes = 1);
 
 public sealed record HinoEscalado(Guid ItemId, IReadOnlyList<ParteEscalada> Partes);
 
@@ -36,10 +41,15 @@ public static class EscalaDeCantores
                 escolhaPorParte[(escolha.ItemId, escolha.Indice)] = escolha;
         }
 
+        // O placar conta estrofes cantadas: solo com nome à mão não entra.
         var estrofes = cantores.ToDictionary(nome => nome, _ => 0);
         foreach (var escolha in escolhaPorParte.Values)
+        {
+            var parte = hinos.First(hino => hino.ItemId == escolha.ItemId).Partes[escolha.Indice];
+            if (parte.Tipo == TipoDaParte.Instrumental) continue;
             foreach (var nome in escolha.Cantores)
                 if (estrofes.ContainsKey(nome)) estrofes[nome]++;
+        }
 
         var ultimaVez = cantores.ToDictionary(nome => nome, _ => -1);
         var posicao = 0;
@@ -57,7 +67,7 @@ public static class EscalaDeCantores
                 var aMao = escolhaPorParte.TryGetValue((hino.ItemId, indice), out var escolha);
                 if (aMao)
                     quem = escolha!.Cantores;
-                else if (parte.Tipo == TipoDaParte.Refrao || indice == ultimaEstrofe ||
+                else if (parte.Tipo != TipoDaParte.Estrofe || indice == ultimaEstrofe ||
                          cantores.Count == 0)
                     quem = [];
                 else
@@ -68,13 +78,14 @@ public static class EscalaDeCantores
                 }
 
                 posicao++;
-                if (quem.Count > 0)
+                if (quem.Count > 0 && parte.Tipo != TipoDaParte.Instrumental)
                 {
                     foreach (var nome in quem)
                         if (ultimaVez.ContainsKey(nome)) ultimaVez[nome] = posicao;
                     anterior = quem;
                 }
-                partes.Add(new ParteEscalada(parte.Tipo, parte.Texto, quem, aMao));
+                partes.Add(new ParteEscalada(
+                    parte.Tipo, parte.Texto, quem, aMao, parte.Nome, parte.Vezes));
             }
             escalados.Add(new HinoEscalado(hino.ItemId, partes));
         }
