@@ -43,6 +43,7 @@ class HinoDoLouvor {
   const HinoDoLouvor({
     required this.itemId,
     required this.titulo,
+    this.artista,
     required this.tom,
     required this.tocado,
     required this.temLetra,
@@ -51,6 +52,7 @@ class HinoDoLouvor {
 
   final String itemId;
   final String titulo;
+  final String? artista;
   final String? tom;
   final bool tocado;
   final bool temLetra;
@@ -63,6 +65,7 @@ class HinoDoLouvor {
   factory HinoDoLouvor.deJson(Map<String, dynamic> json) => HinoDoLouvor(
         itemId: json['itemId'] as String,
         titulo: json['titulo'] as String? ?? '',
+        artista: json['artista'] as String?,
         tom: json['tom'] as String?,
         tocado: json['tocado'] as bool? ?? false,
         temLetra: json['temLetra'] as bool? ?? false,
