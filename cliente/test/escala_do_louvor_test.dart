@@ -38,7 +38,8 @@ Map<String, Object?> _louvor(List<String> cantores) => {
           'tocado': false,
           'temLetra': true,
           'partes': [
-            _parte('Estrofe', 'Cristo Jesus, o santo Cordeiro\nDeu Sua vida',
+            _parte('Estrofe',
+                'G        Bm\nCristo Jesus, o santo Cordeiro\nDeu Sua vida',
                 ['João']),
             _parte('Refrao', 'Por Cristo, resgatado', []),
             _parte('Estrofe', 'Preso estava na iniquidade', ['Ana'],

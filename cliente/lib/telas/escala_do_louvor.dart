@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../dominio/modelos.dart';
+import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
@@ -232,7 +233,13 @@ class _CartaoDoHino extends StatelessWidget {
                   : () => escolherParte!(indice, rotulo),
               title: Text(rotulo),
               subtitle: Text(
-                parte.texto.split('\n').first,
+                // A primeira linha da letra, não a dos acordes.
+                parte.texto
+                        .split('\n')
+                        .where((linha) =>
+                            linha.trim().isNotEmpty && !linhaDeAcordes(linha))
+                        .firstOrNull ??
+                    '',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
