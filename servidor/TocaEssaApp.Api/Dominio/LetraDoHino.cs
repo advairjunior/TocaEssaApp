@@ -55,6 +55,12 @@ public static partial class LetraDoHino
         return Montar(pedacos);
     }
 
+    /// A letra marca as estrofes ("(Estrofe 1)"…): dá para escalar sem
+    /// adivinhar onde cada parte começa.
+    public static bool TemMarcacaoDeEstrofe(string? texto) =>
+        !string.IsNullOrWhiteSpace(texto) &&
+        texto.Split('\n').Any(linha => LerMarcador(linha) is { Tipo: TipoDoPedaco.Texto });
+
     /// "(Estrofe 1)", "[Coro 2x]", "Solo sax tenor:", "(Introdução)"... ou
     /// nulo se a linha é letra ou acorde.
     private static Marcador? LerMarcador(string linha)

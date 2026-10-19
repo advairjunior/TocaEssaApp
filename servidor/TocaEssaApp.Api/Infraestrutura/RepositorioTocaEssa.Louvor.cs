@@ -170,6 +170,37 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    /// Ao colar a cifra com as estrofes marcadas, os hinos do louvor que
+    /// usam essa letra e ainda não têm ninguém já saem escalados. Hino já
+    /// escalado fica como está: corrigir a letra não desfaz trocas à mão.
+    private void EscalarHinosDaLetraNova(Guid artistaId, string conteudo)
+    {
+        if (!LetraDoHino.TemMarcacaoDeEstrofe(conteudo)) return;
+        foreach (var apresentacao in _apresentacoes.Values.Where(apresentacao =>
+                     apresentacao.ArtistaId == artistaId &&
+                     apresentacao.Tipo == TipoApresentacao.Louvor))
+        {
+            var escolhas = _escolhasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [];
+            foreach (var item in ItensDaSetlist(apresentacao.Id))
+            {
+                if (LetraDoItem(artistaId, item) != conteudo ||
+                    escolhas.Any(escolha => escolha.ItemId == item.Id))
+                    continue;
+                escolhas =
+                [
+                    .. escolhas,
+                    .. EscalaDeCantores.EscalarHino(
+                        HinosParaEscala(apresentacao),
+                        item.Id,
+                        _cantoresDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [],
+                        escolhas,
+                        _solistasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [])
+                ];
+            }
+            _escolhasDoLouvor[apresentacao.Id] = escolhas;
+        }
+    }
+
     private List<HinoParaEscala> HinosParaEscala(Apresentacao apresentacao) =>
         ItensDaSetlist(apresentacao.Id)
             .Select(item => new HinoParaEscala(

@@ -119,6 +119,55 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void ColarCifraBemMarcadaJaEscalaOHinoSemEscala()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.DefinirSolistasDoLouvor(cenario.Token, cenario.Show.Id, [new Solista("José", "sax")]);
+
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "234 · O meu ser entrego a Cristo", null,
+            "Tom: A\n(Introdução)\nA   E\n(Estrofe 1)\nA1\n(Coro)\nR1\n(Estrofe 2)\nB1");
+
+        var hino = cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[1];
+        Assert.Equal(
+            ["José", "João", "Ana", "João", "Todos"],
+            hino.Partes.Select(parte =>
+                parte.Cantores.Count == 0 ? "Todos" : string.Join(" e ", parte.Cantores)));
+        Assert.All(hino.Partes, parte => Assert.True(parte.Definida));
+    }
+
+    [Fact]
+    public void ColarCifraSemMarcacaoDeEstrofeNaoEscala()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+
+        cenario.Repo.SalvarCifraEmTexto(
+            cenario.Token, "234 · O meu ser entrego a Cristo", null, "A1\nA2\n\nB1\nB2");
+
+        Assert.All(cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[1].Partes,
+            parte => Assert.False(parte.Definida));
+    }
+
+    [Fact]
+    public void CorrigirACifraDeHinoJaEscaladoNaoRefazAEscala()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "234 · O meu ser entrego a Cristo", null,
+            "(Estrofe 1)\nA1\n(Estrofe 2)\nB1");
+        cenario.Repo.EscolherParteDoLouvor(
+            cenario.Token, cenario.Show.Id, cenario.Hinos[1].Id, 0, ["Ana"]);
+
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "234 · O meu ser entrego a Cristo", null,
+            "(Estrofe 1)\nA1 corrigida\n(Estrofe 2)\nB1");
+
+        var hino = cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[1];
+        Assert.Equal(["Ana"], hino.Partes[0].Cantores);
+        Assert.Equal(["Ana"], hino.Partes[1].Cantores);
+    }
+
+    [Fact]
     public void ParteTrocadaAMaoFicaELimparDeixaSemNinguem()
     {
         var cenario = CriarCenario();
@@ -225,8 +274,10 @@ public sealed class LouvorTestes
 
         Assert.Equal([new Solista("José", "sax tenor"), new Solista("Pedro", "")],
             louvor.Solistas);
-        Assert.False(louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id)
-            .Partes[1].Definida);
+        // A letra marcada já foi escalada ao colar, antes dos solistas: o solo
+        // ficou com a banda até escalar de novo.
+        Assert.Empty(louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id)
+            .Partes[1].Cantores);
         louvor = cenario.Repo.EscalarHinoDoLouvor(cenario.Token, cenario.Show.Id, hinoComSolo.Id);
         var solo = louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1];
         Assert.Equal(TipoDaParte.Instrumental, solo.Tipo);

@@ -99,6 +99,7 @@ public sealed partial class RepositorioTocaEssa
                 registro.AtualizadaEm = DateTimeOffset.UtcNow;
                 _cifrasEmTexto[chave] = registro;
                 AcompanharTomDaCifra(conta.Id, musica, artista, tomAnterior, conteudo);
+                EscalarHinosDaLetraNova(conta.Id, conteudo);
             }
             SalvarEstado();
             return ObterCifraDoArtista(token, musica, artista);
