@@ -400,5 +400,5 @@ public sealed record DefinirCantoresDoLouvor(string[]? Nomes);
 
 public sealed record DefinirSolistasDoLouvor(Solista[]? Solistas);
 
-/// [Cantores] nulo devolve a parte à escala; vazio quer dizer Todos.
+/// [Cantores] nulo deixa a parte sem escala; vazio quer dizer Todos.
 public sealed record EscolherParteDoLouvor(Guid ItemId, int Indice, string[]? Cantores);

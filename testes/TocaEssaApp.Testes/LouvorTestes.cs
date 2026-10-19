@@ -39,7 +39,7 @@ public sealed class LouvorTestes
         """;
 
     [Fact]
-    public void LouvorEscalaAsEstrofesDaLetraColadaNosHinosDaSetlist()
+    public void HinoComecaSemNinguemEEscalarDistribuiPelosPontos()
     {
         var cenario = CriarCenario();
 
@@ -52,15 +52,24 @@ public sealed class LouvorTestes
         Assert.Equal("G", primeiro.Tom);
         Assert.True(primeiro.TemLetra);
         Assert.Equal(6, primeiro.Partes.Count);
-        Assert.Equal(["João"], primeiro.Partes[0].Cantores);
-        Assert.Equal(["Ana"], primeiro.Partes[2].Cantores);
-        Assert.Empty(primeiro.Partes[4].Cantores);
+        Assert.All(primeiro.Partes, parte => Assert.False(parte.Definida));
         var semLetra = louvor.Hinos[1];
         Assert.False(semLetra.TemLetra);
         Assert.Empty(semLetra.Partes);
+
+        var escalado = cenario.Repo.EscalarHinoDoLouvor(
+            cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id);
+
         Assert.Equal(
-            [new PlacarDoCantor("João", 1), new PlacarDoCantor("Ana", 1)],
-            louvor.Placar);
+            ["João", "Ana", "João", "Ana", "João", "Todos"],
+            escalado.Hinos[0].Partes.Select(parte =>
+                parte.Cantores.Count == 0 ? "Todos" : string.Join(" e ", parte.Cantores)));
+        Assert.All(escalado.Hinos[0].Partes, parte => Assert.True(parte.Definida));
+        Assert.Equal(
+            [new PlacarDoCantor("João", 3), new PlacarDoCantor("Ana", 2)],
+            escalado.Placar);
+        Assert.Throws<ItemDoSetlistNaoEncontradoException>(() =>
+            cenario.Repo.EscalarHinoDoLouvor(cenario.Token, cenario.Show.Id, Guid.NewGuid()));
     }
 
     [Fact]
@@ -92,7 +101,7 @@ public sealed class LouvorTestes
     }
 
     [Fact]
-    public void ParteEscolhidaAMaoFicaEAutomaticoDevolveAEscala()
+    public void ParteTrocadaAMaoFicaELimparDeixaSemNinguem()
     {
         var cenario = CriarCenario();
         cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
@@ -101,18 +110,18 @@ public sealed class LouvorTestes
         var escolhida = cenario.Repo.EscolherParteDoLouvor(
             cenario.Token, cenario.Show.Id, hino, 0, ["Ana"]);
         Assert.Equal(["Ana"], escolhida.Hinos[0].Partes[0].Cantores);
-        Assert.True(escolhida.Hinos[0].Partes[0].EscolhidaAMao);
-        Assert.Equal(["João"], escolhida.Hinos[0].Partes[2].Cantores);
+        Assert.True(escolhida.Hinos[0].Partes[0].Definida);
+        Assert.False(escolhida.Hinos[0].Partes[2].Definida);
 
         var todos = cenario.Repo.EscolherParteDoLouvor(
             cenario.Token, cenario.Show.Id, hino, 2, []);
         Assert.Empty(todos.Hinos[0].Partes[2].Cantores);
-        Assert.True(todos.Hinos[0].Partes[2].EscolhidaAMao);
+        Assert.True(todos.Hinos[0].Partes[2].Definida);
 
-        var automatico = cenario.Repo.EscolherParteDoLouvor(
+        var limpa = cenario.Repo.EscolherParteDoLouvor(
             cenario.Token, cenario.Show.Id, hino, 0, null);
-        Assert.False(automatico.Hinos[0].Partes[0].EscolhidaAMao);
-        Assert.Equal(["João"], automatico.Hinos[0].Partes[0].Cantores);
+        Assert.False(limpa.Hinos[0].Partes[0].Definida);
+        Assert.Empty(limpa.Hinos[0].Partes[0].Cantores);
     }
 
     [Fact]
@@ -147,8 +156,8 @@ public sealed class LouvorTestes
             cenario.Token, cenario.Show.Id, ["João"]);
 
         Assert.Equal(["João"], louvor.Hinos[0].Partes[0].Cantores);
-        Assert.True(louvor.Hinos[0].Partes[0].EscolhidaAMao);
-        Assert.False(louvor.Hinos[0].Partes[2].EscolhidaAMao);
+        Assert.True(louvor.Hinos[0].Partes[0].Definida);
+        Assert.False(louvor.Hinos[0].Partes[2].Definida);
     }
 
     [Fact]
@@ -198,6 +207,9 @@ public sealed class LouvorTestes
 
         Assert.Equal([new Solista("José", "sax tenor"), new Solista("Pedro", "")],
             louvor.Solistas);
+        Assert.False(louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id)
+            .Partes[1].Definida);
+        louvor = cenario.Repo.EscalarHinoDoLouvor(cenario.Token, cenario.Show.Id, hinoComSolo.Id);
         var solo = louvor.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1];
         Assert.Equal(TipoDaParte.Instrumental, solo.Tipo);
         Assert.Equal(["José"], solo.Cantores);
@@ -215,8 +227,8 @@ public sealed class LouvorTestes
         var semPedro = cenario.Repo.DefinirSolistasDoLouvor(
             cenario.Token, cenario.Show.Id, [new Solista("José", "sax tenor")]);
         var devolvido = semPedro.Hinos.Single(hino => hino.ItemId == hinoComSolo.Id).Partes[1];
-        Assert.False(devolvido.EscolhidaAMao);
-        Assert.Equal(["José"], devolvido.Cantores);
+        Assert.False(devolvido.Definida);
+        Assert.Empty(devolvido.Cantores);
     }
 
     [Fact]
@@ -278,7 +290,7 @@ public sealed class LouvorTestes
             Assert.Equal(["João", "Ana"], louvor.Cantores);
             Assert.Equal([new Solista("José", "sax")], louvor.Solistas);
             Assert.Equal(["Ana"], louvor.Hinos[0].Partes[0].Cantores);
-            Assert.True(louvor.Hinos[0].Partes[0].EscolhidaAMao);
+            Assert.True(louvor.Hinos[0].Partes[0].Definida);
             Assert.Equal(TipoApresentacao.Louvor,
                 reiniciado.ObterApresentacaoPublica(cenario.Show.Codigo)!.Tipo);
         }
@@ -347,6 +359,12 @@ public sealed class LouvorTestes
                 .GetProperty("solistas")[0].GetProperty("instrumento").GetString());
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/solistas",
                 new { solistas = new[] { new { nome = "Bia", instrumento = "sax" } } })).StatusCode);
+            var escalado = await ana.PostAsync($"{rota}/hinos/{itemId}/escalar", null);
+            Assert.Equal(HttpStatusCode.OK, escalado.StatusCode);
+            Assert.True((await escalado.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("hinos")[0].GetProperty("partes")[0].GetProperty("definida").GetBoolean());
+            Assert.Equal(HttpStatusCode.NotFound,
+                (await bia.PostAsync($"{rota}/hinos/{itemId}/escalar", null)).StatusCode);
             var escolha = await ana.PutAsJsonAsync($"{rota}/partes",
                 new { itemId, indice = 0, cantores = new[] { "Ana" } });
             Assert.Equal(HttpStatusCode.OK, escolha.StatusCode);

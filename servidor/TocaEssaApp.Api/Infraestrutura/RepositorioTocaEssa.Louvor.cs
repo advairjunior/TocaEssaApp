@@ -8,8 +8,8 @@ public sealed partial class RepositorioTocaEssa
 {
     private const int TamanhoMaximoDoNomeDoCantor = 40;
 
-    // Louvor: quem canta no microfone e as partes que o artista escolheu à
-    // mão. A escala automática não é guardada: é refeita a cada leitura.
+    // Louvor: quem canta no microfone e quem fica com cada parte. Nada é
+    // escalado sozinho: o botão de cada hino ou a troca à mão gravam aqui.
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<string>> _cantoresDoLouvor = new();
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<EscolhaAMao>> _escolhasDoLouvor = new();
     // Quem toca os solos e o instrumento de cada um.
@@ -82,8 +82,8 @@ public sealed partial class RepositorioTocaEssa
             .Select(solista => solista.Nome)
     ];
 
-    // Parte que fica sem ninguém volta à escala, em vez de virar Todos sem o
-    // artista pedir.
+    // Parte que fica sem ninguém volta a ficar sem escala, em vez de virar
+    // Todos sem o artista pedir.
     private void ManterSoQuemEstaNoLouvor(Guid apresentacaoId)
     {
         var nomes = NomesDoLouvor(apresentacaoId);
@@ -97,7 +97,7 @@ public sealed partial class RepositorioTocaEssa
         _escolhasDoLouvor[apresentacaoId] = escolhas;
     }
 
-    /// [cantores] nulo devolve a parte à escala; vazio deixa a parte com Todos.
+    /// [cantores] nulo deixa a parte sem escala; vazio deixa a parte com Todos.
     public LouvorDoArtista EscolherParteDoLouvor(
         string token, Guid apresentacaoId, Guid itemId, int indice,
         IReadOnlyList<string>? cantores)
@@ -125,6 +125,39 @@ public sealed partial class RepositorioTocaEssa
             return MontarLouvor(apresentacao);
         }
     }
+
+    /// Botão "Escalar automático" do hino: refaz todas as partes dele pelos
+    /// pontos dos outros hinos.
+    public LouvorDoArtista EscalarHinoDoLouvor(string token, Guid apresentacaoId, Guid itemId)
+    {
+        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        lock (_sincronizacao)
+        {
+            if (!_itensDoSetlist.TryGetValue(itemId, out var item) ||
+                item.ApresentacaoId != apresentacaoId)
+                throw new ItemDoSetlistNaoEncontradoException();
+            var escolhas = _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [];
+            var doHino = EscalaDeCantores.EscalarHino(
+                HinosParaEscala(apresentacao),
+                itemId,
+                _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+                escolhas,
+                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? []);
+            _escolhasDoLouvor[apresentacaoId] =
+            [
+                .. escolhas.Where(escolha => escolha.ItemId != itemId),
+                .. doHino
+            ];
+            SalvarEstado();
+            return MontarLouvor(apresentacao);
+        }
+    }
+
+    private List<HinoParaEscala> HinosParaEscala(Apresentacao apresentacao) =>
+        ItensDaSetlist(apresentacao.Id)
+            .Select(item => new HinoParaEscala(
+                item.Id, LetraDoHino.Separar(LetraDoItem(apresentacao.ArtistaId, item))))
+            .ToList();
 
     /// Roteiro pelo código, sem token, só em evento Louvor. O hino atual é o
     /// último tocado na ordem da setlist.
