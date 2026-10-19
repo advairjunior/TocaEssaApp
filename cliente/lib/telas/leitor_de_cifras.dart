@@ -12,6 +12,7 @@ import 'cifra_do_palco.dart';
 import 'componentes.dart';
 import 'editor_de_cifra.dart';
 import 'sequencia_do_palco.dart';
+import 'trechos_do_louvor.dart';
 
 export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
 export 'cifra_do_palco.dart' show tamanhoDaFonteDaCifra, mostrarDesenhoDoAcorde;
@@ -51,6 +52,89 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     _liberarTela = widget.manterTelaAcesa();
     _sequencia.addListener(_redesenhar);
     _lerPreferencias();
+    if (_noLouvor) _carregarLouvor();
+  }
+
+  bool get _noLouvor => identical(_sequencia.vocabulario, Vocabulario.louvor);
+
+  // No louvor, quem canta cada parte; sem a escala, a cifra corre sem nomes.
+  LouvorDoArtista? _louvor;
+
+  Future<void> _carregarLouvor() async {
+    try {
+      final louvor =
+          await _sequencia.api.obterLouvor(_sequencia.apresentacaoId);
+      if (mounted) setState(() => _louvor = louvor);
+    } catch (_) {
+      // Fica a cifra sem os nomes até a próxima tentativa.
+    }
+  }
+
+  String get _chaveQuemSou =>
+      'louvor_quem_sou_artista_${_sequencia.apresentacaoId}';
+
+  String get _quemSou => _preferencias?.getString(_chaveQuemSou) ?? '';
+
+  Future<void> _escolherQuemSou() async {
+    final cantores = _louvor?.cantores ?? const <String>[];
+    final nome = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (contexto) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              EspacoTocaEssa.base, 0, EspacoTocaEssa.base, EspacoTocaEssa.base),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Quem é você?',
+                  style: Theme.of(contexto).textTheme.titleMedium),
+              const SizedBox(height: EspacoTocaEssa.medio),
+              Wrap(
+                spacing: EspacoTocaEssa.pequeno,
+                runSpacing: EspacoTocaEssa.pequeno,
+                children: [
+                  for (final cantor in cantores)
+                    ChoiceChip(
+                      label: Text(cantor),
+                      selected: cantor == _quemSou,
+                      onSelected: (_) => Navigator.of(contexto).pop(cantor),
+                    ),
+                ],
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(contexto).pop(''),
+                child: const Text('Só tocar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (nome == null) return;
+    try {
+      await _preferencias?.setString(_chaveQuemSou, nome);
+    } catch (_) {
+      // A escolha só não fica guardada para a próxima vez.
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// A cifra da página: no louvor, partes com o nome de quem canta.
+  List<TrechoDaCifra> _trechos(MusicaDoPalco pagina, String texto) {
+    final semitons = _semitonsDe(pagina);
+    final hino = _louvor?.hinos
+        .where(
+            (hino) => hino.itemId == pagina.item?.id && hino.partes.isNotEmpty)
+        .firstOrNull;
+    if (hino == null) {
+      return [TrechoDaCifra(texto: transporCifra(texto, semitons))];
+    }
+    return trechosDoHino(hino,
+        cantores: _louvor!.cantores,
+        quemSou: _quemSou,
+        acordes: true,
+        semitons: semitons);
   }
 
   @override
@@ -169,6 +253,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     if (texto == null || !mounted) return;
     try {
       await _sequencia.salvarCifraEmTexto(_pagina, texto);
+      // A letra nova muda as partes do hino.
+      if (_noLouvor) await _carregarLouvor();
     } catch (erro) {
       if (mounted) mostrarErro(context, erro);
     }
@@ -239,6 +325,12 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => _editarCifra(texto),
             ),
+            if (_noLouvor)
+              IconButton(
+                tooltip: 'Quem sou eu',
+                icon: const Icon(Icons.person_outline_rounded),
+                onPressed: _escolherQuemSou,
+              ),
           ],
         ),
         body: texto == null
@@ -250,10 +342,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               )
             : CifraDoPalco(
                 pagina: _chaveDaPagina(pagina),
-                trechos: [
-                  TrechoDaCifra(
-                      texto: transporCifra(texto, _semitonsDe(pagina))),
-                ],
+                trechos: _trechos(pagina, texto),
               ),
         bottomNavigationBar: _BarraDoLeitor(
           vocabulario: _sequencia.vocabulario,

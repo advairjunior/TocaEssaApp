@@ -38,6 +38,8 @@ class _Palco {
   var telaAcesa = 0;
   // música → texto colado no servidor falso
   final textos = <String, String>{'Velha Infância': _cifraVelha};
+  // Escala do louvor no servidor falso; nulo fora do louvor.
+  Map<String, Object?>? louvor;
   final itens = [
     _item('1', 'Garota de Ipanema', 1, tocada: true),
     _item('2', 'Velha Infância', 2, tom: 'G'),
@@ -48,14 +50,19 @@ class _Palco {
 Future<_Palco> _abrir(WidgetTester tester,
     {String inicial = '2',
     String? cifraDaVelha,
-    Vocabulario vocabulario = Vocabulario.musical}) async {
+    Vocabulario vocabulario = Vocabulario.musical,
+    Map<String, Object?>? louvor}) async {
   final palco = _Palco();
   if (cifraDaVelha != null) palco.textos['Velha Infância'] = cifraDaVelha;
+  palco.louvor = louvor;
   final cliente = MockClient((requisicao) async {
     palco.requisicoes.add(requisicao);
     final sequencia = responderPedidosASeguir(requisicao, []);
     if (sequencia != null) return sequencia;
     final caminho = requisicao.url.path;
+    if (caminho.endsWith('/louvor') && palco.louvor != null) {
+      return http.Response(jsonEncode(palco.louvor), 200, headers: _json);
+    }
     if (caminho.endsWith('/setlist')) {
       return http.Response(jsonEncode(palco.itens), 200, headers: _json);
     }
@@ -509,5 +516,47 @@ void main() {
     expect(find.text('Fim da lista de hinos'), findsOneWidget);
     expect(find.byTooltip('Hino anterior'), findsOneWidget);
     expect(find.byTooltip('Colar ou corrigir letra'), findsOneWidget);
+  });
+
+  testWidgets('no louvor a cifra mostra quem canta e destaca a sua vez',
+      (tester) async {
+    await _abrir(tester, vocabulario: Vocabulario.louvor, louvor: {
+      'cantores': ['João', 'Advair'],
+      'placar': <Object?>[],
+      'hinos': [
+        {
+          'itemId': '2',
+          'titulo': 'Velha Infância',
+          'tom': 'G',
+          'tocado': false,
+          'temLetra': true,
+          'partes': [
+            {
+              'tipo': 'Estrofe',
+              'texto': 'G    D\nQuando eu digo que deixei de te amar',
+              'cantores': ['João'],
+              'escolhidaAMao': false,
+            },
+            {
+              'tipo': 'Refrao',
+              'texto': 'Em   C\nÉ porque eu te amo',
+              'cantores': <String>[],
+              'escolhidaAMao': false,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(find.text('JOÃO'), findsOneWidget);
+    expect(find.text('TODOS'), findsOneWidget);
+    expect(find.text('G    D'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Quem sou eu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ChoiceChip, 'João'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('JOÃO · SUA VEZ'), findsOneWidget);
   });
 }
