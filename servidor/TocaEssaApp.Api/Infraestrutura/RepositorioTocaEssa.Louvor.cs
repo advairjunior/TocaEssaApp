@@ -112,6 +112,7 @@ public sealed partial class RepositorioTocaEssa
         var hinos = itens.Zip(escala.Hinos, (item, escalado) => new HinoDoLouvor(
                 item.Id,
                 item.Titulo,
+                item.Artista,
                 item.Tom,
                 item.Tocada,
                 !string.IsNullOrWhiteSpace(letras[item.Id]),

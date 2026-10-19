@@ -375,6 +375,7 @@ public sealed record DenunciaDeStory(string Aparelho);
 public sealed record HinoDoLouvor(
     Guid ItemId,
     string Titulo,
+    string? Artista,
     string? Tom,
     bool Tocado,
     bool TemLetra,

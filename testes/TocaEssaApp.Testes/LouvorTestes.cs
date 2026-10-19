@@ -64,6 +64,21 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void HinoTrazOCantorDoItemParaColarALetraNoLugarCerto()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.AdicionarMusicaAvulsaAoSetlist(
+            cenario.Token, cenario.Show.Id, "5 · Hino da CCB", "CCB", null, null);
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "5 · Hino da CCB", "CCB", "Uma estrofe");
+
+        var hino = cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[2];
+
+        Assert.Equal("CCB", hino.Artista);
+        Assert.True(hino.TemLetra);
+        Assert.Null(cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[0].Artista);
+    }
+
+    [Fact]
     public void CantoresFicamSemNomeVazioNemRepetido()
     {
         var cenario = CriarCenario();
