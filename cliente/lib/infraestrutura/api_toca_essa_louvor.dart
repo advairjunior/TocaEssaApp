@@ -21,6 +21,16 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
         body: jsonEncode({'nomes': nomes}),
       ));
 
+  Future<LouvorDoArtista> definirSolistasDoLouvor(
+          String apresentacaoId, List<Solista> solistas) async =>
+      _lerLouvor(await _cliente.put(
+        _rotaDoLouvor(apresentacaoId, '/solistas'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode({
+          'solistas': [for (final solista in solistas) solista.paraJson()]
+        }),
+      ));
+
   /// [cantores] nulo devolve a parte à escala; vazio deixa com Todos.
   Future<LouvorDoArtista> escolherParteDoLouvor(String apresentacaoId,
           String itemId, int indice, List<String>? cantores) async =>
@@ -32,9 +42,9 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
       ));
 
   Future<RoteiroDoLouvor> obterRoteiroDoLouvor(String codigo) async {
-    final resposta = await _cliente.get(Uri.parse(
-        '$_enderecoBase/api/publico/apresentacoes/'
-        '${codigo.trim().toUpperCase()}/roteiro'));
+    final resposta =
+        await _cliente.get(Uri.parse('$_enderecoBase/api/publico/apresentacoes/'
+            '${codigo.trim().toUpperCase()}/roteiro'));
     _validar(resposta);
     return RoteiroDoLouvor.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);

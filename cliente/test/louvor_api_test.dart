@@ -8,6 +8,12 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 
 const _louvorJson = {
   'cantores': ['João', 'Ana'],
+  'solistas': [
+    {'nome': 'José', 'instrumento': 'sax tenor'},
+  ],
+  'placarDosSolos': [
+    {'nome': 'José', 'solos': 2},
+  ],
   'placar': [
     {'nome': 'João', 'estrofes': 1},
     {'nome': 'Ana', 'estrofes': 1},
@@ -70,6 +76,8 @@ void main() {
     await api.definirCantoresDoLouvor('a1', ['João', 'Ana']);
     await api.escolherParteDoLouvor('a1', 'h1', 2, ['Ana']);
     await api.escolherParteDoLouvor('a1', 'h1', 0, null);
+    await api.definirSolistasDoLouvor(
+        'a1', [const Solista(nome: 'José', instrumento: 'sax tenor')]);
 
     expect(louvor.cantores, ['João', 'Ana']);
     expect(louvor.placar.first.nome, 'João');
@@ -102,6 +110,14 @@ void main() {
       'cantores': ['Ana'],
     });
     expect(jsonDecode(requisicoes[3].body)['cantores'], isNull);
+    expect(requisicoes[4].url.path, '/api/apresentacoes/a1/louvor/solistas');
+    expect(jsonDecode(requisicoes[4].body), {
+      'solistas': [
+        {'nome': 'José', 'instrumento': 'sax tenor'},
+      ],
+    });
+    expect(louvor.solistas.single.instrumento, 'sax tenor');
+    expect(louvor.placarDosSolos.single.solos, 2);
   });
 
   test('o roteiro é lido pelo código, sem token', () async {
@@ -128,6 +144,7 @@ void main() {
     expect(roteiro.nome, 'Louvor de sábado');
     expect(roteiro.hinoAtualId, 'h1');
     expect(roteiro.cantores, ['João', 'Ana']);
+    expect(roteiro.solistas.single.nome, 'José');
     expect(roteiro.hinos.single.partes, hasLength(3));
   });
 }

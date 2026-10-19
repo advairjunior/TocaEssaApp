@@ -102,17 +102,52 @@ class PlacarDoCantor {
       );
 }
 
-/// O louvor visto pelo artista: cantores, placar e a escala de cada hino.
+/// Quem toca os solos e o instrumento, como "José" e "sax tenor".
+class Solista {
+  const Solista({required this.nome, required this.instrumento});
+
+  final String nome;
+  final String instrumento;
+
+  Map<String, Object?> paraJson() => {'nome': nome, 'instrumento': instrumento};
+
+  factory Solista.deJson(Map<String, dynamic> json) => Solista(
+        nome: json['nome'] as String? ?? '',
+        instrumento: json['instrumento'] as String? ?? '',
+      );
+}
+
+class PlacarDoSolista {
+  const PlacarDoSolista({required this.nome, required this.solos});
+
+  final String nome;
+  final int solos;
+
+  factory PlacarDoSolista.deJson(Map<String, dynamic> json) => PlacarDoSolista(
+        nome: json['nome'] as String? ?? '',
+        solos: (json['solos'] as num?)?.toInt() ?? 0,
+      );
+}
+
+/// O louvor visto pelo artista: cantores, solistas, placares e a escala de
+/// cada hino.
 class LouvorDoArtista {
   const LouvorDoArtista({
     required this.cantores,
     required this.placar,
     required this.hinos,
+    this.solistas = const [],
+    this.placarDosSolos = const [],
   });
 
   final List<String> cantores;
   final List<PlacarDoCantor> placar;
   final List<HinoDoLouvor> hinos;
+  final List<Solista> solistas;
+  final List<PlacarDoSolista> placarDosSolos;
+
+  /// Cantores e solistas, sem repetir: quem pode escolher "Quem é você?".
+  List<String> get participantes => _participantes(cantores, solistas);
 
   factory LouvorDoArtista.deJson(Map<String, dynamic> json) => LouvorDoArtista(
         cantores: _textos(json['cantores']),
@@ -121,6 +156,12 @@ class LouvorDoArtista {
             PlacarDoCantor.deJson(item as Map<String, dynamic>),
         ],
         hinos: _hinos(json['hinos']),
+        solistas: _solistas(json['solistas']),
+        placarDosSolos: [
+          for (final item
+              in json['placarDosSolos'] as List<dynamic>? ?? const [])
+            PlacarDoSolista.deJson(item as Map<String, dynamic>),
+        ],
       );
 }
 
@@ -131,20 +172,37 @@ class RoteiroDoLouvor {
     required this.cantores,
     required this.hinoAtualId,
     required this.hinos,
+    this.solistas = const [],
   });
 
   final String nome;
   final List<String> cantores;
   final String? hinoAtualId;
   final List<HinoDoLouvor> hinos;
+  final List<Solista> solistas;
+
+  /// Cantores e solistas, sem repetir: quem pode escolher "Quem é você?".
+  List<String> get participantes => _participantes(cantores, solistas);
 
   factory RoteiroDoLouvor.deJson(Map<String, dynamic> json) => RoteiroDoLouvor(
         nome: json['nome'] as String? ?? '',
         cantores: _textos(json['cantores']),
         hinoAtualId: json['hinoAtualId'] as String?,
         hinos: _hinos(json['hinos']),
+        solistas: _solistas(json['solistas']),
       );
 }
+
+List<String> _participantes(List<String> cantores, List<Solista> solistas) => [
+      ...cantores,
+      for (final solista in solistas)
+        if (!cantores.contains(solista.nome)) solista.nome,
+    ];
+
+List<Solista> _solistas(Object? valor) => [
+      for (final item in valor as List<dynamic>? ?? const [])
+        Solista.deJson(item as Map<String, dynamic>),
+    ];
 
 List<String> _textos(Object? valor) => [
       for (final item in valor as List<dynamic>? ?? const []) item as String,
