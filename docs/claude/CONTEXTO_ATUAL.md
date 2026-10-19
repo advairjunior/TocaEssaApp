@@ -143,9 +143,10 @@ arquivo.
 - Cartão da retrospectiva no jeito do Strava (2026-10-13): a selfie com o
   público é a estrela; a foto do perfil não entra. Sem selfie, um convite
   por cima (fora da imagem compartilhada) lembra de tirar. Números só quando
-  valorizam: tempo, músicas e a pedido; público no app, atendimento e alôs não
-  entram. A nota saiu do cartão do show (2026-10-19): "4,7" sem dizer que é
-  de 5 parecia nota baixa. A resenha ainda mostra a nota. Fecham o cartão a mais pedida e o convite para o próximo show. A
+  valorizam: tempo, músicas e pedidas pelo público (rótulo em até 2 linhas);
+  público no app, atendimento e alôs não entram. A nota saiu do cartão do
+  show e da resenha (2026-10-19): "4,7" sem dizer que é de 5 parecia nota
+  baixa. Fecham o cartão a mais pedida e o convite para o próximo show. A
   resenha usa o mesmo visual, sem a contagem de gente no app.
 - Encerrar o show sem selfie oferece tirar uma antes: a câmera abre com a
   prévia do cartão, a foto é guardada e o show é encerrado. Encerrar sem foto

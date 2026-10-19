@@ -132,13 +132,16 @@ void main() {
     for (final (rotulo, valor) in [
       ('Tempo', '3h12'),
       ('Músicas', '50'),
-      ('A pedido', '32'),
+      ('Pedidas pelo público', '32'),
     ]) {
       expect(_noCartao(rotulo), findsOneWidget);
       expect(_noCartao(valor), findsOneWidget);
     }
     expect(_noCartao('Nota'), findsNothing);
     expect(_noCartao('4,8'), findsNothing);
+    // Rótulo longo quebra em duas linhas em vez de virar "Pedidas pel…".
+    expect(
+        tester.widget<Text>(_noCartao('Pedidas pelo público')).maxLines, 2);
     expect(_noCartao('80'), findsNothing);
     expect(_noCartao('A mais pedida da noite'), findsOneWidget);
     expect(_noCartao('Evidências'), findsOneWidget);
@@ -222,7 +225,8 @@ void main() {
 
     expect(find.text('Retrospectiva da resenha'), findsOneWidget);
     expect(_noCartao('Recusadas'), findsOneWidget);
-    expect(_noCartao('2,5'), findsOneWidget);
+    expect(_noCartao('Nota'), findsNothing);
+    expect(_noCartao('2,5'), findsNothing);
     expect(_noCartao('7'), findsNothing);
     expect(_noCartao('Pidão da noite'), findsOneWidget);
     expect(find.text('Prêmios da noite'), findsOneWidget);
@@ -354,7 +358,7 @@ void main() {
         const [],
       );
 
-      expect(texto, contains('Tempo 3h12 · Músicas 50 · A pedido 32'));
+      expect(texto, contains('Tempo 3h12 · Músicas 50 · Pedidas pelo público 32'));
       expect(texto, isNot(contains('Nota')));
       expect(texto, isNot(contains('80')));
       expect(texto, contains('A mais pedida da noite: Evidências'));

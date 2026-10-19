@@ -378,7 +378,7 @@ class _NumeroDoCartao extends StatelessWidget {
           children: [
             Text(
               destaque.rotulo,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(color: Colors.white70, fontSize: 11),
             ),
@@ -406,8 +406,10 @@ class _NumerosDoCartao extends StatelessWidget {
   final List<DestaqueDaRetrospectiva> numeros;
 
   @override
+  // Alinhados por baixo: os valores ficam na mesma linha mesmo quando um
+  // rótulo quebra em duas.
   Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [for (final numero in numeros) _NumeroDoCartao(numero)],
       );
 }

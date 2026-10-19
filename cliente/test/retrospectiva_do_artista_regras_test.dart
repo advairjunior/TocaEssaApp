@@ -96,11 +96,11 @@ void main() {
       alos: 9,
     );
 
-    test('noite cheia mostra tempo, músicas e a pedido, como no Strava', () {
+    test('noite cheia mostra tempo, músicas e pedidas pelo público, como no Strava', () {
       final destaques =
           destaquesDoShow(_estatisticas(pessoas: 80, retrospectiva: noiteCheia));
 
-      expect(_rotulos(destaques), ['Tempo 3h12', 'Músicas 42', 'A pedido 32']);
+      expect(_rotulos(destaques), ['Tempo 3h12', 'Músicas 42', 'Pedidas pelo público 32']);
     });
 
     test('público no app, atendimento e alôs nunca vão para as redes', () {
@@ -109,7 +109,7 @@ void main() {
           retrospectiva: _dados(
               aPedido: 32, considerados: 40, atendidos: 36, alos: 9)));
 
-      expect(_rotulos(destaques), ['A pedido 32']);
+      expect(_rotulos(destaques), ['Pedidas pelo público 32']);
     });
 
     test('nunca usa os pedidos brutos, só o que foi validado', () {
@@ -174,8 +174,8 @@ void main() {
         ),
       ));
 
-      expect(_rotulos(numeros),
-          ['Pedidos 9', 'Tocadas 4', 'Recusadas 2', 'Nota 2,5']);
+      // A nota fica fora também aqui: "2,5" sem dizer que é de 5 confunde.
+      expect(_rotulos(numeros), ['Pedidos 9', 'Tocadas 4', 'Recusadas 2']);
     });
   });
 

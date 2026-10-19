@@ -31,7 +31,6 @@ const _notaMinima = 4.0;
 const _musicasTocadasMinimas = 10;
 const _maximoDeDestaques = 3;
 
-String _nota(double media) => media.toStringAsFixed(1).replaceAll('.', ',');
 
 // O cartão usa só os números validados pelo servidor (cada pessoa conta uma
 // vez por música); sem eles, nenhum número de pedido aparece.
@@ -74,7 +73,8 @@ List<DestaqueDaRetrospectiva> destaquesDoShow(EstatisticasDaApresentacao e) {
   if (aPedido >= _tocadosMinimos &&
       aPedido >= e.pessoasNoEvento * _tocadosPorPessoa) {
     destaques
-        .add(DestaqueDaRetrospectiva(valor: '$aPedido', rotulo: 'A pedido'));
+        .add(DestaqueDaRetrospectiva(
+            valor: '$aPedido', rotulo: 'Pedidas pelo público'));
   }
   return destaques.take(_maximoDeDestaques).toList();
 }
@@ -95,8 +95,8 @@ String? duracaoDoShow(EstatisticasDaApresentacao e) {
       '${formatarTempoDoShow(fim.difference(inicio))} de show';
 }
 
-/// Na resenha vale tudo: números completos, inclusive recusas e nota baixa,
-/// mas sem contar a mesma pessoa duas vezes na mesma música.
+/// Na resenha vale tudo: números completos, inclusive recusas, mas sem contar
+/// a mesma pessoa duas vezes na mesma música. A nota fica fora, como no show.
 List<DestaqueDaRetrospectiva> numerosDaResenha(EstatisticasDaApresentacao e) {
   final r = _validados(e);
   return [
@@ -106,8 +106,6 @@ List<DestaqueDaRetrospectiva> numerosDaResenha(EstatisticasDaApresentacao e) {
         valor: '${r.musicasAPedidoTocadas}', rotulo: 'Tocadas'),
     DestaqueDaRetrospectiva(
         valor: '${r.recusadasPorPessoas.length}', rotulo: 'Recusadas'),
-    if (r.mediaDasAvaliacoes case final media?)
-      DestaqueDaRetrospectiva(valor: _nota(media), rotulo: 'Nota'),
   ];
 }
 
