@@ -102,6 +102,28 @@ cada uma começa por uma investigação antes de virar plano.
     é buscada uma única vez.
 - **Registrada em:** 2026-10-08.
 
+### Tela de carregamento e servidor acordando
+
+- **Problema:** no plano free do Render o servidor dorme sem uso. O primeiro
+  acesso (o público escaneando o QR no começo do show, ou o artista abrindo o
+  painel) fica uns 30 a 60 s numa tela preta ou com o botão parado, e parece
+  que o app quebrou.
+- **Ideia:** a mesma solução que já está no ar no Baralho da Resenha
+  (BaralhoResenhaApp, commits `83b8427` e `7573dc4`):
+  - **Tela de carregamento no `web/index.html`:** um aviso em HTML/CSS puro
+    ("Carregando…", com animação) que aparece antes de o Flutter abrir e some
+    no evento `flutter-first-frame`.
+  - **Cutucar o servidor ao abrir o app:** a tela inicial chama o
+    `/api/saude` (que já existe) sem esperar resposta, para o servidor ir
+    acordando enquanto a pessoa digita o nome.
+  - **Aviso de espera:** se uma ação (entrar no evento, fazer login) passar de
+    3 s, aparece um carregando com "Carregando o aplicativo TocaEssa,
+    aguarde…".
+- **Investigar antes:** onde o TocaEssa mais sofre com o servidor dormindo
+  (QR do público ou painel do artista), e se o primeiro acesso ao PostgreSQL
+  do Render também demora.
+- **Registrada em:** 2026-10-19.
+
 ### No palco
 
 - **Salvar a setlist como repertório:** reaproveitar a seleção de um show
