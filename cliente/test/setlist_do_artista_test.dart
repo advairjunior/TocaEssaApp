@@ -77,6 +77,7 @@ Future<List<http.Request>> _abrir(
   List<String> pedidosASeguir = const [],
   VoidCallback? abrirFila,
   StatusApresentacao status = StatusApresentacao.emAndamento,
+  TipoApresentacao tipo = TipoApresentacao.publica,
   Map<String, Object?>? relogio,
 }) async {
   _aSeguirNoServidor = [...pedidosASeguir];
@@ -215,7 +216,7 @@ Future<List<http.Request>> _abrir(
               nomeArtistico: 'Duo Aurora'),
           pedidosAbertos: true,
           status: status,
-          tipo: TipoApresentacao.publica,
+          tipo: tipo,
         ),
         incorporada: true,
         abrirFila: abrirFila,
@@ -887,6 +888,40 @@ void main() {
 
       expect(find.text('1 de 1 tocadas'), findsOneWidget);
       expect(find.text(' · setlist completa'), findsOneWidget);
+    });
+  });
+
+  group('no louvor', () {
+    testWidgets('fala de hinos e letras em vez de músicas e cifras',
+        (tester) async {
+      await _abrir(tester,
+          tipo: TipoApresentacao.louvor,
+          musicasComTexto: {'Garota de Ipanema'});
+
+      expect(find.text('1 de 3 cantados'), findsOneWidget);
+      expect(find.text('2 hinos sem letra'), findsOneWidget);
+      expect(find.textContaining('música'), findsNothing);
+      expect(find.textContaining('cifra'), findsNothing);
+    });
+
+    testWidgets('lista vazia e limpar falam de hinos', (tester) async {
+      await _abrir(tester, tipo: TipoApresentacao.louvor);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      final limpar = find.text('Limpar lista de hinos');
+      await tester.ensureVisible(limpar);
+      await tester.tap(limpar);
+      await tester.pumpAndSettle();
+      expect(find.text('Limpar a lista de hinos?'), findsOneWidget);
+      expect(
+          find.text('Todos os hinos saem da lista, inclusive os já cantados.'),
+          findsOneWidget);
+      await tester.tap(find.text('Limpar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nenhum hino na lista'), findsOneWidget);
+      expect(find.text('Montar lista de hinos'), findsOneWidget);
     });
   });
 }

@@ -4,6 +4,7 @@ part 'modelos_cifras.dart';
 part 'modelos_repertorio.dart';
 part 'modelos_relogio.dart';
 part 'modelos_louvor.dart';
+part 'vocabulario.dart';
 
 class PerfilArtistico {
   const PerfilArtistico(

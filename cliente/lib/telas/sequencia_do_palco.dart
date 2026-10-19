@@ -20,10 +20,16 @@ class MusicaDoPalco {
 /// música, buscada antes para abrir na hora no palco. Compartilhada pela
 /// setlist e pelo leitor de cifras.
 class SequenciaDoPalco extends ChangeNotifier {
-  SequenciaDoPalco({required this.api, required this.apresentacaoId});
+  SequenciaDoPalco({
+    required this.api,
+    required this.apresentacaoId,
+    this.vocabulario = Vocabulario.musical,
+  });
 
   final ApiTocaEssa api;
   final String apresentacaoId;
+  // Palavras das telas do palco: no louvor, hino e letra.
+  final Vocabulario vocabulario;
 
   List<ItemDoSetlist> itens = const [];
   List<GrupoPedidoMusical> pedidos = const [];

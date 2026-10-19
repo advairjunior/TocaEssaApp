@@ -57,7 +57,9 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   late final SequenciaDoPalco _sequencia = SequenciaDoPalco(
     api: widget.api,
     apresentacaoId: widget.apresentacao.id,
+    vocabulario: _v,
   )..addListener(_redesenhar);
+  Vocabulario get _v => widget.apresentacao.tipo.vocabulario;
   bool _carregando = true;
   bool _editando = false;
   // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
@@ -154,7 +156,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           CupertinoActionSheetAction(
             isDefaultAction: true,
             onPressed: () => Navigator.pop(contexto, 'colar'),
-            child: const Text('Colar ou corrigir cifra'),
+            child: Text('Colar ou corrigir ${_v.cifra}'),
           ),
           CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(contexto, 'link'),
@@ -222,9 +224,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     final confirmou = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Limpar a setlist?'),
-            content: const Text(
-                'Todas as músicas saem da setlist, inclusive as já tocadas.'),
+            title: Text('Limpar a ${_v.setlist}?'),
+            content: Text(_v.todasSaemDaSetlist),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
@@ -313,7 +314,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
             _AvisoSemCifra(
-              quantidade: _sequencia.semCifra.length,
+              texto: _v.semCifra(_sequencia.semCifra.length),
               colar: _colarCifras,
             ),
           ],
@@ -328,6 +329,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                   for (final item in _sequencia.itens)
                     _LinhaSetlist(
                       item: item,
+                      vocabulario: _v,
                       salvando: _sequencia.salvando,
                       eProxima: item.id == proxima?.id,
                       semCifra: _sequencia
@@ -362,6 +364,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         aoReordenar: _reordenar,
         construirItem: (context, indice, alca) => _LinhaEmEdicao(
           item: itens[indice],
+          vocabulario: _v,
           remover: () => _remover(itens[indice]),
           alca: alca,
         ),
@@ -373,7 +376,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           onPressed: _limpar,
           style: TextButton.styleFrom(foregroundColor: CoresTocaEssa.rosa),
           icon: const Icon(Icons.delete_sweep_outlined),
-          label: const Text('Limpar setlist'),
+          label: Text('Limpar ${_v.setlist}'),
         ),
       ),
     ];
@@ -409,11 +412,11 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               child: Wrap(
                 crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
-                  Text('${_sequencia.tocadas} de $total tocadas',
+                  Text('${_sequencia.tocadas} de $total ${_v.tocadas}',
                       style: texto.titleMedium),
                   Text(
                     completa
-                        ? ' · setlist completa'
+                        ? ' · ${_v.setlist} completa'
                         : ' · faltam ~${formatarTempoDoShow(_ritmo * faltam)}',
                     style: secundario,
                   ),
@@ -425,7 +428,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               child: Text(_editando ? 'Concluir' : 'Editar'),
             ),
             IconButton(
-              tooltip: 'Montar setlist',
+              tooltip: 'Montar ${_v.setlist}',
               onPressed: _editando ? null : _montar,
               icon: const Icon(Icons.add_rounded),
             ),
@@ -461,8 +464,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         relogio, relogio.duracaoEstimada(_sequencia.musicasNaSequencia));
     return [
       relogio.temRitmoMedio
-          ? 'seu ritmo médio: $ritmo por música'
-          : 'estimativa: $ritmo por música',
+          ? 'seu ritmo médio: $ritmo por ${_v.musica}'
+          : 'estimativa: $ritmo por ${_v.musica}',
       if (contrato != null) contrato,
     ].join(' · ');
   }
@@ -472,16 +475,15 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const EstadoVazio(
+              EstadoVazio(
                 icone: Icons.playlist_play_rounded,
-                titulo: 'Setlist vazia',
-                descricao: 'Monte a setlist com músicas dos seus repertórios '
-                    'ou avulsas.',
+                titulo: _v.setlistVazia,
+                descricao: _v.convitePraMontar,
               ),
               FilledButton.icon(
                 onPressed: _montar,
                 icon: const Icon(Icons.playlist_add_rounded),
-                label: const Text('Montar setlist'),
+                label: Text('Montar ${_v.setlist}'),
               ),
             ],
           ),
@@ -492,9 +494,10 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
 /// Avisa, antes do show, quantas músicas que faltam tocar estão sem cifra,
 /// para o artista não precisar escolher cifra no meio da apresentação.
 class _AvisoSemCifra extends StatelessWidget {
-  const _AvisoSemCifra({required this.quantidade, required this.colar});
+  const _AvisoSemCifra({required this.texto, required this.colar});
 
-  final int quantidade;
+  // "2 músicas sem cifra" ou, no louvor, "2 hinos sem letra".
+  final String texto;
   final VoidCallback colar;
 
   @override
@@ -516,9 +519,7 @@ class _AvisoSemCifra extends StatelessWidget {
           const SizedBox(width: EspacoTocaEssa.pequeno),
           Expanded(
             child: Text(
-              quantidade == 1
-                  ? '1 música sem cifra'
-                  : '$quantidade músicas sem cifra',
+              texto,
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
@@ -574,11 +575,13 @@ class _SeloPedidosNovos extends StatelessWidget {
 class _LinhaEmEdicao extends StatelessWidget {
   const _LinhaEmEdicao({
     required this.item,
+    required this.vocabulario,
     required this.remover,
     required this.alca,
   });
 
   final ItemDoSetlist item;
+  final Vocabulario vocabulario;
   final VoidCallback remover;
   final ConstrutorDaAlca alca;
 
@@ -626,7 +629,7 @@ class _LinhaEmEdicao extends StatelessWidget {
             )
           else ...[
             IconButton(
-              tooltip: 'Remover da setlist',
+              tooltip: 'Remover da ${vocabulario.setlist}',
               icon: const Icon(Icons.remove_circle_outline_rounded,
                   color: CoresTocaEssa.textoSecundario, size: 20),
               onPressed: remover,
@@ -654,6 +657,7 @@ class _LinhaEmEdicao extends StatelessWidget {
 class _LinhaSetlist extends StatelessWidget {
   const _LinhaSetlist({
     required this.item,
+    required this.vocabulario,
     required this.salvando,
     required this.eProxima,
     required this.semCifra,
@@ -665,6 +669,7 @@ class _LinhaSetlist extends StatelessWidget {
   });
 
   final ItemDoSetlist item;
+  final Vocabulario vocabulario;
   final bool salvando;
   final bool eProxima;
   // Cifra já consultada e sem cifra colada no app.
@@ -694,7 +699,7 @@ class _LinhaSetlist extends StatelessWidget {
             backgroundColor: CoresTocaEssa.roxo,
             foregroundColor: CoresTocaEssa.texto,
             icon: Icons.menu_book_rounded,
-            label: 'Cifra',
+            label: vocabulario.cifraMaiuscula,
           ),
           if (!tocada)
             SlidableAction(
@@ -773,7 +778,9 @@ class _LinhaSetlist extends StatelessWidget {
                   const SizedBox(width: EspacoTocaEssa.pequeno),
                 ],
                 Tooltip(
-                  message: semCifra ? 'Sem cifra no app' : 'Cifra no app',
+                  message: semCifra
+                      ? 'Sem ${vocabulario.cifra} no app'
+                      : '${vocabulario.cifraMaiuscula} no app',
                   child: Container(
                     width: 8,
                     height: 8,
