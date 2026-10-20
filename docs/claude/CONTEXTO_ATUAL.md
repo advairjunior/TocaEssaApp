@@ -185,7 +185,10 @@ arquivo.
   virada de um hino para o outro), se houver outra pessoa; introdução para um solista (qualquer
   instrumento). "Escalar todos os hinos" (`EscalarTodos`, `POST
   .../louvor/escalar`, com confirmação) faz a lista inteira na ordem e
-  refaz as trocas à mão. Colar a cifra com "(Estrofe N)" marcadas já
+  refaz as trocas à mão. A confirmação lista os hinos com letra, todos
+  marcados (com "Todos" para marcar ou desmarcar): só os marcados são
+  refeitos (`EscalarSelecionados`, corpo opcional `{ itens }`); os outros
+  ficam como estão e os pontos deles contam. Colar a cifra com "(Estrofe N)" marcadas já
   escala o hino que ainda não tem ninguém (`EscalarHinosDaLetraNova`); hino
   já escalado não muda. A troca à mão continua; "Limpar" deixa
   a parte sem escala. No roteiro, parte sem escala aparece como Todos.
