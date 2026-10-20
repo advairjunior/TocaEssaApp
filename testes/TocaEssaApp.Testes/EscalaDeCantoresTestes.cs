@@ -247,6 +247,53 @@ public sealed class EscalaDeCantoresTestes
         Assert.Equal(["Todos", "Todos", "Todos", "Todos"], Quem(escolhas));
     }
 
+    [Fact]
+    public void MaximoDeCantoresPorHinoRevezaSoEntreOsDeMenosPontos()
+    {
+        var configuracao = new ConfiguracaoDaEscala(MaximoDeCantoresPorHino: 2);
+
+        var escolhas = EscalaDeCantores.EscalarTodos(
+            [Hino(HinoA, estrofes: 3), Hino(HinoB, estrofes: 3)],
+            ["João", "Ana", "Pedro"],
+            [],
+            configuracao: configuracao);
+
+        Assert.Equal(["João", "Ana", "João", "Ana", "João", "Todos"],
+            Quem(escolhas.Where(escolha => escolha.ItemId == HinoA)));
+        Assert.Equal(["Pedro", "Ana", "Pedro", "Ana", "Pedro", "Todos"],
+            Quem(escolhas.Where(escolha => escolha.ItemId == HinoB)));
+    }
+
+    [Fact]
+    public void UmCantorPorHinoCantaTodasAsPartesDoHino()
+    {
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [Hino(HinoA, estrofes: 2)], HinoA, ["João", "Ana"], [],
+            configuracao: new ConfiguracaoDaEscala(MaximoDeCantoresPorHino: 1));
+
+        Assert.Equal(["João", "João", "João", "Todos"], Quem(escolhas));
+    }
+
+    [Fact]
+    public void SemMaximoOuMaximoMaiorQueOsCantoresRevezaEntreTodos()
+    {
+        foreach (var maximo in new int?[] { null, 0, 5 })
+            Assert.Equal(["João", "Ana", "Pedro", "João", "Ana", "Todos"],
+                Quem(EscalaDeCantores.EscalarHino(
+                    [Hino(HinoA, estrofes: 3)], HinoA, ["João", "Ana", "Pedro"], [],
+                    configuracao: new ConfiguracaoDaEscala(MaximoDeCantoresPorHino: maximo))));
+    }
+
+    [Fact]
+    public void CorosComTodosDeixaTodosOsCorosParaTodos()
+    {
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [Hino(HinoA, estrofes: 3)], HinoA, ["João", "Ana"], [],
+            configuracao: new ConfiguracaoDaEscala(CorosComTodos: true));
+
+        Assert.Equal(["João", "Todos", "Ana", "Todos", "João", "Todos"], Quem(escolhas));
+    }
+
     private static HinoParaEscala Hino(Guid id, int estrofes) =>
         new(id, Enumerable.Range(1, estrofes)
             .SelectMany(numero => new[]

@@ -24,6 +24,13 @@ public sealed record ParteEscalada(
 
 public sealed record HinoEscalado(Guid ItemId, IReadOnlyList<ParteEscalada> Partes);
 
+/// Como o louvor escala: [MaximoDeCantoresPorHino] nulo ou zero reveza entre
+/// todos os cantores; [CorosComTodos] deixa todo coro para Todos, não só o
+/// final.
+public sealed record ConfiguracaoDaEscala(
+    int? MaximoDeCantoresPorHino = null,
+    bool CorosComTodos = false);
+
 /// Cada estrofe ou coro cantado no microfone vale um ponto.
 public sealed record PlacarDoCantor(string Nome, int Pontos);
 
@@ -70,12 +77,15 @@ public static class EscalaDeCantores
     /// pela ordem da lista, sem a mesma pessoa em duas partes seguidas. Cada
     /// solo vai, pelo mesmo critério, para quem toca o instrumento dele;
     /// introdução também vai para um solista; interlúdio e final são da banda.
+    /// A [configuracao] limita quantos cantores revezam no hino e pode deixar
+    /// todo coro com Todos.
     public static IReadOnlyList<EscolhaAMao> EscalarHino(
         IReadOnlyList<HinoParaEscala> hinos,
         Guid itemId,
         IReadOnlyList<string> cantores,
         IReadOnlyCollection<EscolhaAMao> escolhas,
-        IReadOnlyList<Solista>? solistas = null)
+        IReadOnlyList<Solista>? solistas = null,
+        ConfiguracaoDaEscala? configuracao = null)
     {
         solistas ??= [];
         var hino = hinos.FirstOrDefault(hino => hino.ItemId == itemId);
@@ -106,6 +116,14 @@ public static class EscalaDeCantores
             .Select(item => item.indice)
             .DefaultIfEmpty(-1)
             .Last();
+        // Com máximo por hino, só os de menos pontos (e há mais tempo sem
+        // cantar) revezam neste hino.
+        var daVez = configuracao?.MaximoDeCantoresPorHino is > 0 and var maximo &&
+                    maximo < cantores.Count
+            ? cantores.OrderBy(nome => pontos[nome]).ThenBy(nome => ultimaVez[nome])
+                .Take(maximo).ToList()
+            : cantores;
+        var corosComTodos = configuracao?.CorosComTodos == true;
         IReadOnlyList<string> anterior = [];
         var resultado = new List<EscolhaAMao>();
         for (var indice = 0; indice < hino.Partes.Count; indice++)
@@ -125,11 +143,12 @@ public static class EscalaDeCantores
                     ultimoSolo[nome] = posicao;
                 }
             }
-            else if (indice == coroFinal || cantores.Count == 0)
+            else if (indice == coroFinal || cantores.Count == 0 ||
+                     (corosComTodos && parte.Tipo == TipoDaParte.Refrao))
                 quem = [];
             else
             {
-                var escolhido = Escolher(cantores, pontos, ultimaVez, anterior);
+                var escolhido = Escolher(daVez, pontos, ultimaVez, anterior);
                 pontos[escolhido]++;
                 ultimaVez[escolhido] = posicao;
                 quem = [escolhido];
@@ -147,11 +166,13 @@ public static class EscalaDeCantores
         IReadOnlyList<HinoParaEscala> hinos,
         IReadOnlyList<string> cantores,
         IReadOnlyCollection<EscolhaAMao> escolhas,
-        IReadOnlyList<Solista>? solistas = null)
+        IReadOnlyList<Solista>? solistas = null,
+        ConfiguracaoDaEscala? configuracao = null)
     {
         var escaladas = new List<EscolhaAMao>();
         foreach (var hino in hinos)
-            escaladas.AddRange(EscalarHino(hinos, hino.ItemId, cantores, escaladas, solistas));
+            escaladas.AddRange(EscalarHino(
+                hinos, hino.ItemId, cantores, escaladas, solistas, configuracao));
         return escaladas;
     }
 
