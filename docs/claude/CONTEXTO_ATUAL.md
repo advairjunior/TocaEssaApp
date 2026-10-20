@@ -180,7 +180,9 @@ arquivo.
   grava quem fica com cada parte. Só o coro final é de Todos; cada estrofe
   vai, junto com o coro que vem depois dela, para quem tem menos pontos nos
   outros hinos (estrofe vale 1, coro vale 2), depois quem está há mais tempo
-  sem cantar; ninguém duas estrofes seguidas; solos pelo instrumento; introdução para um solista (qualquer
+  sem cantar; ninguém duas estrofes seguidas; solos pelo instrumento; quem
+  acabou de tocar não começa a cantar em seguida e vice-versa (inclusive na
+  virada de um hino para o outro), se houver outra pessoa; introdução para um solista (qualquer
   instrumento). "Escalar todos os hinos" (`EscalarTodos`, `POST
   .../louvor/escalar`, com confirmação) faz a lista inteira na ordem e
   refaz as trocas à mão. Colar a cifra com "(Estrofe N)" marcadas já
