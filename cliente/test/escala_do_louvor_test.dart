@@ -213,6 +213,8 @@ void main() {
     expect(find.text('Quem canta no microfone'), findsOneWidget);
     expect(find.text('João · 1'), findsOneWidget);
     expect(find.text('Ana · 1'), findsOneWidget);
+    expect(find.text('O número é de pontos: estrofe vale 1 e coro vale 2.'),
+        findsOneWidget);
     expect(find.text('80 · Por Cristo, resgatado'), findsNothing);
   });
 

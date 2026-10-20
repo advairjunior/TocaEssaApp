@@ -356,7 +356,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         louvor.cantores.isEmpty
             ? 'Coloque quem vai cantar no microfone. Em cada hino, '
                 '"Escalar automático" divide as partes entre eles.'
-            : 'O número é de pontos: cada estrofe ou coro cantado vale 1.',
+            : 'O número é de pontos: estrofe vale 1 e coro vale 2.',
         style: explicacao,
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
