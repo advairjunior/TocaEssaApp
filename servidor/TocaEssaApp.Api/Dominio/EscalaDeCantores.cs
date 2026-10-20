@@ -31,7 +31,7 @@ public sealed record ConfiguracaoDaEscala(
     int? MaximoDeCantoresPorHino = null,
     bool CorosComTodos = false);
 
-/// Cada estrofe ou coro cantado no microfone vale um ponto.
+/// Pontos de quem canta no microfone: estrofe vale um, coro vale dois.
 public sealed record PlacarDoCantor(string Nome, int Pontos);
 
 public sealed record PlacarDoSolista(string Nome, int Solos);
@@ -72,9 +72,10 @@ public static class EscalaDeCantores
     }
 
     /// Escala o hino inteiro, refazendo o que ele tinha. Só o coro final é
-    /// de Todos; cada estrofe e coro vai para quem tem menos pontos nos
-    /// outros hinos, depois para quem está há mais tempo sem cantar, depois
-    /// pela ordem da lista, sem a mesma pessoa em duas partes seguidas. Cada
+    /// de Todos; cada estrofe vai, com o coro que vem depois dela, para quem
+    /// tem menos pontos nos outros hinos, depois para quem está há mais tempo
+    /// sem cantar, depois pela ordem da lista, sem a mesma pessoa em duas
+    /// estrofes seguidas. Cada
     /// solo vai, pelo mesmo critério, para quem toca o instrumento dele;
     /// introdução também vai para um solista; interlúdio e final são da banda.
     /// A [configuracao] limita quantos cantores revezam no hino e pode deixar
@@ -125,6 +126,7 @@ public static class EscalaDeCantores
             : cantores;
         var corosComTodos = configuracao?.CorosComTodos == true;
         IReadOnlyList<string> anterior = [];
+        string? donoDaEstrofe = null;
         var resultado = new List<EscolhaAMao>();
         for (var indice = 0; indice < hino.Partes.Count; indice++)
         {
@@ -148,8 +150,12 @@ public static class EscalaDeCantores
                 quem = [];
             else
             {
-                var escolhido = Escolher(daVez, pontos, ultimaVez, anterior);
-                pontos[escolhido]++;
+                // O coro fica com quem cantou a estrofe de antes.
+                var escolhido = parte.Tipo == TipoDaParte.Refrao && donoDaEstrofe is not null
+                    ? donoDaEstrofe
+                    : Escolher(daVez, pontos, ultimaVez, anterior);
+                donoDaEstrofe = parte.Tipo == TipoDaParte.Estrofe ? escolhido : null;
+                pontos[escolhido] += Peso(parte.Tipo);
                 ultimaVez[escolhido] = posicao;
                 quem = [escolhido];
                 anterior = quem;
@@ -202,9 +208,10 @@ public static class EscalaDeCantores
         foreach (var escolha in escolhas)
         {
             var parte = hinos.First(hino => hino.ItemId == escolha.ItemId).Partes[escolha.Indice];
-            var placar = parte.Tipo == TipoDaParte.Instrumental ? solos : pontos;
+            var instrumental = parte.Tipo == TipoDaParte.Instrumental;
+            var placar = instrumental ? solos : pontos;
             foreach (var nome in escolha.Cantores)
-                if (placar.ContainsKey(nome)) placar[nome]++;
+                if (placar.ContainsKey(nome)) placar[nome] += instrumental ? 1 : Peso(parte.Tipo);
         }
         return (pontos, solos);
     }
@@ -233,6 +240,9 @@ public static class EscalaDeCantores
                               (toca.Contains(instrumento) || instrumento.Contains(toca)))
             .Select(solista => solista.Nome).Distinct().ToList();
     }
+
+    // O coro é a parte mais importante: vale o dobro da estrofe.
+    private static int Peso(TipoDaParte tipo) => tipo == TipoDaParte.Refrao ? 2 : 1;
 
     private static string Escolher(
         IReadOnlyList<string> candidatos,

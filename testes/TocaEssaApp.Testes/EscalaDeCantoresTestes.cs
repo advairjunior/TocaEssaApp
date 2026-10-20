@@ -23,7 +23,7 @@ public sealed class EscalaDeCantoresTestes
     }
 
     [Fact]
-    public void EscolhasValemECadaParteCantadaValeUmPonto()
+    public void EscolhasValemEstrofeValeUmPontoECoroDois()
     {
         var escala = EscalaDeCantores.Montar(
             [Hino(HinoA, estrofes: 2)],
@@ -39,18 +39,18 @@ public sealed class EscalaDeCantoresTestes
         Assert.True(partes[3].Definida);
         Assert.Empty(partes[3].Cantores);
         Assert.Equal(
-            [new PlacarDoCantor("João", 2), new PlacarDoCantor("Ana", 1)],
+            [new PlacarDoCantor("João", 3), new PlacarDoCantor("Ana", 2)],
             escala.Placar);
     }
 
     [Fact]
-    public void EscalarHinoRevezaEstrofesECorosESoOCoroFinalEhDeTodos()
+    public void EscalarHinoDaEstrofeECoroJuntosESoOCoroFinalEhDeTodos()
     {
         var escolhas = EscalaDeCantores.EscalarHino(
             [Hino(HinoA, estrofes: 3)], HinoA, ["João", "Ana", "Pedro"], []);
 
         Assert.Equal(
-            ["João", "Ana", "Pedro", "João", "Ana", "Todos"],
+            ["João", "João", "Ana", "Ana", "Pedro", "Todos"],
             Quem(escolhas));
         Assert.Equal([0, 1, 2, 3, 4, 5], escolhas.Select(escolha => escolha.Indice));
         Assert.All(escolhas, escolha => Assert.Equal(HinoA, escolha.ItemId));
@@ -67,11 +67,12 @@ public sealed class EscalaDeCantoresTestes
              new EscolhaAMao(HinoB, 1, ["João"]),
              new EscolhaAMao(HinoB, 2, ["Ana"])]);
 
-        Assert.Equal(["Pedro", "Ana", "Pedro", "Todos"], Quem(escolhas));
+        // João tem estrofe + coro (3 pontos), Ana só estrofe (1).
+        Assert.Equal(["Pedro", "Pedro", "Ana", "Todos"], Quem(escolhas));
     }
 
     [Fact]
-    public void EscalarHinoNaoDaDuasPartesSeguidasParaAMesmaPessoa()
+    public void ComDoisCantoresCadaUmCantaEstrofeECoroENinguemDuasEstrofesSeguidas()
     {
         var escolhas = EscalaDeCantores.EscalarHino(
             [Hino(HinoB, estrofes: 2), Hino(HinoA, estrofes: 3)],
@@ -81,7 +82,7 @@ public sealed class EscalaDeCantoresTestes
              new EscolhaAMao(HinoB, 1, ["João"]),
              new EscolhaAMao(HinoB, 2, ["João"])]);
 
-        Assert.Equal(["Ana", "João", "Ana", "João", "Ana", "Todos"], Quem(escolhas));
+        Assert.Equal(["Ana", "Ana", "João", "João", "Ana", "Todos"], Quem(escolhas));
     }
 
     [Fact]
@@ -94,7 +95,7 @@ public sealed class EscalaDeCantoresTestes
             [new EscolhaAMao(HinoA, 0, ["Ana"]),
              new EscolhaAMao(HinoA, 1, ["Ana"])]);
 
-        Assert.Equal(["João", "Ana", "João", "Todos"], Quem(escolhas));
+        Assert.Equal(["João", "João", "Ana", "Todos"], Quem(escolhas));
     }
 
     [Fact]
@@ -105,9 +106,9 @@ public sealed class EscalaDeCantoresTestes
             ["João", "Ana", "Pedro"],
             [new EscolhaAMao(HinoA, 0, ["Pedro"]), new EscolhaAMao(HinoB, 1, ["Pedro"])]);
 
-        Assert.Equal(["João", "Ana", "Pedro", "Todos"],
+        Assert.Equal(["João", "João", "Ana", "Todos"],
             Quem(escolhas.Where(escolha => escolha.ItemId == HinoA)));
-        Assert.Equal(["João", "Ana", "Pedro", "Todos"],
+        Assert.Equal(["Pedro", "Pedro", "Ana", "Todos"],
             Quem(escolhas.Where(escolha => escolha.ItemId == HinoB)));
         Assert.Equal(8, escolhas.Count);
     }
@@ -141,7 +142,7 @@ public sealed class EscalaDeCantoresTestes
 
         var escolhas = EscalaDeCantores.EscalarHino([hino], HinoA, ["Ana", "João"], []);
 
-        Assert.Equal(["Ana", "João", "Ana", "Todos", "Todos"], Quem(escolhas));
+        Assert.Equal(["Ana", "Ana", "João", "Todos", "Todos"], Quem(escolhas));
     }
 
     [Fact]
@@ -258,9 +259,9 @@ public sealed class EscalaDeCantoresTestes
             [],
             configuracao: configuracao);
 
-        Assert.Equal(["João", "Ana", "João", "Ana", "João", "Todos"],
+        Assert.Equal(["João", "João", "Ana", "Ana", "João", "Todos"],
             Quem(escolhas.Where(escolha => escolha.ItemId == HinoA)));
-        Assert.Equal(["Pedro", "Ana", "Pedro", "Ana", "Pedro", "Todos"],
+        Assert.Equal(["Pedro", "Pedro", "Ana", "Ana", "Pedro", "Todos"],
             Quem(escolhas.Where(escolha => escolha.ItemId == HinoB)));
     }
 
@@ -278,7 +279,7 @@ public sealed class EscalaDeCantoresTestes
     public void SemMaximoOuMaximoMaiorQueOsCantoresRevezaEntreTodos()
     {
         foreach (var maximo in new int?[] { null, 0, 5 })
-            Assert.Equal(["João", "Ana", "Pedro", "João", "Ana", "Todos"],
+            Assert.Equal(["João", "João", "Ana", "Ana", "Pedro", "Todos"],
                 Quem(EscalaDeCantores.EscalarHino(
                     [Hino(HinoA, estrofes: 3)], HinoA, ["João", "Ana", "Pedro"], [],
                     configuracao: new ConfiguracaoDaEscala(MaximoDeCantoresPorHino: maximo))));

@@ -61,12 +61,12 @@ public sealed class LouvorTestes
             cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id);
 
         Assert.Equal(
-            ["João", "Ana", "João", "Ana", "João", "Todos"],
+            ["João", "João", "Ana", "Ana", "João", "Todos"],
             escalado.Hinos[0].Partes.Select(parte =>
                 parte.Cantores.Count == 0 ? "Todos" : string.Join(" e ", parte.Cantores)));
         Assert.All(escalado.Hinos[0].Partes, parte => Assert.True(parte.Definida));
         Assert.Equal(
-            [new PlacarDoCantor("João", 3), new PlacarDoCantor("Ana", 2)],
+            [new PlacarDoCantor("João", 4), new PlacarDoCantor("Ana", 3)],
             escalado.Placar);
         Assert.Throws<ItemDoSetlistNaoEncontradoException>(() =>
             cenario.Repo.EscalarHinoDoLouvor(cenario.Token, cenario.Show.Id, Guid.NewGuid()));
@@ -111,7 +111,7 @@ public sealed class LouvorTestes
 
         Assert.All(louvor.Hinos[0].Partes, parte => Assert.True(parte.Definida));
         Assert.Equal(["João"], louvor.Hinos[0].Partes[0].Cantores);
-        Assert.Equal([new PlacarDoCantor("João", 3), new PlacarDoCantor("Ana", 2)], louvor.Placar);
+        Assert.Equal([new PlacarDoCantor("João", 4), new PlacarDoCantor("Ana", 3)], louvor.Placar);
 
         var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
         Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
@@ -130,7 +130,7 @@ public sealed class LouvorTestes
 
         var hino = cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Hinos[1];
         Assert.Equal(
-            ["José", "João", "Ana", "João", "Todos"],
+            ["José", "João", "João", "Ana", "Todos"],
             hino.Partes.Select(parte =>
                 parte.Cantores.Count == 0 ? "Todos" : string.Join(" e ", parte.Cantores)));
         Assert.All(hino.Partes, parte => Assert.True(parte.Definida));
