@@ -78,6 +78,8 @@ public static class EscalaDeCantores
     /// estrofes seguidas. Cada
     /// solo vai, pelo mesmo critério, para quem toca o instrumento dele;
     /// introdução também vai para um solista; interlúdio e final são da banda.
+    /// Quem acabou de tocar não começa a cantar em seguida, nem quem acabou
+    /// de cantar começa a tocar, quando há outra pessoa para a parte.
     /// A [configuracao] limita quantos cantores revezam no hino e pode deixar
     /// todo coro com Todos.
     public static IReadOnlyList<EscolhaAMao> EscalarHino(
@@ -103,13 +105,24 @@ public static class EscalaDeCantores
         var (pontos, solos) = Contar(hinos, cantores, solistas, dosOutros);
         var ultimaVez = cantores.ToDictionary(nome => nome, _ => -1);
         var ultimoSolo = solos.Keys.ToDictionary(nome => nome, _ => -1);
+        // Quem fez a parte logo antes e se ela foi no instrumento: quem tocou
+        // não começa a cantar em seguida, nem quem cantou começa a tocar.
+        IReadOnlyList<string> naParteAnterior = [];
+        var parteAnteriorInstrumental = false;
+        var antesDoHino = hino.Partes.Count > 0 ? posicoes[(itemId, 0)] - 1 : -1;
         foreach (var escolha in dosOutros.OrderBy(escolha => posicoes[(escolha.ItemId, escolha.Indice)]))
         {
             var instrumental = hinos.First(outro => outro.ItemId == escolha.ItemId)
                 .Partes[escolha.Indice].Tipo == TipoDaParte.Instrumental;
             var vezes = instrumental ? ultimoSolo : ultimaVez;
+            var posicaoDaEscolha = posicoes[(escolha.ItemId, escolha.Indice)];
             foreach (var nome in escolha.Cantores)
-                if (vezes.ContainsKey(nome)) vezes[nome] = posicoes[(escolha.ItemId, escolha.Indice)];
+                if (vezes.ContainsKey(nome)) vezes[nome] = posicaoDaEscolha;
+            if (posicaoDaEscolha == antesDoHino)
+            {
+                naParteAnterior = escolha.Cantores;
+                parteAnteriorInstrumental = instrumental;
+            }
         }
 
         var coroFinal = hino.Partes.Select((parte, indice) => (parte, indice))
@@ -137,7 +150,8 @@ public static class EscalaDeCantores
             {
                 quem = InstrumentoDoSolo(parte.Nome) is { } instrumento &&
                        QuemTocaOSolo(solistas, instrumento) is { Count: > 0 } candidatos
-                    ? [Escolher(candidatos, solos, ultimoSolo, [])]
+                    ? [Escolher(candidatos, solos, ultimoSolo,
+                        parteAnteriorInstrumental ? [] : naParteAnterior)]
                     : [];
                 foreach (var nome in quem)
                 {
@@ -153,7 +167,8 @@ public static class EscalaDeCantores
                 // O coro fica com quem cantou a estrofe de antes.
                 var escolhido = parte.Tipo == TipoDaParte.Refrao && donoDaEstrofe is not null
                     ? donoDaEstrofe
-                    : Escolher(daVez, pontos, ultimaVez, anterior);
+                    : Escolher(daVez, pontos, ultimaVez,
+                        parteAnteriorInstrumental ? naParteAnterior : [], anterior);
                 donoDaEstrofe = parte.Tipo == TipoDaParte.Estrofe ? escolhido : null;
                 pontos[escolhido] += Peso(parte.Tipo);
                 ultimaVez[escolhido] = posicao;
@@ -161,6 +176,8 @@ public static class EscalaDeCantores
                 anterior = quem;
             }
             resultado.Add(new EscolhaAMao(itemId, indice, quem));
+            naParteAnterior = quem;
+            parteAnteriorInstrumental = parte.Tipo == TipoDaParte.Instrumental;
         }
         return resultado;
     }
@@ -244,18 +261,26 @@ public static class EscalaDeCantores
     // O coro é a parte mais importante: vale o dobro da estrofe.
     private static int Peso(TipoDaParte tipo) => tipo == TipoDaParte.Refrao ? 2 : 1;
 
+    /// Quem tem menos na [contagem], fora quem está em [evitar]. Sem ninguém
+    /// disponível, solta a última lista a evitar, depois a anterior, e assim
+    /// por diante: a primeira é a mais importante.
     private static string Escolher(
         IReadOnlyList<string> candidatos,
         Dictionary<string, int> contagem,
         Dictionary<string, int> ultimaVez,
-        IReadOnlyList<string> anterior)
+        params IReadOnlyList<string>[] evitar)
     {
-        var disponiveis = candidatos.Where(nome => !anterior.Contains(nome)).ToList();
-        if (disponiveis.Count == 0) disponiveis = candidatos.ToList();
-        return disponiveis
-            .OrderBy(nome => contagem[nome])
-            .ThenBy(nome => ultimaVez[nome])
-            .First();
+        for (var quantas = evitar.Length; ; quantas--)
+        {
+            var disponiveis = candidatos
+                .Where(nome => !evitar.Take(quantas).Any(lista => lista.Contains(nome)))
+                .ToList();
+            if (disponiveis.Count > 0)
+                return disponiveis
+                    .OrderBy(nome => contagem[nome])
+                    .ThenBy(nome => ultimaVez[nome])
+                    .First();
+        }
     }
 
     private static string Normalizar(string? valor)

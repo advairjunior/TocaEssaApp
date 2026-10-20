@@ -197,6 +197,58 @@ public sealed class EscalaDeCantoresTestes
     }
 
     [Fact]
+    public void QuemTocouNaoComecaACantarEmSeguida()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Introdução"),
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Estrofe, "b")
+        ]);
+
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [hino], HinoA, ["José", "Ana"], [], [new Solista("José", "sax")]);
+
+        Assert.Equal(["José", "Ana", "José"], Quem(escolhas));
+    }
+
+    [Fact]
+    public void QuemCantouNaoPegaOSoloEmSeguidaNemQuandoSoSobraQuemCantouAntes()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax"),
+            new ParteDoHino(TipoDaParte.Estrofe, "b")
+        ]);
+
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [hino], HinoA, ["Ana", "Rui"], [],
+            [new Solista("Ana", "sax"), new Solista("Rui", "sax")]);
+
+        // Na segunda estrofe, Rui acabou de tocar: Ana canta de novo.
+        Assert.Equal(["Ana", "Rui", "Ana"], Quem(escolhas));
+    }
+
+    [Fact]
+    public void QuemCantouNoFimDoHinoAnteriorNaoAbreAIntroducaoDoSeguinte()
+    {
+        var anterior = new HinoParaEscala(HinoB, [new ParteDoHino(TipoDaParte.Estrofe, "a")]);
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Introdução"),
+            new ParteDoHino(TipoDaParte.Estrofe, "b")
+        ]);
+
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [anterior, hino], HinoA, ["José", "Ana"],
+            [new EscolhaAMao(HinoB, 0, ["José"])],
+            [new Solista("José", "sax"), new Solista("Pedro", "trompete")]);
+
+        Assert.Equal(["Pedro", "Ana"], Quem(escolhas));
+    }
+
+    [Fact]
     public void SoloSemQuemTocaOInstrumentoFicaSemNinguem()
     {
         var hino = new HinoParaEscala(HinoA,
