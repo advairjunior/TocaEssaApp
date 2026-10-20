@@ -187,12 +187,17 @@ arquivo.
   escala o hino que ainda não tem ninguém (`EscalarHinosDaLetraNova`); hino
   já escalado não muda. A troca à mão continua; "Limpar" deixa
   a parte sem escala. No roteiro, parte sem escala aparece como Todos.
+- "Como escalar" na aba Pessoas (`ConfiguracaoDaEscala`, coluna
+  `Apresentacoes.ConfiguracaoDoLouvor`, `PUT .../louvor/configuracao`):
+  "Cantores por hino" (Sem limite, 1 a 4) faz só os N de menos pontos
+  revezarem em cada hino; "Todos cantam os coros" deixa todo coro com
+  Todos. Vale para os próximos "Escalar"; a escala feita não muda sozinha.
 - Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (cartão
   fechado por hino com a ordem, tom, resumo "João · Ana · solo José · 1 sem
   escala", uma bolinha por parte na cor de quem canta, "Agora" no último
   tocado e os já tocados apagados; tocar abre as partes e o "Escalar
   automático"; "Ver por pessoa" destaca as partes de alguém) e "Pessoas"
-  (cantores, solistas e "Como marcar as partes").
+  (cantores, solistas, "Como escalar" e "Como marcar as partes").
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
