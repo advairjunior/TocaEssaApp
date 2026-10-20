@@ -154,4 +154,40 @@ void main() {
     expect(roteiro.solistas.single.nome, 'José');
     expect(roteiro.hinos.single.partes, hasLength(3));
   });
+
+  test('a configuração da escala vai e volta do servidor', () async {
+    late http.Request pedida;
+    final api = ApiTocaEssa(
+      enderecoBase: 'http://teste',
+      cliente: MockClient((requisicao) async {
+        pedida = requisicao;
+        return http.Response(
+            jsonEncode({
+              ..._louvorJson,
+              'configuracao': {
+                'maximoDeCantoresPorHino': 2,
+                'corosComTodos': true,
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }),
+    )..definirTokenArtista('token');
+
+    final louvor = await api.definirConfiguracaoDoLouvor(
+        'a1',
+        const ConfiguracaoDaEscala(
+            maximoDeCantoresPorHino: 2, corosComTodos: true));
+
+    expect(pedida.method, 'PUT');
+    expect(pedida.url.path, '/api/apresentacoes/a1/louvor/configuracao');
+    expect(jsonDecode(pedida.body),
+        {'maximoDeCantoresPorHino': 2, 'corosComTodos': true});
+    expect(louvor.configuracao.maximoDeCantoresPorHino, 2);
+    expect(louvor.configuracao.corosComTodos, isTrue);
+
+    final semConfiguracao = LouvorDoArtista.deJson(_louvorJson);
+    expect(semConfiguracao.configuracao.maximoDeCantoresPorHino, isNull);
+    expect(semConfiguracao.configuracao.corosComTodos, isFalse);
+  });
 }

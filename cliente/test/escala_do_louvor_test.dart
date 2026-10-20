@@ -84,11 +84,22 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
   var solistas = <Map<String, Object?>>[
     {'nome': 'José', 'instrumento': 'sax tenor'},
   ];
+  Map<String, dynamic>? configuracao;
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
     cliente: MockClient((requisicao) async {
       requisicoes.add(requisicao);
       final caminho = requisicao.url.path;
+      if (caminho.endsWith('/louvor/configuracao')) {
+        configuracao = _corpo(requisicao);
+        return http.Response(
+            jsonEncode({
+              ..._louvor(cantores, solistas, tocados),
+              'configuracao': configuracao,
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }
       if (caminho.endsWith('/louvor/solistas')) {
         solistas = [
           for (final solista in (jsonDecode(requisicao.body)
@@ -294,6 +305,41 @@ void main() {
 
     expect(find.text('(Coro 2x)'), findsOneWidget);
     expect(find.text('(Introdução)'), findsOneWidget);
+  });
+
+  testWidgets('configura quantos cantam por hino e os coros com Todos',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
+    Map<String, dynamic> configuracao() => _corpo(requisicoes.lastWhere(
+        (r) => r.url.path == '/api/apresentacoes/$_id/louvor/configuracao'));
+    bool selecionado(String rotulo) => tester
+        .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, rotulo))
+        .selected;
+
+    expect(find.text('Como escalar'), findsOneWidget);
+    expect(selecionado('Sem limite'), isTrue);
+
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, '2'));
+    await tester.tap(find.widgetWithText(ChoiceChip, '2'));
+    await tester.pumpAndSettle();
+
+    expect(
+        configuracao(), {'maximoDeCantoresPorHino': 2, 'corosComTodos': false});
+    expect(selecionado('2'), isTrue);
+    expect(selecionado('Sem limite'), isFalse);
+
+    await tester.ensureVisible(find.text('Todos cantam os coros'));
+    await tester.tap(find.text('Todos cantam os coros'));
+    await tester.pumpAndSettle();
+
+    expect(
+        configuracao(), {'maximoDeCantoresPorHino': 2, 'corosComTodos': true});
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Sem limite'));
+    await tester.pumpAndSettle();
+    expect(configuracao(),
+        {'maximoDeCantoresPorHino': null, 'corosComTodos': true});
   });
 
   testWidgets('mostra, acrescenta e tira quem toca os solos', (tester) async {

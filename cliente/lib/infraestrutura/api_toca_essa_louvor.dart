@@ -31,6 +31,15 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
         }),
       ));
 
+  /// Vale para as próximas escalas.
+  Future<LouvorDoArtista> definirConfiguracaoDoLouvor(
+          String apresentacaoId, ConfiguracaoDaEscala configuracao) async =>
+      _lerLouvor(await _cliente.put(
+        _rotaDoLouvor(apresentacaoId, '/configuracao'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode(configuracao.paraJson()),
+      ));
+
   /// [cantores] nulo deixa a parte sem escala; vazio deixa com Todos.
   Future<LouvorDoArtista> escolherParteDoLouvor(String apresentacaoId,
           String itemId, int indice, List<String>? cantores) async =>

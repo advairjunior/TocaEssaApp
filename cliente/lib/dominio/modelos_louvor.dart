@@ -131,8 +131,32 @@ class PlacarDoSolista {
       );
 }
 
-/// O louvor visto pelo artista: cantores, solistas, placares e a escala de
-/// cada hino.
+/// Como o louvor escala: [maximoDeCantoresPorHino] nulo reveza entre todos
+/// os cantores; [corosComTodos] deixa todo coro para Todos, não só o final.
+class ConfiguracaoDaEscala {
+  const ConfiguracaoDaEscala({
+    this.maximoDeCantoresPorHino,
+    this.corosComTodos = false,
+  });
+
+  final int? maximoDeCantoresPorHino;
+  final bool corosComTodos;
+
+  Map<String, Object?> paraJson() => {
+        'maximoDeCantoresPorHino': maximoDeCantoresPorHino,
+        'corosComTodos': corosComTodos,
+      };
+
+  factory ConfiguracaoDaEscala.deJson(Map<String, dynamic>? json) =>
+      ConfiguracaoDaEscala(
+        maximoDeCantoresPorHino:
+            (json?['maximoDeCantoresPorHino'] as num?)?.toInt(),
+        corosComTodos: json?['corosComTodos'] as bool? ?? false,
+      );
+}
+
+/// O louvor visto pelo artista: cantores, solistas, placares, a escala de
+/// cada hino e como ela é feita.
 class LouvorDoArtista {
   const LouvorDoArtista({
     required this.cantores,
@@ -140,6 +164,7 @@ class LouvorDoArtista {
     required this.hinos,
     this.solistas = const [],
     this.placarDosSolos = const [],
+    this.configuracao = const ConfiguracaoDaEscala(),
   });
 
   final List<String> cantores;
@@ -147,6 +172,7 @@ class LouvorDoArtista {
   final List<HinoDoLouvor> hinos;
   final List<Solista> solistas;
   final List<PlacarDoSolista> placarDosSolos;
+  final ConfiguracaoDaEscala configuracao;
 
   /// Cantores e solistas, sem repetir: quem pode escolher "Quem é você?".
   List<String> get participantes => _participantes(cantores, solistas);
@@ -164,6 +190,8 @@ class LouvorDoArtista {
               in json['placarDosSolos'] as List<dynamic>? ?? const [])
             PlacarDoSolista.deJson(item as Map<String, dynamic>),
         ],
+        configuracao: ConfiguracaoDaEscala.deJson(
+            json['configuracao'] as Map<String, dynamic>?),
       );
 }
 

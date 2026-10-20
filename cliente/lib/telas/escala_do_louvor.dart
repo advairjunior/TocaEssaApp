@@ -105,6 +105,9 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
     await _definirSolistas([..._louvor!.solistas, solista]);
   }
 
+  Future<void> _definirConfiguracao(ConfiguracaoDaEscala configuracao) =>
+      _salvar(() => widget.api.definirConfiguracaoDoLouvor(_id, configuracao));
+
   Future<void> _escolherParte(
       HinoDoLouvor hino, int indice, String rotulo) async {
     final parte = hino.partes[indice];
@@ -323,6 +326,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
     final solos = {
       for (final item in louvor.placarDosSolos) item.nome: item.solos,
     };
+    final configuracao = louvor.configuracao;
     return [
       const TituloGrupo('Quem canta no microfone'),
       Wrap(
@@ -387,6 +391,42 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
       Text(
         'O app dá cada "(Solo sax)" para quem toca o instrumento, '
         'revezando quando tem mais de um. O número é de solos.',
+        style: explicacao,
+      ),
+      const SizedBox(height: EspacoTocaEssa.grande),
+      const TituloGrupo('Como escalar'),
+      Text('Cantores por hino', style: Theme.of(context).textTheme.bodyMedium),
+      const SizedBox(height: EspacoTocaEssa.pequeno),
+      Wrap(
+        spacing: EspacoTocaEssa.pequeno,
+        runSpacing: EspacoTocaEssa.pequeno,
+        children: [
+          for (final maximo in const [null, 1, 2, 3, 4])
+            ChoiceChip(
+              label: Text(maximo == null ? 'Sem limite' : '$maximo'),
+              selected: configuracao.maximoDeCantoresPorHino == maximo,
+              onSelected: _salvando
+                  ? null
+                  : (_) => _definirConfiguracao(ConfiguracaoDaEscala(
+                        maximoDeCantoresPorHino: maximo,
+                        corosComTodos: configuracao.corosComTodos,
+                      )),
+            ),
+        ],
+      ),
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Todos cantam os coros'),
+        value: configuracao.corosComTodos,
+        onChanged: _salvando
+            ? null
+            : (valor) => _definirConfiguracao(ConfiguracaoDaEscala(
+                  maximoDeCantoresPorHino: configuracao.maximoDeCantoresPorHino,
+                  corosComTodos: valor,
+                )),
+      ),
+      Text(
+        'Vale para os próximos "Escalar".',
         style: explicacao,
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
