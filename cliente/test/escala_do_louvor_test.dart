@@ -26,7 +26,8 @@ Map<String, Object?> _parte(String tipo, String texto, List<String> cantores,
 
 Map<String, Object?> _louvor(List<String> cantores,
         [List<Map<String, Object?>> solistas = const [],
-        Set<String> tocados = const {}]) =>
+        Set<String> tocados = const {},
+        bool comTerceiroHino = false]) =>
     {
       'cantores': cantores,
       'solistas': solistas,
@@ -72,13 +73,26 @@ Map<String, Object?> _louvor(List<String> cantores,
           'temLetra': false,
           'partes': <Object?>[],
         },
+        if (comTerceiroHino)
+          {
+            'itemId': 'h3',
+            'titulo': '12 · Hino de louvor',
+            'artista': null,
+            'tom': 'D',
+            'tocado': false,
+            'temLetra': true,
+            'partes': [
+              _parte('Estrofe', 'Louvai', ['Ana'])
+            ],
+          },
       ],
     };
 
 Future<List<http.Request>> _abrir(WidgetTester tester,
     {Future<String?> Function(String titulo)? pedirLetra,
     double largura = 430,
-    Set<String> tocados = const {}}) async {
+    Set<String> tocados = const {},
+    bool comTerceiroHino = false}) async {
   final requisicoes = <http.Request>[];
   var cantores = ['João', 'Ana'];
   var solistas = <Map<String, Object?>>[
@@ -94,7 +108,7 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
         configuracao = _corpo(requisicao);
         return http.Response(
             jsonEncode({
-              ..._louvor(cantores, solistas, tocados),
+              ..._louvor(cantores, solistas, tocados, comTerceiroHino),
               'configuracao': configuracao,
             }),
             200,
@@ -116,7 +130,7 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
       }
       final corpo = caminho.endsWith('/cifras/texto')
           ? jsonEncode({'cifra': null, 'urlPesquisa': 'x', 'texto': 'a'})
-          : jsonEncode(_louvor(cantores, solistas, tocados));
+          : jsonEncode(_louvor(cantores, solistas, tocados, comTerceiroHino));
       return http.Response(corpo, 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }),
@@ -411,22 +425,61 @@ void main() {
 
   testWidgets('escalar todos os hinos pede confirmação e escala a lista',
       (tester) async {
-    final requisicoes = await _abrir(tester);
-    bool escalouTodos() => requisicoes.any((r) =>
-        r.method == 'POST' &&
-        r.url.path == '/api/apresentacoes/$_id/louvor/escalar');
+    final requisicoes = await _abrir(tester, comTerceiroHino: true);
+    List<http.Request> escalou() => requisicoes
+        .where((r) =>
+            r.method == 'POST' &&
+            r.url.path == '/api/apresentacoes/$_id/louvor/escalar')
+        .toList();
 
     await tester.tap(find.text('Escalar todos os hinos'));
     await tester.pumpAndSettle();
-    expect(find.text('Escalar todos os hinos?'), findsOneWidget);
+    expect(find.text('Escalar quais hinos?'), findsOneWidget);
     await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
-    expect(escalouTodos(), isFalse);
+    expect(escalou(), isEmpty);
 
     await tester.tap(find.text('Escalar todos os hinos'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'Escalar'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Escalar (2)'));
     await tester.pumpAndSettle();
-    expect(escalouTodos(), isTrue);
+    expect(_corpo(escalou().last)['itens'], ['h1', 'h3']);
+  });
+
+  testWidgets('escala só os hinos marcados', (tester) async {
+    final requisicoes = await _abrir(tester, comTerceiroHino: true);
+    Finder noDialogo(String texto) => find.descendant(
+        of: find.byType(AlertDialog), matching: find.text(texto));
+
+    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.pumpAndSettle();
+    // Hino sem letra não aparece: não tem o que escalar.
+    expect(noDialogo('234 · O meu ser entrego a Cristo'), findsNothing);
+
+    await tester.tap(noDialogo('80 · Por Cristo, resgatado'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Escalar (1)'));
+    await tester.pumpAndSettle();
+
+    final escalou = requisicoes.lastWhere((r) =>
+        r.method == 'POST' &&
+        r.url.path == '/api/apresentacoes/$_id/louvor/escalar');
+    expect(_corpo(escalou)['itens'], ['h3']);
+  });
+
+  testWidgets('Todos desmarca e marca a lista inteira', (tester) async {
+    await _abrir(tester, comTerceiroHino: true);
+    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.pumpAndSettle();
+    FilledButton botao() => tester
+        .widget<FilledButton>(find.widgetWithText(FilledButton, 'Escalar (0)'));
+
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+    expect(botao().onPressed, isNull);
+
+    await tester.tap(find.text('Todos'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(FilledButton, 'Escalar (2)'), findsOneWidget);
   });
 }

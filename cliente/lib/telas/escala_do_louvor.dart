@@ -132,32 +132,21 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         .escolherParteDoLouvor(_id, hino.itemId, indice, escolha.cantores));
   }
 
-  /// Refaz a escala da lista inteira; pede confirmação porque apaga as
-  /// trocas feitas à mão.
+  /// Refaz a escala dos hinos marcados na confirmação (todos, de início);
+  /// confirma porque apaga as trocas feitas à mão neles.
   Future<void> _escalarTodos() async {
-    final confirmou = await showDialog<bool>(
-          context: context,
-          builder: (contexto) => AlertDialog(
-            title: const Text('Escalar todos os hinos?'),
-            content: const Text(
-                'O app escala os hinos na ordem da lista, cada um pelos pontos '
-                'dos anteriores. A escala de agora, inclusive o que foi '
-                'trocado à mão, é refeita.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(contexto).pop(false),
-                child: const Text('Cancelar'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(contexto).pop(true),
-                child: const Text('Escalar'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-    if (!confirmou) return;
-    await _salvar(() => widget.api.escalarTodosOsHinosDoLouvor(_id));
+    final itens = await showDialog<List<String>>(
+      context: context,
+      builder: (_) => _HinosAEscalar(
+        hinos: [
+          for (final hino in _louvor!.hinos)
+            if (hino.partes.isNotEmpty) hino,
+        ],
+      ),
+    );
+    if (itens == null || itens.isEmpty) return;
+    await _salvar(
+        () => widget.api.escalarTodosOsHinosDoLouvor(_id, itens: itens));
   }
 
   Future<void> _colarLetra(HinoDoLouvor hino) async {
@@ -805,6 +794,82 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
           ),
         ),
       );
+}
+
+/// Confirmação do "Escalar todos os hinos": todos os hinos com letra vêm
+/// marcados; responde os ids marcados, na ordem da lista.
+class _HinosAEscalar extends StatefulWidget {
+  const _HinosAEscalar({required this.hinos});
+
+  final List<HinoDoLouvor> hinos;
+
+  @override
+  State<_HinosAEscalar> createState() => _HinosAEscalarState();
+}
+
+class _HinosAEscalarState extends State<_HinosAEscalar> {
+  late final _marcados = {for (final hino in widget.hinos) hino.itemId};
+
+  @override
+  Widget build(BuildContext context) {
+    final todos = _marcados.length == widget.hinos.length;
+    return AlertDialog(
+      title: const Text('Escalar quais hinos?'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            Text(
+              'Os marcados são refeitos na ordem da lista, inclusive o que '
+              'foi trocado à mão. Os outros ficam como estão.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            ),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Todos'),
+              value: todos,
+              onChanged: (_) => setState(() {
+                if (todos) {
+                  _marcados.clear();
+                } else {
+                  _marcados.addAll(widget.hinos.map((hino) => hino.itemId));
+                }
+              }),
+            ),
+            const Divider(height: 1),
+            for (final hino in widget.hinos)
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(hino.titulo),
+                value: _marcados.contains(hino.itemId),
+                onChanged: (marcado) => setState(() => marcado == true
+                    ? _marcados.add(hino.itemId)
+                    : _marcados.remove(hino.itemId)),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _marcados.isEmpty
+              ? null
+              : () => Navigator.of(context).pop([
+                    for (final hino in widget.hinos)
+                      if (_marcados.contains(hino.itemId)) hino.itemId,
+                  ]),
+          child: Text('Escalar (${_marcados.length})'),
+        ),
+      ],
+    );
+  }
 }
 
 class _NovoCantor extends StatefulWidget {

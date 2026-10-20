@@ -125,6 +125,13 @@ void main() {
     expect(louvor.placarDosSolos.single.solos, 2);
     expect(requisicoes.last.method, 'POST');
     expect(requisicoes.last.url.path, '/api/apresentacoes/a1/louvor/escalar');
+    expect(requisicoes.last.body, isEmpty);
+
+    await api.escalarTodosOsHinosDoLouvor('a1', itens: ['h1', 'h3']);
+    expect(requisicoes.last.url.path, '/api/apresentacoes/a1/louvor/escalar');
+    expect(jsonDecode(requisicoes.last.body), {
+      'itens': ['h1', 'h3'],
+    });
   });
 
   test('o roteiro é lido pelo código, sem token', () async {

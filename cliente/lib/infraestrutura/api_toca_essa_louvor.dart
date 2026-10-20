@@ -58,12 +58,14 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
         headers: _cabecalhos(token: _tokenArtista),
       ));
 
-  /// Botão "Escalar todos os hinos": a lista inteira, na ordem.
-  Future<LouvorDoArtista> escalarTodosOsHinosDoLouvor(
-          String apresentacaoId) async =>
+  /// Botão "Escalar todos os hinos": os [itens] marcados, ou a lista inteira
+  /// se nulo, na ordem.
+  Future<LouvorDoArtista> escalarTodosOsHinosDoLouvor(String apresentacaoId,
+          {List<String>? itens}) async =>
       _lerLouvor(await _cliente.post(
         _rotaDoLouvor(apresentacaoId, '/escalar'),
-        headers: _cabecalhos(token: _tokenArtista),
+        headers: _cabecalhos(token: _tokenArtista, json: itens != null),
+        body: itens == null ? null : jsonEncode({'itens': itens}),
       ));
 
   Future<RoteiroDoLouvor> obterRoteiroDoLouvor(String codigo) async {
