@@ -190,10 +190,23 @@ public static class EscalaDeCantores
         IReadOnlyList<string> cantores,
         IReadOnlyCollection<EscolhaAMao> escolhas,
         IReadOnlyList<Solista>? solistas = null,
+        ConfiguracaoDaEscala? configuracao = null) =>
+        EscalarSelecionados(
+            hinos, hinos.Select(hino => hino.ItemId).ToList(),
+            cantores, escolhas, solistas, configuracao);
+
+    /// Escala só os hinos [marcados], na ordem da lista, refazendo o que eles
+    /// tinham. Os outros ficam como estão e os pontos deles contam.
+    public static IReadOnlyList<EscolhaAMao> EscalarSelecionados(
+        IReadOnlyList<HinoParaEscala> hinos,
+        IReadOnlyCollection<Guid> marcados,
+        IReadOnlyList<string> cantores,
+        IReadOnlyCollection<EscolhaAMao> escolhas,
+        IReadOnlyList<Solista>? solistas = null,
         ConfiguracaoDaEscala? configuracao = null)
     {
-        var escaladas = new List<EscolhaAMao>();
-        foreach (var hino in hinos)
+        var escaladas = escolhas.Where(escolha => !marcados.Contains(escolha.ItemId)).ToList();
+        foreach (var hino in hinos.Where(hino => marcados.Contains(hino.ItemId)))
             escaladas.AddRange(EscalarHino(
                 hinos, hino.ItemId, cantores, escaladas, solistas, configuracao));
         return escaladas;

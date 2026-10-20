@@ -114,6 +114,26 @@ public sealed class EscalaDeCantoresTestes
     }
 
     [Fact]
+    public void EscalarSoOsMarcadosMantemOsOutrosEContaOsPontosDeles()
+    {
+        EscolhaAMao[] doHinoA =
+        [
+            new(HinoA, 0, ["Pedro"]), new(HinoA, 1, ["Pedro"]),
+            new(HinoA, 2, ["Ana"]), new(HinoA, 3, [])
+        ];
+
+        var escolhas = EscalaDeCantores.EscalarSelecionados(
+            [Hino(HinoA, estrofes: 2), Hino(HinoB, estrofes: 2)],
+            [HinoB],
+            ["João", "Ana", "Pedro"],
+            [.. doHinoA, new EscolhaAMao(HinoB, 0, ["Pedro"])]);
+
+        Assert.Equal(doHinoA, escolhas.Where(escolha => escolha.ItemId == HinoA));
+        Assert.Equal(["João", "João", "Ana", "Todos"],
+            Quem(escolhas.Where(escolha => escolha.ItemId == HinoB)));
+    }
+
+    [Fact]
     public void HinoSemCoroTemTodasAsEstrofesEscaladas()
     {
         var hino = new HinoParaEscala(HinoA,

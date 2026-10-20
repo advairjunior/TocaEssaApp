@@ -119,6 +119,23 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void EscalarSoOsHinosMarcadosNaoMexeNosOutros()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.SalvarCifraEmTexto(cenario.Token, "234 · O meu ser entrego a Cristo", null,
+            "(Estrofe 1)\nA1\n(Estrofe 2)\nB1");
+        cenario.Repo.EscolherParteDoLouvor(
+            cenario.Token, cenario.Show.Id, cenario.Hinos[1].Id, 0, ["Ana", "João"]);
+
+        var louvor = cenario.Repo.EscalarTodosOsHinosDoLouvor(
+            cenario.Token, cenario.Show.Id, [cenario.Hinos[0].Id]);
+
+        Assert.All(louvor.Hinos[0].Partes, parte => Assert.True(parte.Definida));
+        Assert.Equal(["João", "Ana"], louvor.Hinos[1].Partes[0].Cantores);
+    }
+
+    [Fact]
     public void ColarCifraBemMarcadaJaEscalaOHinoSemEscala()
     {
         var cenario = CriarCenario();
@@ -473,6 +490,10 @@ public sealed class LouvorTestes
                 .GetProperty("configuracao").GetProperty("maximoDeCantoresPorHino").GetInt32());
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/configuracao",
                 new { maximoDeCantoresPorHino = 1 })).StatusCode);
+            var marcados = await ana.PostAsJsonAsync($"{rota}/escalar", new { itens = new[] { itemId } });
+            Assert.Equal(HttpStatusCode.OK, marcados.StatusCode);
+            Assert.True((await marcados.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("hinos")[0].GetProperty("partes")[0].GetProperty("definida").GetBoolean());
             var todos = await ana.PostAsync($"{rota}/escalar", null);
             Assert.Equal(HttpStatusCode.OK, todos.StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PostAsync($"{rota}/escalar", null)).StatusCode);
