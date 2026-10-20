@@ -177,10 +177,10 @@ arquivo.
 - Nada é escalado sozinho (mudança de 2026-10-19): o hino começa sem
   ninguém ("—") e o botão "Escalar automático" do hino
   (`EscalaDeCantores.EscalarHino`, `POST .../louvor/hinos/{itemId}/escalar`)
-  grava quem fica com cada parte. Só o coro final é de Todos; estrofes e
-  coros do meio vão para quem tem menos pontos nos outros hinos (cada parte
-  cantada vale 1), depois quem está há mais tempo sem cantar; ninguém duas
-  seguidas; solos pelo instrumento; introdução para um solista (qualquer
+  grava quem fica com cada parte. Só o coro final é de Todos; cada estrofe
+  vai, junto com o coro que vem depois dela, para quem tem menos pontos nos
+  outros hinos (estrofe vale 1, coro vale 2), depois quem está há mais tempo
+  sem cantar; ninguém duas estrofes seguidas; solos pelo instrumento; introdução para um solista (qualquer
   instrumento). "Escalar todos os hinos" (`EscalarTodos`, `POST
   .../louvor/escalar`, com confirmação) faz a lista inteira na ordem e
   refaz as trocas à mão. Colar a cifra com "(Estrofe N)" marcadas já
