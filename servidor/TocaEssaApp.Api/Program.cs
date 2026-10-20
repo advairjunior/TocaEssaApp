@@ -309,6 +309,12 @@ app.MapPut("/api/apresentacoes/{id:guid}/louvor/solistas", (
     Results.Ok(repositorio.DefinirSolistasDoLouvor(
         ObterToken(http) ?? string.Empty, id, requisicao.Solistas)));
 
+app.MapPut("/api/apresentacoes/{id:guid}/louvor/configuracao", (
+    Guid id, ConfiguracaoDaEscala requisicao,
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.DefinirConfiguracaoDoLouvor(
+        ObterToken(http) ?? string.Empty, id, requisicao)));
+
 app.MapPost("/api/apresentacoes/{id:guid}/louvor/escalar", (
     Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.EscalarTodosOsHinosDoLouvor(ObterToken(http) ?? string.Empty, id)));

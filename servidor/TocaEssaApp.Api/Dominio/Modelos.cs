@@ -386,7 +386,8 @@ public sealed record LouvorDoArtista(
     IReadOnlyList<PlacarDoCantor> Placar,
     IReadOnlyList<HinoDoLouvor> Hinos,
     IReadOnlyList<Solista> Solistas,
-    IReadOnlyList<PlacarDoSolista> PlacarDosSolos);
+    IReadOnlyList<PlacarDoSolista> PlacarDosSolos,
+    ConfiguracaoDaEscala Configuracao);
 
 /// O que cada participante vê pelo código: hinos, partes e o hino atual.
 public sealed record RoteiroDoLouvor(

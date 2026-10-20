@@ -301,6 +301,40 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void ConfiguracaoLimitaOsCantoresDeCadaHinoAoEscalar()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(
+            cenario.Token, cenario.Show.Id, ["João", "Ana", "Pedro"]);
+
+        var louvor = cenario.Repo.DefinirConfiguracaoDoLouvor(
+            cenario.Token, cenario.Show.Id, new ConfiguracaoDaEscala(2, CorosComTodos: true));
+        Assert.Equal(new ConfiguracaoDaEscala(2, true), louvor.Configuracao);
+
+        louvor = cenario.Repo.EscalarTodosOsHinosDoLouvor(cenario.Token, cenario.Show.Id);
+        Assert.Equal(
+            [["João"], [], ["Ana"], [], ["João"], []],
+            louvor.Hinos[0].Partes.Select(parte => parte.Cantores));
+
+        var semLimite = cenario.Repo.DefinirConfiguracaoDoLouvor(
+            cenario.Token, cenario.Show.Id, new ConfiguracaoDaEscala(-1));
+        Assert.Equal(new ConfiguracaoDaEscala(), semLimite.Configuracao);
+    }
+
+    [Fact]
+    public void OutroArtistaNaoMexeNaConfiguracao()
+    {
+        var cenario = CriarCenario();
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+
+        Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
+            cenario.Repo.DefinirConfiguracaoDoLouvor(
+                tokenBia, cenario.Show.Id, new ConfiguracaoDaEscala(1)));
+        Assert.Equal(new ConfiguracaoDaEscala(),
+            cenario.Repo.ObterLouvor(cenario.Token, cenario.Show.Id).Configuracao);
+    }
+
+    [Fact]
     public void OutroArtistaNaoMexeNosSolistas()
     {
         var cenario = CriarCenario();
@@ -342,7 +376,8 @@ public sealed class LouvorTestes
                 comando.CommandText =
                     "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"CantoresDoLouvor\";" +
                     "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"EscolhasDoLouvor\";" +
-                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"SolistasDoLouvor\"";
+                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"SolistasDoLouvor\";" +
+                    "ALTER TABLE \"Apresentacoes\" DROP COLUMN \"ConfiguracaoDoLouvor\"";
                 comando.ExecuteNonQuery();
             }
 
@@ -350,6 +385,8 @@ public sealed class LouvorTestes
             Assert.Empty(migrado.ObterLouvor(cenario.Token, cenario.Show.Id).Cantores);
             migrado.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
             migrado.DefinirSolistasDoLouvor(cenario.Token, cenario.Show.Id, [new Solista("José", "sax")]);
+            migrado.DefinirConfiguracaoDoLouvor(
+                cenario.Token, cenario.Show.Id, new ConfiguracaoDaEscala(2, true));
             migrado.EscolherParteDoLouvor(
                 cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id, 0, ["Ana"]);
 
@@ -358,6 +395,7 @@ public sealed class LouvorTestes
 
             Assert.Equal(["João", "Ana"], louvor.Cantores);
             Assert.Equal([new Solista("José", "sax")], louvor.Solistas);
+            Assert.Equal(new ConfiguracaoDaEscala(2, true), louvor.Configuracao);
             Assert.Equal(["Ana"], louvor.Hinos[0].Partes[0].Cantores);
             Assert.True(louvor.Hinos[0].Partes[0].Definida);
             Assert.Equal(TipoApresentacao.Louvor,
@@ -428,6 +466,13 @@ public sealed class LouvorTestes
                 .GetProperty("solistas")[0].GetProperty("instrumento").GetString());
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/solistas",
                 new { solistas = new[] { new { nome = "Bia", instrumento = "sax" } } })).StatusCode);
+            var configuracao = await ana.PutAsJsonAsync($"{rota}/configuracao",
+                new { maximoDeCantoresPorHino = 2, corosComTodos = true });
+            Assert.Equal(HttpStatusCode.OK, configuracao.StatusCode);
+            Assert.Equal(2, (await configuracao.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("configuracao").GetProperty("maximoDeCantoresPorHino").GetInt32());
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/configuracao",
+                new { maximoDeCantoresPorHino = 1 })).StatusCode);
             var todos = await ana.PostAsync($"{rota}/escalar", null);
             Assert.Equal(HttpStatusCode.OK, todos.StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PostAsync($"{rota}/escalar", null)).StatusCode);

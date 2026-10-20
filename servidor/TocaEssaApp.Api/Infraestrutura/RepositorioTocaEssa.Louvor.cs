@@ -14,6 +14,8 @@ public sealed partial class RepositorioTocaEssa
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<EscolhaAMao>> _escolhasDoLouvor = new();
     // Quem toca os solos e o instrumento de cada um.
     private readonly ConcurrentDictionary<Guid, IReadOnlyList<Solista>> _solistasDoLouvor = new();
+    // Quantos cantores por hino e se os coros ficam com Todos.
+    private readonly ConcurrentDictionary<Guid, ConfiguracaoDaEscala> _configuracoesDoLouvor = new();
 
     public LouvorDoArtista ObterLouvor(string token, Guid apresentacaoId)
     {
@@ -64,6 +66,29 @@ public sealed partial class RepositorioTocaEssa
             return MontarLouvor(apresentacao);
         }
     }
+
+    /// Vale para as próximas escalas; a escala que já está feita fica como
+    /// está. Máximo zero ou negativo quer dizer sem limite.
+    public LouvorDoArtista DefinirConfiguracaoDoLouvor(
+        string token, Guid apresentacaoId, ConfiguracaoDaEscala? configuracao)
+    {
+        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        lock (_sincronizacao)
+        {
+            configuracao ??= new ConfiguracaoDaEscala();
+            _configuracoesDoLouvor[apresentacaoId] = configuracao with
+            {
+                MaximoDeCantoresPorHino = configuracao.MaximoDeCantoresPorHino is > 0 and var maximo
+                    ? maximo
+                    : null
+            };
+            SalvarEstado();
+            return MontarLouvor(apresentacao);
+        }
+    }
+
+    private ConfiguracaoDaEscala ConfiguracaoDoLouvor(Guid apresentacaoId) =>
+        _configuracoesDoLouvor.GetValueOrDefault(apresentacaoId) ?? new ConfiguracaoDaEscala();
 
     private static string Limpar(string? valor)
     {
@@ -142,7 +167,8 @@ public sealed partial class RepositorioTocaEssa
                 itemId,
                 _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 escolhas,
-                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? []);
+                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+                ConfiguracaoDoLouvor(apresentacaoId));
             _escolhasDoLouvor[apresentacaoId] =
             [
                 .. escolhas.Where(escolha => escolha.ItemId != itemId),
@@ -164,7 +190,8 @@ public sealed partial class RepositorioTocaEssa
                 HinosParaEscala(apresentacao),
                 _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
-                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? []);
+                _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
+                ConfiguracaoDoLouvor(apresentacaoId));
             SalvarEstado();
             return MontarLouvor(apresentacao);
         }
@@ -194,7 +221,8 @@ public sealed partial class RepositorioTocaEssa
                         item.Id,
                         _cantoresDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [],
                         escolhas,
-                        _solistasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [])
+                        _solistasDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [],
+                        ConfiguracaoDoLouvor(apresentacao.Id))
                 ];
             }
             _escolhasDoLouvor[apresentacao.Id] = escolhas;
@@ -246,7 +274,8 @@ public sealed partial class RepositorioTocaEssa
                 escalado.Partes))
             .ToList();
         return new LouvorDoArtista(
-            cantores, escala.Placar, hinos, solistas, escala.PlacarDosSolos);
+            cantores, escala.Placar, hinos, solistas, escala.PlacarDosSolos,
+            ConfiguracaoDoLouvor(apresentacao.Id));
     }
 
     private string? LetraDoItem(Guid artistaId, ItemDoSetlistRegistro item) =>
@@ -264,6 +293,8 @@ public sealed partial class RepositorioTocaEssa
             _escolhasDoLouvor[registro.Id] = escolhas;
         if (LerJson<List<Solista>>(registro.SolistasDoLouvor) is { Count: > 0 } solistas)
             _solistasDoLouvor[registro.Id] = solistas;
+        if (LerJson<ConfiguracaoDaEscala>(registro.ConfiguracaoDoLouvor) is { } configuracao)
+            _configuracoesDoLouvor[registro.Id] = configuracao;
     }
 
     private void EscreverLouvor(ApresentacaoRegistro registro)
@@ -279,6 +310,11 @@ public sealed partial class RepositorioTocaEssa
         registro.SolistasDoLouvor =
             _solistasDoLouvor.GetValueOrDefault(registro.Id) is { Count: > 0 } solistas
                 ? JsonSerializer.Serialize(solistas)
+                : null;
+        registro.ConfiguracaoDoLouvor =
+            _configuracoesDoLouvor.GetValueOrDefault(registro.Id) is { } configuracao &&
+            configuracao != new ConfiguracaoDaEscala()
+                ? JsonSerializer.Serialize(configuracao)
                 : null;
     }
 

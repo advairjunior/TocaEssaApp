@@ -38,6 +38,7 @@ internal sealed class ApresentacaoRegistro
     public string? CantoresDoLouvor { get; set; }
     public string? EscolhasDoLouvor { get; set; }
     public string? SolistasDoLouvor { get; set; }
+    public string? ConfiguracaoDoLouvor { get; set; }
     // Cronômetro do show, visto só pelo artista
     public int? DuracaoContratadaMinutos { get; set; }
     public bool IntervaloPausaRelogio { get; set; }
