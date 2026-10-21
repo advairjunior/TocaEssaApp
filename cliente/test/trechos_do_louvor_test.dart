@@ -129,6 +129,28 @@ void main() {
           'G   D');
     });
 
+    test('solo sem acordes escritos avisa que é instrumental no leitor', () {
+      final soloVazio = HinoDoLouvor(
+        itemId: 'h4',
+        titulo: 'Hino',
+        tom: 'G',
+        tocado: false,
+        temLetra: true,
+        partes: [
+          const ParteDoHino(
+              tipo: TipoDaParte.instrumental,
+              texto: '\n',
+              cantores: ['Fabricio'],
+              definida: true,
+              nome: 'Solo'),
+        ],
+      );
+
+      expect(
+          trechosDoHino(soloVazio, cantores: [], acordes: true).single.texto,
+          'instrumental');
+    });
+
     test('o solista vê a vez dele e o aviso de próximo', () {
       final trechos =
           trechosDoHino(comSolo, cantores: ['José'], quemSou: 'José');

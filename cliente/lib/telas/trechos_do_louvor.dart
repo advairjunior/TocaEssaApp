@@ -114,7 +114,10 @@ List<TrechoDaCifra> trechosDoHino(
                 minha(hino.partes[indice + 1])
             ? 'você é o próximo'
             : null,
-        texto: acordes ? transporCifra(parte.texto, semitons) : letra(parte),
+        // Solo sem acordes escritos avisa que é instrumental mesmo no leitor.
+        texto: acordes && parte.texto.trim().isNotEmpty
+            ? transporCifra(parte.texto, semitons)
+            : letra(parte),
       ),
   ];
 }
