@@ -233,6 +233,8 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
       ];
     }
     return [
+      _ResumoDaEscala(louvor: louvor),
+      const SizedBox(height: EspacoTocaEssa.medio),
       if (louvor.hinos.any((hino) => hino.partes.isNotEmpty)) ...[
         FilledButton.icon(
           onPressed: _salvando ? null : _escalarTodos,
@@ -693,6 +695,99 @@ class _CartaoDoHino extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Topo da aba Hinos: o que falta ("1 sem letra", "2 partes sem escala") e
+/// uma barra de pontos por cantor, para ver de relance se ficou equilibrado.
+class _ResumoDaEscala extends StatelessWidget {
+  const _ResumoDaEscala({required this.louvor});
+
+  final LouvorDoArtista louvor;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    final hinos = louvor.hinos.length;
+    final semLetra = louvor.hinos.where((hino) => !hino.temLetra).length;
+    final semEscala = louvor.hinos
+        .expand((hino) => hino.partes)
+        .where((parte) => !parte.definida)
+        .length;
+    final situacao = [
+      '$hinos ${hinos == 1 ? 'hino' : 'hinos'}',
+      if (semLetra > 0) '$semLetra sem letra',
+      if (semEscala > 0)
+        '$semEscala ${semEscala == 1 ? 'parte' : 'partes'} sem escala',
+      if (semLetra == 0 && semEscala == 0) 'tudo escalado',
+    ].join(' · ');
+    final pontos = {
+      for (final item in louvor.placar) item.nome: item.pontos,
+    };
+    final maximo =
+        pontos.values.fold<int>(0, (maior, p) => p > maior ? p : maior);
+    final solos = [
+      for (final item in louvor.placarDosSolos) '${item.nome} ${item.solos}',
+    ];
+    return Container(
+      padding: const EdgeInsets.all(EspacoTocaEssa.base),
+      decoration: BoxDecoration(
+        color: CoresTocaEssa.superficie,
+        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+        border: Border.all(color: CoresTocaEssa.borda),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(situacao,
+              style: texto.bodyMedium?.copyWith(
+                  color: semLetra + semEscala > 0
+                      ? CoresTocaEssa.atencao
+                      : CoresTocaEssa.sucesso)),
+          for (final nome in louvor.cantores) ...[
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            Row(
+              children: [
+                SizedBox(
+                  width: 88,
+                  child: Text(nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: texto.labelLarge?.copyWith(
+                          color: corDoCantor(louvor.cantores, nome))),
+                ),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+                    child: LinearProgressIndicator(
+                      minHeight: 8,
+                      value: maximo == 0 ? 0 : (pontos[nome] ?? 0) / maximo,
+                      color: corDoCantor(louvor.cantores, nome),
+                      backgroundColor: CoresTocaEssa.borda,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: EspacoTocaEssa.medio),
+                SizedBox(
+                  width: 44,
+                  child: Text(
+                    '${pontos[nome] ?? 0} ${pontos[nome] == 1 ? 'pt' : 'pts'}',
+                    textAlign: TextAlign.right,
+                    style: texto.labelMedium
+                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (solos.isNotEmpty) ...[
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            Text('Solos: ${solos.join(' · ')}',
+                style: texto.labelMedium?.copyWith(color: corInstrumental)),
+          ],
+        ],
       ),
     );
   }

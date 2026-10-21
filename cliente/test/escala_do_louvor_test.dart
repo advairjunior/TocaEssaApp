@@ -236,6 +236,17 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets('o topo resume o que falta e os pontos de cada um',
+      (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('2 hinos · 1 sem letra · 1 parte sem escala'),
+        findsOneWidget);
+    expect(find.text('1 pt'), findsNWidgets(2));
+    expect(find.text('Solos: José 1'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+  });
+
   testWidgets('o hino de agora aparece marcado', (tester) async {
     await _abrir(tester, tocados: {'h1'});
 
