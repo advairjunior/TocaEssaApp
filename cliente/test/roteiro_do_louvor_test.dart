@@ -92,7 +92,7 @@ void main() {
     expect(find.text('Quem é você?'), findsNothing);
     expect(find.text('80 · Por Cristo, resgatado'), findsOneWidget);
     expect(find.text('Tom G'), findsOneWidget);
-    expect(find.text('Você canta 1 estrofe neste hino'), findsOneWidget);
+    expect(find.text('Suas partes: Estrofe 2'), findsOneWidget);
     expect(find.text('JOÃO'), findsOneWidget);
     expect(find.text('ANA · SUA VEZ'), findsOneWidget);
     expect(find.text('TODOS'), findsNWidgets(4));
@@ -152,7 +152,7 @@ void main() {
 
     expect(find.textContaining('SUA VEZ'), findsNothing);
     expect(find.text('JOÃO'), findsOneWidget);
-    expect(find.textContaining('Você canta'), findsNothing);
+    expect(find.textContaining('Suas partes'), findsNothing);
   });
 
   testWidgets('abre no hino atual e segue quando o hino muda', (tester) async {

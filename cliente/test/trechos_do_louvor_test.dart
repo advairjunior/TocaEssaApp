@@ -22,6 +22,26 @@ final _hino = HinoDoLouvor(
 );
 
 void main() {
+  test('as partes de alguém saem pelo nome, juntas com "e"', () {
+    expect(partesDaPessoa(_hino, 'Ana'), 'Estrofe 2');
+    expect(partesDaPessoa(_hino, 'Pedro'), isNull);
+
+    final varias = HinoDoLouvor(
+      itemId: 'h2',
+      titulo: 'Hino',
+      tom: null,
+      tocado: false,
+      temLetra: true,
+      partes: [
+        _parte(TipoDaParte.estrofe, 'Um', ['Ana']),
+        _parte(TipoDaParte.refrao, 'Coro', ['Ana']),
+        _parte(TipoDaParte.estrofe, 'Dois', ['João']),
+        _parte(TipoDaParte.estrofe, 'Três', ['Ana']),
+      ],
+    );
+    expect(partesDaPessoa(varias, 'Ana'), 'Estrofe 1, Refrão e Estrofe 3');
+  });
+
   test('cada parte vira um trecho com o nome de quem canta', () {
     final trechos = trechosDoHino(_hino, cantores: ['João', 'Ana']);
 

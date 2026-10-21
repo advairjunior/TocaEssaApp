@@ -373,7 +373,7 @@ class _CabecalhoDoHino extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final minhas = quemSou.isEmpty ? 0 : hino.partesDe(quemSou);
+    final minhas = quemSou.isEmpty ? null : partesDaPessoa(hino, quemSou);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -389,10 +389,10 @@ class _CabecalhoDoHino extends StatelessWidget {
               const _Selo(texto: 'Agora', cor: CoresTocaEssa.sucesso),
           ],
         ),
-        if (minhas > 0) ...[
+        if (minhas != null) ...[
           const SizedBox(height: EspacoTocaEssa.medio),
           Text(
-            'Você canta $minhas ${minhas == 1 ? 'estrofe' : 'estrofes'} neste hino',
+            'Suas partes: $minhas',
             style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
           ),
         ],

@@ -431,22 +431,6 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
   }
 }
 
-/// "Estrofe 1", "Refrão", "Solo sax tenor · 2x": o nome de cada parte.
-List<String> _rotulosDasPartes(HinoDoLouvor hino) {
-  var estrofe = 0;
-  return [
-    for (final parte in hino.partes)
-      () {
-        final nome = switch (parte.tipo) {
-          TipoDaParte.estrofe => 'Estrofe ${++estrofe}',
-          TipoDaParte.instrumental => parte.nome ?? parte.tipo.rotulo,
-          TipoDaParte.refrao => parte.tipo.rotulo,
-        };
-        return parte.vezes > 1 ? '$nome · ${parte.vezes}x' : nome;
-      }(),
-  ];
-}
-
 /// "João · Ana · solo José · 1 sem escala": quem participa do hino.
 String _resumoDoHino(HinoDoLouvor hino) {
   final nomes = <String>[];
@@ -501,7 +485,7 @@ class _CartaoDoHino extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final rotulos = _rotulosDasPartes(hino);
+    final rotulos = rotulosDasPartes(hino);
     final daPessoa = filtro == null
         ? const <String>[]
         : [

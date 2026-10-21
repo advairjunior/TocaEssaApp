@@ -28,6 +28,36 @@ Color corDoCantor(List<String> cantores, String nome) {
 /// Faixa dos solos e partes instrumentais, diferente da dos cantores.
 const corInstrumental = CoresTocaEssa.atencao;
 
+/// "Estrofe 1", "Refrão", "Solo sax tenor · 2x": o nome de cada parte.
+List<String> rotulosDasPartes(HinoDoLouvor hino) {
+  var estrofe = 0;
+  return [
+    for (final parte in hino.partes)
+      () {
+        final nome = switch (parte.tipo) {
+          TipoDaParte.estrofe => 'Estrofe ${++estrofe}',
+          TipoDaParte.instrumental => parte.nome ?? parte.tipo.rotulo,
+          TipoDaParte.refrao => parte.tipo.rotulo,
+        };
+        return parte.vezes > 1 ? '$nome · ${parte.vezes}x' : nome;
+      }(),
+  ];
+}
+
+/// "Estrofe 1, Refrão e Estrofe 3": as partes de [nome] no hino, ou nulo
+/// se não canta nem toca nele.
+String? partesDaPessoa(HinoDoLouvor hino, String nome) {
+  final rotulos = rotulosDasPartes(hino);
+  final daPessoa = [
+    for (final (indice, parte) in hino.partes.indexed)
+      if (parte.cantores.contains(nome)) rotulos[indice],
+  ];
+  if (daPessoa.isEmpty) return null;
+  if (daPessoa.length == 1) return daPessoa.single;
+  return '${daPessoa.sublist(0, daPessoa.length - 1).join(', ')} '
+      'e ${daPessoa.last}';
+}
+
 /// Partes do hino como trechos da cifra: nome de quem canta (ou do solo) na
 /// faixa, a vez de [quemSou] em destaque e avisada na parte anterior. Sem
 /// [acordes], só a letra; com eles, a cifra no tom escolhido com [semitons].
