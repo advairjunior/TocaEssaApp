@@ -192,7 +192,7 @@ void main() {
     expect(find.text('Cristo Jesus, o santo Cordeiro'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'João'), findsOneWidget);
     expect(find.widgetWithText(ListTile, 'Ana'), findsOneWidget);
-    expect(find.text('Todos'), findsNWidgets(2));
+    expect(find.widgetWithText(ListTile, 'Todos'), findsNWidgets(2));
     expect(find.text('Solo sax tenor · 2x'), findsOneWidget);
     expect(find.text('—'), findsOneWidget);
     expect(find.text('Escalar automático'), findsOneWidget);
@@ -273,7 +273,7 @@ void main() {
     expect(find.text('Ana: 1 parte em 1 hino'), findsOneWidget);
     expect(find.text('Ana: Estrofe 2'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Sem filtro'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Todos'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Ana:'), findsNothing);
   });
@@ -544,11 +544,13 @@ void main() {
     FilledButton botao() => tester
         .widget<FilledButton>(find.widgetWithText(FilledButton, 'Escalar (0)'));
 
-    await tester.tap(find.text('Todos'));
+    final todos = find.descendant(
+        of: find.byType(AlertDialog), matching: find.text('Todos'));
+    await tester.tap(todos);
     await tester.pumpAndSettle();
     expect(botao().onPressed, isNull);
 
-    await tester.tap(find.text('Todos'));
+    await tester.tap(todos);
     await tester.pumpAndSettle();
     expect(find.widgetWithText(FilledButton, 'Escalar (2)'), findsOneWidget);
   });
