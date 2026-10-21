@@ -22,6 +22,16 @@ final _hino = HinoDoLouvor(
 );
 
 void main() {
+  test('até 12 cantores, cada um tem uma cor diferente', () {
+    final cantores = [for (var i = 1; i <= 12; i++) 'Cantor $i'];
+    final cores = {for (final nome in cantores) corDoCantor(cantores, nome)};
+
+    expect(cores, hasLength(12));
+    // Nenhuma se confunde com os solos nem com Todos.
+    expect(cores, isNot(contains(corInstrumental)));
+    expect(cores, isNot(contains(CoresTocaEssa.textoSecundario)));
+  });
+
   test('as partes de alguém saem pelo nome, juntas com "e"', () {
     expect(partesDaPessoa(_hino, 'Ana'), 'Estrofe 2');
     expect(partesDaPessoa(_hino, 'Pedro'), isNull);

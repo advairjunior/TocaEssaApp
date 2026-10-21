@@ -6,6 +6,7 @@ import '../tema/tema_toca_essa.dart';
 import 'cifra_do_palco.dart';
 
 // Uma cor por cantor, na ordem da lista: a mesma em todos os telefones.
+// Doze bem diferentes entre si, sem o amarelo dos solos nem o cinza de Todos.
 const _coresDosCantores = [
   CoresTocaEssa.roxoClaro,
   CoresTocaEssa.rosa,
@@ -13,8 +14,12 @@ const _coresDosCantores = [
   CoresTocaEssa.sucesso,
   Color(0xFFFB923C),
   Color(0xFF22D3EE),
-  Color(0xFFF472B6),
+  Color(0xFFF87171),
   Color(0xFFA3E635),
+  Color(0xFFE879F9),
+  Color(0xFF2DD4BF),
+  Color(0xFFD6A36B),
+  Color(0xFF818CF8),
 ];
 
 /// Cor de quem canta; Todos (ou nome fora da lista) fica discreto.
