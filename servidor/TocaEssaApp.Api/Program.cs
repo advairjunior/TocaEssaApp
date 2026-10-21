@@ -181,6 +181,20 @@ app.MapPost("/api/artista/repertorios", (
         requisicao.Nome));
 });
 
+app.MapPost("/api/artista/repertorios/musicas", (
+    AdicionarMusicasAoRepertorio requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
+{
+    var musicas = requisicao.Musicas ?? [];
+    if (requisicao.RepertorioId is null == string.IsNullOrWhiteSpace(requisicao.NomeNovo))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["repertorio"] = ["Escolha um repertório ou informe o nome do novo."] });
+    if (musicas.Count == 0 || musicas.Any(m => string.IsNullOrWhiteSpace(m.Titulo)))
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+            { ["musicas"] = ["Informe o título de cada música."] });
+    return Results.Ok(repositorio.AdicionarMusicasAoRepertorio(ObterToken(http) ?? string.Empty,
+        requisicao.RepertorioId, requisicao.NomeNovo, musicas));
+});
+
 app.MapPut("/api/artista/repertorios/{id:guid}", (
     Guid id, RenomearRepertorio requisicao, HttpRequest http,
     RepositorioTocaEssa repositorio) =>

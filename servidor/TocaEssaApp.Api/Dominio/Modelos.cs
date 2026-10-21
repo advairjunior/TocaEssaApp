@@ -124,6 +124,14 @@ public sealed record RenomearRepertorio(string Nome);
 
 public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
+/// Várias músicas (da setlist, hinos ou pedidos) de uma vez para um
+/// repertório já existente ou criado com [NomeNovo].
+public sealed record AdicionarMusicasAoRepertorio(
+    Guid? RepertorioId, string? NomeNovo, IReadOnlyList<AdicionarMusicaAoRepertorio>? Musicas);
+
+public sealed record MusicasAdicionadasAoRepertorio(
+    Repertorio Repertorio, int Adicionadas, int JaEstavam);
+
 public sealed record EditarMusicaDoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
 public sealed record ReordenarMusicasDoRepertorio(Guid[]? MusicaIds);

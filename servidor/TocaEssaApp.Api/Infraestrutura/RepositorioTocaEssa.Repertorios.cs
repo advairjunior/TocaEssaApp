@@ -19,14 +19,7 @@ public sealed partial class RepositorioTocaEssa
         var conta = ExigirRegistroArtista(token);
         lock (_sincronizacao)
         {
-            var registro = new RepertorioRegistro
-            {
-                Id = Guid.NewGuid(),
-                ArtistaId = conta.Id,
-                Nome = nome.Trim(),
-                CriadoEm = DateTimeOffset.UtcNow
-            };
-            _repertorios[registro.Id] = registro;
+            var registro = CriarRegistroDeRepertorio(conta.Id, nome);
             SalvarEstado();
             return ParaDominio(registro);
         }
@@ -93,6 +86,66 @@ public sealed partial class RepositorioTocaEssa
             SalvarEstado();
             return ParaDominio(registro);
         }
+    }
+
+    /// Leva várias músicas para um repertório do artista ou para um novo
+    /// chamado [nomeNovo], sem repetir as que já estão nele. Música avulsa
+    /// de setlist com o mesmo nome fica ligada e recebe as correções.
+    public MusicasAdicionadasAoRepertorio AdicionarMusicasAoRepertorio(
+        string token, Guid? repertorioId, string? nomeNovo,
+        IReadOnlyList<AdicionarMusicaAoRepertorio> musicas)
+    {
+        var conta = ExigirRegistroArtista(token);
+        lock (_sincronizacao)
+        {
+            RepertorioRegistro? existente = null;
+            if (repertorioId is { } id &&
+                (!_repertorios.TryGetValue(id, out existente) || existente.ArtistaId != conta.Id))
+                throw new RepertorioNaoEncontradoException();
+            var repertorio = existente ?? CriarRegistroDeRepertorio(conta.Id, nomeNovo ?? string.Empty);
+            var noRepertorio = _musicasDoRepertorio.Values
+                .Where(m => m.RepertorioId == repertorio.Id)
+                .ToList();
+            var adicionadas = 0;
+            foreach (var musica in musicas)
+            {
+                if (noRepertorio.Any(m => MesmaMusica(m.Titulo, m.Artista, musica.Titulo, musica.Artista)))
+                    continue;
+                var registro = new MusicaDoRepertorioRegistro
+                {
+                    Id = Guid.NewGuid(),
+                    RepertorioId = repertorio.Id,
+                    ArtistaId = conta.Id,
+                    Titulo = musica.Titulo.Trim(),
+                    Artista = string.IsNullOrWhiteSpace(musica.Artista) ? null : musica.Artista.Trim(),
+                    Tom = string.IsNullOrWhiteSpace(musica.Tom) ? null : musica.Tom.Trim(),
+                    Ordem = noRepertorio.Select(m => m.Ordem).DefaultIfEmpty(0).Max() + 1
+                };
+                _musicasDoRepertorio[registro.Id] = registro;
+                noRepertorio.Add(registro);
+                adicionadas++;
+                foreach (var item in _itensDoSetlist.Values.Where(i =>
+                             i.ArtistaId == conta.Id && i.MusicaDoRepertorioId == null &&
+                             MesmaMusica(i.Titulo, i.Artista, registro.Titulo, registro.Artista)))
+                    item.MusicaDoRepertorioId = registro.Id;
+            }
+            SalvarEstado();
+            return new MusicasAdicionadasAoRepertorio(
+                ParaDominio(repertorio), adicionadas, musicas.Count - adicionadas);
+        }
+    }
+
+    private RepertorioRegistro CriarRegistroDeRepertorio(Guid artistaId, string nome)
+    {
+        var registro = new RepertorioRegistro
+        {
+            Id = Guid.NewGuid(),
+            ArtistaId = artistaId,
+            Nome = nome.Trim(),
+            CriadoEm = DateTimeOffset.UtcNow
+        };
+        _repertorios[registro.Id] = registro;
+        return registro;
     }
 
     public MusicaDoRepertorio EditarMusicaDoRepertorio(
