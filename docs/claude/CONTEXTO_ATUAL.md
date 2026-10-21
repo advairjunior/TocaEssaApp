@@ -78,7 +78,7 @@ arquivo.
   todos os shows fora do acervo (`GET /api/artista/repertorios/pedidas-fora`).
 - Setlist e hinos mostram o que está fora dos repertórios: faixa "5 músicas
   fora do repertório · Adicionar" abaixo do aviso de cifras (leva só essas)
-  e "fora do repertório" na linha da música. "Limpar setlist" também foi
+  e um ícone na linha da música (desde a revisão das telas, chips e ícone). "Limpar setlist" também foi
   para o menu "⋯"; o Editar ficou só com arrastar e remover.
 - Busca na setlist e nos hinos (a partir de 10): título ou cantor, sem
   acento; mostra "Nº 12" da achada; some no Editar.
@@ -256,6 +256,27 @@ arquivo.
 - No louvor as telas da setlist, leitor e montar falam de hinos e letras
   (`Vocabulario` em `dominio/vocabulario.dart`).
 - Fica para depois: roteiro sem internet.
+
+### Revisão das telas (2026-10-21)
+
+Feita com capturas reais (Playwright, largura do iPhone) e prints do
+proprietário:
+- Louvor sem a faixa só com "Iniciar": Iniciar/Encerrar fica na barra do
+  topo; nos shows com pedidos a faixa "Recebendo pedidos | Encerrar" fica.
+  A foto do cabeçalho fica escura em toda a faixa do texto (o pedestal
+  cortava as letras) e a aba Mais usa a foto só no topo.
+- Início do artista: sem seta de voltar ("Tela inicial" no menu da conta);
+  seção Acervo com Meus repertórios e o resumo; show agendado com data
+  passada vai para o fim de Próximas com "Já passou".
+- Escala: "Escalar todos" no cartão do resumo; na aba Pessoas o × só
+  aparece no Editar, números como "6 pts" e "2 solos", sem parágrafos de
+  explicação. Arquivo dividido em `escala_do_louvor_{hinos,pessoas,dialogos}.dart`.
+  "Quem é você?" do leitor com a cor de cada pessoa.
+- Busca única: `combinaComBusca` (domínio) e `CampoDeBusca` (componentes)
+  em setlist, fila, montar e escolha; a da Fila passou a ignorar acento.
+- Topo da setlist: avisos em chips numa faixa só (pedidos novos, sem
+  cifra, fora do repertório), progresso numa frase só e ícone discreto de
+  fora do repertório na linha.
 
 ### Lições do iPhone/Safari
 
