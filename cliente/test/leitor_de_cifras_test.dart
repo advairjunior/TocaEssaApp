@@ -340,7 +340,8 @@ void main() {
         .position
         .pixels;
 
-    testWidgets('▶ rola a cifra e um toque na cifra pausa', (tester) async {
+    testWidgets('▶ rola a cifra; tocar ou puxar a letra não para, só o pausar',
+        (tester) async {
       await _abrir(tester, cifraDaVelha: cifraLonga);
 
       await tester.tap(find.byTooltip('Rolar automaticamente'));
@@ -349,8 +350,21 @@ void main() {
       expect(rolou, greaterThan(0));
       expect(find.text('1x'), findsOneWidget);
 
+      // Um toque na letra não desconcentra quem canta: a rolagem segue.
       await tester.tap(find.text('Verso 3'), warnIfMissed: false);
       await tester.pump(const Duration(seconds: 3));
+      expect(rolagem(tester), greaterThan(rolou));
+
+      // Puxar a letra ajusta a posição e a rolagem continua dali.
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, 60));
+      await tester.pump();
+      final puxada = rolagem(tester);
+      await tester.pump(const Duration(seconds: 3));
+      expect(rolagem(tester), greaterThan(puxada));
+      expect(find.byTooltip('Pausar rolagem'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Pausar rolagem'));
+      await tester.pump();
       final parada = rolagem(tester);
       await tester.pump(const Duration(seconds: 3));
       expect(rolagem(tester), parada);

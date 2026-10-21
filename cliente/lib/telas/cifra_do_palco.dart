@@ -156,7 +156,9 @@ class _CifraDoPalcoState extends State<CifraDoPalco> {
     _rolando?.cancel();
     const passo = Duration(milliseconds: 50);
     _rolando = Timer.periodic(passo, (_) {
-      if (!_rolagem.hasClients) return;
+      // Com o dedo na tela, espera: puxar a letra ajusta a posição e a
+      // rolagem segue dali ao soltar. Só o pausar para.
+      if (!_rolagem.hasClients || _dedos.isNotEmpty) return;
       final posicao = _rolagem.position;
       final destino = posicao.pixels +
           _velocidades[_velocidade].pixels * passo.inMilliseconds / 1000;
@@ -223,10 +225,7 @@ class _CifraDoPalcoState extends State<CifraDoPalco> {
         children: [
           Positioned.fill(
             child: Listener(
-              onPointerDown: (evento) {
-                _pararRolagem();
-                _dedoNaTela(evento);
-              },
+              onPointerDown: _dedoNaTela,
               onPointerMove: _dedoMoveu,
               onPointerUp: _dedoSaiu,
               onPointerCancel: _dedoSaiu,
