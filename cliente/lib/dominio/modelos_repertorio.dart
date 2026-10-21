@@ -51,6 +51,29 @@ class MusicaDoRepertorio {
       );
 }
 
+/// Música da setlist, hino ou pedido a caminho de um repertório.
+typedef MusicaParaRepertorio = ({String titulo, String? artista, String? tom});
+
+class MusicasAdicionadas {
+  const MusicasAdicionadas({
+    required this.repertorio,
+    required this.adicionadas,
+    required this.jaEstavam,
+  });
+
+  final Repertorio repertorio;
+  final int adicionadas;
+  final int jaEstavam;
+
+  factory MusicasAdicionadas.deJson(Map<String, dynamic> json) =>
+      MusicasAdicionadas(
+        repertorio:
+            Repertorio.deJson(json['repertorio'] as Map<String, dynamic>),
+        adicionadas: json['adicionadas'] as int,
+        jaEstavam: json['jaEstavam'] as int,
+      );
+}
+
 class ItemDoSetlist {
   const ItemDoSetlist({
     required this.id,

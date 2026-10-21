@@ -19,8 +19,7 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
       body: jsonEncode({'nome': nome}),
     );
     _validar(resposta);
-    return Repertorio.deJson(
-        jsonDecode(resposta.body) as Map<String, dynamic>);
+    return Repertorio.deJson(jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
   Future<Repertorio> renomearRepertorio(String id, String nome) async {
@@ -30,8 +29,7 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
       body: jsonEncode({'nome': nome}),
     );
     _validar(resposta);
-    return Repertorio.deJson(
-        jsonDecode(resposta.body) as Map<String, dynamic>);
+    return Repertorio.deJson(jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
   Future<void> excluirRepertorio(String id) async {
@@ -46,13 +44,40 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
       String repertorioId, String titulo, String? artista,
       {String? tom}) async {
     final resposta = await _cliente.post(
-      Uri.parse(
-          '$_enderecoBase/api/artista/repertorios/$repertorioId/musicas'),
+      Uri.parse('$_enderecoBase/api/artista/repertorios/$repertorioId/musicas'),
       headers: _cabecalhos(token: _tokenArtista, json: true),
       body: jsonEncode({'titulo': titulo, 'artista': artista, 'tom': tom}),
     );
     _validar(resposta);
     return MusicaDoRepertorio.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
+  /// Várias músicas de uma vez para [repertorioId] ou para um repertório
+  /// novo chamado [nomeNovo]; o servidor não repete as que já estão nele.
+  Future<MusicasAdicionadas> adicionarMusicasAoRepertorio({
+    String? repertorioId,
+    String? nomeNovo,
+    required List<MusicaParaRepertorio> musicas,
+  }) async {
+    final resposta = await _cliente.post(
+      Uri.parse('$_enderecoBase/api/artista/repertorios/musicas'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({
+        if (repertorioId != null) 'repertorioId': repertorioId,
+        if (nomeNovo != null) 'nomeNovo': nomeNovo,
+        'musicas': [
+          for (final musica in musicas)
+            {
+              'titulo': musica.titulo,
+              'artista': musica.artista,
+              'tom': musica.tom,
+            },
+        ],
+      }),
+    );
+    _validar(resposta);
+    return MusicasAdicionadas.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
@@ -89,8 +114,7 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
       body: jsonEncode({'musicaIds': musicaIds}),
     );
     _validar(resposta);
-    return Repertorio.deJson(
-        jsonDecode(resposta.body) as Map<String, dynamic>);
+    return Repertorio.deJson(jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 
   Future<List<ItemDoSetlist>> obterSetlist(String apresentacaoId) async {
@@ -175,8 +199,7 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
 
   Future<void> limparSetlist(String apresentacaoId) async {
     final resposta = await _cliente.delete(
-      Uri.parse(
-          '$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist'),
+      Uri.parse('$_enderecoBase/api/apresentacoes/$apresentacaoId/setlist'),
       headers: _cabecalhos(token: _tokenArtista),
     );
     _validar(resposta);
