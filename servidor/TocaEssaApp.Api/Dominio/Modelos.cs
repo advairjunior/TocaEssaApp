@@ -92,6 +92,10 @@ public sealed record SalvarCifraEmTexto(string Musica, string? Artista, string? 
 public sealed record CifraDaMusicaDoRepertorio(
     Guid MusicaId, bool TemTexto, string? Url, string UrlPesquisa);
 
+/// O que quem abre o link de uma cifra vê, sem conta.
+public sealed record CifraCompartilhada(
+    string Musica, string? Artista, string? Tom, string Texto, string? NomeArtistico);
+
 public sealed record SalvarCifraDoArtista(
     string Musica, string? Artista, string Url);
 

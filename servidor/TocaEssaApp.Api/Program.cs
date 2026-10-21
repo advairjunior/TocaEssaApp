@@ -127,6 +127,22 @@ app.MapGet("/api/artista/cifras/consulta", (
         : Results.Ok(repositorio.ObterCifraDoArtista(
             ObterToken(http) ?? string.Empty, musica, artista)));
 
+app.MapGet("/api/artista/cifras/compartilhar", (
+    string musica, string? artista, HttpRequest http,
+    RepositorioTocaEssa repositorio) =>
+    Results.Ok(new
+    {
+        codigo = repositorio.CodigoParaCompartilharCifra(
+            ObterToken(http) ?? string.Empty, musica, artista)
+    }));
+
+// Link público de uma cifra: o código é o id da cifra colada.
+app.MapGet("/api/publico/cifras/{codigo:guid}", (
+    Guid codigo, RepositorioTocaEssa repositorio) =>
+    repositorio.ObterCifraCompartilhada(codigo) is { } cifra
+        ? Results.Ok(cifra)
+        : Results.NotFound());
+
 app.MapGet("/api/artista/cifras", (
     HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.ListarCifrasDoArtista(

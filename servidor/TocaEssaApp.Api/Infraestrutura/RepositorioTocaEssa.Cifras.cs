@@ -24,6 +24,33 @@ public sealed partial class RepositorioTocaEssa
             ProcurarMesmaMusica(_cifrasEmTexto, chave)?.Conteudo);
     }
 
+    /// Código do link de compartilhar a cifra colada da música: o próprio id
+    /// da cifra, que não muda ao corrigi-la (o link mostra sempre a versão
+    /// nova) e não dá para adivinhar.
+    public Guid CodigoParaCompartilharCifra(string token, string musica, string? artista)
+    {
+        var conta = ObterRegistroArtista(token)
+            ?? throw new SessaoArtistaInvalidaException();
+        ValidarIdentificacao(musica, artista);
+        return (ProcurarMesmaMusica(_cifrasEmTexto, CriarChave(conta.Id, musica, artista))
+                ?? throw new CifraDoArtistaNaoEncontradaException()).Id;
+    }
+
+    /// Cifra pelo código do link, sem conta: só título, cantor, tom, a cifra
+    /// e o nome do artista. Nulo se o código não existe (ou a cifra saiu).
+    public CifraCompartilhada? ObterCifraCompartilhada(Guid codigo)
+    {
+        var registro = _cifrasEmTexto.Values.FirstOrDefault(cifra => cifra.Id == codigo);
+        return registro is null
+            ? null
+            : new CifraCompartilhada(
+                registro.Musica,
+                registro.Artista,
+                TomDaCifra(registro.Conteudo),
+                registro.Conteudo,
+                _configuracoesPerfis.GetValueOrDefault(registro.ArtistaId)?.Perfil.NomeArtistico);
+    }
+
     /// Situação da cifra de cada música do repertório, para o acervo mostrar
     /// o que falta colar sem consultar música por música.
     public IReadOnlyCollection<CifraDaMusicaDoRepertorio> ListarCifrasDoRepertorio(
