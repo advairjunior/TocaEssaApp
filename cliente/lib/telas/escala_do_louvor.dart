@@ -277,7 +277,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
                 const SizedBox(width: EspacoTocaEssa.pequeno),
                 ChoiceChip(
                   showCheckmark: false,
-                  avatar: _Bolinha(corDaPessoa(louvor.cantores, nome)),
+                  avatar: _Bolinha(corDaPessoa(louvor.participantes, nome)),
                   label: Text(nome),
                   selected: filtro == nome,
                   onSelected: (_) => setState(() => _filtro = nome),

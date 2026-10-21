@@ -217,7 +217,9 @@ void main() {
         bolinha(find.widgetWithText(ChoiceChip, 'Ana'),
             corDoCantor(cantores, 'Ana')),
         findsOneWidget);
-    expect(bolinha(find.widgetWithText(ChoiceChip, 'José'), corInstrumental),
+    expect(
+        bolinha(find.widgetWithText(ChoiceChip, 'José'),
+            corDaPessoa(['João', 'Ana', 'José'], 'José')),
         findsOneWidget);
 
     await _abrirHino(tester);
@@ -232,7 +234,7 @@ void main() {
         findsOneWidget);
     expect(
         bolinha(find.widgetWithText(Chip, 'José · sax tenor · 1 solo'),
-            corInstrumental),
+            corDaPessoa(['João', 'Ana', 'José'], 'José')),
         findsOneWidget);
   });
 

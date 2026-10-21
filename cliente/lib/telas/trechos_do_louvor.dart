@@ -25,17 +25,30 @@ const _coresDosCantores = [
 /// Cor de quem canta; Todos (ou nome fora da lista) fica discreto.
 Color corDoCantor(List<String> cantores, String nome) {
   final indice = cantores.indexOf(nome);
-  return indice < 0
-      ? CoresTocaEssa.textoSecundario
-      : _coresDosCantores[indice % _coresDosCantores.length];
+  return indice < 0 ? CoresTocaEssa.textoSecundario : _corNaPosicao(indice);
+}
+
+/// Depois das doze, uma cor nova por pessoa, sem limite: o ângulo de ouro
+/// afasta cada matiz das anteriores, sempre o mesmo em todos os telefones
+/// (sorteio daria uma cor em cada aparelho). Pula o amarelo dos solos.
+Color _corNaPosicao(int indice) {
+  if (indice < _coresDosCantores.length) return _coresDosCantores[indice];
+  var faltam = indice - _coresDosCantores.length;
+  for (var passo = 0;; passo++) {
+    final matiz = (passo * 137.508 + 15) % 360;
+    if (matiz >= 35 && matiz <= 70) continue;
+    if (faltam-- == 0) return HSLColor.fromAHSL(1, matiz, .75, .68).toColor();
+  }
 }
 
 /// Faixa dos solos e partes instrumentais, diferente da dos cantores.
 const corInstrumental = CoresTocaEssa.atencao;
 
-/// Cor de uma pessoa do louvor: a do cantor ou, de quem só toca, a dos solos.
-Color corDaPessoa(List<String> cantores, String nome) =>
-    cantores.contains(nome) ? corDoCantor(cantores, nome) : corInstrumental;
+/// Cor de uma pessoa do louvor na lista [pessoas] (os participantes:
+/// cantores primeiro, depois quem só toca). Quem canta fica com a mesma cor
+/// da lista só de cantores; quem só toca ganha a sua, não o amarelo dos solos.
+Color corDaPessoa(List<String> pessoas, String nome) =>
+    corDoCantor(pessoas, nome);
 
 /// "Estrofe 1", "Refrão", "Solo sax tenor · 2x": o nome de cada parte.
 List<String> rotulosDasPartes(HinoDoLouvor hino) {

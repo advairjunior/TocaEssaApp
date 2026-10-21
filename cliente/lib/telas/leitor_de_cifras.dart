@@ -106,7 +106,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                           height: 12,
                           decoration: BoxDecoration(
                             color: corDaPessoa(
-                                _louvor?.cantores ?? const [], cantor),
+                                _louvor?.participantes ?? const [], cantor),
                             shape: BoxShape.circle,
                           ),
                         ),

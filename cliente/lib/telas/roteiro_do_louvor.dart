@@ -364,7 +364,7 @@ class _EscolhaDeQuemSou extends StatelessWidget {
               for (final nome in participantes)
                 _BotaoDaPessoa(
                   nome: nome,
-                  cor: corDaPessoa(cantores, nome),
+                  cor: corDaPessoa(participantes, nome),
                   escolher: () => escolher(nome),
                 ),
             ],

@@ -1,11 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 ParteDoHino _parte(TipoDaParte tipo, String texto, List<String> cantores) =>
-    ParteDoHino(
-        tipo: tipo, texto: texto, cantores: cantores, definida: false);
+    ParteDoHino(tipo: tipo, texto: texto, cantores: cantores, definida: false);
 
 final _hino = HinoDoLouvor(
   itemId: 'h1',
@@ -30,6 +30,32 @@ void main() {
     // Nenhuma se confunde com os solos nem com Todos.
     expect(cores, isNot(contains(corInstrumental)));
     expect(cores, isNot(contains(CoresTocaEssa.textoSecundario)));
+  });
+
+  test('cores sem limite: 40 pessoas, todas diferentes e legíveis', () {
+    final pessoas = [for (var i = 1; i <= 40; i++) 'Pessoa $i'];
+    final cores = [for (final nome in pessoas) corDaPessoa(pessoas, nome)];
+
+    expect(cores.toSet(), hasLength(40));
+    // As 12 de sempre continuam: ninguém que já usa troca de cor.
+    expect(cores.first, CoresTocaEssa.roxoClaro);
+    expect(cores[1], CoresTocaEssa.rosa);
+    for (final cor in cores.skip(12)) {
+      final hsl = HSLColor.fromColor(cor);
+      // Longe do amarelo dos solos e clara o bastante no fundo escuro.
+      expect(hsl.hue, isNot(inInclusiveRange(35, 70)));
+      expect(cor.computeLuminance(), greaterThan(.2));
+    }
+    expect(cores, isNot(contains(corInstrumental)));
+  });
+
+  test('quem só toca ganha cor própria, depois dos cantores', () {
+    const pessoas = ['João', 'Ana', 'José'];
+
+    expect(corDaPessoa(pessoas, 'José'), isNot(corInstrumental));
+    expect(corDaPessoa(pessoas, 'José'), isNot(corDaPessoa(pessoas, 'Ana')));
+    // A cor de quem canta é a mesma na lista só de cantores.
+    expect(corDaPessoa(pessoas, 'Ana'), corDoCantor(['João', 'Ana'], 'Ana'));
   });
 
   test('as partes de alguém saem pelo nome, juntas com "e"', () {
@@ -72,8 +98,7 @@ void main() {
     expect(cifra[0].texto, 'A        C#m\nCristo Jesus');
   });
 
-  test('a vez de quem está com o telefone fica em destaque e é avisada',
-      () {
+  test('a vez de quem está com o telefone fica em destaque e é avisada', () {
     final trechos =
         trechosDoHino(_hino, cantores: ['João', 'Ana'], quemSou: 'Ana');
 
@@ -146,8 +171,7 @@ void main() {
         ],
       );
 
-      expect(
-          trechosDoHino(soloVazio, cantores: [], acordes: true).single.texto,
+      expect(trechosDoHino(soloVazio, cantores: [], acordes: true).single.texto,
           'instrumental');
     });
 

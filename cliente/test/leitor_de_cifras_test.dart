@@ -607,7 +607,7 @@ void main() {
         .nonNulls
         .firstOrNull;
     expect(corDe('João'), corDoCantor(['João', 'Advair'], 'João'));
-    expect(corDe('José'), corInstrumental);
+    expect(corDe('José'), corDaPessoa(['João', 'Advair', 'José'], 'José'));
     await tester.tap(find.widgetWithText(ChoiceChip, 'João'));
     await tester.pumpAndSettle();
 

@@ -20,7 +20,9 @@ Map<String, Object?> _parte(String tipo, String texto, List<String> cantores) =>
     };
 
 Map<String, Object?> _hino(String id, String titulo,
-        {String? tom, bool tocado = false, List<Map<String, Object?>>? partes}) =>
+        {String? tom,
+        bool tocado = false,
+        List<Map<String, Object?>>? partes}) =>
     {
       'itemId': id,
       'titulo': titulo,
@@ -39,11 +41,11 @@ final _porCristo = _hino('h1', '80 · Por Cristo, resgatado', tom: 'G', partes: 
   _parte('Refrao', 'Por Cristo, resgatado', []),
 ]);
 
-final _segundo = _hino('h2', '234 · O meu ser entrego a Cristo', tom: 'A',
-    partes: [
-      _parte('Estrofe', 'Primeira do segundo', ['Ana']),
-      _parte('Estrofe', 'Última do segundo', []),
-    ]);
+final _segundo =
+    _hino('h2', '234 · O meu ser entrego a Cristo', tom: 'A', partes: [
+  _parte('Estrofe', 'Primeira do segundo', ['Ana']),
+  _parte('Estrofe', 'Última do segundo', []),
+]);
 
 final _semLetra = _hino('h3', '15 · Hino sem letra');
 
@@ -102,7 +104,8 @@ void main() {
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getString('louvor_quem_sou_ABC123'), 'Ana');
   });
-  testWidgets('acordes aparecem só para quem pede e mudam de tom', (tester) async {
+  testWidgets('acordes aparecem só para quem pede e mudam de tom',
+      (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': ''});
     await _abrir(tester);
 
@@ -141,13 +144,13 @@ void main() {
     expect(preferencias.getBool('louvor_acordes'), isTrue);
   });
 
-  testWidgets('a parte antes da sua avisa que você é o próximo', (tester) async {
+  testWidgets('a parte antes da sua avisa que você é o próximo',
+      (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
     await _abrir(tester);
 
     expect(find.text('você é o próximo'), findsOneWidget);
   });
-
 
   testWidgets('quem só toca solos também está no Quem é você', (tester) async {
     await _abrir(tester);
@@ -166,7 +169,8 @@ void main() {
 
     expect(cor('João'), corDoCantor(['João', 'Ana'], 'João'));
     expect(cor('Ana'), corDoCantor(['João', 'Ana'], 'Ana'));
-    expect(cor('José'), corInstrumental);
+    // Quem só toca tem cor própria, não o amarelo dos solos.
+    expect(cor('José'), corDaPessoa(['João', 'Ana', 'José'], 'José'));
   });
 
   testWidgets('a barra de baixo avisa sua vez no próximo hino', (tester) async {
@@ -174,7 +178,8 @@ void main() {
     _noServidor = _roteiro(atual: 'h1');
     await _abrir(tester);
 
-    expect(find.text('Depois: 234 · O meu ser entrego a Cristo'), findsOneWidget);
+    expect(
+        find.text('Depois: 234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('sua vez: Estrofe 1'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Trocar quem sou eu'));
@@ -222,7 +227,8 @@ void main() {
     await tester.pump(const Duration(seconds: 16));
     await tester.pumpAndSettle();
 
-    expect(find.text('Agora: 234 · O meu ser entrego a Cristo'), findsOneWidget);
+    expect(
+        find.text('Agora: 234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('Tom A'), findsOneWidget);
     expect(find.text('Agora'), findsOneWidget);
@@ -248,7 +254,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('15 · Hino sem letra'));
     await tester.pumpAndSettle();
-    expect(find.text('A letra deste hino ainda não foi colada.'), findsOneWidget);
+    expect(
+        find.text('A letra deste hino ainda não foi colada.'), findsOneWidget);
   });
 }
 

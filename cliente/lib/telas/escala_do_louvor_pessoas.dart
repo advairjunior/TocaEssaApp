@@ -62,7 +62,7 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
         children: [
           for (final solista in louvor.solistas)
             Chip(
-              avatar: const _Bolinha(corInstrumental),
+              avatar: _Bolinha(corDaPessoa(louvor.participantes, solista.nome)),
               label: Text([
                 solista.nome,
                 if (solista.instrumento.isNotEmpty) solista.instrumento,

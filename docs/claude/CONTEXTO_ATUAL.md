@@ -229,9 +229,12 @@ arquivo.
   escalar" e "Como marcar as partes"). A escolha à mão mostra os pontos (ou
   solos) de cada nome e os botões "Todos cantam"/"Banda toda", "Salvar" e
   "Deixar sem escala".
-- Cor de cada pessoa (`corDaPessoa` em `trechos_do_louvor.dart`): a do cantor
-  na ordem da lista (12 cores, só repetem do 13º em diante); quem só toca
-  fica com a cor dos solos. Solo sem acordes escritos mostra "instrumental"
+- Cor de cada pessoa (`corDaPessoa` em `trechos_do_louvor.dart`), na ordem
+  dos participantes (cantores, depois quem só toca): as 12 cores fixas e,
+  da 13ª em diante, uma cor gerada pelo ângulo de ouro, sem limite e igual
+  em todos os aparelhos (sem sorteio), pulando o amarelo. Desde 2026-10-21
+  quem só toca tem cor própria; as partes de solo continuam amarelas na
+  faixa e na cifra. Solo sem acordes escritos mostra "instrumental"
   também no leitor.
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
