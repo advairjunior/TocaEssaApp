@@ -368,37 +368,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _construirProgresso(context),
-          if (widget.abrirFila case final abrirFila?
-              when _sequencia.pedidosNovos.isNotEmpty) ...[
-            const SizedBox(height: EspacoTocaEssa.medio),
-            _SeloPedidosNovos(
-              quantidade: _sequencia.pedidosNovos.length,
-              abrirFila: abrirFila,
-            ),
-          ],
-          if (_sequencia.semCifra.isNotEmpty) ...[
-            const SizedBox(height: EspacoTocaEssa.base),
-            _Aviso(
-              icone: Icons.error_outline_rounded,
-              cor: CoresTocaEssa.atencao,
-              texto: _v.semCifra(_sequencia.semCifra.length),
-              rotulo: 'Colar',
-              acao: _colarCifras,
-            ),
-          ],
-          if (foraDoRepertorio.isNotEmpty) ...[
-            const SizedBox(height: EspacoTocaEssa.pequeno),
-            _Aviso(
-              icone: Icons.library_add_rounded,
-              cor: CoresTocaEssa.roxoClaro,
-              texto: foraDoRepertorio.length == 1
-                  ? '1 ${_v.musica} fora do repertório'
-                  : '${foraDoRepertorio.length} ${_v.musicas} '
-                      'fora do repertório',
-              rotulo: 'Adicionar',
-              acao: () => _levarAoRepertorio(foraDoRepertorio),
-            ),
-          ],
+          _construirAvisos(foraDoRepertorio),
           const SizedBox(height: EspacoTocaEssa.base + 4),
           if (_mostraBusca) ...[
             CampoDeBusca(
@@ -451,6 +421,51 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     );
   }
 
+  /// Pedidos novos, músicas sem cifra e fora do repertório em chips numa
+  /// faixa só: empilhados, empurravam a primeira música para o meio da tela.
+  Widget _construirAvisos(List<ItemDoSetlist> foraDoRepertorio) {
+    final abrirFila = widget.abrirFila;
+    final novos = _sequencia.pedidosNovos.length;
+    final semCifra = _sequencia.semCifra.length;
+    final avisos = [
+      if (abrirFila != null && novos > 0)
+        _ChipDeAviso(
+          icone: Icons.queue_music_rounded,
+          cor: CoresTocaEssa.roxoClaro,
+          texto: novos == 1 ? '1 pedido novo' : '$novos pedidos novos',
+          dica: 'Abrir a fila',
+          seta: true,
+          tocar: abrirFila,
+        ),
+      if (semCifra > 0)
+        _ChipDeAviso(
+          icone: Icons.error_outline_rounded,
+          cor: CoresTocaEssa.atencao,
+          texto: '$semCifra sem ${_v.cifra}',
+          dica: 'Colar as ${_v.cifra}s',
+          tocar: _colarCifras,
+        ),
+      if (foraDoRepertorio.isNotEmpty)
+        _ChipDeAviso(
+          icone: Icons.library_add_rounded,
+          cor: CoresTocaEssa.roxoClaro,
+          texto: '${foraDoRepertorio.length} fora do repertório',
+          dica: 'Adicionar ao repertório',
+          tocar: () => _levarAoRepertorio(foraDoRepertorio),
+        ),
+    ];
+    if (avisos.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: EspacoTocaEssa.medio),
+      child: Wrap(
+        key: const ValueKey('avisos-da-setlist'),
+        spacing: EspacoTocaEssa.pequeno,
+        runSpacing: EspacoTocaEssa.pequeno,
+        children: avisos,
+      ),
+    );
+  }
+
   /// Edição: as que faltam podem ser arrastadas ou removidas; as tocadas
   /// ficam no lugar.
   List<Widget> _construirEdicao() {
@@ -498,16 +513,16 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         Row(
           children: [
             Expanded(
-              // Uma linha; com fonte grande, o tempo desce em vez de estourar.
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  Text('${_sequencia.tocadas} de $total ${_v.tocadas}',
+              // Uma frase só: ao quebrar, o "·" não sobra no começo da linha.
+              child: Text.rich(
+                TextSpan(children: [
+                  TextSpan(
+                      text: '${_sequencia.tocadas} de $total ${_v.tocadas}',
                       style: texto.titleMedium),
                   // Estimativa da lista, com ou sem horas contratadas:
                   // antes de começar, quanto ela leva; depois, o que resta.
-                  Text(
-                    switch ((completa, _sequencia.tocadas)) {
+                  TextSpan(
+                    text: switch ((completa, _sequencia.tocadas)) {
                       (true, _) => ' · ${_v.setlist} completa',
                       (_, 0) => ' · ~${formatarTempoDoShow(_ritmo * faltam)} '
                           'de ${_v.musicas}',
@@ -516,7 +531,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                     },
                     style: secundario,
                   ),
-                ],
+                ]),
               ),
             ),
             TextButton(
@@ -618,89 +633,50 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       );
 }
 
-/// Faixa de aviso com atalho: quantas músicas que faltam tocar estão sem
-/// cifra (para não escolher cifra no meio do show) ou fora do repertório.
-class _Aviso extends StatelessWidget {
-  const _Aviso({
+/// Aviso compacto do topo da setlist: o chip inteiro é o atalho ("2 sem
+/// cifra" leva a colar; "1 pedido novo ›" leva à fila).
+class _ChipDeAviso extends StatelessWidget {
+  const _ChipDeAviso({
     required this.icone,
     required this.cor,
     required this.texto,
-    required this.rotulo,
-    required this.acao,
+    required this.dica,
+    required this.tocar,
+    this.seta = false,
   });
 
   final IconData icone;
   final Color cor;
-  // "2 músicas sem cifra" ou, no louvor, "2 hinos sem letra".
   final String texto;
-  final String rotulo;
-  final VoidCallback acao;
+  final String dica;
+  final VoidCallback tocar;
+  final bool seta;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        EspacoTocaEssa.base,
-        EspacoTocaEssa.pequeno,
-        EspacoTocaEssa.pequeno,
-        EspacoTocaEssa.pequeno,
-      ),
-      decoration: BoxDecoration(
-        color: cor.withValues(alpha: .12),
-        borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
-      ),
-      child: Row(
-        children: [
-          Icon(icone, color: cor),
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-          Expanded(
-            child: Text(
-              texto,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-          TextButton(onPressed: acao, child: Text(rotulo)),
-        ],
-      ),
-    );
-  }
-}
-
-/// "2 pedidos novos ›": leva à aba Fila, onde se aceita ou recusa.
-class _SeloPedidosNovos extends StatelessWidget {
-  const _SeloPedidosNovos({required this.quantidade, required this.abrirFila});
-
-  final int quantidade;
-  final VoidCallback abrirFila;
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: CoresTocaEssa.roxo.withValues(alpha: .14),
-        borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
-          onTap: abrirFila,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: EspacoTocaEssa.base,
-              vertical: EspacoTocaEssa.medio,
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.queue_music_rounded,
-                    color: CoresTocaEssa.roxoClaro),
-                const SizedBox(width: EspacoTocaEssa.pequeno),
-                Expanded(
-                  child: Text(
-                    quantidade == 1
-                        ? '1 pedido novo'
-                        : '$quantidade pedidos novos',
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded,
-                    color: CoresTocaEssa.textoSecundario),
-              ],
+  Widget build(BuildContext context) => Tooltip(
+        message: dica,
+        child: Material(
+          color: cor.withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+            onTap: tocar,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: EspacoTocaEssa.medio,
+                vertical: EspacoTocaEssa.pequeno,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icone, size: 18, color: cor),
+                  const SizedBox(width: EspacoTocaEssa.pequeno - 2),
+                  Text(texto, style: Theme.of(context).textTheme.labelLarge),
+                  if (seta)
+                    const Icon(Icons.chevron_right_rounded,
+                        size: 18, color: CoresTocaEssa.textoSecundario),
+                ],
+              ),
             ),
           ),
         ),
@@ -830,7 +806,6 @@ class _LinhaSetlist extends StatelessWidget {
       if (posicao != null) 'Nº $posicao',
       if (item.artista != null) item.artista!,
       if (item.tom != null) 'Tom ${item.tom}',
-      if (foraDoRepertorio) 'fora do repertório',
     ].join(' · ');
     return Slidable(
       key: ValueKey(item.id),
@@ -918,6 +893,14 @@ class _LinhaSetlist extends StatelessWidget {
                           style: texto.labelMedium
                               ?.copyWith(color: CoresTocaEssa.textoSecundario)),
                     ),
+                  ),
+                  const SizedBox(width: EspacoTocaEssa.pequeno),
+                ],
+                if (foraDoRepertorio) ...[
+                  const Tooltip(
+                    message: 'Fora do repertório',
+                    child: Icon(Icons.library_add_outlined,
+                        size: 16, color: CoresTocaEssa.textoSecundario),
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),
                 ],

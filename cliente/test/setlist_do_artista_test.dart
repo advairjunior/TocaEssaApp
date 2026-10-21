@@ -285,7 +285,7 @@ void main() {
 
     expect(find.byType(Card), findsNothing);
     expect(find.byType(Checkbox), findsNothing);
-    expect(find.text('1 de 3 tocadas'), findsOneWidget);
+    expect(find.textContaining('1 de 3 tocadas'), findsOneWidget);
     expect(find.byTooltip('Montar setlist'), findsOneWidget);
     expect(find.text('Trocar repertório'), findsNothing);
     expect(find.text('Próxima'), findsOneWidget);
@@ -303,7 +303,7 @@ void main() {
       final marcacao = requisicoes.singleWhere((r) => r.method == 'PATCH');
       expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
       expect(marcacao.body, contains('"tocada":true'));
-      expect(find.text('2 de 3 tocadas'), findsOneWidget);
+      expect(find.textContaining('2 de 3 tocadas'), findsOneWidget);
     });
 
     testWidgets('círculo é anunciado como marcável', (tester) async {
@@ -487,8 +487,8 @@ void main() {
         (tester) async {
       await _abrir(tester, musicasComTexto: {'Garota de Ipanema'});
 
-      expect(find.text('2 músicas sem cifra'), findsOneWidget);
-      await tester.tap(find.text('Colar'));
+      expect(find.text('2 sem cifra'), findsOneWidget);
+      await tester.tap(find.text('2 sem cifra'));
       await tester.pumpAndSettle();
 
       expect(find.text('Colar cifras'), findsOneWidget);
@@ -537,7 +537,7 @@ void main() {
     final marcacao = requisicoes.singleWhere((r) => r.method == 'PATCH');
     expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
     expect(marcacao.body, contains('"tocada":true'));
-    expect(find.text('2 de 3 tocadas'), findsOneWidget);
+    expect(find.textContaining('2 de 3 tocadas'), findsOneWidget);
     expect(find.text('Próxima: Evidências'), findsOneWidget);
   });
 
@@ -565,7 +565,7 @@ void main() {
     final desmarcacao = requisicoes.where((r) => r.method == 'PATCH').last;
     expect(desmarcacao.url.path, '/api/apresentacoes/$_id/setlist/2/tocada');
     expect(desmarcacao.body, contains('"tocada":false'));
-    expect(find.text('1 de 3 tocadas'), findsOneWidget);
+    expect(find.textContaining('1 de 3 tocadas'), findsOneWidget);
     expect(find.text('Próxima: Velha Infância'), findsOneWidget);
   });
 
@@ -628,7 +628,7 @@ void main() {
     final marcacao = requisicoes.singleWhere(
         (r) => r.method == 'PATCH' && r.url.path.endsWith('/tocada'));
     expect(marcacao.url.path, '/api/apresentacoes/$_id/setlist/3/tocada');
-    expect(find.text('2 de 3 tocadas'), findsOneWidget);
+    expect(find.textContaining('2 de 3 tocadas'), findsOneWidget);
   });
 
   testWidgets('desfazer devolve o pedido para a sequência', (tester) async {
@@ -646,7 +646,7 @@ void main() {
     expect(status.body, contains('"status":"Aceito"'));
     expect(_aSeguirNoServidor, ['p1']);
     expect(find.text('Próxima: Evidências'), findsOneWidget);
-    expect(find.text('1 de 3 tocadas'), findsOneWidget);
+    expect(find.textContaining('1 de 3 tocadas'), findsOneWidget);
   });
 
   testWidgets('tocar a próxima finaliza o pedido que estava tocando',
@@ -705,7 +705,7 @@ void main() {
       _outroAparelhoTocou('2');
       await atualizar(tester);
 
-      expect(find.text('2 de 3 tocadas'), findsOneWidget);
+      expect(find.textContaining('2 de 3 tocadas'), findsOneWidget);
       expect(find.text('Próxima: Evidências'), findsOneWidget);
     });
 
@@ -878,15 +878,63 @@ void main() {
     });
   });
 
+  group('topo enxuto', () {
+    testWidgets('os avisos viram chips numa faixa só, cada um com o atalho',
+        (tester) async {
+      var abriuFila = false;
+      await _abrir(tester,
+          noAcervo: ['Garota de Ipanema'],
+          musicasComTexto: {'Garota de Ipanema'},
+          grupos: [_grupo('p9', 'Sozinho', 'Aguardando')],
+          abrirFila: () => abriuFila = true);
+
+      final faixa = find.byKey(const ValueKey('avisos-da-setlist'));
+      for (final aviso in [
+        '1 pedido novo',
+        '2 sem cifra',
+        '2 fora do repertório',
+      ]) {
+        expect(find.descendant(of: faixa, matching: find.text(aviso)),
+            findsOneWidget);
+      }
+      expect(find.byTooltip('Colar as cifras'), findsOneWidget);
+      expect(find.byTooltip('Adicionar ao repertório'), findsOneWidget);
+
+      await tester.tap(find.text('1 pedido novo'));
+      await tester.pumpAndSettle();
+      expect(abriuFila, isTrue);
+    });
+
+    testWidgets('sem avisos, não sobra faixa vazia', (tester) async {
+      await _abrir(tester, musicasComTexto: {
+        'Garota de Ipanema',
+        'Velha Infância',
+        'Evidências',
+      });
+
+      expect(find.byKey(const ValueKey('avisos-da-setlist')), findsNothing);
+    });
+
+    testWidgets('o progresso é uma frase só, sem "·" sobrando ao quebrar',
+        (tester) async {
+      await _abrir(tester);
+
+      expect(find.text('1 de 3 tocadas · faltam ~6 min de músicas'),
+          findsOneWidget);
+    });
+  });
+
   group('fora do repertório', () {
     testWidgets('avisa quantas estão fora e marca a linha de cada uma',
         (tester) async {
       await _abrir(tester, noAcervo: ['Garota de Ipanema']);
 
-      expect(find.text('2 músicas fora do repertório'), findsOneWidget);
-      expect(find.text('Banda 3 · fora do repertório'), findsOneWidget);
-      expect(find.text('Banda 2 · Tom G · fora do repertório'), findsOneWidget);
-      expect(find.text('Banda 1 · fora do repertório'), findsNothing);
+      expect(find.text('2 fora do repertório'), findsOneWidget);
+      expect(find.text('Banda 3'), findsOneWidget);
+      expect(find.text('Banda 2 · Tom G'), findsOneWidget);
+      // Um ícone discreto na linha, no lugar do texto que dobrava a altura.
+      expect(find.byTooltip('Fora do repertório'), findsNWidgets(2));
+      expect(find.text('Banda 1'), findsOneWidget);
     });
 
     testWidgets('com todas no acervo, não avisa nem marca', (tester) async {
@@ -898,7 +946,7 @@ void main() {
     testWidgets('Adicionar leva só as de fora e o aviso some', (tester) async {
       final requisicoes = await _abrir(tester, noAcervo: ['Garota de Ipanema']);
 
-      await tester.tap(find.text('Adicionar'));
+      await tester.tap(find.text('2 fora do repertório'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Adicionar 2 músicas ao repertório'));
       await tester.pumpAndSettle();
@@ -921,7 +969,7 @@ void main() {
       await _abrir(tester,
           tipo: TipoApresentacao.louvor, noAcervo: ['Garota de Ipanema']);
 
-      expect(find.text('2 hinos fora do repertório'), findsOneWidget);
+      expect(find.text('2 fora do repertório'), findsOneWidget);
     });
   });
 
@@ -951,7 +999,7 @@ void main() {
       expect(find.text('Canção 2'), findsNothing);
       expect(find.text('Nº 12 · Banda 12 · Tom A'), findsOneWidget);
       // O progresso continua sendo o da setlist inteira.
-      expect(find.text('1 de 12 tocadas'), findsOneWidget);
+      expect(find.textContaining('1 de 12 tocadas'), findsOneWidget);
     });
 
     testWidgets('acha pelo cantor', (tester) async {
@@ -1061,8 +1109,9 @@ void main() {
       await _abrir(tester,
           status: StatusApresentacao.agendada, relogio: relogio(duracao: 240));
 
-      expect(find.text('1 de 3 tocadas'), findsOneWidget);
-      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
+      expect(find.textContaining('1 de 3 tocadas'), findsOneWidget);
+      expect(
+          find.textContaining(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(
           find.text('estimativa: 3 min por música · '
               'contratado 4h → faltam ~3h54 de músicas'),
@@ -1080,8 +1129,8 @@ void main() {
           ],
           relogio: relogio());
 
-      expect(find.text('0 de 8 cantados'), findsOneWidget);
-      expect(find.text(' · ~24 min de hinos'), findsOneWidget);
+      expect(find.textContaining('0 de 8 cantados'), findsOneWidget);
+      expect(find.textContaining(' · ~24 min de hinos'), findsOneWidget);
       expect(find.text('estimativa: 3 min por hino'), findsOneWidget);
       expect(find.textContaining('faltam'), findsNothing);
     });
@@ -1095,8 +1144,8 @@ void main() {
           ],
           relogio: relogio(duracao: 60, ritmoMedio: 240));
 
-      expect(find.text('0 de 20 tocadas'), findsOneWidget);
-      expect(find.text(' · ~1h20 de músicas'), findsOneWidget);
+      expect(find.textContaining('0 de 20 tocadas'), findsOneWidget);
+      expect(find.textContaining(' · ~1h20 de músicas'), findsOneWidget);
       expect(
           find.text('seu ritmo médio: 4 min por música · '
               'a setlist passa ~20 min do contratado'),
@@ -1114,8 +1163,8 @@ void main() {
           ],
           relogio: relogio());
 
-      expect(find.text('0 de 3 tocadas'), findsOneWidget);
-      expect(find.text(' · ~18 min de músicas'), findsOneWidget);
+      expect(find.textContaining('0 de 3 tocadas'), findsOneWidget);
+      expect(find.textContaining(' · ~18 min de músicas'), findsOneWidget);
     });
 
     testWidgets('sem horas contratadas, a legenda mostra só o ritmo',
@@ -1123,7 +1172,8 @@ void main() {
       await _abrir(tester,
           status: StatusApresentacao.agendada, relogio: relogio());
 
-      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
+      expect(
+          find.textContaining(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(find.text('estimativa: 3 min por música'), findsOneWidget);
     });
 
@@ -1131,7 +1181,8 @@ void main() {
         (tester) async {
       await _abrir(tester, relogio: relogio(duracao: 240));
 
-      expect(find.text(' · faltam ~6 min de músicas'), findsOneWidget);
+      expect(
+          find.textContaining(' · faltam ~6 min de músicas'), findsOneWidget);
       expect(find.textContaining('por música'), findsNothing);
     });
 
@@ -1140,8 +1191,8 @@ void main() {
         _item('1', 'Garota de Ipanema', 1, tocada: true),
       ]);
 
-      expect(find.text('1 de 1 tocadas'), findsOneWidget);
-      expect(find.text(' · setlist completa'), findsOneWidget);
+      expect(find.textContaining('1 de 1 tocadas'), findsOneWidget);
+      expect(find.textContaining(' · setlist completa'), findsOneWidget);
     });
   });
 
@@ -1152,8 +1203,8 @@ void main() {
           tipo: TipoApresentacao.louvor,
           musicasComTexto: {'Garota de Ipanema'});
 
-      expect(find.text('1 de 3 cantados'), findsOneWidget);
-      expect(find.text('2 hinos sem letra'), findsOneWidget);
+      expect(find.textContaining('1 de 3 cantados'), findsOneWidget);
+      expect(find.text('2 sem letra'), findsOneWidget);
       expect(find.textContaining('música'), findsNothing);
       expect(find.textContaining('cifra'), findsNothing);
     });
