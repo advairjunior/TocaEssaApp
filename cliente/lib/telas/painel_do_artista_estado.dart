@@ -15,6 +15,8 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   bool _exibirWhatsapp = false;
   bool _pixAtivo = false;
   List<Apresentacao> _apresentacoes = [];
+  // Acervo resumido no início; nulo enquanto não chega.
+  List<Repertorio>? _repertorios;
   List<ParticipanteDaResenha> _galera = [];
   bool _carregando = true;
   bool _salvando = false;
@@ -39,15 +41,27 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
             ? a.data.compareTo(b.data)
             : b.data.compareTo(a.data));
 
+  bool _jaPassou(Apresentacao apresentacao) {
+    final hoje = DateTime.now();
+    return apresentacao.status == StatusApresentacao.agendada &&
+        apresentacao.data.isBefore(DateTime(hoje.year, hoje.month, hoje.day));
+  }
+
   List<Apresentacao> get _apresentacoesAoVivo =>
       _comStatus(StatusApresentacao.emAndamento);
 
   List<Apresentacao> get _apresentacoesFiltradas =>
       switch (_filtroApresentacoes) {
-        _FiltroApresentacoes.proximas => _comStatus(
-            StatusApresentacao.agendada,
-            maisProximaPrimeiro: true,
-          ),
+        // As que já passaram sem encerrar vão para o fim: não podem
+        // esconder o próximo show de verdade.
+        _FiltroApresentacoes.proximas => [
+            ..._comStatus(StatusApresentacao.agendada,
+                    maisProximaPrimeiro: true)
+                .where((apresentacao) => !_jaPassou(apresentacao)),
+            ..._comStatus(StatusApresentacao.agendada,
+                    maisProximaPrimeiro: true)
+                .where(_jaPassou),
+          ],
         _FiltroApresentacoes.historico =>
           _comStatus(StatusApresentacao.encerrada),
       };
@@ -70,6 +84,25 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
       campo.addListener(_aoEditarPerfil);
     }
     _carregar();
+    _carregarRepertorios();
+  }
+
+  Future<void> _carregarRepertorios() async {
+    try {
+      final repertorios = await widget.api.listarRepertorios();
+      if (mounted) setState(() => _repertorios = repertorios);
+    } catch (_) {
+      // Sem o resumo, o acervo continua a um toque no menu da conta.
+    }
+  }
+
+  Future<void> _abrirRepertorios() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+          builder: (_) => GerenciarRepertorios(api: widget.api)),
+    );
+    if (mounted) await _carregarRepertorios();
   }
 
   Future<void> _carregar() async {

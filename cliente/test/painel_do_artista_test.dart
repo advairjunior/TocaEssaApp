@@ -10,6 +10,7 @@ import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
+import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
 
 import 'apoio/camera_falsa.dart';
@@ -84,6 +85,90 @@ void main() {
     expect(find.text('Nenhuma apresentação ainda'), findsOneWidget);
   });
 
+  group('início do artista', () {
+    String dia(int deslocamento) {
+      final data = DateTime.now().add(Duration(days: deslocamento));
+      return '${data.year}-${data.month.toString().padLeft(2, '0')}-'
+          '${data.day.toString().padLeft(2, '0')}';
+    }
+
+    String repertorio(String id, String nome, int musicas) => jsonEncode({
+          'id': id,
+          'artistaId': 'a1',
+          'nome': nome,
+          'musicas': [
+            for (var i = 0; i < musicas; i++)
+              {
+                'id': '$id-$i',
+                'repertorioId': id,
+                'titulo': 'Música $i',
+                'ordem': i + 1,
+              },
+          ],
+        });
+
+    testWidgets('sem seta de voltar; a tela inicial fica no menu da conta',
+        (tester) async {
+      await _abrirPainel(tester);
+
+      expect(find.byType(BackButton), findsNothing);
+      await tester.tap(find.byTooltip('Minha conta'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tela inicial'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('meu painel'), findsOneWidget);
+    });
+
+    testWidgets('show agendado que já passou vai para o fim e avisa',
+        (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Segunda braba',
+          data: dia(-37),
+        )},${_apresentacao(
+          id: '2',
+          nome: 'Cantata de sábado',
+          data: dia(3),
+        )}]',
+      );
+
+      expect(tester.getTopLeft(find.text('Cantata de sábado')).dy,
+          lessThan(tester.getTopLeft(find.text('Segunda braba')).dy));
+      expect(find.text('Já passou · Bar do Zé · Pública'), findsOneWidget);
+      expect(find.text('Bar do Zé · Pública'), findsOneWidget);
+    });
+
+    testWidgets('mostra o acervo e abre os repertórios', (tester) async {
+      await _abrirPainel(
+        tester,
+        outras: (requisicao) async => requisicao.url.path ==
+                '/api/artista/repertorios'
+            ? http.Response(
+                '[${repertorio('r1', 'Barzinho', 2)},'
+                '${repertorio('r2', 'Louvor', 1)}]',
+                200,
+                headers: {'content-type': 'application/json; charset=utf-8'})
+            : null,
+      );
+
+      expect(find.text('Acervo'), findsOneWidget);
+      expect(find.text('2 repertórios · 3 músicas'), findsOneWidget);
+      await tester.tap(find.text('Meus repertórios'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GerenciarRepertorios), findsOneWidget);
+    });
+
+    testWidgets('sem repertórios, convida a montar o acervo', (tester) async {
+      await _abrirPainel(tester);
+
+      expect(find.text('Monte seu acervo de músicas'), findsOneWidget);
+    });
+  });
+
   testWidgets('sem perfil artístico o painel orienta a criar o perfil',
       (tester) async {
     await _abrirPainel(tester, perfil: null);
@@ -143,7 +228,7 @@ void main() {
       apresentacoes: '[${_apresentacao(
         id: '1',
         nome: 'Show de sábado',
-        data: '2026-09-05',
+        data: '2030-09-05',
         tipo: 'ResenhaEntreAmigos',
       )}]',
     );
@@ -160,15 +245,15 @@ void main() {
       apresentacoes: '[${_apresentacao(
         id: '1',
         nome: 'Show de outubro',
-        data: '2026-10-10',
+        data: '2030-10-10',
       )},${_apresentacao(
         id: '2',
         nome: 'Show de dezembro',
-        data: '2026-12-20',
+        data: '2030-12-20',
       )},${_apresentacao(
         id: '3',
         nome: 'Show de setembro',
-        data: '2026-09-05',
+        data: '2030-09-05',
       )}]',
     );
 

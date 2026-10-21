@@ -5,12 +5,15 @@ class _MenuDaConta extends StatelessWidget {
     required this.enderecoFoto,
     required this.abrirPerfil,
     required this.abrirRepertorios,
+    required this.irParaTelaInicial,
     required this.sair,
   });
 
   final String? enderecoFoto;
   final VoidCallback abrirPerfil;
   final VoidCallback abrirRepertorios;
+  // Tela de entrada do app, por exemplo para entrar num show como público.
+  final VoidCallback irParaTelaInicial;
   final VoidCallback sair;
 
   @override
@@ -31,6 +34,10 @@ class _MenuDaConta extends StatelessWidget {
           PopupMenuItem(
             value: abrirRepertorios,
             child: const _ItemMenu(Icons.queue_music_rounded, 'Repertórios'),
+          ),
+          PopupMenuItem(
+            value: irParaTelaInicial,
+            child: const _ItemMenu(Icons.home_outlined, 'Tela inicial'),
           ),
           const PopupMenuDivider(),
           PopupMenuItem(
@@ -286,10 +293,13 @@ class _AbasApresentacoes extends StatelessWidget {
 class _ListaApresentacoes extends StatelessWidget {
   const _ListaApresentacoes({
     required this.apresentacoes,
+    required this.jaPassou,
     required this.abrir,
   });
 
   final List<Apresentacao> apresentacoes;
+  // Agendada com data passada: o artista esqueceu de encerrar.
+  final bool Function(Apresentacao) jaPassou;
   final ValueChanged<Apresentacao> abrir;
 
   @override
@@ -300,10 +310,69 @@ class _ListaApresentacoes extends StatelessWidget {
             LinhaComData(
               data: apresentacao.data,
               titulo: apresentacao.nome,
+              aviso: jaPassou(apresentacao) ? 'Já passou' : null,
               subtitulo:
                   '${apresentacao.local} · ${apresentacao.tipo.rotuloCurto}',
               tocar: () => abrir(apresentacao),
             ),
         ],
       );
+}
+
+/// Resumo dos repertórios, que formam o acervo de onde saem as setlists.
+class _LinhaDoAcervo extends StatelessWidget {
+  const _LinhaDoAcervo({required this.repertorios, required this.abrir});
+
+  final List<Repertorio>? repertorios;
+  final VoidCallback abrir;
+
+  String get _resumo {
+    final lista = repertorios ?? const [];
+    if (lista.isEmpty) return 'Monte seu acervo de músicas';
+    final musicas = lista.fold<int>(
+        0, (soma, repertorio) => soma + repertorio.musicas.length);
+    return [
+      lista.length == 1 ? '1 repertório' : '${lista.length} repertórios',
+      musicas == 1 ? '1 música' : '$musicas músicas',
+    ].join(' · ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return GrupoDeLinhas(
+      linhas: [
+        Semantics(
+          button: true,
+          child: InkWell(
+            onTap: abrir,
+            child: Padding(
+              padding: const EdgeInsets.all(EspacoTocaEssa.base),
+              child: Row(
+                children: [
+                  const Icon(Icons.queue_music_rounded,
+                      color: CoresTocaEssa.roxoClaro),
+                  const SizedBox(width: EspacoTocaEssa.base),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Meus repertórios', style: texto.titleMedium),
+                        const SizedBox(height: 2),
+                        Text(_resumo,
+                            style: texto.bodyMedium?.copyWith(
+                                color: CoresTocaEssa.textoSecundario)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: CoresTocaEssa.textoSecundario),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

@@ -3,17 +3,17 @@ part of 'painel_do_artista.dart';
 extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
   Widget _construirInicio(BuildContext context) => Scaffold(
         appBar: AppBar(
+          // A seta levava à tela de entrada do app e confundia quem já está
+          // no painel; ela agora fica no menu da conta.
+          automaticallyImplyLeading: false,
           title: Text('Olá, $_nomeDeSaudacao'),
           actions: [
             _MenuDaConta(
               enderecoFoto: _api.enderecoArquivo(_perfil?.fotoUrl),
               abrirPerfil: () => _selecionarAba(_AbaPainel.perfil),
-              abrirRepertorios: () => Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => GerenciarRepertorios(api: _api),
-                ),
-              ),
+              abrirRepertorios: _abrirRepertorios,
+              irParaTelaInicial: () => Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/', (_) => false),
               sair: _sair,
             ),
             const SizedBox(width: EspacoTocaEssa.pequeno),
@@ -98,9 +98,13 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
         else
           _ListaApresentacoes(
             apresentacoes: _apresentacoesFiltradas,
+            jaPassou: _jaPassou,
             abrir: _abrirApresentacao,
           ),
       ],
+      const SizedBox(height: EspacoTocaEssa.grande),
+      const TituloGrupo('Acervo'),
+      _LinhaDoAcervo(repertorios: _repertorios, abrir: _abrirRepertorios),
       // Espaço para o botão flutuante não cobrir o último item.
       const SizedBox(height: 88),
     ];

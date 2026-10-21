@@ -182,12 +182,15 @@ class LinhaComData extends StatelessWidget {
     required this.titulo,
     required this.subtitulo,
     required this.tocar,
+    this.aviso,
   });
 
   final DateTime data;
   final String titulo;
   final String subtitulo;
   final VoidCallback tocar;
+  // Destaque antes do subtítulo, como "Já passou".
+  final String? aviso;
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +216,17 @@ class LinhaComData extends StatelessWidget {
                       style: texto.titleMedium,
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      subtitulo,
+                    Text.rich(
+                      TextSpan(children: [
+                        if (aviso != null)
+                          TextSpan(
+                            text: '$aviso · ',
+                            style: const TextStyle(
+                                color: CoresTocaEssa.atencao,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        TextSpan(text: subtitulo),
+                      ]),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: texto.bodyMedium
