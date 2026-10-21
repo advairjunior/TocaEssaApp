@@ -281,6 +281,22 @@ proprietário:
   cifra, fora do repertório), progresso numa frase só e ícone discreto de
   fora do repertório na linha.
 
+### Compartilhar e limpar escala (2026-10-21)
+
+- Compartilhar no leitor (`compartilhar_link.dart`: janela do aparelho
+  pelo `navigator.share`; sem ela, copia o link). No louvor, manda o link do
+  roteiro aberto no hino (`#/publico/CODIGO?hino=itemId`): quem recebe
+  responde "Quem é você?" e cai no hino, com acordes ligados se não
+  escolheu escondê-los. Fora do louvor, manda `#/cifra/{codigo}`
+  (`cifra_compartilhada.dart`, sem conta, com tom e pinça). O código é o id
+  da cifra colada (`CifrasEmTexto.Id`, não muda ao corrigir: link vivo);
+  rotas `GET /api/artista/cifras/compartilhar` (privada) e
+  `GET /api/publico/cifras/{codigo}` (pública, nova). O leitor busca o
+  código ao abrir a página: no iPhone o share só abre direto no toque.
+- "Limpar escala" no resumo da Escala (com confirmação): todas as partes
+  ficam sem ninguém, inclusive as trocadas à mão; rota
+  `DELETE /api/apresentacoes/{id}/louvor/escala`.
+
 ### Lições do iPhone/Safari
 
 O proprietário testa e usa no iPhone. Testes de widget não pegam:
