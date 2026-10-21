@@ -192,11 +192,14 @@ void main() {
 
     expect(find.text('80 · Por Cristo, resgatado'), findsOneWidget);
     expect(find.text('Agora'), findsOneWidget);
+    // Ao abrir não há aviso: só quando o hino muda.
+    expect(find.textContaining('Agora: '), findsNothing);
 
     _noServidor = _roteiro(atual: 'h2');
     await tester.pump(const Duration(seconds: 16));
     await tester.pumpAndSettle();
 
+    expect(find.text('Agora: 234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('Tom A'), findsOneWidget);
     expect(find.text('Agora'), findsOneWidget);

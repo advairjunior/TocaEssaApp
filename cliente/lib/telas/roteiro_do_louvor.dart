@@ -142,6 +142,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     try {
       final roteiro = await widget.api.obterRoteiroDoLouvor(_codigo);
       if (!mounted) return;
+      final mudou = _roteiro != null && roteiro.hinoAtualId != _ultimoAtual;
       setState(() {
         _roteiro = roteiro;
         _erro = null;
@@ -151,6 +152,15 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
           _hinoAbertoId = null;
         }
       });
+      // Avisa por que a tela mudou sozinha.
+      final atual = roteiro.hinos
+          .where((hino) => hino.itemId == roteiro.hinoAtualId)
+          .firstOrNull;
+      if (mudou && atual != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('Agora: ${atual.titulo}')));
+      }
     } catch (erro) {
       // Com o roteiro na tela, a falha fica para a próxima atualização.
       if (mounted && _roteiro == null) setState(() => _erro = erro);
