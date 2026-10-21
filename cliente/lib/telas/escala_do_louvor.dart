@@ -718,14 +718,23 @@ class _CartaoDoHino extends StatelessWidget {
 }
 
 /// Topo da aba Hinos: o que falta ("1 sem letra", "2 partes sem escala") e
-/// uma barra de pontos por cantor, para ver de relance se ficou equilibrado.
-class _ResumoDaEscala extends StatelessWidget {
+/// os pontos ("de 3 a 36"); um toque abre uma barra por cantor, para ver se
+/// ficou equilibrado. Começa fechado, para os hinos aparecerem logo.
+class _ResumoDaEscala extends StatefulWidget {
   const _ResumoDaEscala({required this.louvor});
 
   final LouvorDoArtista louvor;
 
   @override
+  State<_ResumoDaEscala> createState() => _ResumoDaEscalaState();
+}
+
+class _ResumoDaEscalaState extends State<_ResumoDaEscala> {
+  bool _aberto = false;
+
+  @override
   Widget build(BuildContext context) {
+    final louvor = widget.louvor;
     final texto = Theme.of(context).textTheme;
     final hinos = louvor.hinos.length;
     final semLetra = louvor.hinos.where((hino) => !hino.temLetra).length;
@@ -743,8 +752,12 @@ class _ResumoDaEscala extends StatelessWidget {
     final pontos = {
       for (final item in louvor.placar) item.nome: item.pontos,
     };
-    final maximo =
-        pontos.values.fold<int>(0, (maior, p) => p > maior ? p : maior);
+    final valores = [
+      for (final nome in louvor.cantores) pontos[nome] ?? 0,
+    ];
+    final menor = valores.fold<int?>(
+        null, (menor, p) => menor == null || p < menor ? p : menor);
+    final maximo = valores.fold<int>(0, (maior, p) => p > maior ? p : maior);
     final solos = [
       for (final item in louvor.placarDosSolos) '${item.nome} ${item.solos}',
     ];
@@ -763,43 +776,72 @@ class _ResumoDaEscala extends StatelessWidget {
                   color: semLetra + semEscala > 0
                       ? CoresTocaEssa.atencao
                       : CoresTocaEssa.sucesso)),
-          for (final nome in louvor.cantores) ...[
-            const SizedBox(height: EspacoTocaEssa.pequeno),
-            Row(
-              children: [
-                SizedBox(
-                  width: 88,
-                  child: Text(nome,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: texto.labelLarge?.copyWith(
-                          color: corDoCantor(louvor.cantores, nome))),
+          if (menor != null)
+            InkWell(
+              onTap: () => setState(() => _aberto = !_aberto),
+              borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: EspacoTocaEssa.mini),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        menor == maximo
+                            ? 'Pontos: $menor cada'
+                            : 'Pontos: de $menor a $maximo',
+                        style: texto.bodySmall
+                            ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                      ),
+                    ),
+                    Icon(
+                      _aberto
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      color: CoresTocaEssa.textoSecundario,
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
-                    child: LinearProgressIndicator(
-                      minHeight: 8,
-                      value: maximo == 0 ? 0 : (pontos[nome] ?? 0) / maximo,
-                      color: corDoCantor(louvor.cantores, nome),
-                      backgroundColor: CoresTocaEssa.borda,
+              ),
+            ),
+          if (_aberto)
+            for (final nome in louvor.cantores) ...[
+              const SizedBox(height: EspacoTocaEssa.pequeno),
+              Row(
+                children: [
+                  SizedBox(
+                    width: 88,
+                    child: Text(nome,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: texto.labelLarge?.copyWith(
+                            color: corDoCantor(louvor.cantores, nome))),
+                  ),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+                      child: LinearProgressIndicator(
+                        minHeight: 8,
+                        value: maximo == 0 ? 0 : (pontos[nome] ?? 0) / maximo,
+                        color: corDoCantor(louvor.cantores, nome),
+                        backgroundColor: CoresTocaEssa.borda,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: EspacoTocaEssa.medio),
-                SizedBox(
-                  width: 44,
-                  child: Text(
-                    '${pontos[nome] ?? 0} ${pontos[nome] == 1 ? 'pt' : 'pts'}',
-                    textAlign: TextAlign.right,
-                    style: texto.labelMedium
-                        ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  const SizedBox(width: EspacoTocaEssa.medio),
+                  SizedBox(
+                    width: 44,
+                    child: Text(
+                      '${pontos[nome] ?? 0} ${pontos[nome] == 1 ? 'pt' : 'pts'}',
+                      textAlign: TextAlign.right,
+                      style: texto.labelMedium
+                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
-          if (solos.isNotEmpty) ...[
+                ],
+              ),
+            ],
+          if (_aberto && solos.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.pequeno),
             Text('Solos: ${solos.join(' · ')}',
                 style: texto.labelMedium?.copyWith(color: corInstrumental)),

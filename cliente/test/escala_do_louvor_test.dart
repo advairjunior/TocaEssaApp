@@ -242,6 +242,14 @@ void main() {
 
     expect(find.text('2 hinos · 1 sem letra · 1 parte sem escala'),
         findsOneWidget);
+    // Começa fechado, para os hinos aparecerem logo; um toque abre as barras.
+    expect(find.text('Pontos: 1 cada'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text('Solos: José 1'), findsNothing);
+
+    await tester.tap(find.text('Pontos: 1 cada'));
+    await tester.pumpAndSettle();
+
     expect(find.text('1 pt'), findsNWidgets(2));
     expect(find.text('Solos: José 1'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
