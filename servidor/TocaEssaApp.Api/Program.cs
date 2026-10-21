@@ -181,6 +181,10 @@ app.MapPost("/api/artista/repertorios", (
         requisicao.Nome));
 });
 
+app.MapGet("/api/artista/repertorios/pedidas-fora", (
+    HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.ListarPedidasForaDoRepertorio(ObterToken(http) ?? string.Empty)));
+
 app.MapPost("/api/artista/repertorios/musicas", (
     AdicionarMusicasAoRepertorio requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
 {

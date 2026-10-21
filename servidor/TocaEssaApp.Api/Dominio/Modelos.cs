@@ -132,6 +132,10 @@ public sealed record AdicionarMusicasAoRepertorio(
 public sealed record MusicasAdicionadasAoRepertorio(
     Repertorio Repertorio, int Adicionadas, int JaEstavam);
 
+/// Música pedida pelo público e ainda fora do acervo: quantas vezes e em
+/// quantos shows.
+public sealed record PedidaForaDoRepertorio(string Musica, string? Artista, int Vezes, int Shows);
+
 public sealed record EditarMusicaDoRepertorio(string Titulo, string? Artista, string? Tom = null);
 
 public sealed record ReordenarMusicasDoRepertorio(Guid[]? MusicaIds);
