@@ -27,6 +27,7 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
             for (final pedido in _tocando)
               CartaoGrupoPedidoArtista(
                 grupo: pedido,
+                foraDoAcervo: _foraDoAcervo(pedido),
                 destaque: true,
                 abrirCifra: () => _abrirCifra(pedido),
                 escolherCifra: () => _escolherCifra(pedido),
@@ -84,6 +85,7 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
               'Pedidos e alôs registrados nesta apresentação.',
               style: TextStyle(color: CoresTocaEssa.textoSecundario),
             ),
+            if (_temPedidosDeMusica) _botaoLevarAoRepertorio(),
             const SizedBox(height: 12),
             if (_pedidos.isEmpty)
               const _MensagemVazia(
@@ -93,6 +95,7 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
             for (final pedido in _pedidos) ...[
               CartaoGrupoPedidoArtista(
                 grupo: pedido,
+                foraDoAcervo: _foraDoAcervo(pedido),
                 somenteLeitura: true,
                 alterar: (_) {},
                 abrirCifra: () => _abrirCifra(pedido),
@@ -101,6 +104,18 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
               const SizedBox(height: 10),
             ],
           ],
+        ),
+      );
+
+  bool get _temPedidosDeMusica =>
+      _pedidos.any((pedido) => pedido.tipo == TipoPedido.musica);
+
+  Widget _botaoLevarAoRepertorio() => Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: _levarPedidosAoRepertorio,
+          icon: const Icon(Icons.library_add_rounded),
+          label: const Text('Adicionar pedidos ao repertório'),
         ),
       );
 
@@ -167,6 +182,7 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
                 _removerPendente(pedido.pedidoRepresentativoId),
             child: CartaoGrupoPedidoArtista(
               grupo: pedido,
+              foraDoAcervo: _foraDoAcervo(pedido),
               abrirCifra: () => _abrirCifra(pedido),
               escolherCifra: () => _escolherCifra(pedido),
               alterar: (status) => _alterar(pedido, status),
@@ -207,6 +223,7 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
               padding: const EdgeInsets.only(bottom: 10),
               child: CartaoGrupoPedidoArtista(
                 grupo: pedido,
+                foraDoAcervo: _foraDoAcervo(pedido),
                 eoPrimeiroDaFila: indice == 0,
                 aSeguir: _aSeguir.contains(pedido.pedidoRepresentativoId),
                 alternarASeguir: () => _alternarASeguir(pedido),
@@ -237,10 +254,16 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
       );
     }
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_temPedidosDeMusica) ...[
+          _botaoLevarAoRepertorio(),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+        ],
         for (final pedido in _historico) ...[
           CartaoGrupoPedidoArtista(
             grupo: pedido,
+            foraDoAcervo: _foraDoAcervo(pedido),
             somenteLeitura: true,
             alterar: (_) {},
             abrirCifra: () => _abrirCifra(pedido),

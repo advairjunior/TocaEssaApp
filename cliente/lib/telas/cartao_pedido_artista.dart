@@ -17,6 +17,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
     this.destaque = false,
     this.aSeguir = false,
     this.alternarASeguir,
+    this.foraDoAcervo,
   });
 
   final GrupoPedidoMusical grupo;
@@ -35,6 +36,9 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
   final bool aSeguir;
   final VoidCallback? alternarASeguir;
 
+  /// Música que não está em nenhum repertório: o selo leva a um deles.
+  final VoidCallback? foraDoAcervo;
+
   @override
   Widget build(BuildContext context) => CartaoPedidoArtista(
         pedido: grupo.comoPedidoMusical(),
@@ -48,6 +52,7 @@ class CartaoGrupoPedidoArtista extends StatelessWidget {
         destaque: destaque,
         aSeguir: aSeguir,
         alternarASeguir: alternarASeguir,
+        foraDoAcervo: foraDoAcervo,
       );
 }
 
@@ -65,6 +70,7 @@ class CartaoPedidoArtista extends StatelessWidget {
     this.destaque = false,
     this.aSeguir = false,
     this.alternarASeguir,
+    this.foraDoAcervo,
   });
 
   final PedidoMusical pedido;
@@ -82,6 +88,9 @@ class CartaoPedidoArtista extends StatelessWidget {
   /// Marcado para entrar na barra Próxima da setlist e do leitor de cifras.
   final bool aSeguir;
   final VoidCallback? alternarASeguir;
+
+  /// Música que não está em nenhum repertório: o selo leva a um deles.
+  final VoidCallback? foraDoAcervo;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -150,6 +159,16 @@ class CartaoPedidoArtista extends StatelessWidget {
                       .textTheme
                       .bodyMedium
                       ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                ),
+              ],
+              if (foraDoAcervo != null && pedido.tipo == TipoPedido.musica) ...[
+                const SizedBox(height: EspacoTocaEssa.pequeno),
+                ActionChip(
+                  tooltip: 'Adicionar ao repertório',
+                  visualDensity: VisualDensity.compact,
+                  avatar: const Icon(Icons.library_add_rounded, size: 16),
+                  label: const Text('Fora do acervo'),
+                  onPressed: foraDoAcervo,
                 ),
               ],
               if (_detalhesDaParticipacao != null) ...[

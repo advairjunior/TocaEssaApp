@@ -7,10 +7,12 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
+import 'adicionar_ao_repertorio.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'escolher_para_repertorio.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'lista_reordenavel.dart';
 import 'publico_no_app.dart';
@@ -56,6 +58,9 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   String _textoBusca = '';
   // Pedidos marcados para tocar a seguir na barra Próxima da setlist.
   List<String> _aSeguir = [];
+  // Acervo do artista, para saber quais pedidos estão fora dele; nulo
+  // enquanto não chega (sem selo).
+  List<Repertorio>? _repertorios;
 
   bool _correspondeAoBusca(GrupoPedidoMusical p) =>
       _textoBusca.isEmpty ||
@@ -107,6 +112,7 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     });
     _carregar();
     _lerASeguir();
+    _carregarRepertorios();
     _atualizacaoAutomatica = Timer.periodic(
       const Duration(seconds: 30),
       (_) => _carregarSilenciosamente(),
@@ -181,6 +187,76 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
     } catch (_) {
       // Sem a sequência, a fila segue; a próxima atualização tenta de novo.
     }
+  }
+
+  Future<void> _carregarRepertorios() async {
+    try {
+      final repertorios = await widget.api.listarRepertorios();
+      if (mounted) setState(() => _repertorios = repertorios);
+    } catch (_) {
+      // Sem o acervo, a fila segue sem o selo.
+    }
+  }
+
+  /// Primeiro repertório que já tem a música do pedido.
+  Repertorio? _repertorioDe(GrupoPedidoMusical pedido) => _repertorios
+      ?.where((repertorio) => repertorio.musicas.any((musica) => mesmaMusica(
+          musica.titulo, musica.artista, pedido.musica, pedido.artista)))
+      .firstOrNull;
+
+  /// Ação do selo "Fora do acervo"; nula quando o selo não aparece.
+  VoidCallback? _foraDoAcervo(GrupoPedidoMusical pedido) =>
+      _repertorios == null ||
+              pedido.tipo != TipoPedido.musica ||
+              pedido.status == StatusPedidoMusical.canceladoPeloPublico ||
+              _repertorioDe(pedido) != null
+          ? null
+          : () => _adicionarAoRepertorio(pedido);
+
+  // O tom do pedido é o de quem pediu, não o da banda.
+  MusicaParaRepertorio _musicaDo(GrupoPedidoMusical pedido) =>
+      (titulo: pedido.musica, artista: pedido.artista, tom: null);
+
+  Future<void> _adicionarAoRepertorio(GrupoPedidoMusical pedido) async {
+    final resultado = await adicionarAoRepertorio(context,
+        api: widget.api, musicas: [_musicaDo(pedido)]);
+    if (resultado != null) await _carregarRepertorios();
+  }
+
+  /// Pedidos de música do show, os mais pedidos primeiro; os que estão fora
+  /// do acervo começam marcados.
+  Future<void> _levarPedidosAoRepertorio() async {
+    final pedidos = _pedidos
+        .where((pedido) =>
+            pedido.tipo == TipoPedido.musica &&
+            pedido.status != StatusPedidoMusical.canceladoPeloPublico)
+        .toList()
+      ..sort((a, b) => b.quantidadePedidos.compareTo(a.quantidadePedidos));
+    await escolherParaRepertorio(
+      context,
+      api: widget.api,
+      titulo: 'Pedidos para o repertório',
+      nomeSugerido: 'Pedidos · ${widget.apresentacao.nome}',
+      opcoes: [
+        for (final pedido in pedidos)
+          if (_repertorioDe(pedido) case final repertorio)
+            OpcaoParaRepertorio(
+              musica: _musicaDo(pedido),
+              marcada: repertorio == null,
+              detalhe: [
+                if (pedido.quantidadePedidos > 1)
+                  'pedida ${pedido.quantidadePedidos}x',
+                if (pedido.status == StatusPedidoMusical.naoConhecemos ||
+                    pedido.status == StatusPedidoMusical.aindaNaoSabemosTocar)
+                  pedido.status.rotulo,
+                repertorio == null
+                    ? 'fora do acervo'
+                    : 'já em "${repertorio.nome}"',
+              ].join(' · '),
+            ),
+      ],
+    );
+    if (mounted) await _carregarRepertorios();
   }
 
   Future<void> _alternarASeguir(GrupoPedidoMusical pedido) async {
