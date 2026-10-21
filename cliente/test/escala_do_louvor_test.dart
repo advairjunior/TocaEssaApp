@@ -269,6 +269,34 @@ void main() {
     expect(find.widgetWithText(FilledButton, 'Escalar todos'), findsNothing);
   });
 
+  testWidgets('Limpar escala pede confirmação e deixa tudo para reescalar',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    List<http.Request> limpou() => requisicoes
+        .where((r) =>
+            r.method == 'DELETE' &&
+            r.url.path == '/api/apresentacoes/$_id/louvor/escala')
+        .toList();
+
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('resumo-da-escala')),
+            matching: find.text('Limpar escala')),
+        findsOneWidget);
+    await tester.tap(find.text('Limpar escala'));
+    await tester.pumpAndSettle();
+    expect(find.text('Limpar a escala de todos os hinos?'), findsOneWidget);
+    await tester.tap(find.text('Cancelar'));
+    await tester.pumpAndSettle();
+    expect(limpou(), isEmpty);
+
+    await tester.tap(find.text('Limpar escala'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Limpar'));
+    await tester.pumpAndSettle();
+    expect(limpou(), hasLength(1));
+  });
+
   testWidgets('cada hino tem uma faixa com um pedaço por parte',
       (tester) async {
     await _abrir(tester);

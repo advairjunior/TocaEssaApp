@@ -171,6 +171,35 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         () => widget.api.escalarTodosOsHinosDoLouvor(_id, itens: itens));
   }
 
+  /// Tira todo mundo de todas as partes, para reescalar do zero; confirma
+  /// porque desfaz também as trocas feitas à mão.
+  Future<void> _limparEscala() async {
+    final confirmou = await showDialog<bool>(
+          context: context,
+          builder: (contexto) => AlertDialog(
+            title: const Text('Limpar a escala de todos os hinos?'),
+            content: const Text(
+                'Todas as partes ficam sem ninguém, inclusive as trocadas à '
+                'mão. Cantores e solistas continuam.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(contexto, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style:
+                    FilledButton.styleFrom(backgroundColor: CoresTocaEssa.rosa),
+                onPressed: () => Navigator.pop(contexto, true),
+                child: const Text('Limpar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmou || !mounted) return;
+    await _salvar(() => widget.api.limparEscalaDoLouvor(_id));
+  }
+
   Future<void> _colarLetra(HinoDoLouvor hino) async {
     final texto = await (widget.pedirLetra?.call(hino.titulo) ??
         pedirCifraEmTexto(context, titulo: hino.titulo, oQue: 'Letra'));
@@ -260,6 +289,9 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         // Só quando há o que escalar: hino sem letra não tem partes.
         temOQueEscalar: louvor.hinos.any((hino) => hino.partes.isNotEmpty),
         escalarTodos: _salvando ? null : _escalarTodos,
+        temEscala: louvor.hinos
+            .any((hino) => hino.partes.any((parte) => parte.definida)),
+        limparEscala: _salvando ? null : _limparEscala,
       ),
       const SizedBox(height: EspacoTocaEssa.medio),
       if (louvor.participantes.isNotEmpty) ...[

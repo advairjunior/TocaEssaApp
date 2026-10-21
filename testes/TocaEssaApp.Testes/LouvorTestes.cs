@@ -119,6 +119,29 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void LimparAEscalaDeixaTodasAsPartesSemNinguemParaReescalar()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.EscalarTodosOsHinosDoLouvor(cenario.Token, cenario.Show.Id);
+        cenario.Repo.EscolherParteDoLouvor(cenario.Token, cenario.Show.Id, cenario.Hinos[0].Id, 0, ["Ana"]);
+
+        var louvor = cenario.Repo.LimparEscalaDoLouvor(cenario.Token, cenario.Show.Id);
+
+        Assert.All(louvor.Hinos.SelectMany(hino => hino.Partes),
+            parte => Assert.False(parte.Definida));
+        Assert.All(louvor.Placar, placar => Assert.Equal(0, placar.Pontos));
+        // Cantores e solistas continuam: só a escala é refeita.
+        Assert.Equal(["João", "Ana"], louvor.Cantores);
+        var reescalado = cenario.Repo.EscalarTodosOsHinosDoLouvor(cenario.Token, cenario.Show.Id);
+        Assert.All(reescalado.Hinos[0].Partes, parte => Assert.True(parte.Definida));
+
+        var tokenBia = cenario.Repo.CriarContaArtista("Bia", "bia@artista.com", "senha").Token;
+        Assert.Throws<ApresentacaoNaoEncontradaException>(() =>
+            cenario.Repo.LimparEscalaDoLouvor(tokenBia, cenario.Show.Id));
+    }
+
+    [Fact]
     public void EscalarSoOsHinosMarcadosNaoMexeNosOutros()
     {
         var cenario = CriarCenario();
@@ -512,6 +535,14 @@ public sealed class LouvorTestes
             Assert.Equal("Ana", parte.GetProperty("cantores")[0].GetString());
             Assert.Equal(HttpStatusCode.BadRequest, (await ana.PutAsJsonAsync($"{rota}/partes",
                 new { itemId, indice = 0, cantores = new[] { "Pedro" } })).StatusCode);
+
+            Assert.Equal(HttpStatusCode.NotFound, (await bia.DeleteAsync($"{rota}/escala")).StatusCode);
+            var limpa = await ana.DeleteAsync($"{rota}/escala");
+            Assert.Equal(HttpStatusCode.OK, limpa.StatusCode);
+            Assert.False((await limpa.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("hinos")[0].GetProperty("partes")[0].GetProperty("definida").GetBoolean());
+            (await ana.PutAsJsonAsync($"{rota}/partes",
+                new { itemId, indice = 0, cantores = new[] { "Ana" } })).EnsureSuccessStatusCode();
 
             Assert.Equal(HttpStatusCode.NotFound, (await bia.GetAsync(rota)).StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await bia.PutAsJsonAsync($"{rota}/cantores",

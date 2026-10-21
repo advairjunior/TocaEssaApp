@@ -68,6 +68,13 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
         body: itens == null ? null : jsonEncode({'itens': itens}),
       ));
 
+  /// Todas as partes voltam a ficar sem ninguém, para escalar de novo.
+  Future<LouvorDoArtista> limparEscalaDoLouvor(String apresentacaoId) async =>
+      _lerLouvor(await _cliente.delete(
+        _rotaDoLouvor(apresentacaoId, '/escala'),
+        headers: _cabecalhos(token: _tokenArtista),
+      ));
+
   Future<RoteiroDoLouvor> obterRoteiroDoLouvor(String codigo) async {
     final resposta =
         await _cliente.get(Uri.parse('$_enderecoBase/api/publico/apresentacoes/'

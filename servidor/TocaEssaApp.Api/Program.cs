@@ -339,6 +339,10 @@ app.MapPost("/api/apresentacoes/{id:guid}/louvor/escalar", (
     Results.Ok(repositorio.EscalarTodosOsHinosDoLouvor(
         ObterToken(http) ?? string.Empty, id, requisicao?.Itens)));
 
+app.MapDelete("/api/apresentacoes/{id:guid}/louvor/escala", (
+    Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+    Results.Ok(repositorio.LimparEscalaDoLouvor(ObterToken(http) ?? string.Empty, id)));
+
 app.MapPost("/api/apresentacoes/{id:guid}/louvor/hinos/{itemId:guid}/escalar", (
     Guid id, Guid itemId, HttpRequest http, RepositorioTocaEssa repositorio) =>
     Results.Ok(repositorio.EscalarHinoDoLouvor(

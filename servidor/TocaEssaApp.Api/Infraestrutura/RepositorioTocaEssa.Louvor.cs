@@ -201,6 +201,20 @@ public sealed partial class RepositorioTocaEssa
         }
     }
 
+    /// Botão "Limpar escala": todas as partes voltam a ficar sem ninguém,
+    /// inclusive as trocadas à mão, para escalar de novo do zero. Cantores,
+    /// solistas e a configuração ficam.
+    public LouvorDoArtista LimparEscalaDoLouvor(string token, Guid apresentacaoId)
+    {
+        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        lock (_sincronizacao)
+        {
+            _escolhasDoLouvor[apresentacaoId] = [];
+            SalvarEstado();
+            return MontarLouvor(apresentacao);
+        }
+    }
+
     /// Ao colar a cifra com as estrofes marcadas, os hinos do louvor que
     /// usam essa letra e ainda não têm ninguém já saem escalados. Hino já
     /// escalado fica como está: corrigir a letra não desfaz trocas à mão.

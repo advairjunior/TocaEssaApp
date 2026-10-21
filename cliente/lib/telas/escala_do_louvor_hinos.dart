@@ -275,13 +275,18 @@ class _ResumoDaEscala extends StatefulWidget {
     required this.louvor,
     this.temOQueEscalar = false,
     this.escalarTodos,
+    this.temEscala = false,
+    this.limparEscala,
   });
 
   final LouvorDoArtista louvor;
   final bool temOQueEscalar;
-  // "Escalar todos", discreto no canto: depois de escalado, um botão cheio
+  // "Escalar todos", discreto no cartão: depois de escalado, um botão cheio
   // no meio da tela só ocupava espaço.
   final VoidCallback? escalarTodos;
+  // "Limpar escala" aparece quando alguma parte já tem alguém.
+  final bool temEscala;
+  final VoidCallback? limparEscala;
 
   @override
   State<_ResumoDaEscala> createState() => _ResumoDaEscalaState();
@@ -330,23 +335,31 @@ class _ResumoDaEscalaState extends State<_ResumoDaEscala> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(situacao,
-                    style: texto.bodyMedium?.copyWith(
-                        color: semLetra + semEscala > 0
-                            ? CoresTocaEssa.atencao
-                            : CoresTocaEssa.sucesso)),
-              ),
-              if (widget.temOQueEscalar)
-                TextButton.icon(
-                  onPressed: widget.escalarTodos,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Escalar todos'),
-                ),
-            ],
-          ),
+          Text(situacao,
+              style: texto.bodyMedium?.copyWith(
+                  color: semLetra + semEscala > 0
+                      ? CoresTocaEssa.atencao
+                      : CoresTocaEssa.sucesso)),
+          if (widget.temOQueEscalar || widget.temEscala)
+            Wrap(
+              spacing: EspacoTocaEssa.pequeno,
+              children: [
+                if (widget.temOQueEscalar)
+                  TextButton.icon(
+                    onPressed: widget.escalarTodos,
+                    icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                    label: const Text('Escalar todos'),
+                  ),
+                if (widget.temEscala)
+                  TextButton.icon(
+                    onPressed: widget.limparEscala,
+                    style: TextButton.styleFrom(
+                        foregroundColor: CoresTocaEssa.rosa),
+                    icon: const Icon(Icons.layers_clear_outlined, size: 18),
+                    label: const Text('Limpar escala'),
+                  ),
+              ],
+            ),
           if (menor != null)
             InkWell(
               onTap: () => setState(() => _aberto = !_aberto),
