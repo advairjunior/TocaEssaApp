@@ -225,6 +225,8 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     final indice = roteiro.hinos.indexOf(hino);
     final ehAgora = hino.itemId == roteiro.hinoAtualId;
     final semitons = _semitonsDe(hino);
+    final proximo =
+        indice < roteiro.hinos.length - 1 ? roteiro.hinos[indice + 1] : null;
     return Column(
       children: [
         Expanded(
@@ -254,9 +256,10 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
           voltarAoAgora: !ehAgora && roteiro.hinoAtualId != null
               ? () => setState(() => _hinoAbertoId = null)
               : null,
-          depois: indice < roteiro.hinos.length - 1
-              ? roteiro.hinos[indice + 1].titulo
-              : null,
+          depois: proximo?.titulo,
+          suaVezDepois: proximo == null || (_quemSou ?? '').isEmpty
+              ? null
+              : partesDaPessoa(proximo, _quemSou!),
         ),
       ],
     );
@@ -500,12 +503,15 @@ class _BarraDosHinos extends StatelessWidget {
     required this.proximo,
     required this.voltarAoAgora,
     required this.depois,
+    required this.suaVezDepois,
   });
 
   final VoidCallback? anterior;
   final VoidCallback? proximo;
   final VoidCallback? voltarAoAgora;
   final String? depois;
+  // As partes de quem está com o telefone no próximo hino, para se preparar.
+  final String? suaVezDepois;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -529,15 +535,31 @@ class _BarraDosHinos extends StatelessWidget {
                       onPressed: voltarAoAgora,
                       child: const Text('Voltar ao hino de agora'),
                     )
-                  : Text(
-                      depois == null ? 'Último hino' : 'Depois: $depois',
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall
-                          ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          depois == null ? 'Último hino' : 'Depois: $depois',
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(color: CoresTocaEssa.textoSecundario),
+                        ),
+                        if (suaVezDepois case final partes?)
+                          Text(
+                            'sua vez: $partes',
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(color: CoresTocaEssa.ouro),
+                          ),
+                      ],
                     ),
             ),
             IconButton(

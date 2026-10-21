@@ -152,6 +152,22 @@ void main() {
     expect(cor('José'), corInstrumental);
   });
 
+  testWidgets('a barra de baixo avisa sua vez no próximo hino', (tester) async {
+    SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+    _noServidor = _roteiro(atual: 'h1');
+    await _abrir(tester);
+
+    expect(find.text('Depois: 234 · O meu ser entrego a Cristo'), findsOneWidget);
+    expect(find.text('sua vez: Estrofe 1'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Trocar quem sou eu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'João'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('sua vez:'), findsNothing);
+  });
+
   testWidgets('quem já escolheu entra direto e pode trocar', (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'João'});
     await _abrir(tester);
