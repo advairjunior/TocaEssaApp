@@ -197,25 +197,36 @@ arquivo.
   "Cantores por hino" (Sem limite, 1 a 4) faz só os N de menos pontos
   revezarem em cada hino; "Todos cantam os coros" deixa todo coro com
   Todos. Vale para os próximos "Escalar"; a escala feita não muda sozinha.
-- Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (cartão
-  fechado por hino com a ordem, tom, resumo "João · Ana · solo José · 1 sem
-  escala", uma bolinha por parte na cor de quem canta, "Agora" no último
-  tocado e os já tocados apagados; tocar abre as partes e o "Escalar
-  automático"; "Ver por pessoa" destaca as partes de alguém) e "Pessoas"
-  (cantores, solistas, "Como escalar" e "Como marcar as partes").
+- Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (no topo,
+  resumo "2 hinos · 1 sem letra · 1 parte sem escala" com uma barra de pontos
+  por cantor e os solos; cartão fechado por hino com a ordem, tom, resumo
+  "João · Ana · solo José · 1 sem escala", uma faixa com um pedaço por parte
+  na cor de quem canta, "Agora" no último tocado e os já tocados apagados;
+  tocar abre as partes, com o nome na cor da pessoa, e o "Escalar
+  automático"; o filtro por pessoa, com a bolinha da cor, destaca as partes
+  de alguém) e "Pessoas" (cantores e solistas com a bolinha da cor, "Como
+  escalar" e "Como marcar as partes"). A escolha à mão mostra os pontos (ou
+  solos) de cada nome e os botões "Todos cantam"/"Banda toda", "Salvar" e
+  "Deixar sem escala".
+- Cor de cada pessoa (`corDaPessoa` em `trechos_do_louvor.dart`): a do cantor
+  na ordem da lista; quem só toca fica com a cor dos solos.
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
   só para Louvor. O hino de agora é o último tocado na ordem da setlist.
 - Pelo código, cada participante vê o roteiro (`roteiro_do_louvor.dart`):
-  "Quem é você?" guardado no aparelho, segue o Tocar do artista, tela acesa.
+  "Quem é você?" (um botão por pessoa na cor da sua faixa) guardado no
+  aparelho, segue o Tocar do artista com o aviso "Agora: <hino>", tela
+  acesa. O topo do hino diz "Suas partes: Estrofe 1 e Refrão"; a barra de
+  baixo mostra "Depois: <hino>" e "sua vez: ..." no próximo hino.
 - Cifra no jeito de teleprompter (`cifra_do_palco.dart`, tirada do leitor):
   cada parte tem uma faixa com o nome de quem canta, presa no topo enquanto
   a parte passa (`PinnedHeaderSliver` em `SliverMainAxisGroup`); uma cor por
   cantor (`trechos_do_louvor.dart`); a vez da pessoa em destaque e "você é o
   próximo" na parte anterior; o refrão escrito de novo. Pinça, rolagem
-  automática e toque no acorde valem no leitor e no roteiro. No roteiro,
-  "Acordes" (guardado no aparelho) mostra a cifra e o −/+ meio tom por hino;
+  automática e toque no acorde valem no leitor e no roteiro. No roteiro, a
+  nota no topo ("Mostrar acordes", guardado no aparelho) mostra a cifra e o
+  −/+ meio tom por hino ao lado do tom;
   sem ele, só a letra. No leitor do artista, "Quem sou eu" destaca as partes
   dele.
 - No louvor as telas da setlist, leitor e montar falam de hinos e letras
