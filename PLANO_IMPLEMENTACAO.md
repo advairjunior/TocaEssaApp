@@ -127,6 +127,37 @@ cada uma começa por uma investigação antes de virar plano.
   do Render também demora.
 - **Registrada em:** 2026-10-19.
 
+### Compartilhar repertório com outra conta
+
+- **Problema:** um colega de banda ou de louvor precisa montar de novo, na
+  conta dele, um repertório que já existe, com cifras e letras coladas uma a
+  uma.
+- **Ideia (caminho escolhido em 2026-10-21):** enviar uma **cópia por
+  link**. No repertório, "Compartilhar" gera um link com código difícil de
+  adivinhar; o colega, logado, vê a prévia ("Barzinho · 42 músicas · 38 com
+  cifra · de Duo Aurora") e toca em "Copiar para minha conta". Vão título,
+  cantor, tom, cifra colada (letras dos hinos com as marcações de estrofe)
+  e link da cifra. Depois de copiado, o repertório é dele e não muda com o
+  original. "Parar de compartilhar" desativa o link.
+- **Decisões já tomadas:**
+  - Nada é sobrescrito: cifra que o colega já tem para a mesma música fica
+    a dele ("35 cifras copiadas · 3 você já tinha, mantidas").
+  - Copiar de novo o mesmo link **completa o que falta** no repertório já
+    copiado, em vez de criar outro.
+  - Não vão: tom do "b Tom #" (guardado no aparelho), setlists e pedidos.
+  - A prévia mostra só nome e contagens; copiar exige estar logado.
+- **Descartado por enquanto:** repertório vivo editado pelas duas contas
+  (muda o modelo de dono, permissões e conflitos). Só se o uso pedir.
+- **Esforço estimado:** médio. Servidor: tabela nova
+  `RepertoriosCompartilhados` (código, repertório, dono, data, revogado),
+  criada só se não existir; rotas para gerar/revogar o link, prévia e
+  copiar; testes de isolamento entre contas. App: botão Compartilhar, tela
+  que abre o link e aviso do resultado.
+- **Investigar antes:** como guardar a ligação entre a cópia e o link para
+  o "completar o que falta"; abrir o link no iPhone com o app instalado na
+  Tela de Início.
+- **Registrada em:** 2026-10-21.
+
 ### No palco
 
 - **Salvar a setlist como repertório:** ✅ entregue em 2026-10-21
