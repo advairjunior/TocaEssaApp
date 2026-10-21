@@ -111,12 +111,23 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
   Future<void> _escolherParte(
       HinoDoLouvor hino, int indice, String rotulo) async {
     final parte = hino.partes[indice];
+    final solo = parte.tipo == TipoDaParte.instrumental;
     // No solo, quem toca; sem solistas cadastrados, todo mundo.
-    final nomes = parte.tipo == TipoDaParte.instrumental
+    final nomes = solo
         ? (_louvor!.solistas.isEmpty
             ? _louvor!.participantes
             : [for (final solista in _louvor!.solistas) solista.nome])
         : _louvor!.cantores;
+    // Ao lado de cada nome, os pontos (ou solos) de agora.
+    final contagem = solo
+        ? {
+            for (final item in _louvor!.placarDosSolos)
+              item.nome: '${item.solos} ${item.solos == 1 ? 'solo' : 'solos'}',
+          }
+        : {
+            for (final item in _louvor!.placar)
+              item.nome: '${item.pontos} ${item.pontos == 1 ? 'pt' : 'pts'}',
+          };
     final escolha = await showModalBottomSheet<_Escolha>(
       context: context,
       showDragHandle: true,
@@ -125,6 +136,8 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         titulo: '$rotulo · ${hino.titulo}',
         cantores: nomes,
         atuais: parte.cantores,
+        contagem: contagem,
+        solo: solo,
       ),
     );
     if (escolha == null) return;
@@ -825,11 +838,16 @@ class _EscolhaDaParte extends StatefulWidget {
     required this.titulo,
     required this.cantores,
     required this.atuais,
+    required this.contagem,
+    required this.solo,
   });
 
   final String titulo;
   final List<String> cantores;
   final List<String> atuais;
+  // "3 pts" ou "1 solo" por nome.
+  final Map<String, String> contagem;
+  final bool solo;
 
   @override
   State<_EscolhaDaParte> createState() => _EscolhaDaParteState();
@@ -859,7 +877,21 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
                 children: [
                   for (final nome in widget.cantores)
                     FilterChip(
-                      label: Text(nome),
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(nome),
+                          if (widget.contagem[nome] case final conta?) ...[
+                            const SizedBox(width: EspacoTocaEssa.pequeno),
+                            Text(conta,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                        color: CoresTocaEssa.textoSecundario)),
+                          ],
+                        ],
+                      ),
                       selected: _selecionados.contains(nome),
                       onSelected: (marcado) => setState(() => marcado
                           ? _selecionados.add(nome)
@@ -873,7 +905,7 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () => _responder(const []),
-                      child: const Text('Todos'),
+                      child: Text(widget.solo ? 'Banda toda' : 'Todos cantam'),
                     ),
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),
@@ -893,7 +925,7 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
               const SizedBox(height: EspacoTocaEssa.pequeno),
               TextButton(
                 onPressed: () => _responder(null),
-                child: const Text('Limpar'),
+                child: const Text('Deixar sem escala'),
               ),
             ],
           ),

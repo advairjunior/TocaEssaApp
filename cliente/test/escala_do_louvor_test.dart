@@ -323,6 +323,12 @@ void main() {
 
     await tester.tap(find.text('Cristo Jesus, o santo Cordeiro'));
     await tester.pumpAndSettle();
+    // Os pontos ao lado do nome ajudam a escolher quem tem menos.
+    expect(
+        find.descendant(
+            of: find.widgetWithText(FilterChip, 'Ana'),
+            matching: find.text('1 pt')),
+        findsOneWidget);
     await tester.tap(find.widgetWithText(FilterChip, 'Ana'));
     await tester.tap(find.widgetWithText(FilterChip, 'João'));
     await tester.pumpAndSettle();
@@ -336,14 +342,14 @@ void main() {
 
     await tester.tap(find.text('Preso estava na iniquidade'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Todos'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Todos cantam'));
     await tester.pumpAndSettle();
     expect(_corpo(partes().last),
         {'itemId': 'h1', 'indice': 2, 'cantores': <Object?>[]});
 
     await tester.tap(find.text('Preso estava na iniquidade'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(TextButton, 'Limpar'));
+    await tester.tap(find.widgetWithText(TextButton, 'Deixar sem escala'));
     await tester.pumpAndSettle();
     expect(
         _corpo(partes().last), {'itemId': 'h1', 'indice': 2, 'cantores': null});
@@ -455,6 +461,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(FilterChip, 'José'), findsOneWidget);
+    expect(
+        find.descendant(
+            of: find.widgetWithText(FilterChip, 'José'),
+            matching: find.text('1 solo')),
+        findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Banda toda'), findsOneWidget);
     expect(find.widgetWithText(FilterChip, 'Ana'), findsNothing);
   });
 
