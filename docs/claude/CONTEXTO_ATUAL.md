@@ -110,7 +110,8 @@ arquivo.
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
   cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
   tom (guardado por música no aparelho) e rolagem automática (0,5x, 0,75x
-  e 1x a 5x).
+  e 1x a 5x, com ícones de andar e correr). Tocar ou puxar a letra não para
+  a rolagem: com o dedo na tela ela espera e segue dali; só o pausar para.
   Com a pinça, linha que não cabe quebra em vez de rolar para o lado
   (`quebrar_cifra.dart`): acordes e letra quebram juntos no mesmo ponto e o
   acorde segue na sílaba; tablatura também quebra.
@@ -226,7 +227,8 @@ arquivo.
   próximo" na parte anterior; o refrão escrito de novo. Pinça, rolagem
   automática e toque no acorde valem no leitor e no roteiro. No roteiro, a
   nota no topo ("Mostrar acordes", guardado no aparelho) mostra a cifra e o
-  −/+ meio tom por hino ao lado do tom;
+  controle "b Tom A (+2) #" por hino (b e # porque as fontes do app não têm
+  ♭/♯; tocar no tom mudado volta ao original); "Agora" fica na linha do título;
   sem ele, só a letra. No leitor do artista, "Quem sou eu" destaca as partes
   dele.
 - No louvor as telas da setlist, leitor e montar falam de hinos e letras
