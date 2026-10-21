@@ -221,17 +221,17 @@ void main() {
         findsOneWidget);
 
     await _abrirHino(tester);
-    final nome = tester.widget<Text>(find.descendant(
-        of: find.byType(ListTile), matching: find.text('Ana')));
+    final nome = tester.widget<Text>(
+        find.descendant(of: find.byType(ListTile), matching: find.text('Ana')));
     expect(nome.style?.color, corDoCantor(cantores, 'Ana'));
 
     await _irParaPessoas(tester);
     expect(
-        bolinha(find.widgetWithText(InputChip, 'João · 1'),
+        bolinha(find.widgetWithText(Chip, 'João · 1 pt'),
             corDoCantor(cantores, 'João')),
         findsOneWidget);
     expect(
-        bolinha(find.widgetWithText(InputChip, 'José · sax tenor · 1'),
+        bolinha(find.widgetWithText(Chip, 'José · sax tenor · 1 solo'),
             corInstrumental),
         findsOneWidget);
   });
@@ -253,6 +253,18 @@ void main() {
     expect(find.text('1 pt'), findsNWidgets(2));
     expect(find.text('Solos: José 1'), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+  });
+
+  testWidgets('Escalar todos fica no resumo, sem botão cheio no meio',
+      (tester) async {
+    await _abrir(tester);
+
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('resumo-da-escala')),
+            matching: find.text('Escalar todos')),
+        findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Escalar todos'), findsNothing);
   });
 
   testWidgets('cada hino tem uma faixa com um pedaço por parte',
@@ -297,11 +309,30 @@ void main() {
     await _irParaPessoas(tester);
 
     expect(find.text('Quem canta no microfone'), findsOneWidget);
-    expect(find.text('João · 1'), findsOneWidget);
-    expect(find.text('Ana · 1'), findsOneWidget);
-    expect(find.text('O número é de pontos: estrofe vale 1 e coro vale 2.'),
-        findsOneWidget);
+    expect(find.text('João · 1 pt'), findsOneWidget);
+    expect(find.text('Ana · 1 pt'), findsOneWidget);
+    // "1 pt" já diz o que é o número; sem parágrafo de explicação.
+    expect(find.textContaining('O número é de'), findsNothing);
+    expect(find.textContaining('Vale para os próximos'), findsNothing);
     expect(find.text('80 · Por Cristo, resgatado'), findsNothing);
+  });
+
+  testWidgets('tirar alguém só no Editar, longe de um toque sem querer',
+      (tester) async {
+    await _abrir(tester);
+    await _irParaPessoas(tester);
+
+    expect(find.byTooltip('Tirar João'), findsNothing);
+    expect(find.byTooltip('Tirar José dos solos'), findsNothing);
+
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Tirar João'), findsOneWidget);
+    expect(find.byTooltip('Tirar José dos solos'), findsOneWidget);
+
+    await tester.tap(find.text('Concluir'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Tirar João'), findsNothing);
   });
 
   testWidgets('acrescenta e tira cantores', (tester) async {
@@ -317,8 +348,10 @@ void main() {
     final adicionou = requisicoes.lastWhere(
         (r) => r.url.path == '/api/apresentacoes/$_id/louvor/cantores');
     expect(_corpo(adicionou)['nomes'], ['João', 'Ana', 'Pedro']);
-    expect(find.text('Pedro · 1'), findsOneWidget);
+    expect(find.text('Pedro · 1 pt'), findsOneWidget);
 
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Tirar João'));
     await tester.pumpAndSettle();
 
@@ -444,7 +477,7 @@ void main() {
         .toList();
 
     expect(find.text('Quem toca os solos'), findsOneWidget);
-    expect(find.text('José · sax tenor · 1'), findsOneWidget);
+    expect(find.text('José · sax tenor · 1 solo'), findsOneWidget);
 
     await tester.tap(find.text('Adicionar solista'));
     await tester.pumpAndSettle();
@@ -458,8 +491,10 @@ void main() {
       {'nome': 'José', 'instrumento': 'sax tenor'},
       {'nome': 'Pedro', 'instrumento': 'trompete'},
     ]);
-    expect(find.text('Pedro · trompete · 1'), findsOneWidget);
+    expect(find.text('Pedro · trompete · 1 solo'), findsOneWidget);
 
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Tirar José dos solos'));
     await tester.pumpAndSettle();
     expect(_corpo(solistas().last)['solistas'], [
@@ -516,14 +551,14 @@ void main() {
             r.url.path == '/api/apresentacoes/$_id/louvor/escalar')
         .toList();
 
-    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.tap(find.text('Escalar todos'));
     await tester.pumpAndSettle();
     expect(find.text('Escalar quais hinos?'), findsOneWidget);
     await tester.tap(find.text('Cancelar'));
     await tester.pumpAndSettle();
     expect(escalou(), isEmpty);
 
-    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.tap(find.text('Escalar todos'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Escalar (2)'));
     await tester.pumpAndSettle();
@@ -535,7 +570,7 @@ void main() {
     Finder noDialogo(String texto) => find.descendant(
         of: find.byType(AlertDialog), matching: find.text(texto));
 
-    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.tap(find.text('Escalar todos'));
     await tester.pumpAndSettle();
     // Hino sem letra não aparece: não tem o que escalar.
     expect(noDialogo('234 · O meu ser entrego a Cristo'), findsNothing);
@@ -553,7 +588,7 @@ void main() {
 
   testWidgets('Todos desmarca e marca a lista inteira', (tester) async {
     await _abrir(tester, comTerceiroHino: true);
-    await tester.tap(find.text('Escalar todos os hinos'));
+    await tester.tap(find.text('Escalar todos'));
     await tester.pumpAndSettle();
     FilledButton botao() => tester
         .widget<FilledButton>(find.widgetWithText(FilledButton, 'Escalar (0)'));

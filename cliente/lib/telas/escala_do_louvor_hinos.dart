@@ -271,9 +271,17 @@ class _CartaoDoHino extends StatelessWidget {
 /// os pontos ("de 3 a 36"); um toque abre uma barra por cantor, para ver se
 /// ficou equilibrado. Começa fechado, para os hinos aparecerem logo.
 class _ResumoDaEscala extends StatefulWidget {
-  const _ResumoDaEscala({required this.louvor});
+  const _ResumoDaEscala({
+    required this.louvor,
+    this.temOQueEscalar = false,
+    this.escalarTodos,
+  });
 
   final LouvorDoArtista louvor;
+  final bool temOQueEscalar;
+  // "Escalar todos", discreto no canto: depois de escalado, um botão cheio
+  // no meio da tela só ocupava espaço.
+  final VoidCallback? escalarTodos;
 
   @override
   State<_ResumoDaEscala> createState() => _ResumoDaEscalaState();
@@ -312,6 +320,7 @@ class _ResumoDaEscalaState extends State<_ResumoDaEscala> {
       for (final item in louvor.placarDosSolos) '${item.nome} ${item.solos}',
     ];
     return Container(
+      key: const ValueKey('resumo-da-escala'),
       padding: const EdgeInsets.all(EspacoTocaEssa.base),
       decoration: BoxDecoration(
         color: CoresTocaEssa.superficie,
@@ -321,11 +330,23 @@ class _ResumoDaEscalaState extends State<_ResumoDaEscala> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(situacao,
-              style: texto.bodyMedium?.copyWith(
-                  color: semLetra + semEscala > 0
-                      ? CoresTocaEssa.atencao
-                      : CoresTocaEssa.sucesso)),
+          Row(
+            children: [
+              Expanded(
+                child: Text(situacao,
+                    style: texto.bodyMedium?.copyWith(
+                        color: semLetra + semEscala > 0
+                            ? CoresTocaEssa.atencao
+                            : CoresTocaEssa.sucesso)),
+              ),
+              if (widget.temOQueEscalar)
+                TextButton.icon(
+                  onPressed: widget.escalarTodos,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  label: const Text('Escalar todos'),
+                ),
+            ],
+          ),
           if (menor != null)
             InkWell(
               onTap: () => setState(() => _aberto = !_aberto),

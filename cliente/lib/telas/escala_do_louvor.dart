@@ -47,6 +47,11 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
   _AbaDaEscala? _aba;
   final _abertos = <String>{};
   String? _filtro;
+  // Na aba Pessoas, o × de tirar alguém só aparece no Editar.
+  bool _editandoPessoas = false;
+
+  void _alternarEdicaoDePessoas() =>
+      setState(() => _editandoPessoas = !_editandoPessoas);
 
   String get _id => widget.apresentacao.id;
 
@@ -250,16 +255,13 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
       ];
     }
     return [
-      _ResumoDaEscala(louvor: louvor),
+      _ResumoDaEscala(
+        louvor: louvor,
+        // Só quando há o que escalar: hino sem letra não tem partes.
+        temOQueEscalar: louvor.hinos.any((hino) => hino.partes.isNotEmpty),
+        escalarTodos: _salvando ? null : _escalarTodos,
+      ),
       const SizedBox(height: EspacoTocaEssa.medio),
-      if (louvor.hinos.any((hino) => hino.partes.isNotEmpty)) ...[
-        FilledButton.icon(
-          onPressed: _salvando ? null : _escalarTodos,
-          icon: const Icon(Icons.auto_awesome_rounded),
-          label: const Text('Escalar todos os hinos'),
-        ),
-        const SizedBox(height: EspacoTocaEssa.medio),
-      ],
       if (louvor.participantes.isNotEmpty) ...[
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

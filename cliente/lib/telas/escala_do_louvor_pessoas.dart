@@ -14,23 +14,34 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
       for (final item in louvor.placarDosSolos) item.nome: item.solos,
     };
     final configuracao = louvor.configuracao;
+    final temAlguem = louvor.cantores.isNotEmpty || louvor.solistas.isNotEmpty;
     return [
-      const TituloGrupo('Quem canta no microfone'),
+      Row(
+        children: [
+          const Expanded(child: TituloGrupo('Quem canta no microfone')),
+          if (temAlguem)
+            TextButton(
+              onPressed: _alternarEdicaoDePessoas,
+              child: Text(_editandoPessoas ? 'Concluir' : 'Editar'),
+            ),
+        ],
+      ),
       Wrap(
         spacing: EspacoTocaEssa.pequeno,
         runSpacing: EspacoTocaEssa.pequeno,
         children: [
           for (final nome in louvor.cantores)
-            InputChip(
+            Chip(
               avatar: _Bolinha(corDoCantor(louvor.cantores, nome)),
-              label: Text('$nome · ${pontos[nome] ?? 0}'),
+              // "1 pt" já diz o que é o número.
+              label: Text('$nome · ${_pontos(pontos[nome] ?? 0)}'),
               deleteButtonTooltipMessage: 'Tirar $nome',
-              onDeleted: _salvando
-                  ? null
-                  : () => _definirCantores([
+              onDeleted: _editandoPessoas && !_salvando
+                  ? () => _definirCantores([
                         for (final outro in louvor.cantores)
                           if (outro != nome) outro,
-                      ]),
+                      ])
+                  : null,
             ),
           ActionChip(
             avatar: const Icon(Icons.person_add_alt_1_rounded, size: 18),
@@ -39,14 +50,10 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
           ),
         ],
       ),
-      const SizedBox(height: EspacoTocaEssa.pequeno),
-      Text(
-        louvor.cantores.isEmpty
-            ? 'Coloque quem vai cantar no microfone. Em cada hino, '
-                '"Escalar automático" divide as partes entre eles.'
-            : 'O número é de pontos: estrofe vale 1 e coro vale 2.',
-        style: explicacao,
-      ),
+      if (louvor.cantores.isEmpty) ...[
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        Text('Coloque quem vai cantar no microfone.', style: explicacao),
+      ],
       const SizedBox(height: EspacoTocaEssa.grande),
       const TituloGrupo('Quem toca os solos'),
       Wrap(
@@ -54,20 +61,20 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
         runSpacing: EspacoTocaEssa.pequeno,
         children: [
           for (final solista in louvor.solistas)
-            InputChip(
+            Chip(
               avatar: const _Bolinha(corInstrumental),
               label: Text([
                 solista.nome,
                 if (solista.instrumento.isNotEmpty) solista.instrumento,
-                '${solos[solista.nome] ?? 0}',
+                _solos(solos[solista.nome] ?? 0),
               ].join(' · ')),
               deleteButtonTooltipMessage: 'Tirar ${solista.nome} dos solos',
-              onDeleted: _salvando
-                  ? null
-                  : () => _definirSolistas([
+              onDeleted: _editandoPessoas && !_salvando
+                  ? () => _definirSolistas([
                         for (final outro in louvor.solistas)
                           if (outro.nome != solista.nome) outro,
-                      ]),
+                      ])
+                  : null,
             ),
           ActionChip(
             avatar: const Icon(Icons.music_note_rounded, size: 18),
@@ -75,12 +82,6 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
             onPressed: _salvando ? null : _adicionarSolista,
           ),
         ],
-      ),
-      const SizedBox(height: EspacoTocaEssa.pequeno),
-      Text(
-        'O app dá cada "(Solo sax)" para quem toca o instrumento, '
-        'revezando quando tem mais de um. O número é de solos.',
-        style: explicacao,
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
       const TituloGrupo('Como escalar'),
@@ -114,10 +115,6 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
                   corosComTodos: valor,
                 )),
       ),
-      Text(
-        'Vale para os próximos "Escalar".',
-        style: explicacao,
-      ),
       const SizedBox(height: EspacoTocaEssa.grande),
       Align(
         alignment: Alignment.centerLeft,
@@ -130,3 +127,7 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
     ];
   }
 }
+
+String _pontos(int pontos) => pontos == 1 ? '1 pt' : '$pontos pts';
+
+String _solos(int solos) => solos == 1 ? '1 solo' : '$solos solos';
