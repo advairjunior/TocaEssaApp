@@ -74,6 +74,33 @@ class MusicasAdicionadas {
       );
 }
 
+/// Música pedida pelo público nos shows e ainda fora dos repertórios.
+class PedidaForaDoRepertorio {
+  const PedidaForaDoRepertorio({
+    required this.musica,
+    this.artista,
+    required this.vezes,
+    required this.shows,
+  });
+
+  final String musica;
+  final String? artista;
+  final int vezes;
+  final int shows;
+
+  /// "pedida 7x em 3 shows", ou só "pedida 2x" quando foi num show.
+  String get resumo =>
+      shows > 1 ? 'pedida ${vezes}x em $shows shows' : 'pedida ${vezes}x';
+
+  factory PedidaForaDoRepertorio.deJson(Map<String, dynamic> json) =>
+      PedidaForaDoRepertorio(
+        musica: json['musica'] as String,
+        artista: json['artista'] as String?,
+        vezes: json['vezes'] as int,
+        shows: json['shows'] as int,
+      );
+}
+
 class ItemDoSetlist {
   const ItemDoSetlist({
     required this.id,

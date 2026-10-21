@@ -8,6 +8,7 @@ import 'colar_cifras.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'escolher_para_repertorio.dart';
 import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
 
@@ -26,12 +27,41 @@ class GerenciarRepertorios extends StatefulWidget {
 
 class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
   List<Repertorio> _repertorios = [];
+  // Pedidas pelo público nos shows e ainda fora de todos os repertórios.
+  List<PedidaForaDoRepertorio> _pedidas = [];
   bool _carregando = true;
 
   @override
   void initState() {
     super.initState();
     _carregar();
+    _carregarPedidas();
+  }
+
+  Future<void> _carregarPedidas() async {
+    try {
+      final pedidas = await widget.api.listarPedidasForaDoRepertorio();
+      if (mounted) setState(() => _pedidas = pedidas);
+    } catch (_) {
+      // Sem a lista, a tela segue só com os repertórios.
+    }
+  }
+
+  Future<void> _levarPedidas() async {
+    await escolherParaRepertorio(
+      context,
+      api: widget.api,
+      titulo: 'Pedidas pelo público',
+      opcoes: [
+        for (final pedida in _pedidas)
+          OpcaoParaRepertorio(
+            musica: (titulo: pedida.musica, artista: pedida.artista, tom: null),
+            detalhe: pedida.resumo,
+          ),
+      ],
+    );
+    if (!mounted) return;
+    await Future.wait([_carregar(), _carregarPedidas()]);
   }
 
   Future<void> _carregar() async {
@@ -108,17 +138,72 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
                     ),
                   )
                 : ConteudoMobile(
-                    filho: GrupoDeLinhas(
-                      linhas: [
-                        for (final rep in _repertorios)
-                          _LinhaRepertorio(
-                            repertorio: rep,
-                            abrir: () => _abrirDetalhe(rep),
-                          ),
+                    filho: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (_pedidas.isNotEmpty) ...[
+                          _CartaoPedidas(pedidas: _pedidas, ver: _levarPedidas),
+                          const SizedBox(height: EspacoTocaEssa.base),
+                        ],
+                        GrupoDeLinhas(
+                          linhas: [
+                            for (final rep in _repertorios)
+                              _LinhaRepertorio(
+                                repertorio: rep,
+                                abrir: () => _abrirDetalhe(rep),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
       );
+}
+
+/// As três mais pedidas fora do acervo e o atalho para levar todas.
+class _CartaoPedidas extends StatelessWidget {
+  const _CartaoPedidas({required this.pedidas, required this.ver});
+
+  final List<PedidaForaDoRepertorio> pedidas;
+  final VoidCallback ver;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    return Container(
+      padding: const EdgeInsets.all(EspacoTocaEssa.base),
+      decoration: BoxDecoration(
+        color: CoresTocaEssa.superficie,
+        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
+        border: Border.all(color: CoresTocaEssa.borda),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Pedidas pelo público', style: texto.titleMedium),
+          Text('Ainda fora dos seus repertórios',
+              style: texto.bodySmall
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario)),
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          for (final pedida in pedidas.take(3))
+            Padding(
+              padding: const EdgeInsets.only(top: EspacoTocaEssa.mini),
+              child: Text('${pedida.musica} · ${pedida.resumo}'),
+            ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: ver,
+              icon: const Icon(Icons.library_add_rounded),
+              label: Text(pedidas.length == 1
+                  ? 'Ver e adicionar'
+                  : 'Ver as ${pedidas.length} e adicionar'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _LinhaRepertorio extends StatelessWidget {

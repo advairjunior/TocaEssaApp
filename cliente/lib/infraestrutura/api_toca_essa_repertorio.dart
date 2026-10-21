@@ -12,6 +12,19 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
         .toList();
   }
 
+  /// Pedidas em todos os shows e fora dos repertórios, as mais pedidas
+  /// primeiro.
+  Future<List<PedidaForaDoRepertorio>> listarPedidasForaDoRepertorio() async {
+    final resposta = await _cliente.get(
+      Uri.parse('$_enderecoBase/api/artista/repertorios/pedidas-fora'),
+      headers: _cabecalhos(token: _tokenArtista),
+    );
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as List<dynamic>)
+        .map((p) => PedidaForaDoRepertorio.deJson(p as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<Repertorio> criarRepertorio(String nome) async {
     final resposta = await _cliente.post(
       Uri.parse('$_enderecoBase/api/artista/repertorios'),
