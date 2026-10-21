@@ -11,13 +11,15 @@ import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/leitor_de_cifras.dart';
 import 'package:toca_essa_app/telas/sequencia_do_palco.dart';
+import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 import 'apoio/pedidos_a_seguir_falsos.dart';
 
 const _id = '44444444-4444-4444-4444-444444444444';
 const _json = {'content-type': 'application/json; charset=utf-8'};
-const _cifraVelha = 'G    D\nQuando eu digo que deixei de te amar\nEm   C\nÉ porque eu te amo';
+const _cifraVelha =
+    'G    D\nQuando eu digo que deixei de te amar\nEm   C\nÉ porque eu te amo';
 const _linkEvidencias = 'https://www.cifraclub.com.br/banda/evidencias/';
 
 Map<String, Object?> _item(String id, String titulo, int ordem,
@@ -108,8 +110,8 @@ Future<_Palco> _abrir(WidgetTester tester,
   });
   final api = ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')
     ..definirTokenArtista('TOKEN');
-  final sequencia = SequenciaDoPalco(
-      api: api, apresentacaoId: _id, vocabulario: vocabulario);
+  final sequencia =
+      SequenciaDoPalco(api: api, apresentacaoId: _id, vocabulario: vocabulario);
   await tester.runAsync(sequencia.carregar);
   await tester.runAsync(() => sequencia.buscarCifras());
   final musica = MusicaDoPalco.doSetlist(
@@ -331,8 +333,7 @@ void main() {
       expect(find.text('Tom F (-2)'), findsOneWidget);
     });
 
-    testWidgets('o tom escolhido fica guardado para a música',
-        (tester) async {
+    testWidgets('o tom escolhido fica guardado para a música', (tester) async {
       await _abrir(tester);
       await tester.tap(find.byTooltip('Subir meio tom'));
       await tester.pumpAndSettle();
@@ -476,9 +477,12 @@ void main() {
         tester.widget<Text>(find.text('É porque eu te amo')).style!.fontSize!;
     final antes = tamanho();
 
-    final centro = tester.getCenter(find.text('Quando eu digo que deixei de te amar'));
-    final um = await tester.startGesture(centro - const Offset(20, 0), pointer: 1);
-    final dois = await tester.startGesture(centro + const Offset(20, 0), pointer: 2);
+    final centro =
+        tester.getCenter(find.text('Quando eu digo que deixei de te amar'));
+    final um =
+        await tester.startGesture(centro - const Offset(20, 0), pointer: 1);
+    final dois =
+        await tester.startGesture(centro + const Offset(20, 0), pointer: 2);
     await tester.pump();
     for (var passo = 0; passo < 5; passo++) {
       await um.moveBy(const Offset(-10, 0));
@@ -594,6 +598,16 @@ void main() {
     await tester.tap(find.byTooltip('Quem sou eu'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(ChoiceChip, 'José'), findsOneWidget);
+    // Cada nome com a bolinha da sua cor, como no roteiro.
+    Color? corDe(String nome) => tester
+        .widgetList<Container>(find.descendant(
+            of: find.widgetWithText(ChoiceChip, nome),
+            matching: find.byType(Container)))
+        .map((caixa) => (caixa.decoration as BoxDecoration?)?.color)
+        .nonNulls
+        .firstOrNull;
+    expect(corDe('João'), corDoCantor(['João', 'Advair'], 'João'));
+    expect(corDe('José'), corInstrumental);
     await tester.tap(find.widgetWithText(ChoiceChip, 'João'));
     await tester.pumpAndSettle();
 

@@ -97,6 +97,20 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                 children: [
                   for (final cantor in cantores)
                     ChoiceChip(
+                      showCheckmark: false,
+                      // A cor da faixa da pessoa, como no roteiro.
+                      avatar: Center(
+                        widthFactor: 1,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: corDaPessoa(
+                                _louvor?.cantores ?? const [], cantor),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
                       label: Text(cantor),
                       selected: cantor == _quemSou,
                       onSelected: (_) => Navigator.of(contexto).pop(cantor),
