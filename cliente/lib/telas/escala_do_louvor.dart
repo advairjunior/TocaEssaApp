@@ -254,6 +254,8 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
               for (final nome in louvor.participantes) ...[
                 const SizedBox(width: EspacoTocaEssa.pequeno),
                 ChoiceChip(
+                  showCheckmark: false,
+                  avatar: _Bolinha(corDaPessoa(louvor.cantores, nome)),
                   label: Text(nome),
                   selected: filtro == nome,
                   onSelected: (_) => setState(() => _filtro = nome),
@@ -324,6 +326,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         children: [
           for (final nome in louvor.cantores)
             InputChip(
+              avatar: _Bolinha(corDoCantor(louvor.cantores, nome)),
               label: Text('$nome · ${pontos[nome] ?? 0}'),
               deleteButtonTooltipMessage: 'Tirar $nome',
               onDeleted: _salvando
@@ -356,6 +359,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         children: [
           for (final solista in louvor.solistas)
             InputChip(
+              avatar: const _Bolinha(corInstrumental),
               label: Text([
                 solista.nome,
                 if (solista.instrumento.isNotEmpty) solista.instrumento,
@@ -672,10 +676,11 @@ class _CartaoDoHino extends StatelessWidget {
                               'Banda',
                             _ => parte.quemCanta,
                           },
+                          // Na cor de quem canta, a mesma da faixa do roteiro.
                           style: texto.labelLarge?.copyWith(
-                            color: parte.deTodos
-                                ? CoresTocaEssa.textoSecundario
-                                : CoresTocaEssa.roxoClaro,
+                            color: parte.definida && !parte.deTodos
+                                ? _corDa(parte)
+                                : CoresTocaEssa.textoSecundario,
                           ),
                         ),
                         const Icon(Icons.chevron_right_rounded,
@@ -691,6 +696,23 @@ class _CartaoDoHino extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Legenda da cor de uma pessoa nos filtros e na aba Pessoas.
+class _Bolinha extends StatelessWidget {
+  const _Bolinha(this.cor);
+
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) => Center(
+        widthFactor: 1,
+        child: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+        ),
+      );
 }
 
 /// Resposta da escolha de uma parte: [cantores] nulo volta à escala.

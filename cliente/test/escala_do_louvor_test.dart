@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/escala_do_louvor.dart';
+import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 const _id = '22222222-2222-2222-2222-222222222222';
@@ -198,6 +199,41 @@ void main() {
 
     await _abrirHino(tester);
     expect(find.text('Estrofe 1'), findsNothing);
+  });
+
+  testWidgets('cada pessoa tem a sua cor, com legenda no filtro e em Pessoas',
+      (tester) async {
+    await _abrir(tester);
+    const cantores = ['João', 'Ana'];
+    Finder bolinha(Finder dono, Color cor) => find.descendant(
+        of: dono,
+        matching: find.byWidgetPredicate((widget) =>
+            widget is Container &&
+            widget.decoration is BoxDecoration &&
+            (widget.decoration! as BoxDecoration).shape == BoxShape.circle &&
+            (widget.decoration! as BoxDecoration).color == cor));
+
+    expect(
+        bolinha(find.widgetWithText(ChoiceChip, 'Ana'),
+            corDoCantor(cantores, 'Ana')),
+        findsOneWidget);
+    expect(bolinha(find.widgetWithText(ChoiceChip, 'José'), corInstrumental),
+        findsOneWidget);
+
+    await _abrirHino(tester);
+    final nome = tester.widget<Text>(find.descendant(
+        of: find.byType(ListTile), matching: find.text('Ana')));
+    expect(nome.style?.color, corDoCantor(cantores, 'Ana'));
+
+    await _irParaPessoas(tester);
+    expect(
+        bolinha(find.widgetWithText(InputChip, 'João · 1'),
+            corDoCantor(cantores, 'João')),
+        findsOneWidget);
+    expect(
+        bolinha(find.widgetWithText(InputChip, 'José · sax tenor · 1'),
+            corInstrumental),
+        findsOneWidget);
   });
 
   testWidgets('o hino de agora aparece marcado', (tester) async {
