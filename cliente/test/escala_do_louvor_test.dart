@@ -247,6 +247,17 @@ void main() {
     expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
   });
 
+  testWidgets('cada hino tem uma faixa com um pedaço por parte',
+      (tester) async {
+    await _abrir(tester);
+
+    final faixa = find.byKey(const ValueKey('faixa-h1'));
+    expect(faixa, findsOneWidget);
+    expect(find.descendant(of: faixa, matching: find.byType(Expanded)),
+        findsNWidgets(5));
+    expect(find.byKey(const ValueKey('faixa-h2')), findsNothing);
+  });
+
   testWidgets('o hino de agora aparece marcado', (tester) async {
     await _abrir(tester, tocados: {'h1'});
 

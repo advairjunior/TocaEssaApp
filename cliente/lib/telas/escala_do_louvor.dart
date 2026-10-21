@@ -576,20 +576,24 @@ class _CartaoDoHino extends StatelessWidget {
                       ),
                       if (hino.partes.isNotEmpty) ...[
                         const SizedBox(height: EspacoTocaEssa.pequeno),
-                        // Uma bolinha por parte, na cor de quem canta.
+                        // Faixa com um pedaço por parte, na cor de quem
+                        // canta: a ordem das vozes do hino de relance.
                         Padding(
                           padding: const EdgeInsets.only(left: 44),
-                          child: Wrap(
-                            spacing: EspacoTocaEssa.mini,
-                            runSpacing: EspacoTocaEssa.mini,
+                          child: Row(
+                            key: ValueKey('faixa-${hino.itemId}'),
                             children: [
-                              for (final parte in hino.partes)
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    color: _corDa(parte),
-                                    shape: BoxShape.circle,
+                              for (final (indice, parte) in hino.partes.indexed)
+                                Expanded(
+                                  child: Container(
+                                    height: 6,
+                                    margin: EdgeInsets.only(
+                                        left: indice == 0 ? 0 : 2),
+                                    decoration: BoxDecoration(
+                                      color: _corDa(parte),
+                                      borderRadius: BorderRadius.circular(
+                                          RaioTocaEssa.pilula),
+                                    ),
                                   ),
                                 ),
                             ],
