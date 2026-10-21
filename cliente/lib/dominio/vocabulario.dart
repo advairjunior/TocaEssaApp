@@ -17,6 +17,7 @@ class Vocabulario {
     required this.proxima,
     required this.buscar,
     required this.nenhuma,
+    required this.todas,
   });
 
   static const musical = Vocabulario._(
@@ -35,6 +36,7 @@ class Vocabulario {
     proxima: 'Próxima música',
     buscar: 'Buscar música',
     nenhuma: 'Nenhuma música',
+    todas: 'Todas',
   );
 
   static const louvor = Vocabulario._(
@@ -53,6 +55,7 @@ class Vocabulario {
     proxima: 'Próximo hino',
     buscar: 'Buscar hino',
     nenhuma: 'Nenhum hino',
+    todas: 'Todos',
   );
 
   final String musica;
@@ -69,6 +72,8 @@ class Vocabulario {
   final String buscar;
   // "Nenhuma música" ou "Nenhum hino", para a busca sem resultado.
   final String nenhuma;
+  // "Todas" ou "Todos", para marcar a lista inteira.
+  final String todas;
 
   /// "Cifra" ou "Letra", para começo de frase.
   String get cifraMaiuscula => cifra[0].toUpperCase() + cifra.substring(1);

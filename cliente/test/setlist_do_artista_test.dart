@@ -178,6 +178,22 @@ Future<List<http.Request>> _abrir(
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
     const comoJson = {'content-type': 'application/json; charset=utf-8'};
+    if (caminho == '/api/artista/repertorios/musicas') {
+      final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      return http.Response(
+          jsonEncode({
+            'repertorio': {
+              'id': 'r9',
+              'artistaId': 'a1',
+              'nome': corpo['nomeNovo'],
+              'musicas': [],
+            },
+            'adicionadas': (corpo['musicas'] as List).length,
+            'jaEstavam': 0,
+          }),
+          200,
+          headers: comoJson);
+    }
     if (requisicao.method == 'DELETE' && caminho.endsWith('/setlist')) {
       lista.clear();
       return http.Response('', 204);
@@ -782,6 +798,35 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Setlist vazia'), findsOneWidget);
+    });
+
+    testWidgets('leva a setlist inteira para um repertório novo',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+      final adicionar = find.text('Adicionar ao repertório');
+      await tester.ensureVisible(adicionar);
+      await tester.tap(adicionar);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Adicionar 3 músicas ao repertório'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'Show · 10/09'), findsOneWidget);
+      await tester.tap(find.text('Criar'));
+      await tester.pumpAndSettle();
+
+      final envio = requisicoes
+          .singleWhere((r) => r.url.path == '/api/artista/repertorios/musicas');
+      expect(jsonDecode(envio.body), {
+        'nomeNovo': 'Show · 10/09',
+        'musicas': [
+          {'titulo': 'Garota de Ipanema', 'artista': 'Banda 1', 'tom': null},
+          {'titulo': 'Velha Infância', 'artista': 'Banda 2', 'tom': 'G'},
+          {'titulo': 'Evidências', 'artista': 'Banda 3', 'tom': null},
+        ],
+      });
+      expect(find.text('3 músicas foram para "Show · 10/09"'), findsOneWidget);
     });
 
     testWidgets('concluir volta a marcar como tocada pela linha',

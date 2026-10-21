@@ -14,6 +14,7 @@ import 'componentes_palco.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import 'acoes_do_palco.dart';
 import 'colar_cifras.dart';
+import 'escolher_para_repertorio.dart';
 import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
 import 'montar_setlist.dart';
@@ -227,6 +228,28 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     }
   }
 
+  /// Toda a setlist marcada: guardar o show como repertório é o mais comum.
+  Future<void> _levarAoRepertorio() {
+    final data = widget.apresentacao.data;
+    return escolherParaRepertorio(
+      context,
+      api: widget.api,
+      titulo: 'Adicionar ao repertório',
+      vocabulario: _v,
+      nomeSugerido: '${widget.apresentacao.nome} · '
+          '${data.day.toString().padLeft(2, '0')}/'
+          '${data.month.toString().padLeft(2, '0')}',
+      opcoes: [
+        for (final item in _sequencia.itens)
+          OpcaoParaRepertorio(musica: (
+            titulo: item.titulo,
+            artista: item.artista,
+            tom: item.tom,
+          )),
+      ],
+    );
+  }
+
   Future<void> _limpar() async {
     final confirmou = await showDialog<bool>(
           context: context,
@@ -416,6 +439,14 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
         ),
       ),
       const SizedBox(height: EspacoTocaEssa.base),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: TextButton.icon(
+          onPressed: _levarAoRepertorio,
+          icon: const Icon(Icons.library_add_rounded),
+          label: const Text('Adicionar ao repertório'),
+        ),
+      ),
       Align(
         alignment: Alignment.centerLeft,
         child: TextButton.icon(
