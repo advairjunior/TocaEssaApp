@@ -129,8 +129,11 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### No palco
 
-- **Salvar a setlist como repertório:** reaproveitar a seleção de um show
-  (ex.: "Confraternização empresa X") em outro.
+- **Salvar a setlist como repertório:** ✅ entregue em 2026-10-21
+  ("Adicionar ao repertório" no Editar da setlist e dos hinos, também
+  para os pedidos do show).
+- **Copiar ou mover música entre repertórios:** reaproveitar a folha
+  "Adicionar ao repertório" a partir do próprio repertório.
 - **Blocos do show:** "1º set · Intervalo · 2º set" na setlist, ligados ao
   botão Intervalo do cronômetro.
 - **Estilo ou energia por música** ("calma", "animada") e filtro ao montar a
@@ -154,7 +157,9 @@ cada uma começa por uma investigação antes de virar plano.
 
 - **Músicas que mais funcionam:** juntar todas as apresentações (hoje o
   ranking de mais pedidas é por apresentação) e cruzar com o repertório:
-  mais pedidas e ainda fora do repertório, mais bem avaliadas.
+  mais pedidas e ainda fora do repertório, mais bem avaliadas. A parte
+  "mais pedidas e fora do repertório" foi entregue em 2026-10-21 (cartão
+  em Meus repertórios); falta a das mais bem avaliadas.
 - **Agenda pública do artista:** página com as próximas apresentações.
 - **Avisar seguidores do próximo show:** depende de Seguir o artista.
 - **Relatório do show para o contratante:** público pelo app, pedidos e

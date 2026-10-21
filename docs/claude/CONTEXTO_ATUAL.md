@@ -1,6 +1,6 @@
 # TocaEssaApp — Contexto atual
 
-> Atualizado em: 2026-10-19
+> Atualizado em: 2026-10-21
 
 ## Arquitetura
 
@@ -63,6 +63,21 @@ arquivo.
   montada a setlist é independente: só correções de título, cantor e tom do
   acervo são repassadas (decisão de 2026-10-13). Rotas privadas
   `/setlist/musicas`, `/setlist/avulsa`, `/setlist/ordem`, `DELETE /setlist/{itemId}`.
+- Levar ao repertório (2026-10-21): a folha `adicionar_ao_repertorio.dart`
+  escolhe um repertório (com "N já estão") ou cria um novo com nome
+  sugerido; a tela `escolher_para_repertorio.dart` marca músicas ("Todas",
+  busca a partir de 10). Rota privada `POST /api/artista/repertorios/musicas`
+  (`{ repertorioId | nomeNovo, musicas }`, devolve `adicionadas` e
+  `jaEstavam`): não repete música e liga as avulsas da setlist à música
+  nova. Entradas: "Adicionar ao repertório" no Editar da setlist/hinos
+  (todas marcadas; nome "Show · dd/mm"); na Fila, selo "Fora do acervo"
+  no pedido de música e "Adicionar pedidos ao repertório" no Histórico e
+  nas Memórias musicais (mais pedidos primeiro, os de fora já marcados;
+  sem alôs nem cancelados; o tom preferido de quem pediu não vai). Em
+  Meus repertórios, cartão "Pedidas pelo público" com as mais pedidas de
+  todos os shows fora do acervo (`GET /api/artista/repertorios/pedidas-fora`).
+- Busca na setlist e nos hinos (a partir de 10): título ou cantor, sem
+  acento; mostra "Nº 12" da achada; some no Editar.
 - Setlist (desde 2026-10-13 é o centro do show, no jeito do iPhone):
   - tocar na música abre o leitor; o círculo à esquerda marca como tocada;
     deslizar para a esquerda (`flutter_slidable`) mostra Cifra (colar no app
