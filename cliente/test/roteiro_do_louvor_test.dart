@@ -109,10 +109,13 @@ void main() {
     expect(find.text('Cristo Jesus, o santo Cordeiro'), findsOneWidget);
     expect(find.text('G        Bm'), findsNothing);
     expect(find.byTooltip('Subir meio tom'), findsNothing);
+    // Fica no topo, sem ocupar a letra de quem só canta.
+    expect(find.widgetWithText(FilterChip, 'Acordes'), findsNothing);
 
-    await tester.tap(find.widgetWithText(FilterChip, 'Acordes'));
+    await tester.tap(find.byTooltip('Mostrar acordes'));
     await tester.pumpAndSettle();
     expect(find.text('G        Bm'), findsOneWidget);
+    expect(find.byTooltip('Esconder acordes'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Subir meio tom'));
     await tester.tap(find.byTooltip('Subir meio tom'));

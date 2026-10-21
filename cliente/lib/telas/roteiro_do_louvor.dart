@@ -193,6 +193,14 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
         actions: [
           if (roteiro != null && !escolhendo) ...[
             IconButton(
+              tooltip: _acordes ? 'Esconder acordes' : 'Mostrar acordes',
+              isSelected: _acordes,
+              icon: const Icon(Icons.music_note_outlined),
+              selectedIcon: const Icon(Icons.music_note_rounded,
+                  color: CoresTocaEssa.roxoClaro),
+              onPressed: _alternarAcordes,
+            ),
+            IconButton(
               tooltip: 'Lista de hinos',
               icon: const Icon(Icons.format_list_numbered_rounded),
               onPressed: () => _mostrarLista(roteiro),
@@ -248,7 +256,6 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
               quemSou: _quemSou ?? '',
               acordes: _acordes,
               tom: _rotuloDoTom(hino, semitons),
-              alternarAcordes: _alternarAcordes,
               mudarTom: (passo) => _mudarTom(hino, passo),
             ),
             trechos: trechosDoHino(
@@ -404,7 +411,7 @@ class _BotaoDaPessoa extends StatelessWidget {
 }
 
 /// Topo do hino, que rola junto com a letra: título, tom, se é o de agora,
-/// quantas partes a pessoa canta e o botão dos acordes para quem toca.
+/// as partes da pessoa e, com os acordes ligados no topo, a troca de tom.
 class _CabecalhoDoHino extends StatelessWidget {
   const _CabecalhoDoHino({
     required this.hino,
@@ -412,7 +419,6 @@ class _CabecalhoDoHino extends StatelessWidget {
     required this.quemSou,
     required this.acordes,
     required this.tom,
-    required this.alternarAcordes,
     required this.mudarTom,
   });
 
@@ -421,7 +427,6 @@ class _CabecalhoDoHino extends StatelessWidget {
   final String quemSou;
   final bool acordes;
   final String? tom;
-  final VoidCallback alternarAcordes;
   final ValueChanged<int> mudarTom;
 
   @override
@@ -441,6 +446,21 @@ class _CabecalhoDoHino extends StatelessWidget {
             if (tom != null) _Selo(texto: tom!, cor: CoresTocaEssa.roxoClaro),
             if (ehAgora)
               const _Selo(texto: 'Agora', cor: CoresTocaEssa.sucesso),
+            // O tom só muda para quem toca, com os acordes ligados.
+            if (acordes) ...[
+              IconButton(
+                tooltip: 'Baixar meio tom',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.remove_rounded),
+                onPressed: () => mudarTom(-1),
+              ),
+              IconButton(
+                tooltip: 'Subir meio tom',
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.add_rounded),
+                onPressed: () => mudarTom(1),
+              ),
+            ],
           ],
         ),
         if (minhas != null) ...[
@@ -451,28 +471,6 @@ class _CabecalhoDoHino extends StatelessWidget {
           ),
         ],
         const SizedBox(height: EspacoTocaEssa.pequeno),
-        Row(
-          children: [
-            FilterChip(
-              label: const Text('Acordes'),
-              selected: acordes,
-              onSelected: (_) => alternarAcordes(),
-            ),
-            if (acordes) ...[
-              const Spacer(),
-              IconButton(
-                tooltip: 'Baixar meio tom',
-                icon: const Icon(Icons.remove_rounded),
-                onPressed: () => mudarTom(-1),
-              ),
-              IconButton(
-                tooltip: 'Subir meio tom',
-                icon: const Icon(Icons.add_rounded),
-                onPressed: () => mudarTom(1),
-              ),
-            ],
-          ],
-        ),
         if (!hino.temLetra) ...[
           const SizedBox(height: EspacoTocaEssa.grande),
           Text(
