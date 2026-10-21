@@ -256,6 +256,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
               quemSou: _quemSou ?? '',
               acordes: _acordes,
               tom: _rotuloDoTom(hino, semitons),
+              semitons: semitons,
               mudarTom: (passo) => _mudarTom(hino, passo),
             ),
             trechos: trechosDoHino(
@@ -410,8 +411,8 @@ class _BotaoDaPessoa extends StatelessWidget {
       );
 }
 
-/// Topo do hino, que rola junto com a letra: título, tom, se é o de agora,
-/// as partes da pessoa e, com os acordes ligados no topo, a troca de tom.
+/// Topo do hino, que rola junto com a letra: título com o "Agora", o tom
+/// (com os acordes ligados no topo, o controle b Tom #) e as partes da pessoa.
 class _CabecalhoDoHino extends StatelessWidget {
   const _CabecalhoDoHino({
     required this.hino,
@@ -419,6 +420,7 @@ class _CabecalhoDoHino extends StatelessWidget {
     required this.quemSou,
     required this.acordes,
     required this.tom,
+    required this.semitons,
     required this.mudarTom,
   });
 
@@ -427,6 +429,7 @@ class _CabecalhoDoHino extends StatelessWidget {
   final String quemSou;
   final bool acordes;
   final String? tom;
+  final int semitons;
   final ValueChanged<int> mudarTom;
 
   @override
@@ -436,33 +439,28 @@ class _CabecalhoDoHino extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(hino.titulo, style: texto.headlineSmall),
-        const SizedBox(height: EspacoTocaEssa.pequeno),
-        Wrap(
-          spacing: EspacoTocaEssa.pequeno,
-          runSpacing: EspacoTocaEssa.mini,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        Row(
+          key: const ValueKey('titulo-do-hino'),
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (tom != null) _Selo(texto: tom!, cor: CoresTocaEssa.roxoClaro),
-            if (ehAgora)
+            Expanded(child: Text(hino.titulo, style: texto.headlineSmall)),
+            if (ehAgora) ...[
+              const SizedBox(width: EspacoTocaEssa.pequeno),
               const _Selo(texto: 'Agora', cor: CoresTocaEssa.sucesso),
-            // O tom só muda para quem toca, com os acordes ligados.
-            if (acordes) ...[
-              IconButton(
-                tooltip: 'Baixar meio tom',
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.remove_rounded),
-                onPressed: () => mudarTom(-1),
-              ),
-              IconButton(
-                tooltip: 'Subir meio tom',
-                visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.add_rounded),
-                onPressed: () => mudarTom(1),
-              ),
             ],
           ],
         ),
+        const SizedBox(height: EspacoTocaEssa.pequeno),
+        // O tom só muda para quem toca, com os acordes ligados.
+        if (acordes)
+          _ControleDoTom(
+            tom: tom ?? 'Tom',
+            original: hino.tom,
+            semitons: semitons,
+            mudarTom: mudarTom,
+          )
+        else if (tom != null)
+          _Selo(texto: tom!, cor: CoresTocaEssa.roxoClaro),
         if (minhas != null) ...[
           const SizedBox(height: EspacoTocaEssa.medio),
           Text(
@@ -478,6 +476,75 @@ class _CabecalhoDoHino extends StatelessWidget {
             style:
                 texto.bodyLarge?.copyWith(color: CoresTocaEssa.textoSecundario),
           ),
+        ],
+      ],
+    );
+  }
+}
+
+/// "b  Tom A (+2)  #" numa pílula só: bemol e sustenido descem e sobem meio
+/// tom; tocar no tom mudado volta ao original.
+class _ControleDoTom extends StatelessWidget {
+  const _ControleDoTom({
+    required this.tom,
+    required this.original,
+    required this.semitons,
+    required this.mudarTom,
+  });
+
+  final String tom;
+  final String? original;
+  final int semitons;
+  final ValueChanged<int> mudarTom;
+
+  @override
+  Widget build(BuildContext context) {
+    final texto = Theme.of(context).textTheme;
+    const cor = CoresTocaEssa.roxoClaro;
+    Widget sinal(String simbolo, String dica, int passo) => IconButton(
+          tooltip: dica,
+          onPressed: () => mudarTom(passo),
+          icon: Text(simbolo,
+              style: texto.headlineSmall?.copyWith(color: cor, height: 1)),
+        );
+    final rotulo = Text(tom,
+        style: texto.titleMedium
+            ?.copyWith(color: cor, fontWeight: FontWeight.w700));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: cor.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+            border: Border.all(color: cor.withValues(alpha: .5)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              sinal('b', 'Baixar meio tom', -1),
+              semitons == 0
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: EspacoTocaEssa.pequeno),
+                      child: rotulo,
+                    )
+                  : Tooltip(
+                      message: 'Voltar ao tom original',
+                      child: TextButton(
+                        onPressed: () => mudarTom(-semitons),
+                        child: rotulo,
+                      ),
+                    ),
+              sinal('#', 'Subir meio tom', 1),
+            ],
+          ),
+        ),
+        if (semitons != 0 && original != null) ...[
+          const SizedBox(height: EspacoTocaEssa.mini),
+          Text('Toque no tom para voltar ao $original',
+              style: texto.labelSmall
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario)),
         ],
       ],
     );

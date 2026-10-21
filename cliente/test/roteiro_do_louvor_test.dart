@@ -116,12 +116,26 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('G        Bm'), findsOneWidget);
     expect(find.byTooltip('Esconder acordes'), findsOneWidget);
+    // Bemol e sustenido como na cifra (Bb, C#): não parece tamanho da letra.
+    expect(find.text('b'), findsOneWidget);
+    expect(find.text('#'), findsOneWidget);
+    expect(find.byIcon(Icons.add_rounded), findsNothing);
+    expect(find.byTooltip('Voltar ao tom original'), findsNothing);
 
     await tester.tap(find.byTooltip('Subir meio tom'));
     await tester.tap(find.byTooltip('Subir meio tom'));
     await tester.pumpAndSettle();
     expect(find.text('A        C#m'), findsOneWidget);
     expect(find.text('Tom A (+2)'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Voltar ao tom original'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tom G'), findsOneWidget);
+    expect(find.text('G        Bm'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Subir meio tom'));
+    await tester.tap(find.byTooltip('Subir meio tom'));
+    await tester.pumpAndSettle();
 
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getBool('louvor_acordes'), isTrue);
@@ -195,6 +209,12 @@ void main() {
 
     expect(find.text('80 · Por Cristo, resgatado'), findsOneWidget);
     expect(find.text('Agora'), findsOneWidget);
+    // "Agora" fica na linha do título, longe do controle do tom.
+    expect(
+        find.descendant(
+            of: find.byKey(const ValueKey('titulo-do-hino')),
+            matching: find.text('Agora')),
+        findsOneWidget);
     // Ao abrir não há aviso: só quando o hino muda.
     expect(find.textContaining('Agora: '), findsNothing);
 
