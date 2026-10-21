@@ -10,7 +10,6 @@ import '../tema/tema_toca_essa.dart';
 import 'adicionar_ao_repertorio.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
-import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import 'escolher_para_repertorio.dart';
 import 'estatisticas_da_apresentacao.dart';
@@ -63,9 +62,7 @@ class _FilaMusicalArtistaState extends State<FilaMusicalArtista> {
   List<Repertorio>? _repertorios;
 
   bool _correspondeAoBusca(GrupoPedidoMusical p) =>
-      _textoBusca.isEmpty ||
-      p.musica.toLowerCase().contains(_textoBusca) ||
-      (p.artista?.toLowerCase().contains(_textoBusca) ?? false);
+      combinaComBusca(_textoBusca, [p.musica, p.artista, p.destinatarioAlo]);
 
   List<GrupoPedidoMusical> get _aguardando => _pedidos
       .where((item) =>

@@ -78,12 +78,8 @@ class _EscolherParaRepertorioState extends State<_EscolherParaRepertorio> {
     super.dispose();
   }
 
-  bool _achada(OpcaoParaRepertorio opcao) {
-    final termo = normalizarMusica(_busca.text);
-    return normalizarMusica(
-            '${opcao.musica.titulo} ${opcao.musica.artista ?? ''}')
-        .contains(termo);
-  }
+  bool _achada(OpcaoParaRepertorio opcao) =>
+      combinaComBusca(_busca.text, [opcao.musica.titulo, opcao.musica.artista]);
 
   void _alternar(int indice) => setState(() => _marcadas.contains(indice)
       ? _marcadas.remove(indice)
@@ -119,13 +115,10 @@ class _EscolherParaRepertorioState extends State<_EscolherParaRepertorio> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (widget.opcoes.length >= _opcoesParaBuscar) ...[
-              TextField(
-                controller: _busca,
-                onChanged: (_) => setState(() {}),
-                decoration: InputDecoration(
-                  hintText: _v.buscar,
-                  prefixIcon: const Icon(Icons.search_rounded),
-                ),
+              CampoDeBusca(
+                controlador: _busca,
+                dica: _v.buscar,
+                aoMudar: (_) => setState(() {}),
               ),
               const SizedBox(height: EspacoTocaEssa.pequeno),
             ],

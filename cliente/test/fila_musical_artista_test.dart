@@ -103,6 +103,16 @@ void main() {
     expect(find.text('Tirar da sequência'), findsOneWidget);
   });
 
+  testWidgets('a busca da fila ignora acento, como a da setlist',
+      (tester) async {
+    await _abrirComSequencia(tester, []);
+
+    await tester.enterText(find.byType(TextField), 'musica na');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Música na fila'), findsOneWidget);
+  });
+
   testWidgets('abas da fila não quebram o texto em celular de 360px',
       (tester) async {
     addTearDown(tester.view.reset);

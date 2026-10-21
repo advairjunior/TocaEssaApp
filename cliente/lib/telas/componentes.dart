@@ -283,3 +283,44 @@ void mostrarErro(BuildContext context, Object erro) {
   ScaffoldMessenger.of(context)
       .showSnackBar(SnackBar(content: Text(erro.toString())));
 }
+
+/// Campo de busca das listas (setlist, fila, acervo): lupa, dica e o X de
+/// limpar, que só aparece com texto. Combine com [combinaComBusca].
+class CampoDeBusca extends StatelessWidget {
+  const CampoDeBusca({
+    super.key,
+    required this.controlador,
+    required this.dica,
+    this.aoMudar,
+  });
+
+  final TextEditingController controlador;
+  final String dica;
+  final ValueChanged<String>? aoMudar;
+
+  void _limpar() {
+    controlador.clear();
+    aoMudar?.call('');
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controlador,
+        builder: (context, valor, _) => TextField(
+          controller: controlador,
+          onChanged: aoMudar,
+          decoration: InputDecoration(
+            hintText: dica,
+            prefixIcon: const Icon(Icons.search_rounded),
+            suffixIcon: valor.text.isEmpty
+                ? null
+                : IconButton(
+                    tooltip: 'Limpar busca',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: _limpar,
+                  ),
+          ),
+        ),
+      );
+}

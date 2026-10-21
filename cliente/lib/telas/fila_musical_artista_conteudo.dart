@@ -53,23 +53,8 @@ extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
     );
   }
 
-  Widget _campoBusca() => TextField(
-        controller: _busca,
-        decoration:
-            decoracaoCampoTocaEssa(dica: 'Buscar música ou artista…').copyWith(
-          prefixIcon: const Icon(Icons.search_rounded, size: 20),
-          suffixIcon: _textoBusca.isNotEmpty
-              ? IconButton(
-                  tooltip: 'Limpar busca',
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  onPressed: () => _busca.clear(),
-                )
-              : null,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          isDense: true,
-        ),
-      );
+  Widget _campoBusca() =>
+      CampoDeBusca(controlador: _busca, dica: 'Buscar música ou artista');
 
   Widget _conteudoEncerrado() => ConteudoMobile(
         filho: Column(

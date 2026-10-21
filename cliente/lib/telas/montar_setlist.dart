@@ -97,8 +97,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
       return [
         for (final repertorio in repertorios)
           for (final musica in repertorio.musicas)
-            if (normalizarMusica('${musica.titulo} ${musica.artista ?? ''}')
-                .contains(termo))
+            if (combinaComBusca(termo, [musica.titulo, musica.artista]))
               (musica, repertorio.nome),
       ];
     }
@@ -191,13 +190,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          TextField(
-            controller: _busca,
-            decoration: const InputDecoration(
-              hintText: 'Buscar no acervo',
-              prefixIcon: Icon(Icons.search_rounded),
-            ),
-          ),
+          CampoDeBusca(controlador: _busca, dica: 'Buscar no acervo'),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(

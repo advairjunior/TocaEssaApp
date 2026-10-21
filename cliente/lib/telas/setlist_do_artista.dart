@@ -353,7 +353,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   String get _termo => _mostraBusca ? normalizarMusica(_busca.text) : '';
 
   bool _achada(ItemDoSetlist item) =>
-      normalizarMusica('${item.titulo} ${item.artista ?? ''}').contains(_termo);
+      combinaComBusca(_termo, [item.titulo, item.artista]);
 
   void _limparBusca() => setState(_busca.clear);
 
@@ -401,20 +401,10 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           ],
           const SizedBox(height: EspacoTocaEssa.base + 4),
           if (_mostraBusca) ...[
-            TextField(
-              controller: _busca,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: _v.buscar,
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _busca.text.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: 'Limpar busca',
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: _limparBusca,
-                      ),
-              ),
+            CampoDeBusca(
+              controlador: _busca,
+              dica: _v.buscar,
+              aoMudar: (_) => setState(() {}),
             ),
             const SizedBox(height: EspacoTocaEssa.base),
           ],

@@ -149,6 +149,15 @@ String normalizarMusica(String? valor) => (valor ?? '')
     .where((parte) => parte.isNotEmpty)
     .join(' ');
 
+/// A busca de todas as listas: sem acento nem maiúscula, em qualquer um dos
+/// [campos] (título, cantor...); busca vazia combina com tudo.
+bool combinaComBusca(String termo, List<String?> campos) {
+  final procurado = normalizarMusica(termo);
+  return procurado.isEmpty ||
+      normalizarMusica(campos.whereType<String>().join(' '))
+          .contains(procurado);
+}
+
 /// Mesmo título e mesmo cantor; sem cantor num dos lados, vale o título.
 bool mesmaMusica(
     String titulo, String? artista, String outroTitulo, String? outroArtista) {
