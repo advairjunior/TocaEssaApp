@@ -367,6 +367,34 @@ public sealed class EscalaDeCantoresTestes
         Assert.Equal(["João", "Todos", "Ana", "Todos", "João", "Todos"], Quem(escolhas));
     }
 
+    [Fact]
+    public void QuemEstaForaDaEscalaNaoEntraNoAutomatico()
+    {
+        var escolhas = EscalaDeCantores.EscalarHino(
+            [Hino(HinoA, estrofes: 3)], HinoA, ["João", "Ana", "Pedro"], [],
+            configuracao: new ConfiguracaoDaEscala(CantoresFora: ["Ana"]));
+
+        Assert.Equal(["João", "João", "Pedro", "Pedro", "João", "Todos"], Quem(escolhas));
+    }
+
+    [Fact]
+    public void SolistaForaNaoPegaSoloMasContinuaCantando()
+    {
+        var hino = new HinoParaEscala(HinoA,
+        [
+            new ParteDoHino(TipoDaParte.Estrofe, "a"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax"),
+            new ParteDoHino(TipoDaParte.Instrumental, "", "Solo sax"),
+        ]);
+        Solista[] solistas = [new Solista("Ana", "sax"), new Solista("Rui", "sax")];
+
+        var escolhas = EscalaDeCantores.EscalarHino([hino], HinoA, ["Ana"], [], solistas,
+            new ConfiguracaoDaEscala(SolistasFora: ["Ana"]));
+
+        // Ana saiu só dos solos: canta a estrofe, e os solos ficam com Rui.
+        Assert.Equal(["Ana", "Rui", "Rui"], Quem(escolhas));
+    }
+
     private static HinoParaEscala Hino(Guid id, int estrofes) =>
         new(id, Enumerable.Range(1, estrofes)
             .SelectMany(numero => new[]

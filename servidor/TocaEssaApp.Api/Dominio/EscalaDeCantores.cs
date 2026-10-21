@@ -27,9 +27,14 @@ public sealed record HinoEscalado(Guid ItemId, IReadOnlyList<ParteEscalada> Part
 /// Como o louvor escala: [MaximoDeCantoresPorHino] nulo ou zero reveza entre
 /// todos os cantores; [CorosComTodos] deixa todo coro para Todos, não só o
 /// final.
+/// [CantoresFora] e [SolistasFora]: quem fica fora do automático desta vez
+/// (continua na lista e pode ser escolhido à mão). Quem canta e toca pode
+/// sair só do microfone ou só dos solos.
 public sealed record ConfiguracaoDaEscala(
     int? MaximoDeCantoresPorHino = null,
-    bool CorosComTodos = false);
+    bool CorosComTodos = false,
+    IReadOnlyList<string>? CantoresFora = null,
+    IReadOnlyList<string>? SolistasFora = null);
 
 /// Pontos de quem canta no microfone: estrofe vale um, coro vale dois.
 public sealed record PlacarDoCantor(string Nome, int Pontos);
@@ -91,6 +96,11 @@ public static class EscalaDeCantores
         ConfiguracaoDaEscala? configuracao = null)
     {
         solistas ??= [];
+        // Quem está fora desta vez não entra no automático.
+        if (configuracao?.CantoresFora is { Count: > 0 } cantoresFora)
+            cantores = cantores.Where(nome => !cantoresFora.Contains(nome)).ToList();
+        if (configuracao?.SolistasFora is { Count: > 0 } solistasFora)
+            solistas = solistas.Where(solista => !solistasFora.Contains(solista.Nome)).ToList();
         var hino = hinos.FirstOrDefault(hino => hino.ItemId == itemId);
         if (hino is null) return [];
 

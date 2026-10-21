@@ -31,10 +31,17 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
         runSpacing: EspacoTocaEssa.pequeno,
         children: [
           for (final nome in louvor.cantores)
-            Chip(
-              avatar: _Bolinha(corDoCantor(louvor.cantores, nome)),
+            _ChipDaPessoa(
+              cor: corDoCantor(louvor.cantores, nome),
               // "1 pt" já diz o que é o número.
-              label: Text('$nome · ${_pontos(pontos[nome] ?? 0)}'),
+              texto: '$nome · ${_pontos(pontos[nome] ?? 0)}',
+              textoFora: '$nome · fora',
+              fora: configuracao.cantoresFora.contains(nome),
+              alternar: _salvando
+                  ? null
+                  : () => _definirConfiguracao(configuracao.copiarCom(
+                      cantoresFora:
+                          _alternado(configuracao.cantoresFora, nome))),
               deleteButtonTooltipMessage: 'Tirar $nome',
               onDeleted: _editandoPessoas && !_salvando
                   ? () => _definirCantores([
@@ -61,13 +68,24 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
         runSpacing: EspacoTocaEssa.pequeno,
         children: [
           for (final solista in louvor.solistas)
-            Chip(
-              avatar: _Bolinha(corDaPessoa(louvor.participantes, solista.nome)),
-              label: Text([
+            _ChipDaPessoa(
+              cor: corDaPessoa(louvor.participantes, solista.nome),
+              texto: [
                 solista.nome,
                 if (solista.instrumento.isNotEmpty) solista.instrumento,
                 _solos(solos[solista.nome] ?? 0),
-              ].join(' · ')),
+              ].join(' · '),
+              textoFora: [
+                solista.nome,
+                if (solista.instrumento.isNotEmpty) solista.instrumento,
+                'fora',
+              ].join(' · '),
+              fora: configuracao.solistasFora.contains(solista.nome),
+              alternar: _salvando
+                  ? null
+                  : () => _definirConfiguracao(configuracao.copiarCom(
+                      solistasFora:
+                          _alternado(configuracao.solistasFora, solista.nome))),
               deleteButtonTooltipMessage: 'Tirar ${solista.nome} dos solos',
               onDeleted: _editandoPessoas && !_salvando
                   ? () => _definirSolistas([
@@ -97,10 +115,8 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
               selected: configuracao.maximoDeCantoresPorHino == maximo,
               onSelected: _salvando
                   ? null
-                  : (_) => _definirConfiguracao(ConfiguracaoDaEscala(
-                        maximoDeCantoresPorHino: maximo,
-                        corosComTodos: configuracao.corosComTodos,
-                      )),
+                  : (_) => _definirConfiguracao(configuracao.copiarCom(
+                      maximoDeCantoresPorHino: () => maximo)),
             ),
         ],
       ),
@@ -110,10 +126,8 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
         value: configuracao.corosComTodos,
         onChanged: _salvando
             ? null
-            : (valor) => _definirConfiguracao(ConfiguracaoDaEscala(
-                  maximoDeCantoresPorHino: configuracao.maximoDeCantoresPorHino,
-                  corosComTodos: valor,
-                )),
+            : (valor) => _definirConfiguracao(
+                configuracao.copiarCom(corosComTodos: valor)),
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
       Align(
@@ -131,3 +145,47 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
 String _pontos(int pontos) => pontos == 1 ? '1 pt' : '$pontos pts';
 
 String _solos(int solos) => solos == 1 ? '1 solo' : '$solos solos';
+
+/// Lista com [nome] tirado, se estava, ou posto, se não estava.
+List<String> _alternado(List<String> nomes, String nome) => nomes.contains(nome)
+    ? [
+        for (final outro in nomes)
+          if (outro != nome) outro
+      ]
+    : [...nomes, nome];
+
+/// Nome na aba Pessoas: tocar tira ou põe a pessoa no automático; quem está
+/// fora fica apagado, com "fora" no lugar dos pontos. O × de tirar da lista
+/// só aparece no Editar.
+class _ChipDaPessoa extends StatelessWidget {
+  const _ChipDaPessoa({
+    required this.cor,
+    required this.texto,
+    required this.textoFora,
+    required this.fora,
+    required this.alternar,
+    required this.deleteButtonTooltipMessage,
+    required this.onDeleted,
+  });
+
+  final Color cor;
+  final String texto;
+  final String textoFora;
+  final bool fora;
+  final VoidCallback? alternar;
+  final String deleteButtonTooltipMessage;
+  final VoidCallback? onDeleted;
+
+  @override
+  Widget build(BuildContext context) => InputChip(
+        avatar: Opacity(opacity: fora ? .35 : 1, child: _Bolinha(cor)),
+        label: Text(fora ? textoFora : texto),
+        labelStyle:
+            fora ? const TextStyle(color: CoresTocaEssa.textoSecundario) : null,
+        tooltip: fora ? 'Voltar ao automático' : 'Tirar do automático',
+        // Sem onPressed o chip ficaria cinza, com cara de desativado.
+        onPressed: alternar ?? () {},
+        deleteButtonTooltipMessage: deleteButtonTooltipMessage,
+        onDeleted: onDeleted,
+      );
+}

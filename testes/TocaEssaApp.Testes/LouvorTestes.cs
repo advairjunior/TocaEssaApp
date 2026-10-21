@@ -403,6 +403,34 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void QuemEstaForaDaEscalaFicaGuardadoEOAutomaticoPulaEle()
+    {
+        var arquivo = Path.Combine(Path.GetTempPath(), $"tocaessa-louvor-fora-{Guid.NewGuid():N}.db");
+        try
+        {
+            var cenario = CriarCenario(arquivo);
+            cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+            cenario.Repo.DefinirConfiguracaoDoLouvor(cenario.Token, cenario.Show.Id,
+                new ConfiguracaoDaEscala(CantoresFora: ["Ana"], SolistasFora: ["José"]));
+
+            var reiniciado = new RepositorioTocaEssa(arquivo);
+            var configuracao = reiniciado.ObterLouvor(cenario.Token, cenario.Show.Id).Configuracao;
+            var louvor = reiniciado.EscalarTodosOsHinosDoLouvor(cenario.Token, cenario.Show.Id);
+
+            Assert.Equal(["Ana"], configuracao.CantoresFora!);
+            Assert.Equal(["José"], configuracao.SolistasFora!);
+            Assert.DoesNotContain(louvor.Hinos.SelectMany(hino => hino.Partes),
+                parte => parte.Cantores.Contains("Ana"));
+            // Continua na lista: só não entra no automático.
+            Assert.Equal(["João", "Ana"], louvor.Cantores);
+        }
+        finally
+        {
+            ExcluirBanco(arquivo);
+        }
+    }
+
+    [Fact]
     public void LouvorSobreviveAoReinicioEBancoAntigoGanhaAsColunas()
     {
         var arquivo = Path.Combine(Path.GetTempPath(), $"tocaessa-louvor-{Guid.NewGuid():N}.db");

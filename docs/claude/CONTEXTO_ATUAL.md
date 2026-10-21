@@ -293,6 +293,10 @@ proprietário:
   rotas `GET /api/artista/cifras/compartilhar` (privada) e
   `GET /api/publico/cifras/{codigo}` (pública, nova). O leitor busca o
   código ao abrir a página: no iPhone o share só abre direto no toque.
+- Quem fica fora do automático: na aba Pessoas, tocar no nome (cantor ou
+  solista) põe "fora" sem tirar da lista; `ConfiguracaoDaEscala.CantoresFora`
+  e `SolistasFora` (JSON na configuração do louvor, sem coluna nova). Quem
+  canta e toca pode sair só de um dos dois. A escala feita não muda sozinha.
 - "Limpar escala" no resumo da Escala (com confirmação): todas as partes
   ficam sem ninguém, inclusive as trocadas à mão; rota
   `DELETE /api/apresentacoes/{id}/louvor/escala`.

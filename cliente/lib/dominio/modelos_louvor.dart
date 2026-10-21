@@ -137,14 +137,36 @@ class ConfiguracaoDaEscala {
   const ConfiguracaoDaEscala({
     this.maximoDeCantoresPorHino,
     this.corosComTodos = false,
+    this.cantoresFora = const [],
+    this.solistasFora = const [],
   });
 
   final int? maximoDeCantoresPorHino;
   final bool corosComTodos;
+  // Quem fica fora do automático desta vez, sem sair da lista.
+  final List<String> cantoresFora;
+  final List<String> solistasFora;
+
+  ConfiguracaoDaEscala copiarCom({
+    int? Function()? maximoDeCantoresPorHino,
+    bool? corosComTodos,
+    List<String>? cantoresFora,
+    List<String>? solistasFora,
+  }) =>
+      ConfiguracaoDaEscala(
+        maximoDeCantoresPorHino: maximoDeCantoresPorHino == null
+            ? this.maximoDeCantoresPorHino
+            : maximoDeCantoresPorHino(),
+        corosComTodos: corosComTodos ?? this.corosComTodos,
+        cantoresFora: cantoresFora ?? this.cantoresFora,
+        solistasFora: solistasFora ?? this.solistasFora,
+      );
 
   Map<String, Object?> paraJson() => {
         'maximoDeCantoresPorHino': maximoDeCantoresPorHino,
         'corosComTodos': corosComTodos,
+        'cantoresFora': cantoresFora,
+        'solistasFora': solistasFora,
       };
 
   factory ConfiguracaoDaEscala.deJson(Map<String, dynamic>? json) =>
@@ -152,6 +174,14 @@ class ConfiguracaoDaEscala {
         maximoDeCantoresPorHino:
             (json?['maximoDeCantoresPorHino'] as num?)?.toInt(),
         corosComTodos: json?['corosComTodos'] as bool? ?? false,
+        cantoresFora: [
+          for (final nome in json?['cantoresFora'] as List<dynamic>? ?? [])
+            nome as String,
+        ],
+        solistasFora: [
+          for (final nome in json?['solistasFora'] as List<dynamic>? ?? [])
+            nome as String,
+        ],
       );
 }
 

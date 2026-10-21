@@ -229,11 +229,11 @@ void main() {
 
     await _irParaPessoas(tester);
     expect(
-        bolinha(find.widgetWithText(Chip, 'João · 1 pt'),
+        bolinha(find.widgetWithText(InputChip, 'João · 1 pt'),
             corDoCantor(cantores, 'João')),
         findsOneWidget);
     expect(
-        bolinha(find.widgetWithText(Chip, 'José · sax tenor · 1 solo'),
+        bolinha(find.widgetWithText(InputChip, 'José · sax tenor · 1 solo'),
             corDaPessoa(['João', 'Ana', 'José'], 'José')),
         findsOneWidget);
   });
@@ -345,6 +345,48 @@ void main() {
     expect(find.textContaining('O número é de'), findsNothing);
     expect(find.textContaining('Vale para os próximos'), findsNothing);
     expect(find.text('80 · Por Cristo, resgatado'), findsNothing);
+  });
+
+  testWidgets('tocar no nome tira do automático e tocar de novo traz de volta',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
+    Map<String, dynamic> configuracao() => _corpo(requisicoes.lastWhere(
+        (r) => r.url.path == '/api/apresentacoes/$_id/louvor/configuracao'));
+
+    await tester.tap(find.text('Ana · 1 pt'));
+    await tester.pumpAndSettle();
+    expect(configuracao()['cantoresFora'], ['Ana']);
+    // Continua na lista, apagada, com "fora" no lugar dos pontos.
+    expect(find.text('Ana · fora'), findsOneWidget);
+
+    await tester.tap(find.text('José · sax tenor · 1 solo'));
+    await tester.pumpAndSettle();
+    expect(configuracao()['solistasFora'], ['José']);
+    expect(configuracao()['cantoresFora'], ['Ana']);
+    expect(find.text('José · sax tenor · fora'), findsOneWidget);
+
+    await tester.tap(find.text('Ana · fora'));
+    await tester.pumpAndSettle();
+    expect(configuracao()['cantoresFora'], isEmpty);
+    expect(find.text('Ana · 1 pt'), findsOneWidget);
+  });
+
+  testWidgets('mudar como escalar não traz de volta quem está fora',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
+    Map<String, dynamic> configuracao() => _corpo(requisicoes.lastWhere(
+        (r) => r.url.path == '/api/apresentacoes/$_id/louvor/configuracao'));
+
+    await tester.tap(find.text('Ana · 1 pt'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.widgetWithText(ChoiceChip, '2'));
+    await tester.tap(find.widgetWithText(ChoiceChip, '2'));
+    await tester.pumpAndSettle();
+
+    expect(configuracao()['maximoDeCantoresPorHino'], 2);
+    expect(configuracao()['cantoresFora'], ['Ana']);
   });
 
   testWidgets('tirar alguém só no Editar, longe de um toque sem querer',
@@ -481,8 +523,12 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, '2'));
     await tester.pumpAndSettle();
 
-    expect(
-        configuracao(), {'maximoDeCantoresPorHino': 2, 'corosComTodos': false});
+    expect(configuracao(), {
+      'maximoDeCantoresPorHino': 2,
+      'corosComTodos': false,
+      'cantoresFora': [],
+      'solistasFora': []
+    });
     expect(selecionado('2'), isTrue);
     expect(selecionado('Sem limite'), isFalse);
 
@@ -490,13 +536,21 @@ void main() {
     await tester.tap(find.text('Todos cantam os coros'));
     await tester.pumpAndSettle();
 
-    expect(
-        configuracao(), {'maximoDeCantoresPorHino': 2, 'corosComTodos': true});
+    expect(configuracao(), {
+      'maximoDeCantoresPorHino': 2,
+      'corosComTodos': true,
+      'cantoresFora': [],
+      'solistasFora': []
+    });
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Sem limite'));
     await tester.pumpAndSettle();
-    expect(configuracao(),
-        {'maximoDeCantoresPorHino': null, 'corosComTodos': true});
+    expect(configuracao(), {
+      'maximoDeCantoresPorHino': null,
+      'corosComTodos': true,
+      'cantoresFora': [],
+      'solistasFora': []
+    });
   });
 
   testWidgets('mostra, acrescenta e tira quem toca os solos', (tester) async {

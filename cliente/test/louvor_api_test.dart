@@ -174,6 +174,8 @@ void main() {
               'configuracao': {
                 'maximoDeCantoresPorHino': 2,
                 'corosComTodos': true,
+                'cantoresFora': ['Ana'],
+                'solistasFora': ['José'],
               },
             }),
             200,
@@ -184,17 +186,28 @@ void main() {
     final louvor = await api.definirConfiguracaoDoLouvor(
         'a1',
         const ConfiguracaoDaEscala(
-            maximoDeCantoresPorHino: 2, corosComTodos: true));
+            maximoDeCantoresPorHino: 2,
+            corosComTodos: true,
+            cantoresFora: ['Ana'],
+            solistasFora: ['José']));
 
     expect(pedida.method, 'PUT');
     expect(pedida.url.path, '/api/apresentacoes/a1/louvor/configuracao');
-    expect(jsonDecode(pedida.body),
-        {'maximoDeCantoresPorHino': 2, 'corosComTodos': true});
+    expect(jsonDecode(pedida.body), {
+      'maximoDeCantoresPorHino': 2,
+      'corosComTodos': true,
+      'cantoresFora': ['Ana'],
+      'solistasFora': ['José'],
+    });
     expect(louvor.configuracao.maximoDeCantoresPorHino, 2);
+    expect(louvor.configuracao.cantoresFora, ['Ana']);
+    expect(louvor.configuracao.solistasFora, ['José']);
     expect(louvor.configuracao.corosComTodos, isTrue);
 
     final semConfiguracao = LouvorDoArtista.deJson(_louvorJson);
     expect(semConfiguracao.configuracao.maximoDeCantoresPorHino, isNull);
     expect(semConfiguracao.configuracao.corosComTodos, isFalse);
+    // Servidor antigo, sem as listas: ninguém fora.
+    expect(semConfiguracao.configuracao.cantoresFora, isEmpty);
   });
 }
