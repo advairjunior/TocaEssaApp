@@ -78,6 +78,8 @@ Future<List<http.Request>> _abrir(
   StatusApresentacao status = StatusApresentacao.emAndamento,
   TipoApresentacao tipo = TipoApresentacao.publica,
   Map<String, Object?>? relogio,
+  // Títulos que já estão em algum repertório; por padrão, toda a setlist.
+  List<String>? noAcervo,
 }) async {
   _aSeguirNoServidor = [...pedidosASeguir];
   final requisicoes = <http.Request>[];
@@ -95,6 +97,9 @@ Future<List<http.Request>> _abrir(
           _item('2', 'Velha Infância', 2, tom: 'G'),
           _item('3', 'Evidências', 3),
         ],
+  ];
+  final acervo = [
+    ...noAcervo ?? [for (final item in lista) item['titulo'] as String]
   ];
   final cliente = MockClient((requisicao) async {
     requisicoes.add(requisicao);
@@ -178,8 +183,31 @@ Future<List<http.Request>> _abrir(
           headers: {'content-type': 'application/json; charset=utf-8'});
     }
     const comoJson = {'content-type': 'application/json; charset=utf-8'};
+    if (caminho == '/api/artista/repertorios') {
+      return http.Response(
+          jsonEncode([
+            {
+              'id': 'r1',
+              'artistaId': 'a1',
+              'nome': 'Barzinho',
+              'musicas': [
+                for (final (i, titulo) in acervo.indexed)
+                  {
+                    'id': 'm$i',
+                    'repertorioId': 'r1',
+                    'titulo': titulo,
+                    'ordem': i + 1,
+                  },
+              ],
+            },
+          ]),
+          200,
+          headers: comoJson);
+    }
     if (caminho == '/api/artista/repertorios/musicas') {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
+      acervo.addAll(
+          [for (final m in corpo['musicas'] as List) m['titulo'] as String]);
       return http.Response(
           jsonEncode({
             'repertorio': {
@@ -784,14 +812,13 @@ void main() {
           ['Garota de Ipanema', 'Evidências', 'Velha Infância']);
     });
 
-    testWidgets('limpar pede confirmação e esvazia a setlist', (tester) async {
+    testWidgets('limpar fica no menu, pede confirmação e esvazia a setlist',
+        (tester) async {
       await _abrir(tester);
 
-      await tester.tap(find.text('Editar'));
+      await tester.tap(find.byTooltip('Mais opções'));
       await tester.pumpAndSettle();
-      final limpar = find.text('Limpar setlist');
-      await tester.ensureVisible(limpar);
-      await tester.tap(limpar);
+      await tester.tap(find.text('Limpar setlist'));
       await tester.pumpAndSettle();
       expect(find.text('Limpar a setlist?'), findsOneWidget);
       await tester.tap(find.text('Limpar'));
@@ -800,15 +827,23 @@ void main() {
       expect(find.text('Setlist vazia'), findsOneWidget);
     });
 
-    testWidgets('leva a setlist inteira para um repertório novo',
-        (tester) async {
-      final requisicoes = await _abrir(tester);
+    testWidgets('o Editar fica só com arrastar e remover', (tester) async {
+      await _abrir(tester);
 
       await tester.tap(find.text('Editar'));
       await tester.pumpAndSettle();
-      final adicionar = find.text('Adicionar ao repertório');
-      await tester.ensureVisible(adicionar);
-      await tester.tap(adicionar);
+
+      expect(find.text('Limpar setlist'), findsNothing);
+      expect(find.text('Adicionar ao repertório'), findsNothing);
+    });
+
+    testWidgets('pelo menu, leva a setlist inteira para um repertório novo',
+        (tester) async {
+      final requisicoes = await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Mais opções'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Adicionar ao repertório'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Adicionar 3 músicas ao repertório'));
       await tester.pumpAndSettle();
@@ -840,6 +875,53 @@ void main() {
 
       expect(find.byTooltip('Remover da setlist'), findsNothing);
       expect(find.text('Editar'), findsOneWidget);
+    });
+  });
+
+  group('fora do repertório', () {
+    testWidgets('avisa quantas estão fora e marca a linha de cada uma',
+        (tester) async {
+      await _abrir(tester, noAcervo: ['Garota de Ipanema']);
+
+      expect(find.text('2 músicas fora do repertório'), findsOneWidget);
+      expect(find.text('Banda 3 · fora do repertório'), findsOneWidget);
+      expect(find.text('Banda 2 · Tom G · fora do repertório'), findsOneWidget);
+      expect(find.text('Banda 1 · fora do repertório'), findsNothing);
+    });
+
+    testWidgets('com todas no acervo, não avisa nem marca', (tester) async {
+      await _abrir(tester);
+
+      expect(find.textContaining('fora do repertório'), findsNothing);
+    });
+
+    testWidgets('Adicionar leva só as de fora e o aviso some', (tester) async {
+      final requisicoes = await _abrir(tester, noAcervo: ['Garota de Ipanema']);
+
+      await tester.tap(find.text('Adicionar'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Adicionar 2 músicas ao repertório'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Barzinho'));
+      await tester.pumpAndSettle();
+
+      final envio = requisicoes
+          .singleWhere((r) => r.url.path == '/api/artista/repertorios/musicas');
+      expect([
+        for (final m in (jsonDecode(envio.body) as Map)['musicas'] as List)
+          m['titulo']
+      ], [
+        'Velha Infância',
+        'Evidências'
+      ]);
+      expect(find.textContaining('fora do repertório'), findsNothing);
+    });
+
+    testWidgets('no louvor fala de hinos', (tester) async {
+      await _abrir(tester,
+          tipo: TipoApresentacao.louvor, noAcervo: ['Garota de Ipanema']);
+
+      expect(find.text('2 hinos fora do repertório'), findsOneWidget);
     });
   });
 
@@ -1079,11 +1161,9 @@ void main() {
     testWidgets('lista vazia e limpar falam de hinos', (tester) async {
       await _abrir(tester, tipo: TipoApresentacao.louvor);
 
-      await tester.tap(find.text('Editar'));
+      await tester.tap(find.byTooltip('Mais opções'));
       await tester.pumpAndSettle();
-      final limpar = find.text('Limpar lista de hinos');
-      await tester.ensureVisible(limpar);
-      await tester.tap(limpar);
+      await tester.tap(find.text('Limpar lista de hinos'));
       await tester.pumpAndSettle();
       expect(find.text('Limpar a lista de hinos?'), findsOneWidget);
       expect(

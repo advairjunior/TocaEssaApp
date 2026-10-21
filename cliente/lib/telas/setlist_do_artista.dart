@@ -66,6 +66,8 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   // Busca pelo título ou cantor; com muitas músicas, rolar cansa.
   final _busca = TextEditingController();
   static const _musicasParaBuscar = 10;
+  // Acervo do artista, para avisar o que está fora dele.
+  List<Repertorio>? _repertorios;
   // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
   RelogioDoShow? _relogio;
 
@@ -77,6 +79,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     super.initState();
     _carregar();
     _carregarRelogio();
+    _carregarRepertorios();
     // Acompanha o que os outros aparelhos da banda fazem no show.
     _tempoReal = AssinaturaTempoReal(
       widget.api.enderecoTempoReal(widget.apresentacao.codigo),
@@ -228,10 +231,28 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     }
   }
 
-  /// Toda a setlist marcada: guardar o show como repertório é o mais comum.
-  Future<void> _levarAoRepertorio() {
+  Future<void> _carregarRepertorios() async {
+    try {
+      final repertorios = await widget.api.listarRepertorios();
+      if (mounted) setState(() => _repertorios = repertorios);
+    } catch (_) {
+      // Sem o acervo, a setlist segue sem o aviso de fora do repertório.
+    }
+  }
+
+  /// Música que não está em nenhum repertório; nada é marcado enquanto o
+  /// acervo não chega.
+  bool _foraDoRepertorio(ItemDoSetlist item) =>
+      _repertorios?.every((repertorio) => !repertorio.musicas.any((musica) =>
+          mesmaMusica(
+              musica.titulo, musica.artista, item.titulo, item.artista))) ??
+      false;
+
+  /// Leva [itens] (toda a setlist, se nulo) com todas marcadas: guardar o
+  /// show como repertório é o mais comum.
+  Future<void> _levarAoRepertorio([List<ItemDoSetlist>? itens]) async {
     final data = widget.apresentacao.data;
-    return escolherParaRepertorio(
+    await escolherParaRepertorio(
       context,
       api: widget.api,
       titulo: 'Adicionar ao repertório',
@@ -240,7 +261,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           '${data.day.toString().padLeft(2, '0')}/'
           '${data.month.toString().padLeft(2, '0')}',
       opcoes: [
-        for (final item in _sequencia.itens)
+        for (final item in itens ?? _sequencia.itens)
           OpcaoParaRepertorio(musica: (
             titulo: item.titulo,
             artista: item.artista,
@@ -248,6 +269,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           )),
       ],
     );
+    if (mounted) await _carregarRepertorios();
   }
 
   Future<void> _limpar() async {
@@ -340,6 +362,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     final pedidosNaFila = _sequencia.pedidosNaFila;
     final buscando = _termo.isNotEmpty;
     final itens = _sequencia.itens;
+    final foraDoRepertorio = itens.where(_foraDoRepertorio).toList();
     return ConteudoMobile(
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -355,9 +378,25 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           ],
           if (_sequencia.semCifra.isNotEmpty) ...[
             const SizedBox(height: EspacoTocaEssa.base),
-            _AvisoSemCifra(
+            _Aviso(
+              icone: Icons.error_outline_rounded,
+              cor: CoresTocaEssa.atencao,
               texto: _v.semCifra(_sequencia.semCifra.length),
-              colar: _colarCifras,
+              rotulo: 'Colar',
+              acao: _colarCifras,
+            ),
+          ],
+          if (foraDoRepertorio.isNotEmpty) ...[
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            _Aviso(
+              icone: Icons.library_add_rounded,
+              cor: CoresTocaEssa.roxoClaro,
+              texto: foraDoRepertorio.length == 1
+                  ? '1 ${_v.musica} fora do repertório'
+                  : '${foraDoRepertorio.length} ${_v.musicas} '
+                      'fora do repertório',
+              rotulo: 'Adicionar',
+              acao: () => _levarAoRepertorio(foraDoRepertorio),
             ),
           ],
           const SizedBox(height: EspacoTocaEssa.base + 4),
@@ -397,6 +436,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
                         item: item,
                         // Achada pela busca, mostra onde está na ordem.
                         posicao: buscando ? indice + 1 : null,
+                        foraDoRepertorio: foraDoRepertorio.contains(item),
                         vocabulario: _v,
                         salvando: _sequencia.salvando,
                         eProxima: item.id == proxima?.id,
@@ -436,24 +476,6 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
           vocabulario: _v,
           remover: () => _remover(itens[indice]),
           alca: alca,
-        ),
-      ),
-      const SizedBox(height: EspacoTocaEssa.base),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _levarAoRepertorio,
-          icon: const Icon(Icons.library_add_rounded),
-          label: const Text('Adicionar ao repertório'),
-        ),
-      ),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: _limpar,
-          style: TextButton.styleFrom(foregroundColor: CoresTocaEssa.rosa),
-          icon: const Icon(Icons.delete_sweep_outlined),
-          label: Text('Limpar ${_v.setlist}'),
         ),
       ),
     ];
@@ -520,6 +542,33 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               onPressed: _editando ? null : _montar,
               icon: const Icon(Icons.add_rounded),
             ),
+            // Salvar no repertório e limpar, à vista e longe de um toque
+            // acidental.
+            PopupMenuButton<VoidCallback>(
+              tooltip: 'Mais opções',
+              icon: const Icon(Icons.more_horiz_rounded),
+              onSelected: (acao) => acao(),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _levarAoRepertorio,
+                  child: const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.library_add_rounded),
+                    title: Text('Adicionar ao repertório'),
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _limpar,
+                  child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.delete_sweep_outlined,
+                        color: CoresTocaEssa.rosa),
+                    title: Text('Limpar ${_v.setlist}',
+                        style: const TextStyle(color: CoresTocaEssa.rosa)),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         const SizedBox(height: EspacoTocaEssa.pequeno),
@@ -579,14 +628,23 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
       );
 }
 
-/// Avisa, antes do show, quantas músicas que faltam tocar estão sem cifra,
-/// para o artista não precisar escolher cifra no meio da apresentação.
-class _AvisoSemCifra extends StatelessWidget {
-  const _AvisoSemCifra({required this.texto, required this.colar});
+/// Faixa de aviso com atalho: quantas músicas que faltam tocar estão sem
+/// cifra (para não escolher cifra no meio do show) ou fora do repertório.
+class _Aviso extends StatelessWidget {
+  const _Aviso({
+    required this.icone,
+    required this.cor,
+    required this.texto,
+    required this.rotulo,
+    required this.acao,
+  });
 
+  final IconData icone;
+  final Color cor;
   // "2 músicas sem cifra" ou, no louvor, "2 hinos sem letra".
   final String texto;
-  final VoidCallback colar;
+  final String rotulo;
+  final VoidCallback acao;
 
   @override
   Widget build(BuildContext context) {
@@ -598,12 +656,12 @@ class _AvisoSemCifra extends StatelessWidget {
         EspacoTocaEssa.pequeno,
       ),
       decoration: BoxDecoration(
-        color: CoresTocaEssa.atencao.withValues(alpha: .12),
+        color: cor.withValues(alpha: .12),
         borderRadius: BorderRadius.circular(RaioTocaEssa.campo),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: CoresTocaEssa.atencao),
+          Icon(icone, color: cor),
           const SizedBox(width: EspacoTocaEssa.pequeno),
           Expanded(
             child: Text(
@@ -611,7 +669,7 @@ class _AvisoSemCifra extends StatelessWidget {
               style: Theme.of(context).textTheme.titleSmall,
             ),
           ),
-          TextButton(onPressed: colar, child: const Text('Colar')),
+          TextButton(onPressed: acao, child: Text(rotulo)),
         ],
       ),
     );
@@ -746,6 +804,7 @@ class _LinhaSetlist extends StatelessWidget {
   const _LinhaSetlist({
     required this.item,
     this.posicao,
+    this.foraDoRepertorio = false,
     required this.vocabulario,
     required this.salvando,
     required this.eProxima,
@@ -760,6 +819,8 @@ class _LinhaSetlist extends StatelessWidget {
   final ItemDoSetlist item;
   // "Nº 12" quando a linha aparece pela busca.
   final int? posicao;
+  // Não está em nenhum repertório do artista.
+  final bool foraDoRepertorio;
   final Vocabulario vocabulario;
   final bool salvando;
   final bool eProxima;
@@ -779,6 +840,7 @@ class _LinhaSetlist extends StatelessWidget {
       if (posicao != null) 'Nº $posicao',
       if (item.artista != null) item.artista!,
       if (item.tom != null) 'Tom ${item.tom}',
+      if (foraDoRepertorio) 'fora do repertório',
     ].join(' · ');
     return Slidable(
       key: ValueKey(item.id),

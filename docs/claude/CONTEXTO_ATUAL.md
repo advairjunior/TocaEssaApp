@@ -69,13 +69,17 @@ arquivo.
   busca a partir de 10). Rota privada `POST /api/artista/repertorios/musicas`
   (`{ repertorioId | nomeNovo, musicas }`, devolve `adicionadas` e
   `jaEstavam`): não repete música e liga as avulsas da setlist à música
-  nova. Entradas: "Adicionar ao repertório" no Editar da setlist/hinos
+  nova. Entradas: "Adicionar ao repertório" no menu "⋯" da setlist/hinos
   (todas marcadas; nome "Show · dd/mm"); na Fila, selo "Fora do acervo"
   no pedido de música e "Adicionar pedidos ao repertório" no Histórico e
   nas Memórias musicais (mais pedidos primeiro, os de fora já marcados;
   sem alôs nem cancelados; o tom preferido de quem pediu não vai). Em
   Meus repertórios, cartão "Pedidas pelo público" com as mais pedidas de
   todos os shows fora do acervo (`GET /api/artista/repertorios/pedidas-fora`).
+- Setlist e hinos mostram o que está fora dos repertórios: faixa "5 músicas
+  fora do repertório · Adicionar" abaixo do aviso de cifras (leva só essas)
+  e "fora do repertório" na linha da música. "Limpar setlist" também foi
+  para o menu "⋯"; o Editar ficou só com arrastar e remover.
 - Busca na setlist e nos hinos (a partir de 10): título ou cantor, sem
   acento; mostra "Nº 12" da achada; some no Editar.
 - Setlist (desde 2026-10-13 é o centro do show, no jeito do iPhone):
