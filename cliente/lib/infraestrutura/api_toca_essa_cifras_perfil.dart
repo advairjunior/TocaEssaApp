@@ -43,6 +43,31 @@ mixin _ApiCifrasPerfil on _ApiTocaEssaBase {
         .toList();
   }
 
+  /// Código do link de compartilhar a cifra colada da música.
+  Future<String> obterCodigoParaCompartilharCifra(
+      String musica, String? artista) async {
+    final uri = Uri.parse('$_enderecoBase/api/artista/cifras/compartilhar')
+        .replace(queryParameters: {
+      'musica': musica,
+      if (artista != null && artista.trim().isNotEmpty) 'artista': artista,
+    });
+    final resposta =
+        await _cliente.get(uri, headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as Map<String, dynamic>)['codigo']
+        as String;
+  }
+
+  /// Cifra aberta pelo link, sem conta.
+  Future<CifraCompartilhada> obterCifraCompartilhada(String codigo) async {
+    final resposta = await _cliente.get(
+        Uri.parse('$_enderecoBase/api/publico/cifras/${codigo.trim()}'),
+        headers: _cabecalhos());
+    _validar(resposta);
+    return CifraCompartilhada.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
   /// Salva a letra e cifra coladas no app; texto vazio apaga.
   Future<ResultadoCifraDoArtista> salvarCifraEmTexto(
       String musica, String? artista, String texto) async {

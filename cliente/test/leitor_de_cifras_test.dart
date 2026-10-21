@@ -78,6 +78,13 @@ Future<_Palco> _abrir(WidgetTester tester,
       return http.Response(jsonEncode(palco.itens[indice]), 200,
           headers: _json);
     }
+    if (caminho.endsWith('/cifras/compartilhar')) {
+      final musica = requisicao.url.queryParameters['musica'];
+      return palco.textos.containsKey(musica)
+          ? http.Response(jsonEncode({'codigo': 'c0d1g0-$musica'}), 200,
+              headers: _json)
+          : http.Response('', 404);
+    }
     if (caminho.endsWith('/cifras/texto')) {
       final corpo = jsonDecode(requisicao.body) as Map<String, dynamic>;
       palco.textos[corpo['musica'] as String] = corpo['texto'] as String;
@@ -670,6 +677,31 @@ void main() {
     testWidgets('sem o código do show, não oferece compartilhar',
         (tester) async {
       await _abrir(tester, vocabulario: Vocabulario.louvor, louvor: louvor);
+
+      expect(find.byTooltip('Compartilhar'), findsNothing);
+    });
+  });
+
+  group('compartilhar a cifra fora do louvor', () {
+    testWidgets('manda o link da cifra colada', (tester) async {
+      final enviados = <(String, String)>[];
+      await _abrir(tester, cifraDaVelha: 'G   D\nLetra', codigo: 'ABC123',
+          compartilhar: (titulo, url) async {
+        enviados.add((titulo, url));
+        return true;
+      });
+
+      await tester.tap(find.byTooltip('Compartilhar'));
+      await tester.pumpAndSettle();
+
+      final (titulo, url) = enviados.single;
+      expect(titulo, 'Velha Infância');
+      expect(url, endsWith('/#/cifra/c0d1g0-Velha Infância'));
+    });
+
+    testWidgets('sem cifra colada, não há o que compartilhar', (tester) async {
+      // Evidências só tem o link do site, sem cifra colada no app.
+      await _abrir(tester, inicial: '3', codigo: 'ABC123');
 
       expect(find.byTooltip('Compartilhar'), findsNothing);
     });

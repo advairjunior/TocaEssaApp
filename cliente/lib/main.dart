@@ -4,6 +4,7 @@ import 'infraestrutura/api_toca_essa.dart';
 import 'infraestrutura/teclado_virtual.dart';
 import 'tema/tema_toca_essa.dart';
 import 'telas/area_do_publico.dart';
+import 'telas/cifra_compartilhada.dart';
 import 'telas/aviso_sem_internet.dart';
 import 'telas/acesso_do_artista.dart';
 import 'telas/componentes.dart';
@@ -42,6 +43,14 @@ class TocaEssaApp extends StatelessWidget {
                 api: servico,
                 codigoInicial: uri.pathSegments.last,
                 hinoInicial: uri.queryParameters['hino']),
+          );
+        }
+        // Link de uma cifra compartilhada pelo artista, aberto sem conta.
+        if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'cifra') {
+          return MaterialPageRoute<void>(
+            settings: configuracao,
+            builder: (_) => CifraCompartilhadaTela(
+                api: servico, codigo: uri.pathSegments.last),
           );
         }
         if (uri.path == '/artista') {

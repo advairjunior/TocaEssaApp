@@ -77,12 +77,44 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
   }
 
   /// No louvor, o link do roteiro aberto neste hino: quem recebe escolhe
-  /// quem é e vê as suas partes.
-  String? _linkDoHino(MusicaDoPalco pagina) {
-    final codigo = _sequencia.codigo;
-    final item = pagina.item;
-    if (!_noLouvor || codigo == null || item == null) return null;
-    return linkPublicoDoShow(codigo, hino: item.id);
+  /// quem é e vê as suas partes. Fora dele, o link da cifra colada, que
+  /// abre direto nela; sem cifra colada, não há o que compartilhar.
+  String? _linkParaCompartilhar(MusicaDoPalco pagina, String? texto) {
+    if (_noLouvor) {
+      final codigo = _sequencia.codigo;
+      final item = pagina.item;
+      return codigo == null || item == null
+          ? null
+          : linkPublicoDoShow(codigo, hino: item.id);
+    }
+    if (texto == null) return null;
+    final chave = _chaveDaMusica(pagina);
+    final codigo = _codigosDasCifras[chave];
+    if (codigo == null && _codigosPedidos.add(chave)) {
+      // Busca já ao abrir a página: no iPhone a janela de compartilhar só
+      // abre direto no toque, sem esperar a resposta do servidor.
+      _buscarCodigoDaCifra(pagina, chave);
+    }
+    return codigo == null ? null : linkDaCifra(codigo);
+  }
+
+  // Código do link de cada cifra colada, buscado uma vez por música.
+  final _codigosDasCifras = <String, String>{};
+  final _codigosPedidos = <String>{};
+
+  static String _chaveDaMusica(MusicaDoPalco musica) =>
+      '${normalizarMusica(musica.titulo)}|${normalizarMusica(musica.artista)}';
+
+  Future<void> _buscarCodigoDaCifra(MusicaDoPalco pagina, String chave) async {
+    try {
+      final codigo = await _sequencia.api
+          .obterCodigoParaCompartilharCifra(pagina.titulo, pagina.artista);
+      if (mounted) setState(() => _codigosDasCifras[chave] = codigo);
+    } catch (_) {
+      // Sem o código (sem internet), o botão não aparece; tenta de novo
+      // na próxima vez que a página abrir.
+      _codigosPedidos.remove(chave);
+    }
   }
 
   /// Sem a janela de compartilhar (no computador), copia o link.
@@ -344,7 +376,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => _editarCifra(texto),
             ),
-            if (_linkDoHino(pagina) case final link?)
+            if (_linkParaCompartilhar(pagina, texto) case final link?)
               IconButton(
                 tooltip: 'Compartilhar',
                 icon: const Icon(Icons.ios_share_rounded),

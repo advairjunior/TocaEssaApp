@@ -82,3 +82,29 @@ class CifraDaMusicaDoRepertorio {
         urlPesquisa: json['urlPesquisa'] as String,
       );
 }
+
+/// O que quem abre o link de uma cifra vê, sem conta.
+class CifraCompartilhada {
+  const CifraCompartilhada({
+    required this.musica,
+    this.artista,
+    this.tom,
+    required this.texto,
+    this.nomeArtistico,
+  });
+
+  final String musica;
+  final String? artista;
+  final String? tom;
+  final String texto;
+  final String? nomeArtistico;
+
+  factory CifraCompartilhada.deJson(Map<String, dynamic> json) =>
+      CifraCompartilhada(
+        musica: json['musica'] as String,
+        artista: json['artista'] as String?,
+        tom: json['tom'] as String?,
+        texto: json['texto'] as String,
+        nomeArtistico: json['nomeArtistico'] as String?,
+      );
+}
