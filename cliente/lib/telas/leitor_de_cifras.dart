@@ -10,6 +10,7 @@ import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cifra_do_palco.dart';
 import 'componentes.dart';
+import 'controle_do_tom.dart';
 import 'editor_de_cifra.dart';
 import 'sequencia_do_palco.dart';
 import 'trechos_do_louvor.dart';
@@ -293,33 +294,9 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
             icon: const Icon(Icons.close_rounded),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          title:
               Text(pagina.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
-              if (_rotuloDoTom(pagina) case final tom?)
-                Text(
-                  tom,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: CoresTocaEssa.textoSecundario),
-                ),
-            ],
-          ),
           actions: [
-            IconButton(
-              tooltip: 'Baixar meio tom',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.remove_rounded),
-              onPressed: () => _mudarTom(pagina, -1),
-            ),
-            IconButton(
-              tooltip: 'Subir meio tom',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.add_rounded),
-              onPressed: () => _mudarTom(pagina, 1),
-            ),
             IconButton(
               tooltip: 'Colar ou corrigir ${_sequencia.vocabulario.cifra}',
               icon: const Icon(Icons.edit_outlined),
@@ -342,6 +319,16 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               )
             : CifraDoPalco(
                 pagina: _chaveDaPagina(pagina),
+                // O tom rola junto com a cifra, como no roteiro do louvor.
+                cabecalho: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ControleDoTom(
+                    tom: _rotuloDoTom(pagina) ?? 'Tom',
+                    original: pagina.tom,
+                    semitons: _semitonsDe(pagina),
+                    mudarTom: (passo) => _mudarTom(pagina, passo),
+                  ),
+                ),
                 trechos: _trechos(pagina, texto),
               ),
         bottomNavigationBar: _BarraDoLeitor(

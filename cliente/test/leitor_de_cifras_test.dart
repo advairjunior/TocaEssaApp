@@ -301,6 +301,25 @@ void main() {
       expect(find.text('Quando eu digo que deixei de te amar'), findsOneWidget);
     });
 
+    testWidgets('o tom fica num controle só, b Tom #, que volta ao original',
+        (tester) async {
+      await _abrir(tester);
+
+      // Bemol e sustenido como na cifra: não parece tamanho da letra.
+      expect(find.text('b'), findsOneWidget);
+      expect(find.text('#'), findsOneWidget);
+      expect(find.byIcon(Icons.add_rounded), findsNothing);
+      expect(find.byIcon(Icons.remove_rounded), findsNothing);
+
+      await tester.tap(find.byTooltip('Subir meio tom'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Voltar ao tom original'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tom G'), findsOneWidget);
+      expect(find.text('G    D'), findsOneWidget);
+    });
+
     testWidgets('descer dois semitons', (tester) async {
       await _abrir(tester);
 
