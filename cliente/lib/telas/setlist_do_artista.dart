@@ -62,6 +62,9 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   Vocabulario get _v => widget.apresentacao.tipo.vocabulario;
   bool _carregando = true;
   bool _editando = false;
+  // Busca pelo título ou cantor; com muitas músicas, rolar cansa.
+  final _busca = TextEditingController();
+  static const _musicasParaBuscar = 10;
   // Só antes do show: horas contratadas e ritmo médio para estimar a setlist.
   RelogioDoShow? _relogio;
 
@@ -98,6 +101,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     _tempoReal?.encerrar();
     _atualizacaoAutomatica?.cancel();
     _sequencia.dispose();
+    _busca.dispose();
     super.dispose();
   }
 
@@ -298,9 +302,21 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
     );
   }
 
+  bool get _mostraBusca =>
+      !_editando && _sequencia.itens.length >= _musicasParaBuscar;
+
+  String get _termo => _mostraBusca ? normalizarMusica(_busca.text) : '';
+
+  bool _achada(ItemDoSetlist item) =>
+      normalizarMusica('${item.titulo} ${item.artista ?? ''}').contains(_termo);
+
+  void _limparBusca() => setState(_busca.clear);
+
   Widget _construirLista(BuildContext context, ItemDoSetlist? proxima,
       {required bool temBarra}) {
     final pedidosNaFila = _sequencia.pedidosNaFila;
+    final buscando = _termo.isNotEmpty;
+    final itens = _sequencia.itens;
     return ConteudoMobile(
       filho: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -322,29 +338,56 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
             ),
           ],
           const SizedBox(height: EspacoTocaEssa.base + 4),
+          if (_mostraBusca) ...[
+            TextField(
+              controller: _busca,
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: _v.buscar,
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _busca.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Limpar busca',
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: _limparBusca,
+                      ),
+              ),
+            ),
+            const SizedBox(height: EspacoTocaEssa.base),
+          ],
           if (_editando)
             ..._construirEdicao()
+          else if (buscando && !itens.any(_achada))
+            _SemResultado(
+              texto: '${_v.nenhuma} com "${_busca.text.trim()}"',
+              limpar: _limparBusca,
+            )
           else
             SlidableAutoCloseBehavior(
               child: GrupoDeLinhas(
                 recuoDivisoria: 60,
                 linhas: [
-                  for (final item in _sequencia.itens)
-                    _LinhaSetlist(
-                      item: item,
-                      vocabulario: _v,
-                      salvando: _sequencia.salvando,
-                      eProxima: item.id == proxima?.id,
-                      semCifra: _sequencia
-                          .estaSemCifra(MusicaDoPalco.doSetlist(item)),
-                      pedidosNaFila:
-                          pedidosNaFila[item.titulo.toLowerCase().trim()] ?? 0,
-                      marcar: (tocada) => _marcar(item, tocada),
-                      abrirLeitor: () =>
-                          abrirLeitor(MusicaDoPalco.doSetlist(item)),
-                      acoesDaCifra: () => _acoesDaCifra(item),
-                      remover: () => _remover(item),
-                    ),
+                  for (final (indice, item) in itens.indexed)
+                    if (!buscando || _achada(item))
+                      _LinhaSetlist(
+                        item: item,
+                        // Achada pela busca, mostra onde está na ordem.
+                        posicao: buscando ? indice + 1 : null,
+                        vocabulario: _v,
+                        salvando: _sequencia.salvando,
+                        eProxima: item.id == proxima?.id,
+                        semCifra: _sequencia
+                            .estaSemCifra(MusicaDoPalco.doSetlist(item)),
+                        pedidosNaFila:
+                            pedidosNaFila[item.titulo.toLowerCase().trim()] ??
+                                0,
+                        marcar: (tocada) => _marcar(item, tocada),
+                        abrirLeitor: () =>
+                            abrirLeitor(MusicaDoPalco.doSetlist(item)),
+                        acoesDaCifra: () => _acoesDaCifra(item),
+                        remover: () => _remover(item),
+                      ),
                 ],
               ),
             ),
@@ -434,7 +477,11 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
               ),
             ),
             TextButton(
-              onPressed: () => setState(() => _editando = !_editando),
+              // Arrastar numa lista filtrada confundiria a ordem.
+              onPressed: () => setState(() {
+                _editando = !_editando;
+                _busca.clear();
+              }),
               child: Text(_editando ? 'Concluir' : 'Editar'),
             ),
             IconButton(
@@ -667,6 +714,7 @@ class _LinhaEmEdicao extends StatelessWidget {
 class _LinhaSetlist extends StatelessWidget {
   const _LinhaSetlist({
     required this.item,
+    this.posicao,
     required this.vocabulario,
     required this.salvando,
     required this.eProxima,
@@ -679,6 +727,8 @@ class _LinhaSetlist extends StatelessWidget {
   });
 
   final ItemDoSetlist item;
+  // "Nº 12" quando a linha aparece pela busca.
+  final int? posicao;
   final Vocabulario vocabulario;
   final bool salvando;
   final bool eProxima;
@@ -695,6 +745,7 @@ class _LinhaSetlist extends StatelessWidget {
     final texto = Theme.of(context).textTheme;
     final tocada = item.tocada;
     final detalhes = [
+      if (posicao != null) 'Nº $posicao',
       if (item.artista != null) item.artista!,
       if (item.tom != null) 'Tom ${item.tom}',
     ].join(' · ');
@@ -816,6 +867,30 @@ class _LinhaSetlist extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Busca sem nenhuma música achada, com o atalho para limpar.
+class _SemResultado extends StatelessWidget {
+  const _SemResultado({required this.texto, required this.limpar});
+
+  final String texto;
+  final VoidCallback limpar;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: EspacoTocaEssa.medio),
+        child: Column(
+          children: [
+            Text(texto,
+                textAlign: TextAlign.center,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: CoresTocaEssa.textoSecundario)),
+            TextButton(onPressed: limpar, child: const Text('Limpar busca')),
+          ],
+        ),
+      );
 }
 
 /// Círculo de marcar como tocada, alvo separado de abrir a cifra.

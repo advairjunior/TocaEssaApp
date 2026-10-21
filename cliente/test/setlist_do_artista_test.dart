@@ -798,6 +798,115 @@ void main() {
     });
   });
 
+  group('buscar na setlist', () {
+    // Doze músicas: a busca só aparece a partir de dez.
+    List<Map<String, Object?>> muitas() => [
+          _item('1', 'Garota de Ipanema', 1, tocada: true),
+          for (var i = 2; i <= 11; i++) _item('$i', 'Canção $i', i),
+          _item('12', 'Evidências', 12, tom: 'A'),
+        ];
+
+    testWidgets('com poucas músicas não mostra a busca', (tester) async {
+      await _abrir(tester);
+
+      expect(find.widgetWithText(TextField, 'Buscar música'), findsNothing);
+    });
+
+    testWidgets('acha pelo título sem acento e mostra a posição',
+        (tester) async {
+      await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'evidencias');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Evidências'), findsOneWidget);
+      expect(find.text('Canção 2'), findsNothing);
+      expect(find.text('Nº 12 · Banda 12 · Tom A'), findsOneWidget);
+      // O progresso continua sendo o da setlist inteira.
+      expect(find.text('1 de 12 tocadas'), findsOneWidget);
+    });
+
+    testWidgets('acha pelo cantor', (tester) async {
+      await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'banda 1');
+      await tester.pumpAndSettle();
+
+      // Banda 1, Banda 10, Banda 11 e Banda 12.
+      expect(find.text('Garota de Ipanema'), findsOneWidget);
+      expect(find.text('Canção 10'), findsOneWidget);
+      expect(find.text('Evidências'), findsOneWidget);
+      expect(find.text('Canção 2'), findsNothing);
+    });
+
+    testWidgets('sem resultado avisa e limpa a busca', (tester) async {
+      await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'xyz');
+      await tester.pumpAndSettle();
+      expect(find.text('Nenhuma música com "xyz"'), findsOneWidget);
+
+      await tester.tap(find.text('Limpar busca'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Canção 2'), findsOneWidget);
+      expect(find.text('Nenhuma música com "xyz"'), findsNothing);
+    });
+
+    testWidgets('o X do campo limpa a busca', (tester) async {
+      await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'evid');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Limpar busca'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Canção 2'), findsOneWidget);
+    });
+
+    testWidgets('tocar na música achada abre o leitor e marca pelo círculo',
+        (tester) async {
+      final requisicoes = await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'evidencias');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Marcar como tocada'));
+      await tester.pumpAndSettle();
+
+      expect(requisicoes.singleWhere((r) => r.method == 'PATCH').url.path,
+          '/api/apresentacoes/$_id/setlist/12/tocada');
+    });
+
+    testWidgets('no Editar a busca some e a lista volta inteira',
+        (tester) async {
+      await _abrir(tester, itens: muitas());
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar música'), 'evidencias');
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Editar'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextField, 'Buscar música'), findsNothing);
+      expect(find.text('Canção 2'), findsOneWidget);
+    });
+
+    testWidgets('no louvor procura hinos', (tester) async {
+      await _abrir(tester, itens: muitas(), tipo: TipoApresentacao.louvor);
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Buscar hino'), 'xyz');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Nenhum hino com "xyz"'), findsOneWidget);
+    });
+  });
+
   testWidgets('setlist cabe em celular de 360px', (tester) async {
     addTearDown(tester.view.reset);
     tester.view.devicePixelRatio = 3;
