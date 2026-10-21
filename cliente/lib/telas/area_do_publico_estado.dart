@@ -119,8 +119,12 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
   }
 
   @override
-  Widget build(BuildContext context) =>
+  Widget build(
+          BuildContext context) =>
       _tipoApresentacao == TipoApresentacao.louvor
-          ? RoteiroDoLouvorTela(api: _api, codigo: _codigoInicial)
+          ? RoteiroDoLouvorTela(
+              api: _api,
+              codigo: _codigoInicial,
+              hinoInicial: widget.hinoInicial)
           : _construirArea(context);
 }

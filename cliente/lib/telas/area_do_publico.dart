@@ -46,10 +46,13 @@ class AreaDoPublico extends StatefulWidget {
       {super.key,
       required this.api,
       required this.codigoInicial,
+      this.hinoInicial,
       this.revisitar = false});
 
   final ApiTocaEssa api;
   final String codigoInicial;
+  // No louvor, o hino do link compartilhado.
+  final String? hinoInicial;
   final bool revisitar;
 
   @override

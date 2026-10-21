@@ -23,11 +23,14 @@ class SequenciaDoPalco extends ChangeNotifier {
   SequenciaDoPalco({
     required this.api,
     required this.apresentacaoId,
+    this.codigo,
     this.vocabulario = Vocabulario.musical,
   });
 
   final ApiTocaEssa api;
   final String apresentacaoId;
+  // Código público do show, para o link de compartilhar um hino.
+  final String? codigo;
   // Palavras das telas do palco: no louvor, hino e letra.
   final Vocabulario vocabulario;
 
@@ -238,7 +241,8 @@ class SequenciaDoPalco extends ChangeNotifier {
   List<MusicaDoPalco> get paginasDoLeitor {
     final setlist = itens.map(MusicaDoPalco.doSetlist).toList();
     final primeiraQueFalta = itens.indexWhere((i) => !i.tocada);
-    setlist.insertAll(primeiraQueFalta < 0 ? setlist.length : primeiraQueFalta, [
+    setlist
+        .insertAll(primeiraQueFalta < 0 ? setlist.length : primeiraQueFalta, [
       ...tocandoAgora.map(MusicaDoPalco.doPedido),
       ...pedidosASeguir.map(MusicaDoPalco.doPedido),
     ]);

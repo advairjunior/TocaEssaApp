@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/modelos.dart';
 import '../dominio/transpor_cifra.dart';
+import '../infraestrutura/compartilhar_link.dart';
+import '../infraestrutura/link_publico.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cifra_do_palco.dart';
@@ -28,12 +30,15 @@ class LeitorDeCifras extends StatefulWidget {
     required this.sequencia,
     required this.musicaInicial,
     required this.abrirUrl,
+    this.compartilhar = compartilharNoAparelho,
     this.manterTelaAcesa = manterTelaAcesaNoAparelho,
   });
 
   final SequenciaDoPalco sequencia;
   final MusicaDoPalco musicaInicial;
   final Future<void> Function(Uri url) abrirUrl;
+  // Janela de compartilhar do aparelho; falso onde não existe.
+  final Future<bool> Function(String titulo, String url) compartilhar;
   final LiberarTelaAcesa Function() manterTelaAcesa;
 
   @override
@@ -68,6 +73,29 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
       if (mounted) setState(() => _louvor = louvor);
     } catch (_) {
       // Fica a cifra sem os nomes até a próxima tentativa.
+    }
+  }
+
+  /// No louvor, o link do roteiro aberto neste hino: quem recebe escolhe
+  /// quem é e vê as suas partes.
+  String? _linkDoHino(MusicaDoPalco pagina) {
+    final codigo = _sequencia.codigo;
+    final item = pagina.item;
+    if (!_noLouvor || codigo == null || item == null) return null;
+    return linkPublicoDoShow(codigo, hino: item.id);
+  }
+
+  /// Sem a janela de compartilhar (no computador), copia o link.
+  Future<void> _compartilhar(String titulo, String link) async {
+    final avisos = ScaffoldMessenger.of(context);
+    final abriu = await widget.compartilhar(titulo, link);
+    if (abriu) return;
+    try {
+      await Clipboard.setData(ClipboardData(text: link));
+      avisos.showSnackBar(const SnackBar(content: Text('Link copiado')));
+    } catch (_) {
+      // Sem acesso à área de transferência: mostra o link para copiar à mão.
+      avisos.showSnackBar(SnackBar(content: SelectableText(link)));
     }
   }
 
@@ -316,6 +344,12 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               icon: const Icon(Icons.edit_outlined),
               onPressed: () => _editarCifra(texto),
             ),
+            if (_linkDoHino(pagina) case final link?)
+              IconButton(
+                tooltip: 'Compartilhar',
+                icon: const Icon(Icons.ios_share_rounded),
+                onPressed: () => _compartilhar(pagina.titulo, link),
+              ),
             if (_noLouvor)
               IconButton(
                 tooltip: 'Quem sou eu',

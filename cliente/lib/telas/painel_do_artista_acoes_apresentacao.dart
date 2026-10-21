@@ -234,14 +234,6 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
     }
   }
 
-  String _linkPublico(String codigo) {
-    final base = Uri.base;
-    final origem = base.scheme == 'http' || base.scheme == 'https'
-        ? base.origin
-        : 'http://localhost:5173';
-    return '$origem/#/publico/$codigo';
-  }
-
   Future<void> _mostrarCodigo(
     Apresentacao apresentacao, {
     bool recemCriada = false,
@@ -252,7 +244,7 @@ extension _AcoesDeApresentacaoDoArtista on _PainelDoArtistaState {
           builder: (_) => _CodigoDaApresentacao(
             apresentacao: apresentacao,
             recemCriada: recemCriada,
-            linkPublico: _linkPublico(apresentacao.codigo),
+            linkPublico: linkPublicoDoShow(apresentacao.codigo),
             enderecoFoto:
                 _api.enderecoArquivo(apresentacao.perfilArtistico.fotoUrl),
           ),

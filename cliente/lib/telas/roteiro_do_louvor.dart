@@ -24,11 +24,14 @@ class RoteiroDoLouvorTela extends StatefulWidget {
     super.key,
     required this.api,
     required this.codigo,
+    this.hinoInicial,
     this.manterTelaAcesa = manterTelaAcesaNoAparelho,
   });
 
   final ApiTocaEssa api;
   final String codigo;
+  // Hino do link compartilhado ("#/publico/ABC123?hino=..."): abre nele.
+  final String? hinoInicial;
   final LiberarTelaAcesa Function() manterTelaAcesa;
 
   @override
@@ -42,7 +45,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
   String? _quemSou;
   bool _escolhendo = false;
   // Hino aberto pela pessoa; nulo segue o hino de agora.
-  String? _hinoAbertoId;
+  late String? _hinoAbertoId = widget.hinoInicial;
   String? _ultimoAtual;
   Timer? _atualizacaoPeriodica;
   AssinaturaTempoReal? _tempoReal;
@@ -83,7 +86,10 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     setState(() {
       _preferencias = preferencias;
       if (salvo != null) _quemSou = salvo;
-      _acordes = preferencias.getBool(_chaveAcordes) ?? false;
+      // Quem recebe o link de um hino quer ver a cifra: sem escolha
+      // guardada, os acordes já vêm ligados.
+      _acordes =
+          preferencias.getBool(_chaveAcordes) ?? widget.hinoInicial != null;
     });
   }
 
@@ -143,12 +149,16 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     try {
       final roteiro = await widget.api.obterRoteiroDoLouvor(_codigo);
       if (!mounted) return;
-      final mudou = _roteiro != null && roteiro.hinoAtualId != _ultimoAtual;
+      final primeira = _roteiro == null;
+      final mudou = !primeira && roteiro.hinoAtualId != _ultimoAtual;
       setState(() {
         _roteiro = roteiro;
         _erro = null;
         // O artista começou outro hino: todos os telefones vão para ele.
-        if (roteiro.hinoAtualId != _ultimoAtual) {
+        // Na primeira leitura, fica o hino do link.
+        if (primeira) {
+          _ultimoAtual = roteiro.hinoAtualId;
+        } else if (roteiro.hinoAtualId != _ultimoAtual) {
           _ultimoAtual = roteiro.hinoAtualId;
           _hinoAbertoId = null;
         }

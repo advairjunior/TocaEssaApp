@@ -39,7 +39,9 @@ class TocaEssaApp extends StatelessWidget {
           return MaterialPageRoute<void>(
             settings: configuracao,
             builder: (_) => AreaDoPublico(
-                api: servico, codigoInicial: uri.pathSegments.last),
+                api: servico,
+                codigoInicial: uri.pathSegments.last,
+                hinoInicial: uri.queryParameters['hino']),
           );
         }
         if (uri.path == '/artista') {

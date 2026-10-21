@@ -53,7 +53,9 @@ Future<_Palco> _abrir(WidgetTester tester,
     {String inicial = '2',
     String? cifraDaVelha,
     Vocabulario vocabulario = Vocabulario.musical,
-    Map<String, Object?>? louvor}) async {
+    Map<String, Object?>? louvor,
+    String? codigo,
+    Future<bool> Function(String titulo, String url)? compartilhar}) async {
   final palco = _Palco();
   if (cifraDaVelha != null) palco.textos['Velha Infância'] = cifraDaVelha;
   palco.louvor = louvor;
@@ -110,8 +112,8 @@ Future<_Palco> _abrir(WidgetTester tester,
   });
   final api = ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')
     ..definirTokenArtista('TOKEN');
-  final sequencia =
-      SequenciaDoPalco(api: api, apresentacaoId: _id, vocabulario: vocabulario);
+  final sequencia = SequenciaDoPalco(
+      api: api, apresentacaoId: _id, codigo: codigo, vocabulario: vocabulario);
   await tester.runAsync(sequencia.carregar);
   await tester.runAsync(() => sequencia.buscarCifras());
   final musica = MusicaDoPalco.doSetlist(
@@ -121,6 +123,7 @@ Future<_Palco> _abrir(WidgetTester tester,
       sequencia: sequencia,
       musicaInicial: musica,
       abrirUrl: (url) async => palco.abertas.add(url),
+      compartilhar: compartilhar ?? (titulo, url) async => true,
       manterTelaAcesa: () {
         palco.telaAcesa++;
         return () {};
@@ -612,5 +615,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('JOÃO · SUA VEZ'), findsOneWidget);
+  });
+
+  group('compartilhar o hino', () {
+    const louvor = {
+      'cantores': ['João'],
+      'placar': <Object?>[],
+      'hinos': <Object?>[],
+    };
+
+    testWidgets('manda o link do roteiro aberto nesse hino', (tester) async {
+      final enviados = <(String, String)>[];
+      await _abrir(tester,
+          vocabulario: Vocabulario.louvor,
+          louvor: louvor,
+          codigo: 'ABC123', compartilhar: (titulo, url) async {
+        enviados.add((titulo, url));
+        return true;
+      });
+
+      await tester.tap(find.byTooltip('Compartilhar'));
+      await tester.pumpAndSettle();
+
+      final (titulo, url) = enviados.single;
+      expect(titulo, 'Velha Infância');
+      expect(url, endsWith('/#/publico/ABC123?hino=2'));
+    });
+
+    testWidgets('sem a janela de compartilhar do aparelho, copia o link',
+        (tester) async {
+      String? copiado;
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, (chamada) async {
+        if (chamada.method == 'Clipboard.setData') {
+          copiado = (chamada.arguments as Map)['text'] as String;
+        }
+        return null;
+      });
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null));
+      await _abrir(tester,
+          vocabulario: Vocabulario.louvor,
+          louvor: louvor,
+          codigo: 'ABC123',
+          compartilhar: (titulo, url) async => false);
+
+      await tester.tap(find.byTooltip('Compartilhar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Link copiado'), findsOneWidget);
+      expect(copiado, endsWith('/#/publico/ABC123?hino=2'));
+    });
+
+    testWidgets('sem o código do show, não oferece compartilhar',
+        (tester) async {
+      await _abrir(tester, vocabulario: Vocabulario.louvor, louvor: louvor);
+
+      expect(find.byTooltip('Compartilhar'), findsNothing);
+    });
   });
 }

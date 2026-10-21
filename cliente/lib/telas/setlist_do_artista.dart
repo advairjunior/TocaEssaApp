@@ -58,6 +58,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
   late final SequenciaDoPalco _sequencia = SequenciaDoPalco(
     api: widget.api,
     apresentacaoId: widget.apresentacao.id,
+    codigo: widget.apresentacao.codigo,
     vocabulario: _v,
   )..addListener(_redesenhar);
   Vocabulario get _v => widget.apresentacao.tipo.vocabulario;

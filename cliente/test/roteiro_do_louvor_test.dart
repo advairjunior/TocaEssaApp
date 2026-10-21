@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/roteiro_do_louvor.dart';
 import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
@@ -62,7 +63,7 @@ Map<String, Object?> _roteiro({String? atual}) => {
 
 var _noServidor = _roteiro();
 
-Future<void> _abrir(WidgetTester tester) async {
+Future<void> _abrir(WidgetTester tester, {String? hinoInicial}) async {
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
     cliente: MockClient((requisicao) async => http.Response(
@@ -74,7 +75,8 @@ Future<void> _abrir(WidgetTester tester) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(MaterialApp(
     theme: TemaTocaEssa.escuro,
-    home: RoteiroDoLouvorTela(api: api, codigo: 'ABC123'),
+    home: RoteiroDoLouvorTela(
+        api: api, codigo: 'ABC123', hinoInicial: hinoInicial),
   ));
   await tester.pumpAndSettle();
 }
@@ -104,6 +106,35 @@ void main() {
     final preferencias = await SharedPreferences.getInstance();
     expect(preferencias.getString('louvor_quem_sou_ABC123'), 'Ana');
   });
+  group('link compartilhado de um hino', () {
+    testWidgets('pergunta quem é e abre nesse hino, com os acordes',
+        (tester) async {
+      _noServidor = _roteiro(atual: 'h1');
+      await _abrir(tester, hinoInicial: 'h2');
+
+      expect(find.text('Quem é você?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Ana'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
+      expect(find.text('Primeira do segundo'), findsOneWidget);
+      // Quem recebe o link quer ver a cifra: os acordes já vêm ligados.
+      expect(find.byTooltip('Esconder acordes'), findsOneWidget);
+    });
+
+    testWidgets('quem já escolheu esconder os acordes continua sem',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'louvor_quem_sou_ABC123': 'Ana',
+        'louvor_acordes': false,
+      });
+      await _abrir(tester, hinoInicial: 'h2');
+
+      expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
+      expect(find.byTooltip('Mostrar acordes'), findsOneWidget);
+    });
+  });
+
   testWidgets('acordes aparecem só para quem pede e mudam de tom',
       (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': ''});
@@ -293,5 +324,35 @@ void mainDaEntradaPeloCodigo() {
     expect(find.text('ANA · SUA VEZ'), findsOneWidget);
     expect(find.text('Pedir'), findsNothing);
     expect(find.text('Fila'), findsNothing);
+  });
+
+  testWidgets('o link com ?hino= abre o roteiro nesse hino', (tester) async {
+    SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+    final api = ApiTocaEssa(
+      enderecoBase: 'http://teste',
+      cliente: MockClient((requisicao) async {
+        final caminho = requisicao.url.path;
+        final corpo = caminho.endsWith('/roteiro')
+            ? jsonEncode(_roteiro(atual: 'h1'))
+            : caminho.endsWith('/fila')
+                ? '[]'
+                : _louvorJson;
+        return http.Response(corpo, 200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }),
+    );
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/publico/ABC123?hino=h2';
+    addTearDown(
+        tester.binding.platformDispatcher.clearDefaultRouteNameTestValue);
+
+    await tester.pumpWidget(TocaEssaApp(api: api));
+    await tester.pumpAndSettle();
+
+    expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
+    expect(find.text('Primeira do segundo'), findsOneWidget);
   });
 }
