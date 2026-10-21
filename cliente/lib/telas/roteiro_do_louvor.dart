@@ -205,7 +205,9 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
           (null, _) => const Center(child: CircularProgressIndicator()),
           (final RoteiroDoLouvor roteiro, _) when escolhendo =>
             _EscolhaDeQuemSou(
-                cantores: roteiro.participantes, escolher: _escolherQuemSou),
+                participantes: roteiro.participantes,
+                cantores: roteiro.cantores,
+                escolher: _escolherQuemSou),
           (final RoteiroDoLouvor roteiro, _) when roteiro.hinos.isEmpty =>
             const EstadoVazio(
               icone: Icons.library_music_outlined,
@@ -300,9 +302,16 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
       );
 }
 
+/// Cada pessoa num botão grande na cor da sua faixa, para ela já se achar
+/// pela cor na letra.
 class _EscolhaDeQuemSou extends StatelessWidget {
-  const _EscolhaDeQuemSou({required this.cantores, required this.escolher});
+  const _EscolhaDeQuemSou({
+    required this.participantes,
+    required this.cantores,
+    required this.escolher,
+  });
 
+  final List<String> participantes;
   final List<String> cantores;
   final ValueChanged<String> escolher;
 
@@ -319,7 +328,7 @@ class _EscolhaDeQuemSou extends StatelessWidget {
           Text('Quem é você?', style: texto.headlineSmall),
           const SizedBox(height: EspacoTocaEssa.pequeno),
           Text(
-            'Suas partes ficam em destaque na letra.',
+            'Suas partes ficam em destaque na letra, na sua cor.',
             textAlign: TextAlign.center,
             style: texto.bodyMedium
                 ?.copyWith(color: CoresTocaEssa.textoSecundario),
@@ -330,11 +339,11 @@ class _EscolhaDeQuemSou extends StatelessWidget {
             spacing: EspacoTocaEssa.pequeno,
             runSpacing: EspacoTocaEssa.pequeno,
             children: [
-              for (final nome in cantores)
-                ChoiceChip(
-                  label: Text(nome),
-                  selected: false,
-                  onSelected: (_) => escolher(nome),
+              for (final nome in participantes)
+                _BotaoDaPessoa(
+                  nome: nome,
+                  cor: corDaPessoa(cantores, nome),
+                  escolher: () => escolher(nome),
                 ),
             ],
           ),
@@ -347,6 +356,38 @@ class _EscolhaDeQuemSou extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BotaoDaPessoa extends StatelessWidget {
+  const _BotaoDaPessoa({
+    required this.nome,
+    required this.cor,
+    required this.escolher,
+  });
+
+  final String nome;
+  final Color cor;
+  final VoidCallback escolher;
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton.icon(
+        onPressed: escolher,
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(120, 52),
+          backgroundColor: cor.withValues(alpha: .12),
+          side: BorderSide(color: cor.withValues(alpha: .7), width: 1.5),
+        ),
+        icon: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+        ),
+        label: Text(nome,
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(color: cor, fontWeight: FontWeight.w700)),
+      );
 }
 
 /// Topo do hino, que rola junto com a letra: título, tom, se é o de agora,

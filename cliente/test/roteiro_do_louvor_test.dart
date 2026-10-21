@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
 import 'package:toca_essa_app/telas/roteiro_do_louvor.dart';
+import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
 
 Map<String, Object?> _parte(String tipo, String texto, List<String> cantores) =>
@@ -86,7 +87,7 @@ void main() {
     await _abrir(tester);
 
     expect(find.text('Quem é você?'), findsOneWidget);
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Ana'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Ana'));
     await tester.pumpAndSettle();
 
     expect(find.text('Quem é você?'), findsNothing);
@@ -134,8 +135,21 @@ void main() {
   testWidgets('quem só toca solos também está no Quem é você', (tester) async {
     await _abrir(tester);
 
-    expect(find.widgetWithText(ChoiceChip, 'José'), findsOneWidget);
-    expect(find.widgetWithText(ChoiceChip, 'Ana'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'José'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Ana'), findsOneWidget);
+  });
+
+  testWidgets('cada pessoa aparece na cor da sua faixa', (tester) async {
+    await _abrir(tester);
+    Color? cor(String nome) => tester
+        .widget<Text>(find.descendant(
+            of: find.byType(OutlinedButton), matching: find.text(nome)))
+        .style
+        ?.color;
+
+    expect(cor('João'), corDoCantor(['João', 'Ana'], 'João'));
+    expect(cor('Ana'), corDoCantor(['João', 'Ana'], 'Ana'));
+    expect(cor('José'), corInstrumental);
   });
 
   testWidgets('quem já escolheu entra direto e pode trocar', (tester) async {

@@ -28,6 +28,10 @@ Color corDoCantor(List<String> cantores, String nome) {
 /// Faixa dos solos e partes instrumentais, diferente da dos cantores.
 const corInstrumental = CoresTocaEssa.atencao;
 
+/// Cor de uma pessoa do louvor: a do cantor ou, de quem só toca, a dos solos.
+Color corDaPessoa(List<String> cantores, String nome) =>
+    cantores.contains(nome) ? corDoCantor(cantores, nome) : corInstrumental;
+
 /// "Estrofe 1", "Refrão", "Solo sax tenor · 2x": o nome de cada parte.
 List<String> rotulosDasPartes(HinoDoLouvor hino) {
   var estrofe = 0;
