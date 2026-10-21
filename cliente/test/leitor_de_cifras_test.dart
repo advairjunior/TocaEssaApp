@@ -363,6 +363,9 @@ void main() {
 
       await tester.tap(find.byTooltip('Rolar automaticamente'));
       await tester.pump();
+      // Andando e correndo: não confunde com o tom nem com a letra.
+      expect(find.byIcon(Icons.directions_walk_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.directions_run_rounded), findsOneWidget);
       await tester.tap(find.byTooltip('Mais rápido'));
       await tester.pump();
       expect(find.text('2x'), findsOneWidget);

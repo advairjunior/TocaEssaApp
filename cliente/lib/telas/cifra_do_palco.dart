@@ -426,7 +426,8 @@ class _CorpoDoTrecho extends StatelessWidget {
       );
 }
 
-/// ▶ discreto; rolando, vira "− 2x + ⏸".
+/// ▶ discreto; rolando, vira "andando 2x correndo ⏸": ícones de velocidade,
+/// para não confundir com o tom nem com o tamanho da letra.
 class _ControleDaRolagem extends StatelessWidget {
   const _ControleDaRolagem({
     required this.rolando,
@@ -465,7 +466,7 @@ class _ControleDaRolagem extends StatelessWidget {
             tooltip: 'Mais devagar',
             visualDensity: VisualDensity.compact,
             onPressed: velocidade > 0 ? () => mudarVelocidade(-1) : null,
-            icon: const Icon(Icons.remove_rounded),
+            icon: const Icon(Icons.directions_walk_rounded),
           ),
           Text(_rotuloDaVelocidade(_velocidades[velocidade].vezes)),
           IconButton(
@@ -474,7 +475,7 @@ class _ControleDaRolagem extends StatelessWidget {
             onPressed: velocidade < _velocidades.length - 1
                 ? () => mudarVelocidade(1)
                 : null,
-            icon: const Icon(Icons.add_rounded),
+            icon: const Icon(Icons.directions_run_rounded),
           ),
           IconButton(
             tooltip: 'Pausar rolagem',
