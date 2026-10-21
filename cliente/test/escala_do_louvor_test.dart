@@ -284,6 +284,12 @@ void main() {
     await tester.tap(find.widgetWithText(ChoiceChip, 'Todos'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Ana:'), findsNothing);
+    // Sem ✓ em nenhum filtro: "Todos" fica igual aos nomes.
+    expect(
+        tester
+            .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+            .every((chip) => chip.showCheckmark == false),
+        isTrue);
   });
 
   testWidgets('pessoas ficam na aba Pessoas, com os pontos', (tester) async {

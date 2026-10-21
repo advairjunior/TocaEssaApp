@@ -262,6 +262,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
           child: Row(
             children: [
               ChoiceChip(
+                showCheckmark: false,
                 label: const Text('Todos'),
                 selected: filtro == null,
                 onSelected: (_) => setState(() => _filtro = null),
