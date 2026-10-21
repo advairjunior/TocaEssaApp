@@ -127,6 +127,38 @@ cada uma começa por uma investigação antes de virar plano.
   do Render também demora.
 - **Registrada em:** 2026-10-19.
 
+### Trocar acorde para enriquecer a cifra
+
+- **Problema:** a cifra escrita pelo artista às vezes é simples demais; ele
+  quer acordes e passagens mais bonitas sem sair do app nem procurar em
+  outro lugar.
+- **Ideia (caminho escolhido em 2026-10-21: regras, sem IA):** no editor da
+  cifra (e talvez no leitor), tocar num acorde mostra substitutos calculados
+  pela teoria, e o artista escolhe um por um:
+  - **trocar:** G → G7M, G6, G9, G/B (tétrades, extensões e inversões
+    conforme a função do acorde no tom);
+  - **inserir antes:** dominante secundária (E7 antes do Am), ii–V
+    (Bm7(b5) E7 antes do Am), diminuto de passagem (C → C#º → Dm);
+  - **baixo caminhando:** C → C/E → F.
+  O acorde novo entra alinhado na mesma sílaba; o "Tom:" e as marcações
+  "(Estrofe 1)" continuam valendo para a escala do louvor.
+- **Por que regras e não IA:** grátis, funciona sem internet, sem chave de
+  API nem custo; o artista fica no controle de cada troca. A IA (enriquecer
+  a cifra inteira de uma vez) fica como possível passo seguinte.
+- **Investigado em 2026-10-21:** não existe pronto em Flutter nem fora algo
+  confiável que enriqueça a cifra sozinho. Em Dart há bibliotecas de teoria
+  musical: `music_notes` (a mais completa: acordes, escalas, funções
+  harmônicas, tonalidades), `saavy_music` e `crisp_notation_core`. Fora,
+  PyTheory (Python), opendaw-mcp e JMove aplicam receitas de rearmonização
+  (dominante secundária, trítono, diminuto de passagem, empréstimo modal).
+  O app já transpõe cifras (`transpor_cifra.dart`), base para calcular os
+  substitutos sem dependência nova.
+- **Investigar antes:** usar `music_notes` ou estender `transpor_cifra.dart`;
+  como mostrar as opções no toque sem atrapalhar a edição no iPhone;
+  guardar a versão anterior da cifra para "Voltar à original" (nunca perder
+  o que o artista escreveu).
+- **Registrada em:** 2026-10-21.
+
 ### Compartilhar repertório com outra conta
 
 - **Problema:** um colega de banda ou de louvor precisa montar de novo, na
