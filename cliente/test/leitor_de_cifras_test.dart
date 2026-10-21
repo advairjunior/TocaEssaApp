@@ -706,4 +706,27 @@ void main() {
       expect(find.byTooltip('Compartilhar'), findsNothing);
     });
   });
+
+  testWidgets('quem está fora da escala continua no Quem sou eu',
+      (tester) async {
+    await _abrir(tester, vocabulario: Vocabulario.louvor, louvor: {
+      'cantores': ['João', 'Ana'],
+      'solistas': [
+        {'nome': 'Pedro', 'instrumento': 'baixo'},
+      ],
+      'placar': <Object?>[],
+      'hinos': <Object?>[],
+      // Pedro só acompanha no baixo; Ana fica fora do microfone desta vez.
+      'configuracao': {
+        'cantoresFora': ['Ana'],
+        'solistasFora': ['Pedro'],
+      },
+    });
+
+    await tester.tap(find.byTooltip('Quem sou eu'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(ChoiceChip, 'Ana'), findsOneWidget);
+    expect(find.widgetWithText(ChoiceChip, 'Pedro'), findsOneWidget);
+  });
 }

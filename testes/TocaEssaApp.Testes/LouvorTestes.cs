@@ -431,6 +431,23 @@ public sealed class LouvorTestes
     }
 
     [Fact]
+    public void QuemEstaForaDaEscalaContinuaNoQuemEhVoceDoRoteiro()
+    {
+        var cenario = CriarCenario();
+        cenario.Repo.DefinirCantoresDoLouvor(cenario.Token, cenario.Show.Id, ["João", "Ana"]);
+        cenario.Repo.DefinirSolistasDoLouvor(cenario.Token, cenario.Show.Id,
+            [new Solista("José", "sax"), new Solista("Pedro", "baixo")]);
+        // Pedro só acompanha no baixo; Ana fica fora do microfone desta vez.
+        cenario.Repo.DefinirConfiguracaoDoLouvor(cenario.Token, cenario.Show.Id,
+            new ConfiguracaoDaEscala(CantoresFora: ["Ana"], SolistasFora: ["Pedro"]));
+
+        var roteiro = cenario.Repo.ObterRoteiroDoLouvor(cenario.Show.Codigo)!;
+
+        Assert.Equal(["João", "Ana"], roteiro.Cantores);
+        Assert.Equal(["José", "Pedro"], roteiro.Solistas.Select(solista => solista.Nome));
+    }
+
+    [Fact]
     public void LouvorSobreviveAoReinicioEBancoAntigoGanhaAsColunas()
     {
         var arquivo = Path.Combine(Path.GetTempPath(), $"tocaessa-louvor-{Guid.NewGuid():N}.db");
