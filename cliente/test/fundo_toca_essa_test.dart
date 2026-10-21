@@ -91,6 +91,30 @@ void main() {
     expect(restricao.width, double.infinity);
   });
 
+  testWidgets('no cabeçalho a foto fica escura onde o texto passa', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: FundoTocaEssa(
+          variante: VarianteFundoTocaEssa.bastidores,
+          intensidade: IntensidadeFundoTocaEssa.cabecalho,
+          child: SizedBox(),
+        ),
+      ),
+    );
+
+    final mascara = tester.widget<ShaderMask>(find.byType(ShaderMask));
+    final contraste = (mascara.child! as Stack).children[1] as DecoratedBox;
+    final gradiente =
+        (contraste.decoration as BoxDecoration).gradient! as LinearGradient;
+
+    // O pedestal do microfone cortava "0 de 4 tocadas" e os avisos.
+    for (final cor in gradiente.colors) {
+      expect(cor.a, greaterThanOrEqualTo(.6));
+    }
+  });
+
   testWidgets('mantém fallback e conteúdo acionável quando a imagem falha', (
     tester,
   ) async {

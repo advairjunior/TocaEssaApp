@@ -14,13 +14,23 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
             onPressed: _voltarAoInicio,
           ),
           actions: [
+            // Sem pedidos (louvor), a faixa abaixo teria só este botão.
+            if (_semFaixaDePedidos(apresentacao) &&
+                apresentacao.status != StatusApresentacao.encerrada)
+              _BotaoDoShow(
+                apresentacao: apresentacao,
+                salvando: _salvando,
+                alterarStatus: (status) =>
+                    _alterarStatusApresentacao(apresentacao, status),
+              ),
             IconButton(
               tooltip: 'Código e link',
               icon: const Icon(Icons.qr_code_2_rounded),
               onPressed: () => _mostrarCodigo(apresentacao),
             ),
           ],
-          bottom: apresentacao.status == StatusApresentacao.encerrada
+          bottom: apresentacao.status == StatusApresentacao.encerrada ||
+                  _semFaixaDePedidos(apresentacao)
               ? null
               : _BarraStatusApresentacao(
                   apresentacao: apresentacao,
@@ -76,9 +86,7 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
         ),
         body: FundoTocaEssa(
           variante: VarianteFundoTocaEssa.bastidores,
-          intensidade: _aba == _AbaPainel.mais
-              ? IntensidadeFundoTocaEssa.suave
-              : IntensidadeFundoTocaEssa.cabecalho,
+          intensidade: IntensidadeFundoTocaEssa.cabecalho,
           child: Column(
             children: [
               // Fora das abas, para seguir contando ao trocar de aba.
@@ -94,6 +102,10 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
           ),
         ),
       );
+
+  // No louvor não há pedidos para receber ou pausar.
+  bool _semFaixaDePedidos(Apresentacao apresentacao) =>
+      apresentacao.tipo == TipoApresentacao.louvor;
 
   Widget _construirAba(BuildContext context, Apresentacao apresentacao) =>
       KeyedSubtree(

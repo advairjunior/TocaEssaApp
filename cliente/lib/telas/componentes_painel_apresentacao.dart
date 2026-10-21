@@ -20,6 +20,62 @@ class _BarraStatusApresentacao extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        EspacoTocaEssa.base,
+        0,
+        EspacoTocaEssa.base,
+        EspacoTocaEssa.pequeno,
+      ),
+      child: Row(
+        children: [
+          Tooltip(
+            message: 'Receber pedidos',
+            child: Switch(
+              value: apresentacao.pedidosAbertos,
+              onChanged: salvando ? null : (_) => alterarPedidos(),
+            ),
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          Expanded(
+            child: Text(
+              apresentacao.pedidosAbertos
+                  ? 'Recebendo pedidos'
+                  : 'Pedidos pausados',
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: CoresTocaEssa.textoSecundario),
+            ),
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          _BotaoDoShow(
+            apresentacao: apresentacao,
+            salvando: salvando,
+            alterarStatus: alterarStatus,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Iniciar (show agendado) ou Encerrar (show ao vivo). Fica na faixa de
+/// pedidos ou, no louvor, que não tem pedidos, na barra do topo.
+class _BotaoDoShow extends StatelessWidget {
+  const _BotaoDoShow({
+    required this.apresentacao,
+    required this.salvando,
+    required this.alterarStatus,
+  });
+
+  final Apresentacao apresentacao;
+  final bool salvando;
+  final ValueChanged<StatusApresentacao> alterarStatus;
+
+  @override
+  Widget build(BuildContext context) {
     final agendada = apresentacao.status == StatusApresentacao.agendada;
     final estilo =
         (agendada ? FilledButton.styleFrom : OutlinedButton.styleFrom)(
@@ -31,55 +87,11 @@ class _BarraStatusApresentacao extends StatelessWidget
         : () => alterarStatus(agendada
             ? StatusApresentacao.emAndamento
             : StatusApresentacao.encerrada);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        EspacoTocaEssa.base,
-        0,
-        EspacoTocaEssa.base,
-        EspacoTocaEssa.pequeno,
-      ),
-      child: Row(
-        children: [
-          // No louvor não há pedidos para receber ou pausar.
-          if (apresentacao.tipo == TipoApresentacao.louvor)
-            const Spacer()
-          else ...[
-            Tooltip(
-              message: 'Receber pedidos',
-              child: Switch(
-                value: apresentacao.pedidosAbertos,
-                onChanged: salvando ? null : (_) => alterarPedidos(),
-              ),
-            ),
-            const SizedBox(width: EspacoTocaEssa.pequeno),
-            Expanded(
-              child: Text(
-                apresentacao.pedidosAbertos
-                    ? 'Recebendo pedidos'
-                    : 'Pedidos pausados',
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
-              ),
-            ),
-          ],
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-          agendada
-              ? FilledButton(
-                  style: estilo,
-                  onPressed: acao,
-                  child: const Text('Iniciar'),
-                )
-              : OutlinedButton(
-                  style: estilo,
-                  onPressed: acao,
-                  child: const Text('Encerrar'),
-                ),
-        ],
-      ),
-    );
+    return agendada
+        ? FilledButton(
+            style: estilo, onPressed: acao, child: const Text('Iniciar'))
+        : OutlinedButton(
+            style: estilo, onPressed: acao, child: const Text('Encerrar'));
   }
 }
 

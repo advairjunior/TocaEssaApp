@@ -121,7 +121,9 @@ class FundoTocaEssa extends StatelessWidget {
         IntensidadeFundoTocaEssa.cabecalho => const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0x8008050D), Colors.transparent],
+            // Escura de ponta a ponta: o texto e os avisos passam por cima
+            // da foto, e o pedestal do microfone cortava as letras.
+            colors: [Color(0xA608050D), Color(0xC008050D)],
           ),
       };
 }

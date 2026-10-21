@@ -9,6 +9,7 @@ import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/infraestrutura/camera_do_app.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
+import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
 
 import 'apoio/camera_falsa.dart';
@@ -410,6 +411,10 @@ void main() {
     expect(find.text('Editar apresentação'), findsOneWidget);
     expect(find.text('Excluir apresentação'), findsOneWidget);
     expect(find.text('Iniciar'), findsOneWidget);
+    // A foto só no topo, como nas outras abas: inteira, a borda do tapete
+    // parecia um corte no meio da tela.
+    expect(tester.widget<FundoTocaEssa>(find.byType(FundoTocaEssa)).intensidade,
+        IntensidadeFundoTocaEssa.cabecalho);
   });
 
   group('horas contratadas', () {
@@ -676,7 +681,12 @@ void main() {
       expect(find.text('Fila'), findsNothing);
       expect(find.text('Estatísticas'), findsNothing);
       expect(find.text('Recebendo pedidos'), findsNothing);
-      expect(find.text('Iniciar'), findsOneWidget);
+      // Sem pedidos, não sobra faixa só para o Iniciar: ele fica no topo.
+      expect(
+          find.descendant(
+              of: find.byType(AppBar), matching: find.text('Iniciar')),
+          findsOneWidget);
+      expect(tester.widget<AppBar>(find.byType(AppBar)).bottom, isNull);
       expect(barra.selectedIndex, 0);
       expect(find.text('Por hino'), findsOneWidget);
       expect(find.text('Pessoas'), findsOneWidget);
@@ -702,6 +712,11 @@ void main() {
 
       final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
       expect(barra.selectedIndex, 1);
+      expect(
+          find.descendant(
+              of: find.byType(AppBar), matching: find.text('Encerrar')),
+          findsOneWidget);
+      expect(tester.widget<AppBar>(find.byType(AppBar)).bottom, isNull);
     });
   });
 }
