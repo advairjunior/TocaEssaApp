@@ -108,8 +108,9 @@ arquivo.
   com a cifra em JetBrains Mono (acordes em roxo, tamanho automático, pinça),
   setas sempre visíveis que só trocam de música, Tocar no meio ("Tocando ✓"),
   pedal/teclado vira a página. Tocar e Abrir cifra abrem o leitor quando há
-  cifra colada; tocar na música da setlist abre o leitor. Também: −/+ meio
-  tom (guardado por música no aparelho) e rolagem automática (0,5x, 0,75x
+  cifra colada; tocar na música da setlist abre o leitor. Também: controle
+  "b Tom #" no topo da cifra (`controle_do_tom.dart`, o mesmo do roteiro;
+  guardado por música no aparelho) e rolagem automática (0,5x, 0,75x
   e 1x a 5x, com ícones de andar e correr). Tocar ou puxar a letra não para
   a rolagem: com o dedo na tela ela espera e segue dali; só o pausar para.
   Com a pinça, linha que não cabe quebra em vez de rolar para o lado
@@ -199,8 +200,8 @@ arquivo.
   revezarem em cada hino; "Todos cantam os coros" deixa todo coro com
   Todos. Vale para os próximos "Escalar"; a escala feita não muda sozinha.
 - Aba Escala (`escala_do_louvor.dart`) em duas partes: "Por hino" (no topo,
-  resumo "2 hinos · 1 sem letra · 1 parte sem escala" com uma barra de pontos
-  por cantor e os solos; cartão fechado por hino com a ordem, tom, resumo
+  resumo "2 hinos · 1 sem letra · 1 parte sem escala" e "Pontos: de 3 a 36",
+  fechado; um toque abre uma barra de pontos por cantor e os solos; cartão fechado por hino com a ordem, tom, resumo
   "João · Ana · solo José · 1 sem escala", uma faixa com um pedaço por parte
   na cor de quem canta, "Agora" no último tocado e os já tocados apagados;
   tocar abre as partes, com o nome na cor da pessoa, e o "Escalar
@@ -210,7 +211,9 @@ arquivo.
   solos) de cada nome e os botões "Todos cantam"/"Banda toda", "Salvar" e
   "Deixar sem escala".
 - Cor de cada pessoa (`corDaPessoa` em `trechos_do_louvor.dart`): a do cantor
-  na ordem da lista; quem só toca fica com a cor dos solos.
+  na ordem da lista (12 cores, só repetem do 13º em diante); quem só toca
+  fica com a cor dos solos. Solo sem acordes escritos mostra "instrumental"
+  também no leitor.
 - Cantores e escolhas à mão em JSON nas colunas `Apresentacoes.CantoresDoLouvor`
   e `EscolhasDoLouvor`. Rotas privadas `/api/apresentacoes/{id}/louvor`
   (`/cantores`, `/partes`); pública `GET /api/publico/apresentacoes/{codigo}/roteiro`,
