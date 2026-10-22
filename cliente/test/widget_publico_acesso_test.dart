@@ -46,7 +46,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.image(const AssetImage('assets/fundos/atmosfera.png')),
+      find.image(const AssetImage('assets/fundos/atmosfera.webp')),
       findsOneWidget,
     );
     expect(find.text('Duo Aurora'), findsWidgets);

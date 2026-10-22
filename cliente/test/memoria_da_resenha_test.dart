@@ -73,7 +73,7 @@ void main() {
     expect(find.text('12 DE SETEMBRO · RESENHA'), findsOneWidget);
     // Sem foto do encontro, a capa usa o palco da marca.
     expect(
-      find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+      find.image(const AssetImage('assets/fundos/inicio_palco.webp')),
       findsWidgets,
     );
   });

@@ -287,8 +287,8 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
             // Alterna os fundos de palco para que noites sem foto não
             // fiquem todas iguais.
             fundoAlternativo: (indiceMemoria++).isEven
-                ? 'assets/fundos/bastidores.png'
-                : 'assets/fundos/inicio_palco.png',
+                ? 'assets/fundos/bastidores.webp'
+                : 'assets/fundos/inicio_palco.webp',
             enderecoFoto: widget.api.enderecoArquivo,
             tocar: () => _abrirMemoria(encontro),
           ),

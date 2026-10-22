@@ -8,9 +8,9 @@ void main() {
     tester,
   ) async {
     for (final caso in const [
-      (VarianteFundoTocaEssa.palco, 'assets/fundos/inicio_palco.png'),
-      (VarianteFundoTocaEssa.bastidores, 'assets/fundos/bastidores.png'),
-      (VarianteFundoTocaEssa.atmosfera, 'assets/fundos/atmosfera.png'),
+      (VarianteFundoTocaEssa.palco, 'assets/fundos/inicio_palco.webp'),
+      (VarianteFundoTocaEssa.bastidores, 'assets/fundos/bastidores.webp'),
+      (VarianteFundoTocaEssa.atmosfera, 'assets/fundos/atmosfera.webp'),
     ]) {
       await tester.pumpWidget(
         MaterialApp(
@@ -60,7 +60,7 @@ void main() {
       );
 
       final imagem = tester.widget<Image>(
-        find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+        find.image(const AssetImage('assets/fundos/inicio_palco.webp')),
       );
       expect(imagem.alignment, caso.$2);
     }

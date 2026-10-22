@@ -77,7 +77,7 @@ class CapaDaNoite extends StatelessWidget {
   const CapaDaNoite({
     super.key,
     required this.endereco,
-    this.fundoAlternativo = 'assets/fundos/inicio_palco.png',
+    this.fundoAlternativo = 'assets/fundos/inicio_palco.webp',
     this.alinhamento = Alignment.center,
   });
 

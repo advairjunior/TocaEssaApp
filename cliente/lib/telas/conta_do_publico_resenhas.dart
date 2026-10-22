@@ -143,7 +143,7 @@ class _CartaoResenhaAoVivo extends StatelessWidget {
           Positioned.fill(
             child: CapaDaNoite(
               endereco: enderecoCapa,
-              fundoAlternativo: 'assets/fundos/inicio_palco.png',
+              fundoAlternativo: 'assets/fundos/inicio_palco.webp',
             ),
           ),
           const Positioned.fill(

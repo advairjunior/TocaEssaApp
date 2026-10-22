@@ -19,7 +19,7 @@ void main() {
     expect(find.text('Código da apresentação'), findsOneWidget);
     expect(find.text('Feito por Advair'), findsOneWidget);
     expect(
-      find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+      find.image(const AssetImage('assets/fundos/inicio_palco.webp')),
       findsOneWidget,
     );
   });
@@ -52,7 +52,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.image(const AssetImage('assets/fundos/bastidores.png')),
+      find.image(const AssetImage('assets/fundos/bastidores.webp')),
       findsOneWidget,
     );
     expect(find.text('Entre no seu painel'), findsOneWidget);
@@ -99,7 +99,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.image(const AssetImage('assets/fundos/bastidores.png')),
+      find.image(const AssetImage('assets/fundos/bastidores.webp')),
       findsOneWidget,
     );
     expect(find.byType(NavigationBar), findsNothing);

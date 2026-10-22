@@ -92,9 +92,9 @@ class FundoTocaEssa extends StatelessWidget {
   }
 
   String _caminhoDaImagem(VarianteFundoTocaEssa variante) => switch (variante) {
-        VarianteFundoTocaEssa.palco => 'assets/fundos/inicio_palco.png',
-        VarianteFundoTocaEssa.bastidores => 'assets/fundos/bastidores.png',
-        VarianteFundoTocaEssa.atmosfera => 'assets/fundos/atmosfera.png',
+        VarianteFundoTocaEssa.palco => 'assets/fundos/inicio_palco.webp',
+        VarianteFundoTocaEssa.bastidores => 'assets/fundos/bastidores.webp',
+        VarianteFundoTocaEssa.atmosfera => 'assets/fundos/atmosfera.webp',
       };
 
   Gradient get _gradienteContraste => switch (intensidade) {

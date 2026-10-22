@@ -64,7 +64,7 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
     await tester.pumpAndSettle();
     expect(
-      find.image(const AssetImage('assets/fundos/atmosfera.png')),
+      find.image(const AssetImage('assets/fundos/atmosfera.webp')),
       findsOneWidget,
     );
     expect(find.text('Minhas resenhas'), findsOneWidget);
@@ -106,7 +106,7 @@ void main() {
     // Mesma linguagem do início: foto do palco ao fundo e sem barra de app.
     expect(find.byType(AppBar), findsNothing);
     expect(
-      find.image(const AssetImage('assets/fundos/inicio_palco.png')),
+      find.image(const AssetImage('assets/fundos/inicio_palco.webp')),
       findsOneWidget,
     );
     expect(find.text('Suas noites, guardadas.'), findsOneWidget);
