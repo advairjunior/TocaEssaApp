@@ -17,6 +17,7 @@ import 'componentes_lista.dart';
 import 'trechos_do_louvor.dart';
 
 part 'roteiro_do_louvor_componentes.dart';
+part 'roteiro_do_louvor_listas.dart';
 
 /// Roteiro do louvor no telefone de cada participante, pelo código: a letra
 /// do hino com quem canta cada parte, a vez da pessoa em destaque e o hino
@@ -213,6 +214,12 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
                   color: CoresTocaEssa.roxoClaro),
               onPressed: _alternarAcordes,
             ),
+            if ((_quemSou ?? '').isNotEmpty)
+              IconButton(
+                tooltip: 'Meus hinos',
+                icon: const Icon(Icons.assignment_ind_outlined),
+                onPressed: () => _mostrarMeusHinos(roteiro),
+              ),
             IconButton(
               tooltip: 'Lista de hinos',
               icon: const Icon(Icons.format_list_numbered_rounded),
@@ -295,43 +302,4 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
       ],
     );
   }
-
-  Future<void> _mostrarLista(RoteiroDoLouvor roteiro) =>
-      showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (contexto) => SafeArea(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-                maxHeight: MediaQuery.sizeOf(contexto).height * .8),
-            child: ListView(
-              shrinkWrap: true,
-              children: [
-                for (final hino in roteiro.hinos)
-                  ListTile(
-                    selected: hino.itemId == _hinoMostrado?.itemId,
-                    leading: Icon(hino.itemId == roteiro.hinoAtualId
-                        ? Icons.graphic_eq_rounded
-                        : hino.tocado
-                            ? Icons.check_rounded
-                            : Icons.music_note_outlined),
-                    title: Text(hino.titulo),
-                    subtitle: Text([
-                      if (hino.tom case final tom?) 'Tom $tom',
-                      if (_quemSou case final nome? when nome.isNotEmpty)
-                        if (hino.partesDe(nome) case final partes
-                            when partes > 0)
-                          'você canta $partes',
-                    ].join(' · ')),
-                    onTap: () {
-                      Navigator.of(contexto).pop();
-                      _abrirHino(hino);
-                    },
-                  ),
-              ],
-            ),
-          ),
-        ),
-      );
 }

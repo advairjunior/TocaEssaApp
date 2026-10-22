@@ -265,6 +265,76 @@ void main() {
     expect(find.text('Agora'), findsOneWidget);
   });
 
+  group('meus hinos', () {
+    Finder naFolha(String texto) => find.descendant(
+        of: find.byType(BottomSheet), matching: find.text(texto));
+
+    testWidgets('mostra só os hinos da pessoa, com as partes dela',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Meus hinos'));
+      await tester.pumpAndSettle();
+
+      expect(naFolha('Hinos de Ana'), findsOneWidget);
+      expect(naFolha('2 partes em 2 hinos'), findsOneWidget);
+      expect(naFolha('80 · Por Cristo, resgatado'), findsOneWidget);
+      expect(naFolha('Estrofe 2 · Tom G'), findsOneWidget);
+      expect(naFolha('234 · O meu ser entrego a Cristo'), findsOneWidget);
+      expect(naFolha('15 · Hino sem letra'), findsNothing);
+
+      await tester.tap(naFolha('234 · O meu ser entrego a Cristo'));
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('Primeira do segundo'), findsOneWidget);
+    });
+
+    testWidgets('quem só toca vê os solos dele', (tester) async {
+      SharedPreferences.setMockInitialValues(
+          {'louvor_quem_sou_ABC123': 'José'});
+      _noServidor = {
+        ..._roteiro(),
+        'hinos': [
+          _hino('h1', '80 · Por Cristo, resgatado', partes: [
+            _parte('Estrofe', 'Cristo Jesus', ['João']),
+            {
+              ..._parte('Instrumental', '', ['José']),
+              'nome': 'Solo sax'
+            },
+          ]),
+        ],
+      };
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Meus hinos'));
+      await tester.pumpAndSettle();
+
+      expect(naFolha('1 parte em 1 hino'), findsOneWidget);
+      expect(naFolha('Solo sax'), findsOneWidget);
+    });
+
+    testWidgets('sem parte própria, faz parte do coral', (tester) async {
+      SharedPreferences.setMockInitialValues(
+          {'louvor_quem_sou_ABC123': 'José'});
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Meus hinos'));
+      await tester.pumpAndSettle();
+
+      expect(naFolha('José faz parte do coral'), findsOneWidget);
+      expect(naFolha('Canta junto nas partes de Todos, em todos os hinos.'),
+          findsOneWidget);
+    });
+
+    testWidgets('quem só acompanha não tem a opção', (tester) async {
+      SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': ''});
+      await _abrir(tester);
+
+      expect(find.byTooltip('Meus hinos'), findsNothing);
+    });
+  });
+
   mainDaEntradaPeloCodigo();
 
   testWidgets('navega pelos hinos e volta ao atual', (tester) async {
