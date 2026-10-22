@@ -12,12 +12,9 @@ const _acimaDoTeto = <String, int>{
   'lib/telas/cartao_pedido_artista.dart': 408,
   'lib/telas/fila_musical_artista.dart': 351,
   'lib/telas/gerenciar_repertorios_detalhe.dart': 566,
-  'lib/telas/leitor_de_cifras.dart': 562,
   'lib/telas/painel_do_artista_aba_perfil.dart': 355,
   'lib/telas/painel_do_artista_estado.dart': 444,
-  'lib/telas/roteiro_do_louvor.dart': 591,
   'lib/telas/sequencia_do_palco.dart': 452,
-  'lib/telas/tela_de_stories.dart': 579,
 };
 
 void main() {

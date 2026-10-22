@@ -21,6 +21,9 @@ export '../dominio/transpor_cifra.dart' show linhaDeAcordes;
 export 'cifra_do_palco.dart' show tamanhoDaFonteDaCifra, mostrarDesenhoDoAcorde;
 export 'editor_de_cifra.dart' show pedirCifraEmTexto;
 
+part 'leitor_de_cifras_acoes.dart';
+part 'leitor_de_cifras_componentes.dart';
+
 /// Leitor de cifras do show: só a cifra na tela, setas para trocar de
 /// música (sem marcar nada) e Tocar sempre à mão. Pedal Bluetooth de virar
 /// página funciona pelas setas e Page Up/Down do teclado.
@@ -136,65 +139,6 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
 
   String get _quemSou => _preferencias?.getString(_chaveQuemSou) ?? '';
 
-  Future<void> _escolherQuemSou() async {
-    final cantores = _louvor?.participantes ?? const <String>[];
-    final nome = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (contexto) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              EspacoTocaEssa.base, 0, EspacoTocaEssa.base, EspacoTocaEssa.base),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Quem é você?',
-                  style: Theme.of(contexto).textTheme.titleMedium),
-              const SizedBox(height: EspacoTocaEssa.medio),
-              Wrap(
-                spacing: EspacoTocaEssa.pequeno,
-                runSpacing: EspacoTocaEssa.pequeno,
-                children: [
-                  for (final cantor in cantores)
-                    ChoiceChip(
-                      showCheckmark: false,
-                      // A cor da faixa da pessoa, como no roteiro.
-                      avatar: Center(
-                        widthFactor: 1,
-                        child: Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: corDaPessoa(
-                                _louvor?.participantes ?? const [], cantor),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                      label: Text(cantor),
-                      selected: cantor == _quemSou,
-                      onSelected: (_) => Navigator.of(contexto).pop(cantor),
-                    ),
-                ],
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(contexto).pop(''),
-                child: const Text('Só tocar'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (nome == null) return;
-    try {
-      await _preferencias?.setString(_chaveQuemSou, nome);
-    } catch (_) {
-      // A escolha só não fica guardada para a próxima vez.
-    }
-    if (mounted) setState(() {});
-  }
-
   /// A cifra da página: no louvor, partes com o nome de quem canta.
   List<TrechoDaCifra> _trechos(MusicaDoPalco pagina, String texto) {
     final semitons = _semitonsDe(pagina);
@@ -296,52 +240,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     setState(() => _pagina = paginas[destino]);
   }
 
-  KeyEventResult _teclado(FocusNode _, KeyEvent evento) {
-    if (evento is! KeyDownEvent) return KeyEventResult.ignored;
-    final tecla = evento.logicalKey;
-    if (tecla == LogicalKeyboardKey.arrowRight ||
-        tecla == LogicalKeyboardKey.pageDown) {
-      _irPara(1);
-      return KeyEventResult.handled;
-    }
-    if (tecla == LogicalKeyboardKey.arrowLeft ||
-        tecla == LogicalKeyboardKey.pageUp) {
-      _irPara(-1);
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
-  }
-
-  Future<void> _tocar() async {
-    try {
-      await _sequencia.comecar(_pagina);
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _editarCifra(String? textoAtual) async {
-    final texto = await pedirCifraEmTexto(context,
-        titulo: _pagina.titulo,
-        texto: textoAtual,
-        oQue: _sequencia.vocabulario.cifraMaiuscula);
-    if (texto == null || !mounted) return;
-    try {
-      await _sequencia.salvarCifraEmTexto(_pagina, texto);
-      // A letra nova muda as partes do hino.
-      if (_noLouvor) await _carregarLouvor();
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
-
-  Future<void> _abrirNoSite(String url) async {
-    try {
-      await widget.abrirUrl(Uri.parse(url));
-    } catch (erro) {
-      if (mounted) mostrarErro(context, erro);
-    }
-  }
+  void _mudarEstado(VoidCallback acao) => setState(acao);
 
   @override
   Widget build(BuildContext context) {
@@ -425,138 +324,4 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
       ),
     );
   }
-}
-
-class _SemCifra extends StatelessWidget {
-  const _SemCifra({
-    required this.vocabulario,
-    required this.link,
-    required this.colar,
-    required this.abrirNoSite,
-  });
-
-  final Vocabulario vocabulario;
-  final String? link;
-  final VoidCallback colar;
-  final ValueChanged<String> abrirNoSite;
-
-  @override
-  Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(EspacoTocaEssa.grande),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.music_note_rounded,
-                  size: 48, color: CoresTocaEssa.textoSecundario),
-              const SizedBox(height: EspacoTocaEssa.medio),
-              Text('Sem ${vocabulario.cifra} no app',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: EspacoTocaEssa.base),
-              FilledButton.icon(
-                onPressed: colar,
-                icon: const Icon(Icons.content_paste_rounded),
-                label: Text('Colar ${vocabulario.cifra}'),
-              ),
-              if (link case final endereco?) ...[
-                const SizedBox(height: EspacoTocaEssa.pequeno),
-                OutlinedButton.icon(
-                  onPressed: () => abrirNoSite(endereco),
-                  icon: const Icon(Icons.open_in_new_rounded),
-                  label: const Text('Abrir no site'),
-                ),
-              ],
-            ],
-          ),
-        ),
-      );
-}
-
-/// Sempre visível: setas que só trocam a cifra e Tocar no meio.
-class _BarraDoLeitor extends StatelessWidget {
-  const _BarraDoLeitor({
-    required this.vocabulario,
-    required this.temAnterior,
-    required this.temProxima,
-    required this.tocando,
-    required this.salvando,
-    required this.depois,
-    required this.anterior,
-    required this.proxima,
-    required this.tocar,
-  });
-
-  final Vocabulario vocabulario;
-  final bool temAnterior;
-  final bool temProxima;
-  final bool tocando;
-  final bool salvando;
-  final String? depois;
-  final VoidCallback anterior;
-  final VoidCallback proxima;
-  final VoidCallback tocar;
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(
-            EspacoTocaEssa.pequeno,
-            EspacoTocaEssa.pequeno,
-            EspacoTocaEssa.pequeno,
-            EspacoTocaEssa.pequeno,
-          ),
-          decoration: const BoxDecoration(
-            color: CoresTocaEssa.superficie,
-            border: Border(top: BorderSide(color: CoresTocaEssa.borda)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  IconButton.filledTonal(
-                    tooltip: vocabulario.anterior,
-                    iconSize: 32,
-                    onPressed: temAnterior ? anterior : null,
-                    icon: const Icon(Icons.chevron_left_rounded),
-                  ),
-                  const SizedBox(width: EspacoTocaEssa.pequeno),
-                  Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 52),
-                        backgroundColor: tocando ? CoresTocaEssa.sucesso : null,
-                        disabledBackgroundColor: tocando
-                            ? CoresTocaEssa.sucesso.withValues(alpha: .25)
-                            : null,
-                      ),
-                      onPressed: tocando || salvando ? null : tocar,
-                      child: Text(tocando ? 'Tocando ✓' : 'Tocar'),
-                    ),
-                  ),
-                  const SizedBox(width: EspacoTocaEssa.pequeno),
-                  IconButton.filledTonal(
-                    tooltip: vocabulario.proxima,
-                    iconSize: 32,
-                    onPressed: temProxima ? proxima : null,
-                    icon: const Icon(Icons.chevron_right_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: EspacoTocaEssa.mini),
-              Text(
-                depois == null
-                    ? 'Fim da ${vocabulario.setlist}'
-                    : 'Depois: $depois',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(color: CoresTocaEssa.textoSecundario),
-              ),
-            ],
-          ),
-        ),
-      );
 }
