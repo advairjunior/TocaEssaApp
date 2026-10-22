@@ -6,6 +6,9 @@ import 'package:video_player/video_player.dart';
 import '../dominio/stories.dart';
 import '../tema/tema_toca_essa.dart';
 
+part 'tela_de_stories_construcao.dart';
+part 'tela_de_stories_video.dart';
+
 /// Monta o vídeo do story. Isolado para a tela ser testada sem o reprodutor
 /// do aparelho.
 typedef ConstrutorDeVideo = Widget Function({
@@ -101,8 +104,8 @@ class _TelaDeStoriesState extends State<TelaDeStories>
       inicio--;
     }
     var fim = indice;
-    while (fim + 1 < _stories.length &&
-        chaveDoGrupo(_stories[fim + 1]) == chave) {
+    while (
+        fim + 1 < _stories.length && chaveDoGrupo(_stories[fim + 1]) == chave) {
       fim++;
     }
     return (inicio, fim);
@@ -229,10 +232,10 @@ class _TelaDeStoriesState extends State<TelaDeStories>
       body: LayoutBuilder(
         builder: (context, limites) => GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapUp: (detalhes) => detalhes.localPosition.dx <
-                  limites.maxWidth / 3
-              ? _voltar()
-              : _avancar(),
+          onTapUp: (detalhes) =>
+              detalhes.localPosition.dx < limites.maxWidth / 3
+                  ? _voltar()
+                  : _avancar(),
           onLongPressStart: (_) => _pausar(true),
           onLongPressEnd: (_) => _pausar(false),
           onVerticalDragEnd: (detalhes) {
@@ -253,13 +256,11 @@ class _TelaDeStoriesState extends State<TelaDeStories>
                         fit: BoxFit.contain,
                         // Sem CORS no armazenamento ou com foto HEIC do
                         // iPhone, só a imagem do próprio navegador mostra.
-                        webHtmlElementStrategy:
-                            WebHtmlElementStrategy.fallback,
-                        loadingBuilder: (_, filho, carregando) =>
-                            carregando == null
-                                ? filho
-                                : const Center(
-                                    child: CircularProgressIndicator()),
+                        webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
+                        loadingBuilder: (_, filho, carregando) => carregando ==
+                                null
+                            ? filho
+                            : const Center(child: CircularProgressIndicator()),
                         errorBuilder: (_, __, ___) => const Center(
                           child: Icon(Icons.broken_image_rounded,
                               color: CoresTocaEssa.textoSecundario, size: 48),
@@ -298,282 +299,10 @@ class _TelaDeStoriesState extends State<TelaDeStories>
       ),
     );
   }
-
-  Widget _construirBarras(StoryDoShow story) {
-    final (inicio, fim) = _faixaDe(_atual);
-    return AnimatedBuilder(
-      animation: Listenable.merge([_tempo, _progressoDoVideo]),
-      builder: (_, __) => Row(
-        children: [
-          for (var i = inicio; i <= fim; i++) ...[
-            if (i > inicio) const SizedBox(width: 3),
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(
-                  minHeight: 3,
-                  backgroundColor: Colors.white24,
-                  color: Colors.white,
-                  value: i < _atual
-                      ? 1
-                      : i > _atual
-                          ? 0
-                          : story.tipo == TipoDeStory.foto
-                              ? _tempo.value
-                              : _progressoDoVideo.value,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _construirCabecalho(BuildContext context, StoryDoShow story) {
-    final hora = story.criadoEm.toLocal();
-    final texto = Theme.of(context).textTheme;
-    final acoes = widget.acoes?.call(story) ?? const <AcaoDoStory>[];
-    return Row(
-      children: [
-        if (story.doArtista) ...[
-          const Icon(Icons.mic_rounded, color: CoresTocaEssa.ouro, size: 20),
-          const SizedBox(width: EspacoTocaEssa.mini),
-        ],
-        Flexible(
-          child: Text(
-            story.nome ?? 'Público',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: texto.titleSmall?.copyWith(color: Colors.white),
-          ),
-        ),
-        const SizedBox(width: EspacoTocaEssa.pequeno),
-        Text(
-          '${hora.hour.toString().padLeft(2, '0')}:'
-          '${hora.minute.toString().padLeft(2, '0')}',
-          style: texto.bodySmall?.copyWith(color: Colors.white70),
-        ),
-        if (story.expiraEm case final expiraEm?) ...[
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-          Flexible(
-            child: Text(
-              _quandoSome(expiraEm),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: texto.bodySmall?.copyWith(color: Colors.white70),
-            ),
-          ),
-        ],
-        if (story.escondido) ...[
-          const SizedBox(width: EspacoTocaEssa.pequeno),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: CoresTocaEssa.perigo,
-              borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
-            ),
-            child: Text('Escondido',
-                style: texto.labelSmall?.copyWith(color: CoresTocaEssa.fundo)),
-          ),
-        ],
-        const Spacer(),
-        if (acoes.isNotEmpty)
-          PopupMenuButton<AcaoDoStory>(
-            tooltip: 'Mais',
-            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
-            onOpened: () => _pausar(true),
-            onCanceled: () => _pausar(false),
-            onSelected: _executar,
-            itemBuilder: (_) => [
-              for (final acao in acoes)
-                PopupMenuItem(value: acao, child: Text(acao.rotulo)),
-            ],
-          ),
-        IconButton(
-          tooltip: 'Fechar',
-          onPressed: _fechar,
-          icon: const Icon(Icons.close_rounded, color: Colors.white),
-        ),
-      ],
-    );
-  }
 }
 
 String _quandoSome(DateTime expiraEm) {
   final dias = expiraEm.difference(DateTime.now()).inDays;
   if (dias < 1) return 'some hoje';
   return 'some em $dias ${dias == 1 ? 'dia' : 'dias'}';
-}
-
-
-/// Vídeo do story no reprodutor do aparelho. Começa com som; se o
-/// navegador não deixar tocar com som sem um toque, toca mudo e o botão de
-/// som libera.
-class VideoDoStory extends StatefulWidget {
-  const VideoDoStory({
-    super.key,
-    required this.url,
-    required this.pausado,
-    required this.aoProgredir,
-    required this.aoTerminar,
-  });
-
-  static Widget construir({
-    required Uri url,
-    required bool pausado,
-    required ValueChanged<double> aoProgredir,
-    required VoidCallback aoTerminar,
-  }) =>
-      VideoDoStory(
-        url: url,
-        pausado: pausado,
-        aoProgredir: aoProgredir,
-        aoTerminar: aoTerminar,
-      );
-
-  final Uri url;
-  final bool pausado;
-  final ValueChanged<double> aoProgredir;
-  final VoidCallback aoTerminar;
-
-  @override
-  State<VideoDoStory> createState() => _VideoDoStoryState();
-}
-
-class _VideoDoStoryState extends State<VideoDoStory> {
-  // Quem desligou o som continua sem som nos próximos.
-  static var _comSom = true;
-
-  VideoPlayerController? _controle;
-  var _mudo = false;
-  var _iniciado = false;
-  var _falhou = false;
-  var _terminou = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _abrir(mudo: !_comSom);
-  }
-
-  @override
-  void didUpdateWidget(VideoDoStory antigo) {
-    super.didUpdateWidget(antigo);
-    final controle = _controle;
-    if (controle == null || !_iniciado || antigo.pausado == widget.pausado) {
-      return;
-    }
-    widget.pausado ? controle.pause() : controle.play();
-  }
-
-  @override
-  void dispose() {
-    _soltar();
-    super.dispose();
-  }
-
-  void _soltar() {
-    _controle?.removeListener(_acompanhar);
-    _controle?.dispose();
-    _controle = null;
-  }
-
-  Future<void> _abrir({required bool mudo}) async {
-    final controle = VideoPlayerController.networkUrl(widget.url);
-    _controle = controle;
-    _mudo = mudo;
-    _iniciado = false;
-    controle.addListener(_acompanhar);
-    try {
-      await controle.initialize();
-      if (controle != _controle) return;
-      if (mudo) await controle.setVolume(0);
-      _iniciado = true;
-      if (!widget.pausado) await controle.play();
-    } catch (_) {
-      if (controle == _controle && mounted) setState(() => _falhou = true);
-      return;
-    }
-    if (mounted) setState(() {});
-  }
-
-  void _acompanhar() {
-    final controle = _controle;
-    if (controle == null) return;
-    final valor = controle.value;
-    if (valor.hasError) {
-      if (_iniciado && !_mudo) {
-        // Tocar com som pede um toque na tela: segue mudo. Fora do aviso,
-        // que o reprodutor não pode ser solto enquanto avisa.
-        _iniciado = false;
-        scheduleMicrotask(() {
-          if (!mounted || _controle != controle) return;
-          _soltar();
-          _abrir(mudo: true);
-        });
-      } else if (mounted && !_falhou) {
-        setState(() => _falhou = true);
-      }
-      return;
-    }
-    if (!valor.isInitialized) return;
-    final total = valor.duration.inMilliseconds;
-    if (total > 0) {
-      widget.aoProgredir(
-          (valor.position.inMilliseconds / total).clamp(0, 1).toDouble());
-    }
-    if (valor.isCompleted && !_terminou) {
-      _terminou = true;
-      widget.aoTerminar();
-    }
-  }
-
-  void _alternarSom() {
-    final controle = _controle;
-    if (controle == null) return;
-    setState(() => _mudo = !_mudo);
-    _comSom = !_mudo;
-    controle.setVolume(_mudo ? 0 : 1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final controle = _controle;
-    if (_falhou) {
-      return Center(
-        child: Text('Não foi possível tocar este vídeo.',
-            style: Theme.of(context)
-                .textTheme
-                .bodyLarge
-                ?.copyWith(color: Colors.white70)),
-      );
-    }
-    if (controle == null || !controle.value.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    return Stack(
-      children: [
-        Center(
-          child: AspectRatio(
-            aspectRatio: controle.value.aspectRatio,
-            child: VideoPlayer(controle),
-          ),
-        ),
-        Positioned(
-          right: EspacoTocaEssa.pequeno,
-          bottom: EspacoTocaEssa.pequeno,
-          child: SafeArea(
-            child: IconButton.filledTonal(
-              tooltip: _mudo ? 'Ligar o som' : 'Desligar o som',
-              onPressed: _alternarSom,
-              icon: Icon(_mudo
-                  ? Icons.volume_off_rounded
-                  : Icons.volume_up_rounded),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }
