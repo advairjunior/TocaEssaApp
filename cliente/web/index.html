@@ -49,6 +49,14 @@
       animation: gira 0.9s linear infinite;
     }
     @keyframes gira { to { transform: rotate(360deg); } }
+    /* O editor de cifra usa um campo do navegador por baixo do Flutter, e no
+       iPhone é ele que põe o cursor: com a mesma fonte, o toque cai na letra
+       certa. */
+    @font-face {
+      font-family: 'JetBrainsMono';
+      src: url('assets/assets/fontes/JetBrainsMono.ttf') format('truetype');
+      font-display: swap;
+    }
   </style>
 </head>
 <body>

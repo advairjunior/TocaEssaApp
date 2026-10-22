@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../dominio/ajustar_cifra.dart';
@@ -6,6 +8,7 @@ import '../tema/tema_toca_essa.dart';
 import 'como_marcar_hinos.dart';
 
 const _tamanhoDaLetra = 15.0;
+const _alturaDaLinha = 1.35;
 // Largura de uma letra da JetBrains Mono em relação ao tamanho da fonte.
 const _larguraDaLetra = .6;
 const _margem = EspacoTocaEssa.base;
@@ -123,11 +126,16 @@ double _larguraDoTexto(Iterable<String> linhas, double minima) {
 const _estiloDaCifra = TextStyle(
   fontFamily: 'JetBrainsMono',
   fontSize: _tamanhoDaLetra,
-  height: 1.35,
+  height: _alturaDaLinha,
 );
 
 /// Campo sem quebra de linha: a linha comprida rola para o lado, para o
 /// acorde ficar sempre em cima da sílaba enquanto se edita.
+///
+/// O campo tem a altura do texto inteiro e a tela rola por fora dele. No
+/// Safari do iPhone quem põe o cursor é o campo do navegador por baixo do
+/// Flutter, e ele não acompanha a rolagem de dentro de um campo: o toque numa
+/// linha de baixo caía numa linha lá de cima.
 class _CampoSemQuebra extends StatelessWidget {
   const _CampoSemQuebra({required this.controlador});
 
@@ -135,29 +143,39 @@ class _CampoSemQuebra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-        builder: (context, limites) => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width:
-                _larguraDoTexto(controlador.text.split('\n'), limites.maxWidth),
-            height: limites.maxHeight,
-            child: TextField(
-              controller: controlador,
-              autofocus: controlador.text.isEmpty,
-              expands: true,
-              maxLines: null,
-              keyboardType: TextInputType.multiline,
-              textAlignVertical: TextAlignVertical.top,
-              autocorrect: false,
-              enableSuggestions: false,
-              style: _estiloDaCifra.copyWith(color: CoresTocaEssa.texto),
-              decoration: const InputDecoration(
-                hintText: 'Cole aqui a letra com os acordes',
-                filled: false,
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: EdgeInsets.all(_margem),
+        // Tocar para parar a letra que desliza conta como tocar no campo:
+        // enquanto rola, o Flutter ignora toques no conteúdo, e na web o toque
+        // "fora" fecharia o teclado.
+        builder: (context, limites) => TextFieldTapRegion(
+          child: SingleChildScrollView(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: _larguraDoTexto(
+                    controlador.text.split('\n'), limites.maxWidth),
+                child: TextField(
+                  controller: controlador,
+                  autofocus: controlador.text.isEmpty,
+                  // Ocupa a tela toda mesmo com pouco texto: tocar embaixo
+                  // ainda abre o teclado.
+                  minLines: math.max(
+                      1,
+                      (limites.maxHeight - _margem * 2) ~/
+                          (_tamanhoDaLetra * _alturaDaLinha)),
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  style: _estiloDaCifra.copyWith(color: CoresTocaEssa.texto),
+                  decoration: const InputDecoration(
+                    hintText: 'Cole aqui a letra com os acordes',
+                    filled: false,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.all(_margem),
+                  ),
+                ),
               ),
             ),
           ),

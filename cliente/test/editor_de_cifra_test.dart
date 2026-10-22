@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
@@ -58,6 +59,49 @@ void main() {
         findsOneWidget);
   });
 
+  testWidgets(
+      'texto comprido: o campo cresce com o texto e a tela rola por fora',
+      (tester) async {
+    // No Safari do iPhone o cursor é posto pelo campo do navegador, que não
+    // acompanha a rolagem de dentro do campo do Flutter: o toque numa linha
+    // de baixo caía numa linha lá de cima.
+    _celular(tester);
+    await _abrir(tester,
+        texto: [for (var i = 1; i <= 80; i++) 'Linha $i'].join('\n'));
+
+    final campo = find.byType(EditableText);
+    expect(tester.getSize(campo).height, greaterThan(740 * 2));
+    expect(
+        find.ancestor(
+            of: campo,
+            matching: find.byWidgetPredicate((w) =>
+                w is SingleChildScrollView &&
+                w.scrollDirection == Axis.vertical)),
+        findsOneWidget);
+  });
+
+  testWidgets('tocar para parar a rolagem não fecha o teclado', (tester) async {
+    _celular(tester);
+    await _abrir(tester,
+        texto: [for (var i = 1; i <= 80; i++) 'Linha $i'].join('\n'));
+    await tester.tapAt(const Offset(180, 200));
+    await tester.pump();
+    final foco =
+        tester.widget<EditableText>(find.byType(EditableText)).focusNode;
+    expect(foco.hasFocus, isTrue);
+
+    // Enquanto a letra desliza, o Flutter ignora toques no que está rolando,
+    // e o toque parecia fora do campo. Na web o dedo fora do campo fecha o
+    // teclado; aqui fora da web só o mouse faz isso, por isso o mouse.
+    await tester.flingFrom(const Offset(180, 600), const Offset(0, -300), 2000);
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.tapAt(const Offset(180, 400), kind: PointerDeviceKind.mouse);
+    await tester.pump();
+
+    expect(foco.hasFocus, isTrue);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('fechar não salva', (tester) async {
     final respostas = await _abrir(tester, texto: 'G  D');
 
@@ -99,8 +143,7 @@ void main() {
     // Voltar para editar mantém o texto.
     await tester.tap(find.text('Editar'));
     await tester.pumpAndSettle();
-    expect(
-        tester.widget<TextField>(find.byType(TextField)).controller!.text,
+    expect(tester.widget<TextField>(find.byType(TextField)).controller!.text,
         startsWith('C7M        D11'));
   });
 

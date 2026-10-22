@@ -9,4 +9,13 @@ void main() {
 
     expect(html, contains('background-color: #0B080F'));
   });
+
+  test('a página conhece a fonte da cifra para o campo do navegador', () {
+    // No Safari do iPhone o cursor do editor é posto pelo campo do navegador;
+    // com outra fonte, o toque num acorde caía algumas letras para o lado.
+    final html = File('web/index.html').readAsStringSync();
+
+    expect(html, contains("font-family: 'JetBrainsMono'"));
+    expect(html, contains('assets/assets/fontes/JetBrainsMono.ttf'));
+  });
 }
