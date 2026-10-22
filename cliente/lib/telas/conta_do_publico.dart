@@ -19,6 +19,7 @@ import 'retrospectiva_do_ano.dart';
 
 part 'conta_do_publico_construcao.dart';
 part 'conta_do_publico_resenhas.dart';
+part 'conta_do_publico_memorias.dart';
 
 class ContaDoPublico extends StatefulWidget {
   const ContaDoPublico({super.key, required this.api});
