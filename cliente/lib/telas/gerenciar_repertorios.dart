@@ -14,6 +14,8 @@ import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
 
 part 'gerenciar_repertorios_detalhe.dart';
+part 'gerenciar_repertorios_acoes.dart';
+part 'gerenciar_repertorios_musicas.dart';
 part 'gerenciar_repertorios_formularios.dart';
 
 class GerenciarRepertorios extends StatefulWidget {
