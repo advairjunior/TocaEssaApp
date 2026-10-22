@@ -38,9 +38,11 @@ part 'painel_do_artista_inicio.dart';
 part 'painel_do_artista_apresentacao.dart';
 part 'componentes_painel_progresso.dart';
 part 'componentes_painel_inicio.dart';
+part 'componentes_painel_lista.dart';
 part 'componentes_painel_apresentacao.dart';
 part 'formulario_apresentacao.dart';
 part 'codigo_da_apresentacao.dart';
+part 'codigo_da_apresentacao_cartao.dart';
 
 enum _FiltroApresentacoes { proximas, historico }
 
