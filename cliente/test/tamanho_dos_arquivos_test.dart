@@ -9,12 +9,8 @@ const _tetoDeLinhas = 350;
 /// tamanho daquele dia: podem diminuir, nunca crescer. Ao dividir um deles,
 /// tire-o daqui.
 const _acimaDoTeto = <String, int>{
-  'lib/telas/cartao_pedido_artista.dart': 408,
   'lib/telas/fila_musical_artista.dart': 351,
-  'lib/telas/gerenciar_repertorios_detalhe.dart': 566,
   'lib/telas/painel_do_artista_aba_perfil.dart': 355,
-  'lib/telas/painel_do_artista_estado.dart': 444,
-  'lib/telas/sequencia_do_palco.dart': 452,
 };
 
 void main() {
