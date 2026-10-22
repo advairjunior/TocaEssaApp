@@ -198,6 +198,27 @@ cada uma começa por uma investigação antes de virar plano.
   Tela de Início.
 - **Registrada em:** 2026-10-21.
 
+### Visual próprio para o Louvor
+
+- **Problema:** o Louvor usa o mesmo visual de show (roxo neon, foto de palco
+  com público), mas acontece de dia ou em casa iluminada, com cada um lendo a
+  letra no próprio telefone. Texto branco no preto cansa num ambiente claro, e
+  o clima de bar não combina com um encontro de hinos.
+- **Ideia:** automática pelo tipo de evento, sem botão de tema. O leitor da
+  letra fica claro (fundo creme tipo papel, letra quase preta, acordes num
+  tom escuro). O resto do Louvor continua escuro, mas troca o roxo pelo
+  dourado (`CoresTocaEssa.ouro`) e a foto de palco por um fundo liso e quente.
+  O show continua como está.
+- **Prévia aprovada para avaliar:** https://claude.ai/artifact/2oqkzWg2dQF3aLAo2ARXQ3
+  (leitor hoje × claro, escala roxa × dourada, as 12 cores no escuro × claro).
+- **Cuidado:** as 12 cores dos cantores (`_coresDosCantores`) foram feitas para
+  o fundo escuro; o claro precisa de uma versão mais escura de cada uma, na
+  mesma ordem. Verde-limão e caramelo são as mais fracas no creme.
+- **Investigar antes:** observar o encontro de 2026-10-24 (letra legível na
+  sala? alguém aumenta o brilho?); escolher creme ou branco e acordes roxos ou
+  marrons pela prévia.
+- **Registrada em:** 2026-10-22.
+
 ### No palco
 
 - **Salvar a setlist como repertório:** ✅ entregue em 2026-10-21
