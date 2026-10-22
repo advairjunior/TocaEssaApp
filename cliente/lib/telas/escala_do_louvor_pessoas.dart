@@ -35,7 +35,6 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
               cor: corDoCantor(louvor.cantores, nome),
               // "1 pt" já diz o que é o número.
               texto: '$nome · ${_pontos(pontos[nome] ?? 0)}',
-              textoFora: '$nome · fora',
               fora: configuracao.cantoresFora.contains(nome),
               alternar: _salvando
                   ? null
@@ -74,11 +73,6 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
                 solista.nome,
                 if (solista.instrumento.isNotEmpty) solista.instrumento,
                 _solos(solos[solista.nome] ?? 0),
-              ].join(' · '),
-              textoFora: [
-                solista.nome,
-                if (solista.instrumento.isNotEmpty) solista.instrumento,
-                'fora',
               ].join(' · '),
               fora: configuracao.solistasFora.contains(solista.nome),
               alternar: _salvando
@@ -155,13 +149,12 @@ List<String> _alternado(List<String> nomes, String nome) => nomes.contains(nome)
     : [...nomes, nome];
 
 /// Nome na aba Pessoas: tocar tira ou põe a pessoa no automático; quem está
-/// fora fica apagado, com "fora" no lugar dos pontos. O × de tirar da lista
-/// só aparece no Editar.
+/// fora fica apagado, com "fora" depois dos pontos: escalada à mão, ainda
+/// conta o que canta. O × de tirar da lista só aparece no Editar.
 class _ChipDaPessoa extends StatelessWidget {
   const _ChipDaPessoa({
     required this.cor,
     required this.texto,
-    required this.textoFora,
     required this.fora,
     required this.alternar,
     required this.deleteButtonTooltipMessage,
@@ -170,7 +163,6 @@ class _ChipDaPessoa extends StatelessWidget {
 
   final Color cor;
   final String texto;
-  final String textoFora;
   final bool fora;
   final VoidCallback? alternar;
   final String deleteButtonTooltipMessage;
@@ -179,7 +171,7 @@ class _ChipDaPessoa extends StatelessWidget {
   @override
   Widget build(BuildContext context) => InputChip(
         avatar: Opacity(opacity: fora ? .35 : 1, child: _Bolinha(cor)),
-        label: Text(fora ? textoFora : texto),
+        label: Text(fora ? '$texto · fora' : texto),
         labelStyle:
             fora ? const TextStyle(color: CoresTocaEssa.textoSecundario) : null,
         tooltip: fora ? 'Voltar ao automático' : 'Tirar do automático',

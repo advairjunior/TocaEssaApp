@@ -357,16 +357,17 @@ void main() {
     await tester.tap(find.text('Ana · 1 pt'));
     await tester.pumpAndSettle();
     expect(configuracao()['cantoresFora'], ['Ana']);
-    // Continua na lista, apagada, com "fora" no lugar dos pontos.
-    expect(find.text('Ana · fora'), findsOneWidget);
+    // Continua na lista, apagada; os pontos ficam, para ver o que ela canta
+    // quando é escalada à mão.
+    expect(find.text('Ana · 1 pt · fora'), findsOneWidget);
 
     await tester.tap(find.text('José · sax tenor · 1 solo'));
     await tester.pumpAndSettle();
     expect(configuracao()['solistasFora'], ['José']);
     expect(configuracao()['cantoresFora'], ['Ana']);
-    expect(find.text('José · sax tenor · fora'), findsOneWidget);
+    expect(find.text('José · sax tenor · 1 solo · fora'), findsOneWidget);
 
-    await tester.tap(find.text('Ana · fora'));
+    await tester.tap(find.text('Ana · 1 pt · fora'));
     await tester.pumpAndSettle();
     expect(configuracao()['cantoresFora'], isEmpty);
     expect(find.text('Ana · 1 pt'), findsOneWidget);
