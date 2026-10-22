@@ -67,6 +67,10 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### Cifra dentro do próprio app
 
+- **Status:** ✅ entregue em 2026-10-13 pelo caminho alternativo: o artista
+  cola a cifra no app, guardada junto com a música (`ebadd90`), e o leitor
+  de cifras mostra tudo sem sair do TocaEssa (`0280149`). Depois vieram
+  tom, rolagem automática, limpeza da cifra colada e o leitor do louvor.
 - **Problema:** no palco, cada música abre a cifra numa aba do navegador e o
   artista precisa alternar entre o app e a cifra. Mesmo com uma única aba de
   cifra, essa troca gera silêncio entre uma música e outra.
@@ -161,6 +165,10 @@ cada uma começa por uma investigação antes de virar plano.
 
 ### Compartilhar repertório com outra conta
 
+- **Status:** parcial. Em 2026-10-21 entrou o compartilhamento de **uma**
+  música por link, sem conta: a cifra colada (`744e3c3`, `#/cifra/{codigo}`)
+  e o hino do louvor (`f1044e2`). Copiar o repertório inteiro para outra
+  conta continua como ideia.
 - **Problema:** um colega de banda ou de louvor precisa montar de novo, na
   conta dele, um repertório que já existe, com cifras e letras coladas uma a
   uma.
