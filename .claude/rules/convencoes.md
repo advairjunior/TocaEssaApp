@@ -7,7 +7,8 @@
 
 ## Servidor (.NET / ASP.NET Core)
 
-- Minimal APIs no `Program.cs` — sem controllers.
+- Minimal APIs agrupadas por assunto em `Rotas/` (`app.MapearRotasDoX()`, chamadas pelo `Program.cs`) — sem controllers.
+- Teto de 350 linhas por arquivo, no app e no servidor (testes `tamanho_dos_arquivos_test.dart` e `TamanhoDosArquivosTestes.cs`): ao passar, dividir por responsabilidade.
 - Repositório dividido em arquivos parciais por domínio: `RepositorioTocaEssa.Contas.cs`, `RepositorioTocaEssa.Apresentacoes.cs`, etc.
 - Operações privadas recebem `string token` e resolvem a conta internamente — nunca recebem `ArtistaId` do cliente.
 - Erros de negócio como exceções de domínio; mapeamento para HTTP em `TratamentoDeErros.cs`.

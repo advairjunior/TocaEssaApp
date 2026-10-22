@@ -10,7 +10,6 @@ public class TamanhoDosArquivosTestes
     // deles, tire-o daqui.
     private static readonly Dictionary<string, int> AcimaDoTeto = new()
     {
-        ["Program.cs"] = 976,
         ["Dominio/Modelos.cs"] = 424,
         ["Infraestrutura/BancoTocaEssa.cs"] = 866,
         ["Infraestrutura/RepositorioTocaEssa.Louvor.cs"] = 351,
