@@ -30,7 +30,6 @@ const _acimaDoTeto = <String, int>{
   'lib/telas/perfil_participante.dart': 359,
   'lib/telas/roteiro_do_louvor.dart': 591,
   'lib/telas/sequencia_do_palco.dart': 452,
-  'lib/telas/stories_do_show.dart': 673,
   'lib/telas/tela_de_stories.dart': 579,
 };
 
