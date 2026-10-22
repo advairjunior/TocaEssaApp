@@ -3,7 +3,7 @@ part of 'fila_musical_artista.dart';
 extension _ConteudoFilaMusicalArtista on _FilaMusicalArtistaState {
   Widget _conteudoFila(BuildContext context) {
     if (_carregando) {
-      return const Center(child: CircularProgressIndicator());
+      return const EsqueletoDeLista();
     }
     if (widget.apresentacao.status == StatusApresentacao.encerrada) {
       return _conteudoEncerrado();

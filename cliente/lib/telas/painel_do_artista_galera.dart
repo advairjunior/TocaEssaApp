@@ -4,10 +4,7 @@ extension _GaleraDoPainelDoArtista on _PainelDoArtistaState {
   List<Widget> _construirGaleraDaResenha(BuildContext context) => [
         const TituloGrupo('Galera da resenha'),
         if (_carregandoGalera)
-          const Padding(
-            padding: EdgeInsets.all(EspacoTocaEssa.grande),
-            child: Center(child: CircularProgressIndicator()),
-          )
+          const EsqueletoDeLista(linhas: 3, telaInteira: false)
         else if (_galera.isEmpty)
           Padding(
             padding: const EdgeInsets.all(EspacoTocaEssa.base),

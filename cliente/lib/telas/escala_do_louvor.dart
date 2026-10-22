@@ -7,6 +7,7 @@ import '../tema/tema_toca_essa.dart';
 import 'como_marcar_hinos.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 import 'editor_de_cifra.dart';
 import 'trechos_do_louvor.dart';
 
@@ -215,7 +216,7 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
     final louvor = _louvor;
     if (louvor == null) {
       return _erro == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const EsqueletoDeLista()
           : EstadoVazio(
               icone: Icons.wifi_off_rounded,
               titulo: 'Não foi possível abrir a escala',

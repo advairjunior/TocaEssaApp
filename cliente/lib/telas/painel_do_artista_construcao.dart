@@ -8,7 +8,7 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
             body: FundoTocaEssa(
               variante: VarianteFundoTocaEssa.bastidores,
               intensidade: IntensidadeFundoTocaEssa.cabecalho,
-              child: Center(child: CircularProgressIndicator()),
+              child: EsqueletoDeLista(),
             ),
           )
         : _dentroDaApresentacao && apresentacao != null
@@ -16,13 +16,25 @@ extension _ConstrucaoPainelDoArtista on _PainelDoArtistaState {
             : _aba == _AbaPainel.perfil
                 ? _construirPerfil(context)
                 : _construirInicio(context);
+    // O carregamento conta como início: a lista chega sem deslizar.
+    final chave = _carregando
+        ? 'inicio'
+        : _dentroDaApresentacao && apresentacao != null
+            ? 'apresentacao-${apresentacao.id}'
+            : _aba == _AbaPainel.perfil
+                ? 'perfil'
+                : 'inicio';
     return PopScope(
       canPop: _aba == _AbaPainel.inicio,
       onPopInvokedWithResult: (saiu, _) {
         if (saiu) return;
         _aba == _AbaPainel.perfil ? _sairDoPerfil() : _voltarAoInicio();
       },
-      child: tela,
+      child: TrocaDeTela(
+        chave: chave,
+        voltando: chave == 'inicio',
+        child: tela,
+      ),
     );
   }
 

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -220,6 +221,29 @@ void main() {
     expect(find.text('Setlist'), findsOneWidget);
     expect(find.text('Mais'), findsOneWidget);
     expect(barra.selectedIndex, 0);
+  });
+
+  testWidgets('abrir o show desliza para o lado e trocar de aba esmaece',
+      (tester) async {
+    await _abrirPainel(
+      tester,
+      apresentacoes: '[${_apresentacao(
+        id: '1',
+        nome: 'Show de hoje',
+        data: '2026-09-04',
+        status: 'EmAndamento',
+      )}]',
+    );
+
+    await tester.tap(find.text('Abrir fila'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byType(SharedAxisTransition), findsWidgets);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Setlist'));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byType(FadeThroughTransition), findsWidgets);
+    await tester.pumpAndSettle();
   });
 
   testWidgets('lista mostra data em bloco e tipo resumido', (tester) async {

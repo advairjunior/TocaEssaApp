@@ -130,12 +130,15 @@ extension _ConstrucaoAreaDoPublico on _AreaDoPublicoState {
                       'Confira o código com o artista e tente novamente.',
                 );
               }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 4),
-                  ..._construirConteudoDaAba(apresentacao, context),
-                ],
+              return TrocaDeAba(
+                chave: _abaSelecionada,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const SizedBox(height: 4),
+                    ..._construirConteudoDaAba(apresentacao, context),
+                  ],
+                ),
               );
             },
           ),

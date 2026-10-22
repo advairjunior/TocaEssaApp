@@ -1,3 +1,4 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -39,6 +40,26 @@ final _filaCompleta = '[${_pedido('1', 'Agora', 'TocandoAgora', solicitantes: [
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
+
+  testWidgets('trocar de aba esmaece a antiga e traz a nova', (tester) async {
+    final cliente = MockClient((requisicao) async =>
+        requisicao.url.path.endsWith('/fila')
+            ? http.Response(_filaCompleta, 200)
+            : http.Response(_apresentacaoJson, 200));
+    await tester.pumpWidget(MaterialApp(
+      home: AreaDoPublico(
+        api: ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste'),
+        codigoInicial: 'A1B2C3',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Fila').last);
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(find.byType(FadeThroughTransition), findsWidgets);
+    await tester.pumpAndSettle();
+    expect(find.text('Agora'), findsOneWidget);
+  });
 
   testWidgets('fila não repete o cartão da apresentação do topo',
       (tester) async {

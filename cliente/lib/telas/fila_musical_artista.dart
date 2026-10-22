@@ -11,6 +11,7 @@ import 'adicionar_ao_repertorio.dart';
 import 'cartao_pedido_artista.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 import 'escolher_para_repertorio.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'lista_reordenavel.dart';

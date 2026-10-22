@@ -5,6 +5,7 @@ import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 
 /// Monta a setlist do show escolhendo músicas do acervo: navega pelos
 /// repertórios, marca músicas (ou todas de um repertório), busca em tudo e
@@ -176,7 +177,7 @@ class _MontarSetlistState extends State<MontarSetlist> {
         child: Scaffold(
           appBar: AppBar(title: Text('Montar ${_v.setlist}')),
           body: _repertorios == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoDeLista()
               : _construirCorpo(context),
           bottomNavigationBar: _construirRodape(context),
         ),

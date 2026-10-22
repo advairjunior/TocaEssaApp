@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tema/tema_toca_essa.dart';
 import 'componentes_formulario.dart';
+import 'componentes_movimento.dart';
 
 /// Título curto de uma seção, em destaque discreto.
 class TituloGrupo extends StatelessWidget {
@@ -55,7 +56,13 @@ class GrupoDeLinhas extends StatelessWidget {
                     indent: recuoDivisoria,
                     endIndent: 16,
                   ),
-                linha,
+                // A chave da linha passa para fora, para a lista que muda
+                // de ordem não trocar o estado de uma linha pelo de outra.
+                EntradaSuave(
+                  key: linha.key == null ? null : ObjectKey(linha.key),
+                  ordem: indice,
+                  child: linha,
+                ),
               ],
             ],
           ),

@@ -1,4 +1,9 @@
+import 'package:animations/animations.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+const _deslizarParaOLado = SharedAxisPageTransitionsBuilder(
+    transitionType: SharedAxisTransitionType.horizontal);
 
 abstract final class CoresTocaEssa {
   static const fundo = Color(0xFF0B080F);
@@ -83,6 +88,16 @@ abstract final class TemaTocaEssa {
       ),
       scaffoldBackgroundColor: CoresTocaEssa.fundo,
       useMaterial3: true,
+      // Tela nova chega deslizando para o lado. No iPhone e no Mac fica a
+      // do sistema, que deixa voltar puxando da borda com o dedo.
+      pageTransitionsTheme: const PageTransitionsTheme(builders: {
+        TargetPlatform.android: _deslizarParaOLado,
+        TargetPlatform.fuchsia: _deslizarParaOLado,
+        TargetPlatform.linux: _deslizarParaOLado,
+        TargetPlatform.windows: _deslizarParaOLado,
+        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      }),
       appBarTheme: const AppBarTheme(
         backgroundColor: CoresTocaEssa.fundo,
         foregroundColor: CoresTocaEssa.texto,

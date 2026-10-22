@@ -108,8 +108,8 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
       apresentacao.tipo == TipoApresentacao.louvor;
 
   Widget _construirAba(BuildContext context, Apresentacao apresentacao) =>
-      KeyedSubtree(
-        key: ValueKey('${_aba.name}-${apresentacao.id}'),
+      TrocaDeAba(
+        chave: '${_aba.name}-${apresentacao.id}',
         child: switch (_aba) {
           _AbaPainel.fila => FilaMusicalArtista(
               api: _api, apresentacao: apresentacao, incorporada: true),

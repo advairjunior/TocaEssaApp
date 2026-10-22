@@ -15,7 +15,7 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
               ? IntensidadeFundoTocaEssa.imersiva
               : IntensidadeFundoTocaEssa.suave,
           child: _ocupado && _perfil == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const EsqueletoDeLista()
               : ConteudoMobile(
                   filho: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -10,6 +10,7 @@ import '../infraestrutura/abrir_url_externa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 import 'componentes_palco.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import 'acoes_do_palco.dart';
@@ -317,7 +318,7 @@ class _SetlistDoArtistaState extends State<SetlistDoArtista>
 
   Widget _construirCorpo(BuildContext context) {
     if (_carregando) {
-      return const Center(child: CircularProgressIndicator());
+      return const EsqueletoDeLista();
     }
     if (_sequencia.itens.isEmpty) {
       return _construirVazio();

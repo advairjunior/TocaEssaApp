@@ -8,6 +8,7 @@ import 'colar_cifras.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 import 'escolher_para_repertorio.dart';
 import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
@@ -117,7 +118,7 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
           ],
         ),
         body: _carregando
-            ? const Center(child: CircularProgressIndicator())
+            ? const EsqueletoDeLista()
             : _repertorios.isEmpty
                 ? Center(
                     child: SingleChildScrollView(

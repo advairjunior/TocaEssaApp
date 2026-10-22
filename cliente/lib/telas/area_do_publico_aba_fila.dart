@@ -8,10 +8,7 @@ extension _ConstrucaoAbasSociais on _AreaDoPublicoState {
           builder: (context, filaSnapshot) {
             if (filaSnapshot.connectionState != ConnectionState.done &&
                 !filaSnapshot.hasData) {
-              return const Center(
-                  child: Padding(
-                      padding: EdgeInsets.all(EspacoTocaEssa.grande),
-                      child: CircularProgressIndicator()));
+              return const EsqueletoDeLista(telaInteira: false);
             }
             final pedidos = filaSnapshot.data ?? [];
             if (pedidos.isEmpty) {

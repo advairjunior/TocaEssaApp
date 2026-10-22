@@ -4,6 +4,7 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
+import 'componentes_movimento.dart';
 
 /// Folha para levar músicas da setlist, hinos ou pedidos a um repertório
 /// já existente ou a um novo, criado na hora com [nomeSugerido]. Avisa
@@ -181,7 +182,7 @@ class _FolhaDoRepertorioState extends State<_FolhaDoRepertorio> {
               ),
               const SizedBox(height: EspacoTocaEssa.base),
               if (repertorios == null)
-                const Center(child: CircularProgressIndicator())
+                const EsqueletoDeLista(linhas: 3, telaInteira: false)
               else
                 for (final repertorio in repertorios)
                   ListTile(

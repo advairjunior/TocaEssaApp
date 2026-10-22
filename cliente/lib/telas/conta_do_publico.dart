@@ -10,6 +10,7 @@ import 'area_do_publico.dart';
 import 'componentes.dart';
 import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
+import 'componentes_movimento.dart';
 import 'componentes_memoria.dart';
 import '../tema/tema_toca_essa.dart';
 import 'fundo_toca_essa.dart';
