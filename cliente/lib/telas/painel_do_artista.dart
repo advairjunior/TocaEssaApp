@@ -33,6 +33,7 @@ part 'painel_do_artista_acoes_perfil.dart';
 part 'painel_do_artista_acoes_apresentacao.dart';
 part 'painel_do_artista_construcao.dart';
 part 'painel_do_artista_aba_perfil.dart';
+part 'painel_do_artista_previa_perfil.dart';
 part 'painel_do_artista_perfil_publico.dart';
 part 'painel_do_artista_galera.dart';
 part 'painel_do_artista_inicio.dart';
