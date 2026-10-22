@@ -241,6 +241,37 @@ carregamento, entrada suave das listas e transições entre telas e abas
   baixados.
 - **Registrada em:** 2026-10-22.
 
+### Qualidade e manutenção
+
+Ideias tiradas do [vibe-coding-toolkit](https://github.com/soumatheusgomes/vibe-coding-toolkit)
+em 2026-10-22, adaptadas ao nosso projeto (Flutter + .NET, conta pessoal
+separada da corporativa).
+
+- **Testes automáticos antes do deploy:** um workflow do GitHub Actions
+  (`.github/workflows/`) que roda `dart analyze`, `flutter test`,
+  `dotnet build` e `dotnet test` a cada push. Repositório público: Actions de
+  graça e sem configurar nada no GitHub. Para o Render só publicar com os
+  testes passando, trocar no painel do serviço **Settings → Build & Deploy →
+  Auto-Deploy** para "After CI Checks Pass", só depois da primeira verificação
+  verde. Cada deploy passa a esperar os testes (alguns minutos a mais).
+- **Revisão de segurança do repositório inteiro:** só leitura, com relatório;
+  foco em rotas públicas por código, token de um artista alcançando o show de
+  outro e envio de fotos.
+- **Saber quando o app quebra no celular de alguém (Sentry):** avisa erros
+  sozinho, tem plano gratuito, mas é serviço externo que recebe dados de erro
+  dos usuários; decidir antes o que pode ser enviado.
+- **Documentação atual dos pacotes (Context7):** ajuda pouco com o Flutter em
+  versão fixa; pede conta externa e instalação geral no computador, onde é
+  fácil misturar com a conta corporativa. Só se a instalação ficar no projeto.
+- **Não serve para nós:** ESLint, Next.js, Drizzle, shadcn, skills da Vercel,
+  RTK, Caveman, Ponytail, Graphify, orquestração de vários agentes e
+  `PRODUCT.md`/`AGENTS.md` (já temos `CLAUDE.md`, `.claude/rules/` e
+  `docs/claude/`). Não rodar os prompts "de uma linha" do toolkit: instalam
+  coisas no computador inteiro.
+- **Arquivos grandes:** em andamento desde 2026-10-22 (teto de 350 linhas,
+  divisão por responsabilidade, um arquivo por commit).
+- **Registrada em:** 2026-10-22.
+
 ### No palco
 
 - **Salvar a setlist como repertório:** ✅ entregue em 2026-10-21
