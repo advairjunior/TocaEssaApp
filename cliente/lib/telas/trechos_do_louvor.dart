@@ -74,11 +74,32 @@ String? partesDaPessoa(HinoDoLouvor hino, String nome) {
     for (final (indice, parte) in hino.partes.indexed)
       if (parte.cantores.contains(nome)) rotulos[indice],
   ];
-  if (daPessoa.isEmpty) return null;
-  if (daPessoa.length == 1) return daPessoa.single;
-  return '${daPessoa.sublist(0, daPessoa.length - 1).join(', ')} '
-      'e ${daPessoa.last}';
+  return daPessoa.isEmpty ? null : _emLista(daPessoa);
 }
+
+/// "você canta Estrofe 1 e toca Solo flauta": o que [nome] faz no hino, ou
+/// nulo se não canta nem toca nele.
+String? oQueVoceFaz(HinoDoLouvor hino, String nome) {
+  final rotulos = rotulosDasPartes(hino);
+  List<String> partes({required bool tocadas}) => [
+        for (final (indice, parte) in hino.partes.indexed)
+          if (parte.cantores.contains(nome) &&
+              (parte.tipo == TipoDaParte.instrumental) == tocadas)
+            rotulos[indice],
+      ];
+  final canta = partes(tocadas: false);
+  final toca = partes(tocadas: true);
+  if (canta.isEmpty && toca.isEmpty) return null;
+  final oQue = [
+    if (canta.isNotEmpty) 'canta ${_emLista(canta)}',
+    if (toca.isNotEmpty) 'toca ${_emLista(toca)}',
+  ];
+  return 'você ${oQue.join(' e ')}';
+}
+
+String _emLista(List<String> itens) => itens.length == 1
+    ? itens.single
+    : '${itens.sublist(0, itens.length - 1).join(', ')} e ${itens.last}';
 
 /// Partes do hino como trechos da cifra: nome de quem canta (ou do solo) na
 /// faixa, a vez de [quemSou] em destaque e avisada na parte anterior. Sem

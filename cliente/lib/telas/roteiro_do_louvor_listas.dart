@@ -17,8 +17,7 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
                 subtitle: Text([
                   if (hino.tom case final tom?) 'Tom $tom',
                   if (_quemSou case final nome? when nome.isNotEmpty)
-                    if (hino.partesDe(nome) case final partes when partes > 0)
-                      'você canta $partes',
+                    if (oQueVoceFaz(hino, nome) case final suaVez?) suaVez,
                 ].join(' · ')),
                 onTap: () {
                   Navigator.of(contexto).pop();

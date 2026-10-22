@@ -327,6 +327,33 @@ void main() {
           findsOneWidget);
     });
 
+    testWidgets('a lista de todos os hinos também diz o que a pessoa faz',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+      _noServidor = {
+        ..._roteiro(),
+        'hinos': [
+          _porCristo,
+          _hino('h2', '234 · O meu ser entrego a Cristo', partes: [
+            _parte('Estrofe', 'Primeira do segundo', ['Ana']),
+            {
+              ..._parte('Instrumental', '', ['Ana']),
+              'nome': 'Solo flauta'
+            },
+          ]),
+          _semLetra,
+        ],
+      };
+      await _abrir(tester);
+
+      await tester.tap(find.byTooltip('Lista de hinos'));
+      await tester.pumpAndSettle();
+
+      expect(naFolha('Tom G · você canta Estrofe 2'), findsOneWidget);
+      expect(
+          naFolha('você canta Estrofe 1 e toca Solo flauta'), findsOneWidget);
+    });
+
     testWidgets('quem só acompanha não tem a opção', (tester) async {
       SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': ''});
       await _abrir(tester);
