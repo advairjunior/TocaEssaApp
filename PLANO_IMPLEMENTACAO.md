@@ -219,6 +219,28 @@ cada uma começa por uma investigação antes de virar plano.
   marrons pela prévia.
 - **Registrada em:** 2026-10-22.
 
+### Mais movimento na tela
+
+Pesquisa na comunidade Flutter em 2026-10-22. Já entregues: esqueleto no
+carregamento, entrada suave das listas e transições entre telas e abas
+(componentes em `componentes_movimento.dart`). Ficaram para depois:
+
+- **Números que rolam como placar** (`animated_flip_counter`): pedidos,
+  curtidas e público nas estatísticas e na retrospectiva passam de um número
+  para o outro rolando, em vez de trocar de repente.
+- **Confete nos momentos de festa** (`flutter_confetti`): explosão curta
+  quando o artista marca como tocada uma música pedida, e na tela de quem
+  pediu. Pouco uso, para não perder a graça.
+- **Investigar:** montar o app em WebAssembly, que o Flutter está tornando o
+  padrão na web e promete rolagem e animações mais lisas. Antes, conferir o
+  suporte no Safari do iPhone e o tamanho do download.
+- **Evitar, pelo Safari do iPhone e pela bateria no show:** vidro fosco em
+  mais lugares (o desfoque pesa ao rolar listas), fundos animados com
+  degradê ou "aurora", animações Lottie ou Rive (deixam o app mais pesado e
+  precisam de alguém para desenhar) e pacotes de vidro novos e pouco
+  baixados.
+- **Registrada em:** 2026-10-22.
+
 ### No palco
 
 - **Salvar a setlist como repertório:** ✅ entregue em 2026-10-21
