@@ -5,19 +5,8 @@ public class TamanhoDosArquivosTestes
 {
     private const int TetoDeLinhas = 350;
 
-    // Os que já passavam do teto quando a régua chegou (2026-10-22), com o
-    // tamanho daquele dia: podem diminuir, nunca crescer. Ao dividir um
-    // deles, tire-o daqui.
-    private static readonly Dictionary<string, int> AcimaDoTeto = new()
-    {
-        ["Dominio/Modelos.cs"] = 424,
-        ["Infraestrutura/RepositorioTocaEssa.Louvor.cs"] = 351,
-        ["Infraestrutura/RepositorioTocaEssa.Pedidos.cs"] = 359,
-        ["Infraestrutura/RepositorioTocaEssa.Persistencia.cs"] = 453,
-    };
-
     [Fact]
-    public void NenhumArquivoDoServidorCresceAlemDoTeto()
+    public void NenhumArquivoDoServidorPassaDoTeto()
     {
         var raiz = Path.Combine(PastaDaSolucao(), "servidor", "TocaEssaApp.Api");
         var problemas = new List<string>();
@@ -26,12 +15,11 @@ public class TamanhoDosArquivosTestes
             var caminho = Path.GetRelativePath(raiz, arquivo).Replace('\\', '/');
             if (caminho.StartsWith("bin/") || caminho.StartsWith("obj/")) continue;
             var linhas = File.ReadAllLines(arquivo).Length;
-            var limite = AcimaDoTeto.GetValueOrDefault(caminho, TetoDeLinhas);
-            if (linhas > limite) problemas.Add($"{caminho}: {linhas} (limite {limite})");
+            if (linhas > TetoDeLinhas) problemas.Add($"{caminho}: {linhas}");
         }
 
         Assert.True(problemas.Count == 0,
-            "Divida por responsabilidade em vez de aumentar o limite:\n" +
+            "Divida por responsabilidade em vez de aumentar o teto:\n" +
             string.Join('\n', problemas));
     }
 
