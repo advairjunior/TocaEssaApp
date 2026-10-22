@@ -17,6 +17,8 @@ import 'publico_no_app.dart';
 part 'estatisticas_da_apresentacao_componentes.dart';
 part 'estatisticas_da_apresentacao_acoes.dart';
 part 'estatisticas_da_apresentacao_retrospectiva.dart';
+part 'estatisticas_da_apresentacao_moldura.dart';
+part 'estatisticas_da_apresentacao_conteudo.dart';
 
 class EstatisticasDaApresentacaoTela extends StatefulWidget {
   const EstatisticasDaApresentacaoTela({
