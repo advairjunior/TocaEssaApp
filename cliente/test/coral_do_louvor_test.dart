@@ -242,6 +242,17 @@ void main() {
 
       expect(find.text('Suas partes: Estrofe 2'), findsOneWidget);
       expect(find.text('No coral: Refrão'), findsOneWidget);
+      // O mesmo ícone do microfone e do coral de Meus hinos.
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey('cabecalho-microfone')),
+              matching: find.byIcon(Icons.mic_rounded)),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey('cabecalho-coral')),
+              matching: find.byIcon(Icons.groups_rounded)),
+          findsOneWidget);
     });
 
     testWidgets('Meus hinos traz os hinos com coral da pessoa', (tester) async {
@@ -253,7 +264,37 @@ void main() {
 
       expect(find.text('Hinos de Bia'), findsOneWidget);
       expect(find.text('2 partes em 1 hino'), findsOneWidget);
-      expect(find.text('coral: Refrão e Estrofe 2 · Tom G'), findsOneWidget);
+      final coral = find.byKey(const ValueKey('coral-h1'));
+      expect(
+          find.descendant(
+              of: coral, matching: find.text('Refrão e Estrofe 2')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: coral, matching: find.byIcon(Icons.groups_rounded)),
+          findsOneWidget);
+      // Bia não tem parte no microfone.
+      expect(find.byKey(const ValueKey('microfone-h1')), findsNothing);
+    });
+
+    testWidgets('em Meus hinos, microfone e coral ficam em linhas separadas',
+        (tester) async {
+      await _abrirRoteiro(tester);
+      await _escolher(tester, 'Ana');
+
+      await tester.tap(find.byTooltip('Meus hinos'));
+      await tester.pumpAndSettle();
+
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey('microfone-h1')),
+              matching: find.text('Estrofe 2')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: find.byKey(const ValueKey('coral-h1')),
+              matching: find.text('Refrão')),
+          findsOneWidget);
     });
 
     testWidgets('a lista de hinos diz onde a pessoa canta no coral',

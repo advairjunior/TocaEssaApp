@@ -36,16 +36,40 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
   /// com as partes dela; sem nenhuma, ela faz parte do coral.
   Future<void> _mostrarMeusHinos(RoteiroDoLouvor roteiro) {
     final nome = _quemSou!;
+    final cor = corDaPessoa(roteiro.participantes, nome);
+    final estilo = Theme.of(context)
+        .textTheme
+        .bodyMedium
+        ?.copyWith(color: CoresTocaEssa.textoSecundario);
+    // Uma linha por papel, com o ícone: microfone, coral e solos.
+    List<Widget> papeis(HinoDoLouvor hino) => [
+          if (partesNoMicrofone(hino, nome) case final partes?)
+            _LinhaDoPapel(
+                key: ValueKey('microfone-${hino.itemId}'),
+                icone: iconeDoMicrofone,
+                texto: partes,
+                cor: cor,
+                estilo: estilo),
+          if (partesNoCoral(hino, nome, cantores: roteiro.cantores)
+              case final partes?)
+            _LinhaDoPapel(
+                key: ValueKey('coral-${hino.itemId}'),
+                icone: iconeDoCoral,
+                texto: partes,
+                cor: CoresTocaEssa.texto,
+                estilo: estilo),
+          if (partesTocadas(hino, nome) case final partes?)
+            _LinhaDoPapel(
+                key: ValueKey('toca-${hino.itemId}'),
+                icone: iconeDoSolo,
+                texto: partes,
+                cor: corInstrumental,
+                estilo: estilo),
+        ];
     final meus = [
       for (final hino in roteiro.hinos)
-        if ([
-          if (partesDaPessoa(hino, nome) case final partes?) partes,
-          if (partesNoCoral(hino, nome, cantores: roteiro.cantores)
-              case final coral?)
-            'coral: $coral',
-        ]
-            case final partes when partes.isNotEmpty)
-          (hino, partes.join(' · ')),
+        if (papeis(hino) case final linhas when linhas.isNotEmpty)
+          (hino, linhas),
     ];
     final total = meus.fold<int>(
         0,
@@ -56,7 +80,6 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
                     parte.cantores.contains(nome) ||
                     (parte.doCoral && roteiro.cantores.contains(nome)))
                 .length);
-    final cor = corDaPessoa(roteiro.participantes, nome);
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -75,14 +98,19 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
                 : '$total ${total == 1 ? 'parte' : 'partes'} em '
                     '${meus.length} ${meus.length == 1 ? 'hino' : 'hinos'}'),
           ),
-          for (final (hino, partes) in meus)
+          for (final (hino, linhas) in meus)
             ListTile(
               leading: Icon(_iconeDoHino(roteiro, hino), color: cor),
               title: Text(hino.titulo),
-              subtitle: Text([
-                partes,
-                if (hino.tom case final tom?) 'Tom $tom',
-              ].join(' · ')),
+              trailing: hino.tom == null ? null : Text('Tom ${hino.tom}'),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: EspacoTocaEssa.mini),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: EspacoTocaEssa.mini,
+                  children: linhas,
+                ),
+              ),
               onTap: () {
                 Navigator.of(contexto).pop();
                 _abrirHino(hino);

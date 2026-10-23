@@ -280,7 +280,16 @@ void main() {
       expect(naFolha('Hinos de Ana'), findsOneWidget);
       expect(naFolha('2 partes em 2 hinos'), findsOneWidget);
       expect(naFolha('80 · Por Cristo, resgatado'), findsOneWidget);
-      expect(naFolha('Estrofe 2 · Tom G'), findsOneWidget);
+      // Cada papel numa linha com o seu ícone; o tom fica à direita.
+      final microfone = find.byKey(const ValueKey('microfone-h1'));
+      expect(
+          find.descendant(of: microfone, matching: find.text('Estrofe 2')),
+          findsOneWidget);
+      expect(
+          find.descendant(
+              of: microfone, matching: find.byIcon(Icons.mic_rounded)),
+          findsOneWidget);
+      expect(naFolha('Tom G'), findsOneWidget);
       expect(naFolha('234 · O meu ser entrego a Cristo'), findsOneWidget);
       expect(naFolha('15 · Hino sem letra'), findsNothing);
 
@@ -311,7 +320,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(naFolha('1 parte em 1 hino'), findsOneWidget);
-      expect(naFolha('Solo sax'), findsOneWidget);
+      final toca = find.byKey(const ValueKey('toca-h1'));
+      expect(find.descendant(of: toca, matching: find.text('Solo sax')),
+          findsOneWidget);
+      expect(find.byKey(const ValueKey('microfone-h1')), findsNothing);
     });
 
     testWidgets('sem parte própria, faz parte do coral', (tester) async {

@@ -81,21 +81,33 @@ String? partesDaPessoa(HinoDoLouvor hino, String nome) {
 /// "você canta Estrofe 1 e toca Solo flauta": o que [nome] faz no hino, ou
 /// nulo se não canta nem toca nele.
 String? oQueVoceFaz(HinoDoLouvor hino, String nome) {
-  final rotulos = rotulosDasPartes(hino);
-  List<String> partes({required bool tocadas}) => [
-        for (final (indice, parte) in hino.partes.indexed)
-          if (parte.cantores.contains(nome) &&
-              (parte.tipo == TipoDaParte.instrumental) == tocadas)
-            rotulos[indice],
-      ];
-  final canta = partes(tocadas: false);
-  final toca = partes(tocadas: true);
-  if (canta.isEmpty && toca.isEmpty) return null;
+  final canta = partesNoMicrofone(hino, nome);
+  final toca = partesTocadas(hino, nome);
+  if (canta == null && toca == null) return null;
   final oQue = [
-    if (canta.isNotEmpty) 'canta ${_emLista(canta)}',
-    if (toca.isNotEmpty) 'toca ${_emLista(toca)}',
+    if (canta != null) 'canta $canta',
+    if (toca != null) 'toca $toca',
   ];
   return 'você ${oQue.join(' e ')}';
+}
+
+/// "Estrofe 1 e Refrão": o que [nome] canta no microfone, sem os solos.
+String? partesNoMicrofone(HinoDoLouvor hino, String nome) =>
+    _partesDe(hino, nome, tocadas: false);
+
+/// "Solo sax": o que [nome] toca no hino.
+String? partesTocadas(HinoDoLouvor hino, String nome) =>
+    _partesDe(hino, nome, tocadas: true);
+
+String? _partesDe(HinoDoLouvor hino, String nome, {required bool tocadas}) {
+  final rotulos = rotulosDasPartes(hino);
+  final partes = [
+    for (final (indice, parte) in hino.partes.indexed)
+      if (parte.cantores.contains(nome) &&
+          (parte.tipo == TipoDaParte.instrumental) == tocadas)
+        rotulos[indice],
+  ];
+  return partes.isEmpty ? null : _emLista(partes);
 }
 
 /// "Refrão e Estrofe 2": onde [nome] canta no coral (as partes do coral em

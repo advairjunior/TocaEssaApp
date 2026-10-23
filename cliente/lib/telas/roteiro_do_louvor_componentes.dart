@@ -115,7 +115,33 @@ class _CabecalhoDoHino extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final minhas = quemSou.isEmpty ? null : partesDaPessoa(hino, quemSou);
+    final microfone =
+        quemSou.isEmpty ? null : partesNoMicrofone(hino, quemSou);
+    final toca = quemSou.isEmpty ? null : partesTocadas(hino, quemSou);
+    final estilo = texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro);
+    final papeis = [
+      if (microfone != null)
+        _LinhaDoPapel(
+            key: const ValueKey('cabecalho-microfone'),
+            icone: iconeDoMicrofone,
+            texto: 'Suas partes: $microfone',
+            cor: CoresTocaEssa.ouro,
+            estilo: estilo),
+      if (toca != null)
+        _LinhaDoPapel(
+            key: const ValueKey('cabecalho-toca'),
+            icone: iconeDoSolo,
+            texto: 'Você toca: $toca',
+            cor: CoresTocaEssa.ouro,
+            estilo: estilo),
+      if (noCoral != null)
+        _LinhaDoPapel(
+            key: const ValueKey('cabecalho-coral'),
+            icone: iconeDoCoral,
+            texto: 'No coral: $noCoral',
+            cor: CoresTocaEssa.ouro,
+            estilo: estilo),
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -141,22 +167,10 @@ class _CabecalhoDoHino extends StatelessWidget {
           )
         else if (tom != null)
           _Selo(texto: tom!, cor: CoresTocaEssa.roxoClaro),
-        if (minhas != null) ...[
-          const SizedBox(height: EspacoTocaEssa.medio),
-          Text(
-            'Suas partes: $minhas',
-            style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
-          ),
-        ],
-        if (noCoral != null) ...[
+        for (final (indice, papel) in papeis.indexed) ...[
           SizedBox(
-              height: minhas == null
-                  ? EspacoTocaEssa.medio
-                  : EspacoTocaEssa.mini),
-          Text(
-            'No coral: $noCoral',
-            style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
-          ),
+              height: indice == 0 ? EspacoTocaEssa.medio : EspacoTocaEssa.mini),
+          papel,
         ],
         const SizedBox(height: EspacoTocaEssa.pequeno),
         if (!hino.temLetra) ...[
@@ -170,6 +184,42 @@ class _CabecalhoDoHino extends StatelessWidget {
       ],
     );
   }
+}
+
+// Os mesmos ícones no topo do hino e em Meus hinos: onde a pessoa fica no
+// microfone, no coral e nos solos. Ícones do app, não emoji: o emoji
+// depende de baixar uma fonte na hora, e a internet do encontro é fraca.
+const iconeDoMicrofone = Icons.mic_rounded;
+const iconeDoCoral = Icons.groups_rounded;
+const iconeDoSolo = Icons.piano_rounded;
+
+/// Um papel da pessoa no hino: o ícone e as partes dela.
+class _LinhaDoPapel extends StatelessWidget {
+  const _LinhaDoPapel({
+    super.key,
+    required this.icone,
+    required this.texto,
+    required this.cor,
+    this.estilo,
+  });
+
+  final IconData icone;
+  final String texto;
+  final Color cor;
+  final TextStyle? estilo;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Icon(icone, size: 18, color: cor),
+          ),
+          const SizedBox(width: EspacoTocaEssa.pequeno),
+          Expanded(child: Text(texto, style: estilo)),
+        ],
+      );
 }
 
 class _Selo extends StatelessWidget {
