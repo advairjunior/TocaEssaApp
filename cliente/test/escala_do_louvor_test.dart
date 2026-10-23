@@ -548,6 +548,7 @@ void main() {
 
     expect(find.text('(Coro 2x)'), findsOneWidget);
     expect(find.text('(Introdução)'), findsOneWidget);
+    expect(find.text('(Coral) … (Fim do coral)'), findsOneWidget);
   });
 
   testWidgets('configura quantos cantam por hino e os coros com Todos',

@@ -51,6 +51,27 @@ public sealed class LetraDoHinoTestes
         Assert.Equal(Refrao, partes[5].Texto);
     }
 
+    // O app lê "(Coral)" e "(Fim do coral)" dentro da parte: elas não podem
+    // virar parte nova nem sumir do texto.
+    [Fact]
+    public void MarcasDoCoralFicamDentroDaParte()
+    {
+        var partes = LetraDoHino.Separar("""
+            (Estrofe 1)
+            Tem minha alma grande alegria
+            (Coral)
+            Glória a Jesus que me resgatou
+            (Fim do coral)
+            (Coro)
+            Por Cristo, resgatado
+            """);
+
+        Assert.Equal([TipoDaParte.Estrofe, TipoDaParte.Refrao], partes.Select(parte => parte.Tipo));
+        Assert.Equal(
+            "Tem minha alma grande alegria\n(Coral)\nGlória a Jesus que me resgatou\n(Fim do coral)",
+            partes[0].Texto);
+    }
+
     [Fact]
     public void LinhaEmBrancoSempreSeparaPartes()
     {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../dominio/coral_na_letra.dart';
 import '../dominio/modelos.dart';
 import '../dominio/transpor_cifra.dart';
 import '../tema/tema_toca_essa.dart';
@@ -117,7 +118,16 @@ String? partesNoCoral(HinoDoLouvor hino, String nome,
   var refraoListado = false;
   final partes = <String>[];
   for (final (indice, parte) in hino.partes.indexed) {
-    if (!noCoral(parte)) continue;
+    if (!noCoral(parte)) {
+      // Só algumas linhas da parte, marcadas com (Coral) na letra.
+      if (parte.tipo != TipoDaParte.instrumental &&
+          !parte.cantores.contains(nome) &&
+          temCoralNaLetra(parte.texto)) {
+        final artigo = parte.tipo == TipoDaParte.refrao ? 'do' : 'da';
+        partes.add('parte $artigo ${rotulos[indice]}');
+      }
+      continue;
+    }
     if (parte.tipo != TipoDaParte.refrao || refroesNoCoral == 1) {
       partes.add(rotulos[indice]);
     } else if (!refraoListado) {
@@ -137,7 +147,8 @@ String _emLista(List<String> itens) => itens.length == 1
 /// [acordes], só a letra; com eles, a cifra no tom escolhido com [semitons].
 /// Quem está nos [cantores] e não tem a parte no microfone canta no coral
 /// nas partes do coral; as partes em que não canta ficam apagadas, e o
-/// coral é avisado de quando entra e de quando para.
+/// coral é avisado de quando entra e de quando para. A parte com "(Coral)"
+/// na letra vira um trecho por pedaço, cada um com a sua faixa.
 List<TrechoDaCifra> trechosDoHino(
   HinoDoLouvor hino, {
   required List<String> cantores,
@@ -145,62 +156,89 @@ List<TrechoDaCifra> trechosDoHino(
   bool acordes = false,
   int semitons = 0,
 }) {
+  final pedacos = [
+    for (final parte in hino.partes)
+      if (parte.tipo == TipoDaParte.instrumental)
+        _Pedaco(parte, parte.texto, coral: false, primeiro: true)
+      else
+        for (final (indice, pedaco) in pedacosDoCoral(parte.texto).indexed)
+          _Pedaco(parte, pedaco.texto,
+              coral: parte.doCoral || pedaco.coral, primeiro: indice == 0),
+  ];
   final cantaNoCoral = quemSou.isNotEmpty && cantores.contains(quemSou);
-  bool minha(ParteDoHino parte) =>
-      quemSou.isNotEmpty && parte.cantores.contains(quemSou);
-  bool noCoral(ParteDoHino parte) =>
-      cantaNoCoral && !minha(parte) && parte.doCoral;
-  bool canta(ParteDoHino parte) => minha(parte) || noCoral(parte);
+  bool minha(_Pedaco pedaco) =>
+      quemSou.isNotEmpty && pedaco.parte.cantores.contains(quemSou);
+  bool noCoral(_Pedaco pedaco) =>
+      cantaNoCoral && !minha(pedaco) && pedaco.coral;
+  bool canta(_Pedaco pedaco) => minha(pedaco) || noCoral(pedaco);
   String? aviso(int indice) {
-    final parte = hino.partes[indice];
-    final seguinte =
-        indice + 1 < hino.partes.length ? hino.partes[indice + 1] : null;
+    final pedaco = pedacos[indice];
+    final seguinte = indice + 1 < pedacos.length ? pedacos[indice + 1] : null;
     if (seguinte == null) return null;
-    if (!canta(parte) && canta(seguinte)) {
+    if (!canta(pedaco) && canta(seguinte)) {
       return minha(seguinte) ? 'você é o próximo' : 'coral entra';
     }
-    return noCoral(parte) && !canta(seguinte) ? 'depois, para' : null;
+    return noCoral(pedaco) && !canta(seguinte) ? 'depois, para' : null;
   }
 
-  String rotulo(ParteDoHino parte) => [
-        if (parte.tipo != TipoDaParte.instrumental)
-          parte.quemCanta.toUpperCase()
-        else ...[
-          if (!parte.deTodos) parte.quemCanta.toUpperCase(),
-          (parte.nome ?? parte.tipo.rotulo).toUpperCase(),
-        ],
-        if (parte.vezes > 1) '${parte.vezes}X',
-        if (minha(parte) || (noCoral(parte) && parte.deTodos))
-          'SUA VEZ'
-        else if (noCoral(parte))
-          'SUA VEZ NO CORAL',
-      ].join(' · ');
-  String letra(ParteDoHino parte) {
-    final semAcordes = parte.texto
+  String rotulo(_Pedaco pedaco) {
+    final parte = pedaco.parte;
+    return [
+      if (parte.tipo != TipoDaParte.instrumental)
+        parte.deTodos
+            ? 'TODOS'
+            : '${parte.cantores.join(' e ')}${pedaco.coral ? ' + coral' : ''}'
+                .toUpperCase()
+      else ...[
+        if (!parte.deTodos) parte.quemCanta.toUpperCase(),
+        (parte.nome ?? parte.tipo.rotulo).toUpperCase(),
+      ],
+      if (parte.vezes > 1 && pedaco.primeiro) '${parte.vezes}X',
+      // "ANA + CORAL · SUA VEZ": o "+ CORAL" já diz que é no coral, e a
+      // faixa cabe no celular junto do aviso.
+      if (canta(pedaco)) 'SUA VEZ',
+    ].join(' · ');
+  }
+
+  String letra(_Pedaco pedaco) {
+    final semAcordes = pedaco.texto
         .split('\n')
         .where((linha) => !linhaDeAcordes(linha))
         .join('\n');
-    return parte.tipo == TipoDaParte.instrumental && semAcordes.trim().isEmpty
+    return pedaco.parte.tipo == TipoDaParte.instrumental &&
+            semAcordes.trim().isEmpty
         ? 'instrumental'
         : semAcordes;
   }
 
   return [
-    for (final (indice, parte) in hino.partes.indexed)
+    for (final (indice, pedaco) in pedacos.indexed)
       TrechoDaCifra(
-        rotulo: rotulo(parte),
-        cor: parte.tipo == TipoDaParte.instrumental
+        rotulo: rotulo(pedaco),
+        cor: pedaco.parte.tipo == TipoDaParte.instrumental
             ? corInstrumental
-            : parte.deTodos
+            : pedaco.parte.deTodos
                 ? CoresTocaEssa.textoSecundario
-                : corDoCantor(cantores, parte.cantores.first),
-        destaque: canta(parte),
+                : corDoCantor(cantores, pedaco.parte.cantores.first),
+        destaque: canta(pedaco),
         aviso: aviso(indice),
-        apagado: cantaNoCoral && !canta(parte),
+        apagado: cantaNoCoral && !canta(pedaco),
         // Solo sem acordes escritos avisa que é instrumental mesmo no leitor.
-        texto: acordes && parte.texto.trim().isNotEmpty
-            ? transporCifra(parte.texto, semitons)
-            : letra(parte),
+        texto: acordes && pedaco.texto.trim().isNotEmpty
+            ? transporCifra(pedaco.texto, semitons)
+            : letra(pedaco),
       ),
   ];
+}
+
+/// Pedaço de uma parte: a parte inteira, ou as linhas dentro ou fora do
+/// "(Coral)" da letra. [primeiro] leva o "2X" da parte.
+class _Pedaco {
+  const _Pedaco(this.parte, this.texto,
+      {required this.coral, required this.primeiro});
+
+  final ParteDoHino parte;
+  final String texto;
+  final bool coral;
+  final bool primeiro;
 }

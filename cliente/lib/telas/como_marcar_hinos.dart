@@ -25,6 +25,12 @@ const _marcacoes = [
   ('(Interlúdio)', 'Instrumental no meio do hino.'),
   ('(Final)', 'Instrumental no fim do hino.'),
   ('(Coro 2x)', 'O "2x" no fim repete a parte. Vale para todas.'),
+  (
+    '(Coral) … (Fim do coral)',
+    'Dentro de uma parte: o coral canta junto só as linhas entre as duas '
+        'marcações. Sem o fim, vai até o fim da parte. Quem não está no '
+        'microfone canta no coral.'
+  ),
 ];
 
 const _exemplo = '''Tom: G

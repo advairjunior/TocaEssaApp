@@ -149,7 +149,7 @@ void main() {
       expect([for (final trecho in daBia) trecho.rotulo], [
         'JOÃO',
         'TODOS · SUA VEZ',
-        'ANA + CORAL · SUA VEZ NO CORAL',
+        'ANA + CORAL · SUA VEZ',
         'TODOS',
         'JOÃO',
       ]);
@@ -171,7 +171,7 @@ void main() {
     test('quem sai do coral e volta ao microfone é avisado', () {
       final doJoao = _trechosDe('João');
 
-      expect(doJoao[2].rotulo, 'ANA + CORAL · SUA VEZ NO CORAL');
+      expect(doJoao[2].rotulo, 'ANA + CORAL · SUA VEZ');
       expect([for (final trecho in doJoao) trecho.aviso],
           [null, null, 'depois, para', 'você é o próximo', null]);
     });
@@ -231,7 +231,7 @@ void main() {
 
       expect(find.textContaining('Suas partes'), findsNothing);
       expect(find.text('No coral: Refrão e Estrofe 2'), findsOneWidget);
-      expect(find.text('ANA + CORAL · SUA VEZ NO CORAL'), findsOneWidget);
+      expect(find.text('ANA + CORAL · SUA VEZ'), findsOneWidget);
       expect(find.text('coral entra'), findsOneWidget);
       expect(find.text('depois, para'), findsOneWidget);
     });
