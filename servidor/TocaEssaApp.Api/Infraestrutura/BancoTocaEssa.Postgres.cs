@@ -62,6 +62,8 @@ internal sealed partial class BancoTocaEssa
                 ADD COLUMN IF NOT EXISTS "SolistasDoLouvor" text NULL;
             ALTER TABLE "Apresentacoes"
                 ADD COLUMN IF NOT EXISTS "ConfiguracaoDoLouvor" text NULL;
+            ALTER TABLE "Apresentacoes"
+                ADD COLUMN IF NOT EXISTS "CoralDoLouvor" text NULL;
             CREATE TABLE IF NOT EXISTS "AvaliacoesPedidos" (
                 "PedidoId" uuid NOT NULL,
                 "IdentificadorAvaliador" character varying(160) NOT NULL,

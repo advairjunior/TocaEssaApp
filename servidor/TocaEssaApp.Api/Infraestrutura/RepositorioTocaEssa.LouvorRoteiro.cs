@@ -43,7 +43,7 @@ public sealed partial class RepositorioTocaEssa
                 item.Tom,
                 item.Tocada,
                 !string.IsNullOrWhiteSpace(letras[item.Id]),
-                escalado.Partes))
+                ComCoral(apresentacao.Id, item.Id, escalado.Partes)))
             .ToList();
         return new LouvorDoArtista(
             cantores, escala.Placar, hinos, solistas, escala.PlacarDosSolos,
@@ -67,6 +67,7 @@ public sealed partial class RepositorioTocaEssa
             _solistasDoLouvor[registro.Id] = solistas;
         if (LerJson<ConfiguracaoDaEscala>(registro.ConfiguracaoDoLouvor) is { } configuracao)
             _configuracoesDoLouvor[registro.Id] = configuracao;
+        CarregarCoral(registro);
     }
 
     private void EscreverLouvor(ApresentacaoRegistro registro)
@@ -88,6 +89,7 @@ public sealed partial class RepositorioTocaEssa
             configuracao != new ConfiguracaoDaEscala()
                 ? JsonSerializer.Serialize(configuracao)
                 : null;
+        EscreverCoral(registro);
     }
 
     private static T? LerJson<T>(string? json) where T : class

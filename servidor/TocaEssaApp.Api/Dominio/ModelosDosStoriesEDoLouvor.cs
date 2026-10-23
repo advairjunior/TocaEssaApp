@@ -82,3 +82,8 @@ public sealed record EscalarHinosDoLouvor(Guid[]? Itens);
 
 /// [Cantores] nulo deixa a parte sem escala; vazio quer dizer Todos.
 public sealed record EscolherParteDoLouvor(Guid ItemId, int Indice, string[]? Cantores);
+
+/// Parte de um hino em que o coral canta junto.
+public sealed record ParteDoCoral(Guid ItemId, int Indice);
+
+public sealed record MarcarCoralDoLouvor(Guid ItemId, int Indice, bool Coral);

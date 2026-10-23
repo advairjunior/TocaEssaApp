@@ -104,5 +104,12 @@ public static class RotasDaSetlistEDoLouvor
             Results.Ok(repositorio.EscolherParteDoLouvor(
                 ObterToken(http) ?? string.Empty, id, requisicao.ItemId,
                 requisicao.Indice, requisicao.Cantores)));
+
+        app.MapPut("/api/apresentacoes/{id:guid}/louvor/coral", (
+            Guid id, MarcarCoralDoLouvor requisicao,
+            HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.MarcarCoralDoLouvor(
+                ObterToken(http) ?? string.Empty, id, requisicao.ItemId,
+                requisicao.Indice, requisicao.Coral)));
     }
 }

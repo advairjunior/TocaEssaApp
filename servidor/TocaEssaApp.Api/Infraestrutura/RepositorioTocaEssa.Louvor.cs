@@ -162,8 +162,9 @@ public sealed partial class RepositorioTocaEssa
                 item.ApresentacaoId != apresentacaoId)
                 throw new ItemDoSetlistNaoEncontradoException();
             var escolhas = _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [];
+            var hinos = HinosParaEscala(apresentacao);
             var doHino = EscalaDeCantores.EscalarHino(
-                HinosParaEscala(apresentacao),
+                hinos,
                 itemId,
                 _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 escolhas,
@@ -174,6 +175,7 @@ public sealed partial class RepositorioTocaEssa
                 .. escolhas.Where(escolha => escolha.ItemId != itemId),
                 .. doHino
             ];
+            MarcarCoralNosRefroes(apresentacaoId, hinos.Where(hino => hino.ItemId == itemId));
             SalvarEstado();
             return MontarLouvor(apresentacao);
         }
@@ -189,13 +191,15 @@ public sealed partial class RepositorioTocaEssa
         lock (_sincronizacao)
         {
             var hinos = HinosParaEscala(apresentacao);
+            var marcados = itens ?? hinos.Select(hino => hino.ItemId).ToList();
             _escolhasDoLouvor[apresentacaoId] = EscalaDeCantores.EscalarSelecionados(
                 hinos,
-                itens ?? hinos.Select(hino => hino.ItemId).ToList(),
+                marcados,
                 _cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 _escolhasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 _solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [],
                 ConfiguracaoDoLouvor(apresentacaoId));
+            MarcarCoralNosRefroes(apresentacaoId, hinos.Where(hino => marcados.Contains(hino.ItemId)));
             SalvarEstado();
             return MontarLouvor(apresentacao);
         }
@@ -231,11 +235,13 @@ public sealed partial class RepositorioTocaEssa
                 if (LetraDoItem(artistaId, item) != conteudo ||
                     escolhas.Any(escolha => escolha.ItemId == item.Id))
                     continue;
+                var hinos = HinosParaEscala(apresentacao);
+                MarcarCoralNosRefroes(apresentacao.Id, hinos.Where(hino => hino.ItemId == item.Id));
                 escolhas =
                 [
                     .. escolhas,
                     .. EscalaDeCantores.EscalarHino(
-                        HinosParaEscala(apresentacao),
+                        hinos,
                         item.Id,
                         _cantoresDoLouvor.GetValueOrDefault(apresentacao.Id) ?? [],
                         escolhas,

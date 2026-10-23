@@ -13,14 +13,15 @@ public sealed record EscolhaAMao(Guid ItemId, int Indice, IReadOnlyList<string> 
 public sealed record Solista(string Nome, string Instrumento);
 
 /// [Definida] falso: a parte ainda não foi escalada. Definida e sem
-/// [Cantores] é de Todos.
+/// [Cantores] é de Todos. [Coral]: o coral canta junto de quem tem a parte.
 public sealed record ParteEscalada(
     TipoDaParte Tipo,
     string Texto,
     IReadOnlyList<string> Cantores,
     bool Definida,
     string? Nome = null,
-    int Vezes = 1);
+    int Vezes = 1,
+    bool Coral = false);
 
 public sealed record HinoEscalado(Guid ItemId, IReadOnlyList<ParteEscalada> Partes);
 
@@ -30,11 +31,13 @@ public sealed record HinoEscalado(Guid ItemId, IReadOnlyList<ParteEscalada> Part
 /// [CantoresFora] e [SolistasFora]: quem fica fora do automático desta vez
 /// (continua na lista e pode ser escolhido à mão). Quem canta e toca pode
 /// sair só do microfone ou só dos solos.
+/// [CoralNosRefroes]: escalar um hino também põe o coral em todo refrão dele.
 public sealed record ConfiguracaoDaEscala(
     int? MaximoDeCantoresPorHino = null,
     bool CorosComTodos = false,
     IReadOnlyList<string>? CantoresFora = null,
-    IReadOnlyList<string>? SolistasFora = null);
+    IReadOnlyList<string>? SolistasFora = null,
+    bool CoralNosRefroes = false);
 
 /// Pontos de quem canta no microfone: estrofe vale um, coro vale dois.
 public sealed record PlacarDoCantor(string Nome, int Pontos);
