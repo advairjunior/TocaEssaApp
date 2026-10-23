@@ -39,7 +39,7 @@ var app = builder.Build();
 app.UseMiddleware<TocaEssaApp.Api.TratamentoDeErros>();
 app.UseCors();
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(CacheDosArquivosDoApp.Opcoes());
 app.Use(async (contexto, proximo) =>
 {
     if (contexto.Request.Path.StartsWithSegments("/api/perfil-artistico") ||
@@ -65,7 +65,7 @@ app.MapearRotasDoPublico();
 app.MapearRotasDasApresentacoes();
 app.MapearRotasDosStories();
 
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html", CacheDosArquivosDoApp.Opcoes());
 
 app.Run();
 
