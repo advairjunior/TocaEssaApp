@@ -97,6 +97,37 @@ String? oQueVoceFaz(HinoDoLouvor hino, String nome) {
   return 'você ${oQue.join(' e ')}';
 }
 
+/// "Refrão e Estrofe 2": onde [nome] canta no coral (as partes do coral em
+/// que não está no microfone), ou nulo. Só quem está nos [cantores] canta
+/// no coral; quem só toca, não.
+String? partesNoCoral(HinoDoLouvor hino, String nome,
+    {required List<String> cantores}) {
+  if (!cantores.contains(nome)) return null;
+  final rotulos = rotulosDasPartes(hino);
+  bool noCoral(ParteDoHino parte) =>
+      parte.doCoral && !parte.cantores.contains(nome);
+  // Os refrões têm o mesmo nome: vários viram "2 refrões" ou "todos os
+  // refrões", no lugar do primeiro, em vez de "Refrão e Refrão".
+  final refroes =
+      hino.partes.where((parte) => parte.tipo == TipoDaParte.refrao);
+  final refroesNoCoral = refroes.where(noCoral).length;
+  final refroesJuntos = refroesNoCoral == refroes.length
+      ? 'todos os refrões'
+      : '$refroesNoCoral refrões';
+  var refraoListado = false;
+  final partes = <String>[];
+  for (final (indice, parte) in hino.partes.indexed) {
+    if (!noCoral(parte)) continue;
+    if (parte.tipo != TipoDaParte.refrao || refroesNoCoral == 1) {
+      partes.add(rotulos[indice]);
+    } else if (!refraoListado) {
+      refraoListado = true;
+      partes.add(refroesJuntos);
+    }
+  }
+  return partes.isEmpty ? null : _emLista(partes);
+}
+
 String _emLista(List<String> itens) => itens.length == 1
     ? itens.single
     : '${itens.sublist(0, itens.length - 1).join(', ')} e ${itens.last}';
@@ -104,6 +135,9 @@ String _emLista(List<String> itens) => itens.length == 1
 /// Partes do hino como trechos da cifra: nome de quem canta (ou do solo) na
 /// faixa, a vez de [quemSou] em destaque e avisada na parte anterior. Sem
 /// [acordes], só a letra; com eles, a cifra no tom escolhido com [semitons].
+/// Quem está nos [cantores] e não tem a parte no microfone canta no coral
+/// nas partes do coral; as partes em que não canta ficam apagadas, e o
+/// coral é avisado de quando entra e de quando para.
 List<TrechoDaCifra> trechosDoHino(
   HinoDoLouvor hino, {
   required List<String> cantores,
@@ -111,8 +145,23 @@ List<TrechoDaCifra> trechosDoHino(
   bool acordes = false,
   int semitons = 0,
 }) {
+  final cantaNoCoral = quemSou.isNotEmpty && cantores.contains(quemSou);
   bool minha(ParteDoHino parte) =>
       quemSou.isNotEmpty && parte.cantores.contains(quemSou);
+  bool noCoral(ParteDoHino parte) =>
+      cantaNoCoral && !minha(parte) && parte.doCoral;
+  bool canta(ParteDoHino parte) => minha(parte) || noCoral(parte);
+  String? aviso(int indice) {
+    final parte = hino.partes[indice];
+    final seguinte =
+        indice + 1 < hino.partes.length ? hino.partes[indice + 1] : null;
+    if (seguinte == null) return null;
+    if (!canta(parte) && canta(seguinte)) {
+      return minha(seguinte) ? 'você é o próximo' : 'coral entra';
+    }
+    return noCoral(parte) && !canta(seguinte) ? 'depois, para' : null;
+  }
+
   String rotulo(ParteDoHino parte) => [
         if (parte.tipo != TipoDaParte.instrumental)
           parte.quemCanta.toUpperCase()
@@ -121,7 +170,10 @@ List<TrechoDaCifra> trechosDoHino(
           (parte.nome ?? parte.tipo.rotulo).toUpperCase(),
         ],
         if (parte.vezes > 1) '${parte.vezes}X',
-        if (minha(parte)) 'SUA VEZ',
+        if (minha(parte) || (noCoral(parte) && parte.deTodos))
+          'SUA VEZ'
+        else if (noCoral(parte))
+          'SUA VEZ NO CORAL',
       ].join(' · ');
   String letra(ParteDoHino parte) {
     final semAcordes = parte.texto
@@ -142,12 +194,9 @@ List<TrechoDaCifra> trechosDoHino(
             : parte.deTodos
                 ? CoresTocaEssa.textoSecundario
                 : corDoCantor(cantores, parte.cantores.first),
-        destaque: minha(parte),
-        aviso: !minha(parte) &&
-                indice + 1 < hino.partes.length &&
-                minha(hino.partes[indice + 1])
-            ? 'você é o próximo'
-            : null,
+        destaque: canta(parte),
+        aviso: aviso(indice),
+        apagado: cantaNoCoral && !canta(parte),
         // Solo sem acordes escritos avisa que é instrumental mesmo no leitor.
         texto: acordes && parte.texto.trim().isNotEmpty
             ? transporCifra(parte.texto, semitons)

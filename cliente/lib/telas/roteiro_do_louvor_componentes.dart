@@ -95,6 +95,7 @@ class _CabecalhoDoHino extends StatelessWidget {
     required this.hino,
     required this.ehAgora,
     required this.quemSou,
+    required this.noCoral,
     required this.acordes,
     required this.tom,
     required this.semitons,
@@ -104,6 +105,8 @@ class _CabecalhoDoHino extends StatelessWidget {
   final HinoDoLouvor hino;
   final bool ehAgora;
   final String quemSou;
+  // "Refrão e Estrofe 2": onde a pessoa canta no coral.
+  final String? noCoral;
   final bool acordes;
   final String? tom;
   final int semitons;
@@ -142,6 +145,16 @@ class _CabecalhoDoHino extends StatelessWidget {
           const SizedBox(height: EspacoTocaEssa.medio),
           Text(
             'Suas partes: $minhas',
+            style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
+          ),
+        ],
+        if (noCoral != null) ...[
+          SizedBox(
+              height: minhas == null
+                  ? EspacoTocaEssa.medio
+                  : EspacoTocaEssa.mini),
+          Text(
+            'No coral: $noCoral',
             style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro),
           ),
         ],

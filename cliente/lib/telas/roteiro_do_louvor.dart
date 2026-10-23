@@ -274,6 +274,8 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
               hino: hino,
               ehAgora: ehAgora,
               quemSou: _quemSou ?? '',
+              noCoral: partesNoCoral(hino, _quemSou ?? '',
+                  cantores: roteiro.cantores),
               acordes: _acordes,
               tom: _rotuloDoTom(hino, semitons),
               semitons: semitons,

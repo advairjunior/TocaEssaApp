@@ -150,6 +150,11 @@ class _EscalaDoLouvorState extends State<EscalaDoLouvor> {
         atuais: parte.cantores,
         contagem: contagem,
         solo: solo,
+        coral: parte.coral,
+        mudarCoral: solo
+            ? null
+            : (coral) => _salvar(() => widget.api
+                .marcarCoralDoLouvor(_id, hino.itemId, indice, coral)),
       ),
     );
     if (escolha == null) return;

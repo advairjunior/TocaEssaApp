@@ -123,6 +123,16 @@ extension _PessoasDaEscala on _EscalaDoLouvorState {
             : (valor) => _definirConfiguracao(
                 configuracao.copiarCom(corosComTodos: valor)),
       ),
+      SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: const Text('Coral canta nos refrões'),
+        subtitle: const Text('Quem não está no microfone canta junto.'),
+        value: configuracao.coralNosRefroes,
+        onChanged: _salvando
+            ? null
+            : (valor) => _definirConfiguracao(
+                configuracao.copiarCom(coralNosRefroes: valor)),
+      ),
       const SizedBox(height: EspacoTocaEssa.grande),
       Align(
         alignment: Alignment.centerLeft,

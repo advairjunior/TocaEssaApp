@@ -16,8 +16,12 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
                 title: Text(hino.titulo),
                 subtitle: Text([
                   if (hino.tom case final tom?) 'Tom $tom',
-                  if (_quemSou case final nome? when nome.isNotEmpty)
+                  if (_quemSou case final nome? when nome.isNotEmpty) ...[
                     if (oQueVoceFaz(hino, nome) case final suaVez?) suaVez,
+                    if (partesNoCoral(hino, nome, cantores: roteiro.cantores)
+                        case final coral?)
+                      'coral: $coral',
+                  ],
                 ].join(' · ')),
                 onTap: () {
                   Navigator.of(contexto).pop();
@@ -28,16 +32,30 @@ extension _ListasDoRoteiro on _RoteiroDoLouvorTelaState {
         ),
       );
 
-  /// Só os hinos em que a pessoa canta ou toca, com as partes dela; sem
-  /// nenhuma parte própria, ela faz parte do coral.
+  /// Só os hinos em que a pessoa canta, no microfone ou no coral, ou toca,
+  /// com as partes dela; sem nenhuma, ela faz parte do coral.
   Future<void> _mostrarMeusHinos(RoteiroDoLouvor roteiro) {
     final nome = _quemSou!;
     final meus = [
       for (final hino in roteiro.hinos)
-        if (partesDaPessoa(hino, nome) case final partes?) (hino, partes),
+        if ([
+          if (partesDaPessoa(hino, nome) case final partes?) partes,
+          if (partesNoCoral(hino, nome, cantores: roteiro.cantores)
+              case final coral?)
+            'coral: $coral',
+        ]
+            case final partes when partes.isNotEmpty)
+          (hino, partes.join(' · ')),
     ];
-    final total =
-        meus.fold<int>(0, (soma, item) => soma + item.$1.partesDe(nome));
+    final total = meus.fold<int>(
+        0,
+        (soma, item) =>
+            soma +
+            item.$1.partes
+                .where((parte) =>
+                    parte.cantores.contains(nome) ||
+                    (parte.doCoral && roteiro.cantores.contains(nome)))
+                .length);
     final cor = corDaPessoa(roteiro.participantes, nome);
     return showModalBottomSheet<void>(
       context: context,

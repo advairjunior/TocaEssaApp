@@ -53,9 +53,12 @@ class _Cifra extends StatelessWidget {
                     child: _Faixa(rotulo: rotulo, trecho: trecho),
                   ),
                   SliverToBoxAdapter(
-                    child: _CorpoDoTrecho(
-                      trecho: trecho,
-                      child: linhasDe(trecho.texto),
+                    child: Opacity(
+                      opacity: trecho.apagado ? .4 : 1,
+                      child: _CorpoDoTrecho(
+                        trecho: trecho,
+                        child: linhasDe(trecho.texto),
+                      ),
                     ),
                   ),
                 ])

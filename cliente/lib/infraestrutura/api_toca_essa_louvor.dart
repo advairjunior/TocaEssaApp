@@ -50,6 +50,15 @@ mixin _ApiLouvor on _ApiTocaEssaBase {
             {'itemId': itemId, 'indice': indice, 'cantores': cantores}),
       ));
 
+  /// O coral canta junto de quem tem a parte, ou deixa de cantar.
+  Future<LouvorDoArtista> marcarCoralDoLouvor(String apresentacaoId,
+          String itemId, int indice, bool coral) async =>
+      _lerLouvor(await _cliente.put(
+        _rotaDoLouvor(apresentacaoId, '/coral'),
+        headers: _cabecalhos(token: _tokenArtista, json: true),
+        body: jsonEncode({'itemId': itemId, 'indice': indice, 'coral': coral}),
+      ));
+
   /// Botão "Escalar automático" do hino: refaz as partes dele pelos pontos.
   Future<LouvorDoArtista> escalarHinoDoLouvor(
           String apresentacaoId, String itemId) async =>

@@ -198,6 +198,7 @@ void main() {
       'corosComTodos': true,
       'cantoresFora': ['Ana'],
       'solistasFora': ['José'],
+      'coralNosRefroes': false,
     });
     expect(louvor.configuracao.maximoDeCantoresPorHino, 2);
     expect(louvor.configuracao.cantoresFora, ['Ana']);

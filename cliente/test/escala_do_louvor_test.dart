@@ -475,6 +475,49 @@ void main() {
         _corpo(partes().last), {'itemId': 'h1', 'indice': 2, 'cantores': null});
   });
 
+  testWidgets('a escolha da parte liga o coral junto de quem canta',
+      (tester) async {
+    final requisicoes = await _abrir(tester);
+    await _abrirHino(tester);
+
+    await tester.tap(find.text('Cristo Jesus, o santo Cordeiro'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SwitchListTile, 'Coral canta junto'));
+    await tester.pumpAndSettle();
+
+    final coral = requisicoes.singleWhere(
+        (r) => r.url.path == '/api/apresentacoes/$_id/louvor/coral');
+    expect(_corpo(coral), {'itemId': 'h1', 'indice': 0, 'coral': true});
+    // Quem canta não muda por causa do coral.
+    expect(
+        requisicoes.where(
+            (r) => r.url.path == '/api/apresentacoes/$_id/louvor/partes'),
+        isEmpty);
+  });
+
+  testWidgets('no solo não há coral para ligar', (tester) async {
+    await _abrir(tester);
+    await _abrirHino(tester);
+
+    await tester.tap(find.text('Solo sax tenor · 2x'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Coral canta junto'), findsNothing);
+  });
+
+  testWidgets('configura se o coral canta nos refrões', (tester) async {
+    final requisicoes = await _abrir(tester);
+    await _irParaPessoas(tester);
+
+    await tester.ensureVisible(find.text('Coral canta nos refrões'));
+    await tester.tap(find.text('Coral canta nos refrões'));
+    await tester.pumpAndSettle();
+
+    final configuracao = _corpo(requisicoes.lastWhere(
+        (r) => r.url.path == '/api/apresentacoes/$_id/louvor/configuracao'));
+    expect(configuracao['coralNosRefroes'], isTrue);
+  });
+
   testWidgets('cola a letra do hino que ainda não tem', (tester) async {
     String? pedidoPara;
     final requisicoes = await _abrir(tester, pedirLetra: (titulo) async {
@@ -528,7 +571,8 @@ void main() {
       'maximoDeCantoresPorHino': 2,
       'corosComTodos': false,
       'cantoresFora': [],
-      'solistasFora': []
+      'solistasFora': [],
+      'coralNosRefroes': false
     });
     expect(selecionado('2'), isTrue);
     expect(selecionado('Sem limite'), isFalse);
@@ -541,7 +585,8 @@ void main() {
       'maximoDeCantoresPorHino': 2,
       'corosComTodos': true,
       'cantoresFora': [],
-      'solistasFora': []
+      'solistasFora': [],
+      'coralNosRefroes': false
     });
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Sem limite'));
@@ -550,7 +595,8 @@ void main() {
       'maximoDeCantoresPorHino': null,
       'corosComTodos': true,
       'cantoresFora': [],
-      'solistasFora': []
+      'solistasFora': [],
+      'coralNosRefroes': false
     });
   });
 

@@ -28,6 +28,7 @@ class ParteDoHino {
     required this.definida,
     this.nome,
     this.vezes = 1,
+    this.coral = false,
   });
 
   final TipoDaParte tipo;
@@ -39,10 +40,21 @@ class ParteDoHino {
   final String? nome;
   // De marcações como "(Coro 2x)".
   final int vezes;
+  // O coral canta junto de quem tem a parte no microfone.
+  final bool coral;
 
   bool get deTodos => cantores.isEmpty;
 
-  String get quemCanta => deTodos ? 'Todos' : cantores.join(' e ');
+  /// O coral canta as partes marcadas e as de Todos já escaladas; parte
+  /// sem escala ainda não é de ninguém.
+  bool get doCoral =>
+      tipo != TipoDaParte.instrumental && (coral || (definida && deTodos));
+
+  String get quemCanta => deTodos
+      ? 'Todos'
+      : coral
+          ? '${cantores.join(' e ')} + coral'
+          : cantores.join(' e ');
 
   factory ParteDoHino.deJson(Map<String, dynamic> json) => ParteDoHino(
         tipo: TipoDaParte.deJson(json['tipo'] as String? ?? ''),
@@ -51,6 +63,7 @@ class ParteDoHino {
         definida: json['definida'] as bool? ?? false,
         nome: json['nome'] as String?,
         vezes: (json['vezes'] as num?)?.toInt() ?? 1,
+        coral: json['coral'] as bool? ?? false,
       );
 }
 
@@ -132,13 +145,15 @@ class PlacarDoSolista {
 }
 
 /// Como o louvor escala: [maximoDeCantoresPorHino] nulo reveza entre todos
-/// os cantores; [corosComTodos] deixa todo coro para Todos, não só o final.
+/// os cantores; [corosComTodos] deixa todo coro para Todos, não só o final;
+/// [coralNosRefroes] põe o coral em todo refrão do hino escalado.
 class ConfiguracaoDaEscala {
   const ConfiguracaoDaEscala({
     this.maximoDeCantoresPorHino,
     this.corosComTodos = false,
     this.cantoresFora = const [],
     this.solistasFora = const [],
+    this.coralNosRefroes = false,
   });
 
   final int? maximoDeCantoresPorHino;
@@ -146,12 +161,14 @@ class ConfiguracaoDaEscala {
   // Quem fica fora do automático desta vez, sem sair da lista.
   final List<String> cantoresFora;
   final List<String> solistasFora;
+  final bool coralNosRefroes;
 
   ConfiguracaoDaEscala copiarCom({
     int? Function()? maximoDeCantoresPorHino,
     bool? corosComTodos,
     List<String>? cantoresFora,
     List<String>? solistasFora,
+    bool? coralNosRefroes,
   }) =>
       ConfiguracaoDaEscala(
         maximoDeCantoresPorHino: maximoDeCantoresPorHino == null
@@ -160,6 +177,7 @@ class ConfiguracaoDaEscala {
         corosComTodos: corosComTodos ?? this.corosComTodos,
         cantoresFora: cantoresFora ?? this.cantoresFora,
         solistasFora: solistasFora ?? this.solistasFora,
+        coralNosRefroes: coralNosRefroes ?? this.coralNosRefroes,
       );
 
   Map<String, Object?> paraJson() => {
@@ -167,6 +185,7 @@ class ConfiguracaoDaEscala {
         'corosComTodos': corosComTodos,
         'cantoresFora': cantoresFora,
         'solistasFora': solistasFora,
+        'coralNosRefroes': coralNosRefroes,
       };
 
   factory ConfiguracaoDaEscala.deJson(Map<String, dynamic>? json) =>
@@ -182,6 +201,7 @@ class ConfiguracaoDaEscala {
           for (final nome in json?['solistasFora'] as List<dynamic>? ?? [])
             nome as String,
         ],
+        coralNosRefroes: json?['coralNosRefroes'] as bool? ?? false,
       );
 }
 

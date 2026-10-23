@@ -13,6 +13,8 @@ class _EscolhaDaParte extends StatefulWidget {
     required this.atuais,
     required this.contagem,
     required this.solo,
+    this.coral = false,
+    this.mudarCoral,
   });
 
   final String titulo;
@@ -21,6 +23,9 @@ class _EscolhaDaParte extends StatefulWidget {
   // "3 pts" ou "1 solo" por nome.
   final Map<String, String> contagem;
   final bool solo;
+  final bool coral;
+  // Grava na hora, sem mexer em quem canta; nulo no solo.
+  final ValueChanged<bool>? mudarCoral;
 
   @override
   State<_EscolhaDaParte> createState() => _EscolhaDaParteState();
@@ -28,6 +33,7 @@ class _EscolhaDaParte extends StatefulWidget {
 
 class _EscolhaDaParteState extends State<_EscolhaDaParte> {
   late final _selecionados = {...widget.atuais};
+  late var _coral = widget.coral;
 
   void _responder(List<String>? cantores) =>
       Navigator.of(context).pop(_Escolha(cantores));
@@ -72,6 +78,16 @@ class _EscolhaDaParteState extends State<_EscolhaDaParte> {
                     ),
                 ],
               ),
+              if (widget.mudarCoral case final mudarCoral?)
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Coral canta junto'),
+                  value: _coral,
+                  onChanged: (valor) {
+                    setState(() => _coral = valor);
+                    mudarCoral(valor);
+                  },
+                ),
               const SizedBox(height: EspacoTocaEssa.grande),
               Row(
                 children: [

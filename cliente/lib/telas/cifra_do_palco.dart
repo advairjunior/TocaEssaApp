@@ -59,6 +59,7 @@ class TrechoDaCifra {
     this.cor = CoresTocaEssa.textoSecundario,
     this.destaque = false,
     this.aviso,
+    this.apagado = false,
   });
 
   final String texto;
@@ -69,6 +70,8 @@ class TrechoDaCifra {
   final bool destaque;
   // Recado à direita da faixa, como "você é o próximo".
   final String? aviso;
+  // Parte em que a pessoa não canta: fica fraca, para ela saber quando parar.
+  final bool apagado;
 }
 
 /// Cifra na tela do palco: tamanho automático, pinça para aumentar,
