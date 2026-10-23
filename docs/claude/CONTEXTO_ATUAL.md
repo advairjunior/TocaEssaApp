@@ -1,6 +1,6 @@
 # TocaEssaApp — Contexto atual
 
-> Atualizado em: 2026-10-21
+> Atualizado em: 2026-10-23
 
 ## Arquitetura
 
@@ -271,6 +271,23 @@ arquivo.
   CORAL", o resto fica apagado, "coral entra" e "depois, para" avisam, e
   o topo diz "No coral: todos os refrões e Estrofe 2". Parte sem escala não
   é do coral. Quem só toca não entra no coral.
+  A faixa diz "ANA + CORAL · SUA VEZ" também para quem canta no coral (o
+  "+ CORAL" já explica; o texto longo cortava com o aviso).
+- Coral em algumas linhas (2026-10-23): na letra, `(Coral)` … `(Fim do
+  coral)` (também `[Coral]`, `Coral:`, `(Coral fim)`, `(Fim coral)`; sem
+  o fim, vai até o fim da parte) marcam só as linhas do coral dentro de
+  uma parte. Só no app (`dominio/coral_na_letra.dart`): o servidor mantém
+  essas linhas no texto da parte (teste `MarcasDoCoralFicamDentroDaParte`).
+  A parte continua uma só na escala e nos pontos; no roteiro e no leitor
+  vira um trecho por pedaço ("JOÃO", "JOÃO + CORAL"), sem as linhas de
+  marca, com os avisos de entrar e parar; o topo diz "parte da Estrofe 3".
+  Explicado em "Como marcar as partes". Letra sem "(Estrofe N)" separa
+  pelo tamanho e as linhas de marca entram na conta.
+- Ícones dos papéis (2026-10-23): em Meus hinos, uma linha por papel com
+  ícone do app (microfone na cor da pessoa, coral, solo) e o tom à
+  direita; o topo do hino usa os mesmos ícones em "Suas partes", "No
+  coral" e "Você toca" (solos saíram de "Suas partes"). Ícones, não
+  emoji: o emoji baixaria uma fonte na internet fraca do encontro.
 - Fica para depois: roteiro sem internet.
 
 ### Revisão das telas (2026-10-21)
