@@ -258,6 +258,19 @@ arquivo.
   dele.
 - No louvor as telas da setlist, leitor e montar falam de hinos e letras
   (`Vocabulario` em `dominio/vocabulario.dart`).
+- Coral (2026-10-23): o coral canta junto de quem tem a parte no
+  microfone. Cada parte pode ter o coral ("Coral canta junto" na escolha
+  à mão; rota privada `PUT .../louvor/coral`, coluna
+  `Apresentacoes.CoralDoLouvor`, separada das escolhas para que escalar de
+  novo não apague) e "Coral canta nos refrões" (`CoralNosRefroes` na
+  configuração) põe o coral em todo refrão dos hinos escalados. O roteiro
+  público ganhou `coral` em cada parte (autorizado). As pessoas do coral
+  são cantores cadastrados (fora do automático, se não forem ao
+  microfone) e escolhem o próprio nome: nas partes do coral (as marcadas e
+  as de Todos já escaladas) quem não está no microfone vê "SUA VEZ NO
+  CORAL", o resto fica apagado, "coral entra" e "depois, para" avisam, e
+  o topo diz "No coral: todos os refrões e Estrofe 2". Parte sem escala não
+  é do coral. Quem só toca não entra no coral.
 - Fica para depois: roteiro sem internet.
 
 ### Revisão das telas (2026-10-21)
