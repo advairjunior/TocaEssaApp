@@ -27,6 +27,7 @@ import 'fila_musical_artista.dart';
 import 'fundo_toca_essa.dart';
 import 'setlist_do_artista.dart';
 import 'gerenciar_repertorios.dart';
+import 'tocar_musicas.dart';
 
 part 'painel_do_artista_estado.dart';
 part 'painel_do_artista_acoes_perfil.dart';

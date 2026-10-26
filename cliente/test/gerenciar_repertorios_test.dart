@@ -8,6 +8,7 @@ import 'package:http/testing.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
+import 'package:toca_essa_app/telas/tocar_musicas.dart';
 
 const _repertoriosJson =
     '[{"id":"r1","artistaId":"a1","nome":"Barzinho","musicas":['
@@ -74,6 +75,19 @@ void main() {
 
     expect(requisicoes.where((r) => r.method == 'DELETE'), hasLength(1));
     expect(find.text('Meus repertórios'), findsOneWidget);
+  });
+
+  testWidgets('Tocar no repertório abre as músicas dele para tocar',
+      (tester) async {
+    await _abrir(tester);
+    await tester.tap(find.text('Barzinho'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Tocar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TocarMusicas), findsOneWidget);
+    expect(find.text('Evidências'), findsOneWidget);
   });
 
   testWidgets('menu do repertório permite renomear com o nome atual preenchido',

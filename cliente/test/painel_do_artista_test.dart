@@ -13,6 +13,7 @@ import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
+import 'package:toca_essa_app/telas/tocar_musicas.dart';
 
 import 'apoio/camera_falsa.dart';
 
@@ -161,6 +162,28 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(GerenciarRepertorios), findsOneWidget);
+    });
+
+    testWidgets('Tocar e ensaiar abre o acervo sem criar show', (tester) async {
+      await _abrirPainel(
+        tester,
+        outras: (requisicao) async => requisicao.url.path ==
+                '/api/artista/repertorios'
+            ? http.Response('[${repertorio('r1', 'Barzinho', 2)}]', 200,
+                headers: {'content-type': 'application/json; charset=utf-8'})
+            : null,
+      );
+
+      await tester.tap(find.text('Tocar e ensaiar'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TocarMusicas), findsOneWidget);
+    });
+
+    testWidgets('sem repertórios, não oferece tocar', (tester) async {
+      await _abrirPainel(tester);
+
+      expect(find.text('Tocar e ensaiar'), findsNothing);
     });
 
     testWidgets('sem repertórios, convida a montar o acervo', (tester) async {

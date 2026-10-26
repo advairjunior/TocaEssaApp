@@ -105,6 +105,15 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
     if (mounted) await _carregarRepertorios();
   }
 
+  /// Tocar e ensaiar as músicas do acervo sem criar um show.
+  Future<void> _tocarMusicas() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(builder: (_) => TocarMusicas(api: widget.api)),
+    );
+    if (mounted) await _carregarRepertorios();
+  }
+
   Future<void> _carregar() async {
     try {
       final resultados = await Future.wait<dynamic>([

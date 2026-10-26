@@ -90,6 +90,18 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
     await _recarregarDepoisDaCifra();
   }
 
+  /// Abre as músicas deste repertório para tocar, sem show.
+  Future<void> _tocar() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => TocarMusicas(
+        api: widget.api,
+        repertorioInicialId: widget.repertorio.id,
+        abrirUrl: widget.abrirUrl,
+      ),
+    ));
+    await _recarregarDepoisDaCifra();
+  }
+
   void _mudarEstado(VoidCallback acao) => setState(acao);
 
   @override
@@ -97,6 +109,12 @@ class _DetalheRepertorioState extends State<_DetalheRepertorio> {
         appBar: AppBar(
           title: Text(_nome),
           actions: [
+            if (_musicas.isNotEmpty)
+              IconButton(
+                tooltip: 'Tocar',
+                icon: const Icon(Icons.play_arrow_rounded),
+                onPressed: _tocar,
+              ),
             IconButton(
               tooltip: 'Adicionar música',
               icon: const Icon(Icons.add_rounded),

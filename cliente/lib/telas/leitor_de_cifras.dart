@@ -253,6 +253,11 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
       );
     }
     final pagina = paginas[indice];
+    // Fora do show, a cifra é buscada ao abrir a página; não há Tocar.
+    final ensaio = switch (_sequencia) {
+      final SequenciaDoEnsaio ensaio => ensaio..prepararPagina(pagina),
+      _ => null,
+    };
     final consulta = _sequencia.cifraDe(pagina);
     final texto = consulta?.texto;
     final depois =
@@ -289,27 +294,29 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
               ),
           ],
         ),
-        body: texto == null
-            ? _SemCifra(
-                vocabulario: _sequencia.vocabulario,
-                link: consulta?.cifra?.url,
-                colar: () => _editarCifra(null),
-                abrirNoSite: _abrirNoSite,
-              )
-            : CifraDoPalco(
-                pagina: _chaveDaPagina(pagina),
-                // O tom rola junto com a cifra, como no roteiro do louvor.
-                cabecalho: Align(
-                  alignment: Alignment.centerLeft,
-                  child: ControleDoTom(
-                    tom: _rotuloDoTom(pagina) ?? 'Tom',
-                    original: pagina.tom,
-                    semitons: _semitonsDe(pagina),
-                    mudarTom: (passo) => _mudarTom(pagina, passo),
+        body: texto == null && ensaio?.buscandoCifra(pagina) == true
+            ? const Center(child: CircularProgressIndicator())
+            : texto == null
+                ? _SemCifra(
+                    vocabulario: _sequencia.vocabulario,
+                    link: consulta?.cifra?.url,
+                    colar: () => _editarCifra(null),
+                    abrirNoSite: _abrirNoSite,
+                  )
+                : CifraDoPalco(
+                    pagina: _chaveDaPagina(pagina),
+                    // O tom rola junto com a cifra, como no roteiro do louvor.
+                    cabecalho: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ControleDoTom(
+                        tom: _rotuloDoTom(pagina) ?? 'Tom',
+                        original: pagina.tom,
+                        semitons: _semitonsDe(pagina),
+                        mudarTom: (passo) => _mudarTom(pagina, passo),
+                      ),
+                    ),
+                    trechos: _trechos(pagina, texto),
                   ),
-                ),
-                trechos: _trechos(pagina, texto),
-              ),
         bottomNavigationBar: _BarraDoLeitor(
           vocabulario: _sequencia.vocabulario,
           temAnterior: indice > 0,
@@ -319,7 +326,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
           depois: depois,
           anterior: () => _irPara(-1),
           proxima: () => _irPara(1),
-          tocar: _tocar,
+          tocar: ensaio == null ? _tocar : null,
+          posicao: '${indice + 1} de ${paginas.length}',
         ),
       ),
     );

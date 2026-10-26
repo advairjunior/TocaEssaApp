@@ -104,7 +104,11 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
       ],
       const SizedBox(height: EspacoTocaEssa.grande),
       const TituloGrupo('Acervo'),
-      _LinhaDoAcervo(repertorios: _repertorios, abrir: _abrirRepertorios),
+      _LinhaDoAcervo(
+        repertorios: _repertorios,
+        abrir: _abrirRepertorios,
+        tocar: _tocarMusicas,
+      ),
       // Espaço para o botão flutuante não cobrir o último item.
       const SizedBox(height: 88),
     ];

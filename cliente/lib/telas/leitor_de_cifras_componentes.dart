@@ -45,7 +45,8 @@ class _SemCifra extends StatelessWidget {
       );
 }
 
-/// Sempre visível: setas que só trocam a cifra e Tocar no meio.
+/// Sempre visível: setas que só trocam a cifra e Tocar no meio. Fora do
+/// show (sem [tocar]), o meio diz em que música da lista se está.
 class _BarraDoLeitor extends StatelessWidget {
   const _BarraDoLeitor({
     required this.vocabulario,
@@ -57,6 +58,7 @@ class _BarraDoLeitor extends StatelessWidget {
     required this.anterior,
     required this.proxima,
     required this.tocar,
+    required this.posicao,
   });
 
   final Vocabulario vocabulario;
@@ -67,7 +69,9 @@ class _BarraDoLeitor extends StatelessWidget {
   final String? depois;
   final VoidCallback anterior;
   final VoidCallback proxima;
-  final VoidCallback tocar;
+  final VoidCallback? tocar;
+  // "3 de 25"
+  final String posicao;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -95,17 +99,22 @@ class _BarraDoLeitor extends StatelessWidget {
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),
                   Expanded(
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 52),
-                        backgroundColor: tocando ? CoresTocaEssa.sucesso : null,
-                        disabledBackgroundColor: tocando
-                            ? CoresTocaEssa.sucesso.withValues(alpha: .25)
-                            : null,
-                      ),
-                      onPressed: tocando || salvando ? null : tocar,
-                      child: Text(tocando ? 'Tocando ✓' : 'Tocar'),
-                    ),
+                    child: tocar == null
+                        ? Text(posicao,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.titleMedium)
+                        : FilledButton(
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size(0, 52),
+                              backgroundColor:
+                                  tocando ? CoresTocaEssa.sucesso : null,
+                              disabledBackgroundColor: tocando
+                                  ? CoresTocaEssa.sucesso.withValues(alpha: .25)
+                                  : null,
+                            ),
+                            onPressed: tocando || salvando ? null : tocar,
+                            child: Text(tocando ? 'Tocando ✓' : 'Tocar'),
+                          ),
                   ),
                   const SizedBox(width: EspacoTocaEssa.pequeno),
                   IconButton.filledTonal(
@@ -119,7 +128,9 @@ class _BarraDoLeitor extends StatelessWidget {
               const SizedBox(height: EspacoTocaEssa.mini),
               Text(
                 depois == null
-                    ? 'Fim da ${vocabulario.setlist}'
+                    ? tocar == null
+                        ? 'Fim da lista'
+                        : 'Fim da ${vocabulario.setlist}'
                     : 'Depois: $depois',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,

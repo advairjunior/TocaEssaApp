@@ -12,6 +12,7 @@ import 'componentes_movimento.dart';
 import 'escolher_para_repertorio.dart';
 import 'leitor_de_cifras.dart';
 import 'lista_reordenavel.dart';
+import 'tocar_musicas.dart';
 
 part 'gerenciar_repertorios_detalhe.dart';
 part 'gerenciar_repertorios_acoes.dart';

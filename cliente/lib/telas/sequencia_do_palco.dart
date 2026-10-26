@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 
+part 'sequencia_do_palco_ensaio.dart';
 part 'sequencia_do_palco_pedidos.dart';
 
 /// Uma música que pode tocar no show: item do setlist ou pedido do público.
