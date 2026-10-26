@@ -27,8 +27,9 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
   String? _apresentacaoGestaoId;
   _FiltroApresentacoes _filtroApresentacoes = _FiltroApresentacoes.proximas;
 
+  // Início e perfil ficam fora; toda outra aba é de uma apresentação aberta.
   bool get _dentroDaApresentacao =>
-      _abasDaApresentacao.contains(_aba) || _abasDoLouvor.contains(_aba);
+      _aba != _AbaPainel.inicio && _aba != _AbaPainel.perfil;
 
   List<Apresentacao> _comStatus(
     StatusApresentacao status, {

@@ -824,6 +824,38 @@ void main() {
       expect(find.text('Pessoas'), findsOneWidget);
     });
 
+    testWidgets('karaokê abre na aba Noite, com a galera e o Mais',
+        (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Karaokê de sexta',
+          data: '2026-10-30',
+          tipo: 'Karaoke',
+        )}]',
+        outras: (requisicao) async => requisicao.url.path.endsWith('/karaoke')
+            ? http.Response(
+                '{"repertorioId":null,"modo":"Livre","sorteada":false,'
+                '"podeSortearDeNovo":true,"ordem":[],"foraDaOrdem":[]}',
+                200,
+                headers: {'content-type': 'application/json; charset=utf-8'})
+            : null,
+      );
+      await tester.tap(find.text('Karaokê de sexta'));
+      await tester.pumpAndSettle();
+
+      final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(barra.destinations, hasLength(2));
+      expect(barra.selectedIndex, 0);
+      expect(find.text('Noite'), findsOneWidget);
+      expect(find.text('Ninguém na galera ainda'), findsOneWidget);
+
+      await tester.tap(find.text('Mais'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NavigationBar), findsOneWidget);
+    });
+
     testWidgets('louvor ao vivo abre direto nos hinos', (tester) async {
       await _abrirPainel(
         tester,
