@@ -159,6 +159,9 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
     }
   }
 
+  Future<void> _terminarVez() =>
+      _executar(() => widget.api.terminarVezDoKaraokeComoDono(_id));
+
   Future<void> _sortear() =>
       _executar(() => widget.api.sortearOrdemDoKaraoke(_id));
 
@@ -221,6 +224,11 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
       ];
     }
     return [
+      if (noite.cantando case final cantando?) ...[
+        _CantandoAgora(
+            cantando: cantando, terminar: _ocupado ? null : _terminarVez),
+        const SizedBox(height: EspacoTocaEssa.grande),
+      ],
       TituloGrupo(noite.sorteada
           ? 'Ordem da noite'
           : 'Na galera · ${noite.ordem.length}'),
@@ -230,6 +238,7 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
             key: ValueKey(pessoa.publicoId),
             pessoa: pessoa,
             posicao: noite.sorteada ? indice + 1 : null,
+            proximo: noite.sorteada && noite.proximo == pessoa.publicoId,
             corrigir: _ocupado ? null : (c) => _corrigir(c, pessoa),
           ),
       ]),

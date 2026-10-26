@@ -26,8 +26,12 @@ Map<String, dynamic> _noite({
   String modo = 'Livre',
   List<Map<String, dynamic>>? ordem,
   List<Map<String, dynamic>> foraDaOrdem = const [],
+  Map<String, dynamic>? cantando,
+  String? proximo,
 }) =>
     {
+      'cantando': cantando,
+      'proximo': proximo,
       'repertorioId': repertorioId,
       'modo': modo,
       'sorteada': sorteada,
@@ -270,5 +274,43 @@ void main() {
 
     expect(find.textContaining('QR'), findsOneWidget);
     expect(find.text('Sortear a ordem'), findsNothing);
+  });
+
+  testWidgets('mostra quem canta, a música de cada um e destrava a vez',
+      (tester) async {
+    final requisicoes = await _abrir(tester, respostas: {
+      'GET $_rota': _devolver(_noite(
+        sorteada: true,
+        podeSortearDeNovo: false,
+        ordem: [
+          _pessoa('p1', 'Ana'),
+          {
+            ..._pessoa('p2', 'Bia'),
+            'musica': {'titulo': 'Trem-Bala'}
+          },
+        ],
+        cantando: {
+          'publicoId': 'p1',
+          'nome': 'Ana',
+          'musica': {'titulo': 'Evidências', 'linkDoVideo': null},
+          'comecouEm': '2026-10-30T23:00:00Z',
+        },
+        proximo: 'p2',
+      )),
+      'POST $_rota/vez/fim': _devolver(_noite(sorteada: true, proximo: 'p2')),
+    });
+
+    expect(find.text('Cantando agora: Ana · Evidências'), findsOneWidget);
+    expect(find.text('Trem-Bala'), findsOneWidget);
+    expect(find.text('próximo'), findsOneWidget);
+
+    await tester.tap(find.text('Terminar a vez'));
+    await tester.pumpAndSettle();
+
+    expect(
+        requisicoes
+            .where((r) => r.method == 'POST' && r.url.path == '$_rota/vez/fim'),
+        hasLength(1));
+    expect(find.text('Cantando agora: Ana · Evidências'), findsNothing);
   });
 }

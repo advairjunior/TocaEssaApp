@@ -2,21 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/modelos.dart';
+import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'entrar_para_guardar.dart';
+import 'escolher_musica_do_karaoke.dart';
 
-/// A noite no celular de cada um: entra na galera com a conta e acompanha a
-/// ordem sorteada e a própria vez.
+part 'noite_de_karaoke_galera_vez.dart';
+
+void _abrirNoYouTube(Uri url) => abrirUrlExterna(url);
+
+/// A noite no celular de cada um: entra na galera com a conta, escolhe a
+/// música, acompanha a ordem e, na vez, toca o vídeo na TV pelo YouTube.
 class NoiteDeKaraokeDaGalera extends StatefulWidget {
-  const NoiteDeKaraokeDaGalera(
-      {super.key, required this.api, required this.codigo});
+  const NoiteDeKaraokeDaGalera({
+    super.key,
+    required this.api,
+    required this.codigo,
+    this.abrirUrl = _abrirNoYouTube,
+  });
 
   final ApiTocaEssa api;
   final String codigo;
+
+  /// Abre o vídeo no próprio toque: o Safari bloqueia o que abre depois.
+  final void Function(Uri url) abrirUrl;
 
   @override
   State<NoiteDeKaraokeDaGalera> createState() => _NoiteDeKaraokeDaGaleraState();
@@ -28,6 +41,9 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
   String? _token;
   String? _eu;
   bool _carregando = true;
+  bool _ocupado = false;
+  // Na roleta, a pessoa disse que conhece a música sorteada.
+  bool _confirmada = false;
   AssinaturaTempoReal? _tempoReal;
 
   @override
@@ -100,6 +116,51 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
     }
   }
 
+  Future<void> _executar(
+      Future<NoiteDeKaraoke> Function(String token) acao) async {
+    final token = _token;
+    if (token == null) return;
+    setState(() => _ocupado = true);
+    try {
+      final noite = await acao(token);
+      if (mounted) setState(() => _noite = noite);
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
+  }
+
+  Future<void> _escolher() async {
+    final token = _token;
+    if (token == null) return;
+    final escolha = await escolherMusicaDoKaraoke(context,
+        api: widget.api, codigo: widget.codigo, token: token);
+    if (escolha == null || !mounted) return;
+    await _executar((token) => widget.api.escolherMusicaNoKaraoke(
+        widget.codigo, token,
+        musicaId: escolha.musicaId,
+        titulo: escolha.titulo,
+        linkDoVideo: escolha.linkDoVideo));
+  }
+
+  Future<void> _girar() {
+    setState(() => _confirmada = false);
+    return _executar(
+        (token) => widget.api.girarRoletaDoKaraoke(widget.codigo, token));
+  }
+
+  /// O vídeo abre antes de qualquer espera, ainda dentro do toque.
+  Future<void> _tocarNaTv(MusicaDoKaraoke musica) {
+    widget.abrirUrl(musica.enderecoNoYouTube);
+    setState(() => _confirmada = false);
+    return _executar(
+        (token) => widget.api.comecarVezNoKaraoke(widget.codigo, token));
+  }
+
+  Future<void> _terminar() => _executar(
+      (token) => widget.api.terminarVezNoKaraoke(widget.codigo, token));
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: Text(_apresentacao?.nome ?? 'Karaokê')),
@@ -129,8 +190,24 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
   List<Widget> _naGalera() {
     final noite = _noite;
     if (noite == null) return const [];
+    final momento = MomentoNaNoite.de(noite, _eu);
     return [
-      _CartaoDaVez(noite: noite, eu: _eu),
+      if (noite.cantando case final cantando? when cantando.publicoId != _eu)
+        _CantandoAgora(cantando: cantando),
+      _CartaoDaVez(
+        noite: noite,
+        momento: momento,
+        acoes: _AcoesDaVez(
+          ocupado: _ocupado,
+          confirmada: _confirmada,
+          escolher: _escolher,
+          girar: _girar,
+          confirmar: () => setState(() => _confirmada = true),
+          tocarNaTv: _tocarNaTv,
+          terminar: _terminar,
+        ),
+        eu: _eu,
+      ),
       const SizedBox(height: EspacoTocaEssa.grande),
       TituloGrupo(noite.sorteada
           ? 'Ordem da noite'
@@ -151,61 +228,5 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
           ),
       ]),
     ];
-  }
-}
-
-/// Onde a pessoa está na noite.
-class _CartaoDaVez extends StatelessWidget {
-  const _CartaoDaVez({required this.noite, required this.eu});
-
-  final NoiteDeKaraoke noite;
-  final String? eu;
-
-  (String, String) get _textos {
-    final posicao = noite.posicaoDe(eu);
-    if (posicao == null) {
-      return (
-        'Você está fora da ordem',
-        'Fale com o dono da noite para voltar.'
-      );
-    }
-    if (!noite.sorteada) {
-      return (
-        'Você está na galera',
-        'O dono da noite ainda vai sortear a ordem de quem canta.'
-      );
-    }
-    final antes = posicao - 1;
-    return (
-      antes == 0
-          ? 'Você é o 1º · abre a noite'
-          : 'Você é o $posicaoº · ${antes == 1 ? 'falta 1' : 'faltam $antes'} '
-              'antes de você',
-      'Vá pensando na música e na coragem.'
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final texto = Theme.of(context).textTheme;
-    final (titulo, detalhe) = _textos;
-    return Container(
-      padding: const EdgeInsets.all(EspacoTocaEssa.base),
-      decoration: BoxDecoration(
-        color: CoresTocaEssa.superficie,
-        borderRadius: BorderRadius.circular(RaioTocaEssa.cartao),
-        border: Border.all(color: CoresTocaEssa.borda),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(titulo, style: texto.titleMedium),
-          const SizedBox(height: EspacoTocaEssa.mini),
-          Text(detalhe,
-              style: texto.bodyMedium
-                  ?.copyWith(color: CoresTocaEssa.textoSecundario)),
-        ],
-      ),
-    );
   }
 }

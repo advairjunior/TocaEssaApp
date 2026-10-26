@@ -76,11 +76,15 @@ class _LinhaDaPessoa extends StatelessWidget {
     required this.pessoa,
     required this.posicao,
     required this.corrigir,
+    this.proximo = false,
   });
 
   final PessoaDoKaraoke pessoa;
   final int? posicao;
   final ValueChanged<_Correcao>? corrigir;
+
+  /// Quem canta depois de quem está cantando.
+  final bool proximo;
 
   @override
   Widget build(BuildContext context) => ListTile(
@@ -97,7 +101,21 @@ class _LinhaDaPessoa extends StatelessWidget {
                         ?.copyWith(color: CoresTocaEssa.roxoClaro)),
           ),
         ),
-        title: Text(pessoa.nome),
+        title: Row(
+          children: [
+            Flexible(child: Text(pessoa.nome, overflow: TextOverflow.ellipsis)),
+            if (proximo) ...[
+              const SizedBox(width: EspacoTocaEssa.pequeno),
+              Text('próximo',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: CoresTocaEssa.rosa)),
+            ],
+          ],
+        ),
+        // A música que a pessoa escolheu para a próxima vez dela.
+        subtitle: pessoa.musica == null ? null : Text(pessoa.musica!.titulo),
         trailing: PopupMenuButton<_Correcao>(
           tooltip: 'Opções de ${pessoa.nome}',
           enabled: corrigir != null,
@@ -125,4 +143,24 @@ class _LinhaForaDaOrdem extends StatelessWidget {
         trailing:
             TextButton(onPressed: devolver, child: const Text('Devolver')),
       );
+}
+
+/// Quem está cantando e o botão para destravar uma vez esquecida aberta.
+class _CantandoAgora extends StatelessWidget {
+  const _CantandoAgora({required this.cantando, required this.terminar});
+
+  final CantandoNoKaraoke cantando;
+  final VoidCallback? terminar;
+
+  @override
+  Widget build(BuildContext context) => GrupoDeLinhas(linhas: [
+        ListTile(
+          leading: const Icon(Icons.mic_rounded, color: CoresTocaEssa.rosa),
+          title: Text(
+              'Cantando agora: ${cantando.nome} · ${cantando.musica.titulo}'),
+          subtitle: const Text('A vez passa quando o próximo tocar na TV'),
+          trailing: TextButton(
+              onPressed: terminar, child: const Text('Terminar a vez')),
+        ),
+      ]);
 }
