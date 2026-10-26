@@ -256,5 +256,7 @@ internal sealed partial class BancoTocaEssa
             comando, "Apresentacoes", "CoralDoLouvor", "TEXT NULL");
         AdicionarColunaSqliteSeNecessario(
             comando, "ParticipacoesResenha", "NomeNoLouvor", "TEXT NULL");
+        AdicionarColunaSqliteSeNecessario(
+            comando, "MusicasDoRepertorio", "LinkDoVideo", "TEXT NULL");
     }
 }

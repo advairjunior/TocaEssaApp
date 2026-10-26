@@ -183,6 +183,8 @@ internal sealed class MusicaDoRepertorioRegistro
     public string? Artista { get; set; }
     public string? Tom { get; set; }
     public int Ordem { get; set; }
+    // Vídeo de karaokê no YouTube, vindo da playlist importada.
+    public string? LinkDoVideo { get; set; }
 }
 
 internal sealed class ItemDoSetlistRegistro

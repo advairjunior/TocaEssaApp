@@ -224,6 +224,7 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.Property(item => item.Titulo).HasMaxLength(200);
             entidade.Property(item => item.Artista).HasMaxLength(200);
             entidade.Property(item => item.Tom).HasMaxLength(10);
+            entidade.Property(item => item.LinkDoVideo).HasMaxLength(300);
         });
 
         modelo.Entity<ItemDoSetlistRegistro>(entidade =>

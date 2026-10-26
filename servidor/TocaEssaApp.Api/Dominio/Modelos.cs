@@ -111,7 +111,8 @@ public sealed record MusicaDoRepertorio(
     string Titulo,
     string? Artista,
     string? Tom,
-    int Ordem);
+    int Ordem,
+    string? LinkDoVideo = null);
 
 public sealed record ItemDoSetlist(
     Guid Id,
@@ -126,7 +127,8 @@ public sealed record CriarRepertorio(string Nome);
 
 public sealed record RenomearRepertorio(string Nome);
 
-public sealed record AdicionarMusicaAoRepertorio(string Titulo, string? Artista, string? Tom = null);
+public sealed record AdicionarMusicaAoRepertorio(
+    string Titulo, string? Artista, string? Tom = null, string? LinkDoVideo = null);
 
 /// Várias músicas (da setlist, hinos ou pedidos) de uma vez para um
 /// repertório já existente ou criado com [NomeNovo].

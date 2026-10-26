@@ -27,6 +27,10 @@ builder.Services.AddSingleton(new ArmazenamentoDeImagens(
 builder.Services.AddSingleton(new ArmazenamentoDeStories(
     builder.Configuration, Path.Combine(Path.GetDirectoryName(arquivoBanco)!, "stories"),
     exigeR2: builder.Environment.IsProduction()));
+// Chave da API do YouTube só no ambiente (YouTube__ChaveDaApi no Render).
+builder.Services.AddSingleton<ILeitorDePlaylist>(new LeitorDePlaylistDoYouTube(
+    new HttpClient { Timeout = TimeSpan.FromSeconds(20) },
+    builder.Configuration["YouTube:ChaveDaApi"]));
 builder.Services.ConfigureHttpJsonOptions(opcoes =>
     opcoes.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddCors(opcoes => opcoes.AddDefaultPolicy(politica => politica
@@ -64,6 +68,7 @@ app.MapearRotasDaSetlistEDoLouvor();
 app.MapearRotasDoPublico();
 app.MapearRotasDasApresentacoes();
 app.MapearRotasDosStories();
+app.MapearRotasDoKaraoke();
 
 app.MapFallbackToFile("index.html", CacheDosArquivosDoApp.Opcoes());
 

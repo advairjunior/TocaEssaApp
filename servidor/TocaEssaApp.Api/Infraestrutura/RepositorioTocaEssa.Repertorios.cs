@@ -109,31 +109,62 @@ public sealed partial class RepositorioTocaEssa
             var adicionadas = 0;
             foreach (var musica in musicas)
             {
-                if (noRepertorio.Any(m => MesmaMusica(m.Titulo, m.Artista, musica.Titulo, musica.Artista)))
-                    continue;
-                var registro = new MusicaDoRepertorioRegistro
-                {
-                    Id = Guid.NewGuid(),
-                    RepertorioId = repertorio.Id,
-                    ArtistaId = conta.Id,
-                    Titulo = musica.Titulo.Trim(),
-                    Artista = string.IsNullOrWhiteSpace(musica.Artista) ? null : musica.Artista.Trim(),
-                    Tom = string.IsNullOrWhiteSpace(musica.Tom) ? null : musica.Tom.Trim(),
-                    Ordem = noRepertorio.Select(m => m.Ordem).DefaultIfEmpty(0).Max() + 1
-                };
-                _musicasDoRepertorio[registro.Id] = registro;
+                if (JaEstaNoRepertorio(noRepertorio, musica)) continue;
+                var registro = NovaMusicaDoRepertorio(repertorio, musica,
+                    noRepertorio.Select(m => m.Ordem).DefaultIfEmpty(0).Max() + 1);
                 noRepertorio.Add(registro);
                 adicionadas++;
-                foreach (var item in _itensDoSetlist.Values.Where(i =>
-                             i.ArtistaId == conta.Id && i.MusicaDoRepertorioId == null &&
-                             MesmaMusica(i.Titulo, i.Artista, registro.Titulo, registro.Artista)))
-                    item.MusicaDoRepertorioId = registro.Id;
+                LigarAvulsasDaSetlist(registro);
             }
             SalvarEstado();
             return new MusicasAdicionadasAoRepertorio(
                 ParaDominio(repertorio), adicionadas, musicas.Count - adicionadas);
         }
     }
+
+    /// Já está quem tem o mesmo vídeo (mesmo com o nome corrigido à mão) ou
+    /// o mesmo nome; a música com o mesmo nome e sem vídeo ganha o vídeo.
+    private static bool JaEstaNoRepertorio(
+        IEnumerable<MusicaDoRepertorioRegistro> noRepertorio, AdicionarMusicaAoRepertorio musica)
+    {
+        var link = string.IsNullOrWhiteSpace(musica.LinkDoVideo) ? null : musica.LinkDoVideo.Trim();
+        if (link is not null && noRepertorio.Any(m => m.LinkDoVideo == link)) return true;
+        var mesma = noRepertorio.FirstOrDefault(m =>
+            MesmaMusica(m.Titulo, m.Artista, musica.Titulo, musica.Artista));
+        if (mesma is null) return false;
+        mesma.LinkDoVideo ??= link;
+        return true;
+    }
+
+    private MusicaDoRepertorioRegistro NovaMusicaDoRepertorio(
+        RepertorioRegistro repertorio, AdicionarMusicaAoRepertorio musica, int ordem)
+    {
+        var registro = new MusicaDoRepertorioRegistro
+        {
+            Id = Guid.NewGuid(),
+            RepertorioId = repertorio.Id,
+            ArtistaId = repertorio.ArtistaId,
+            Titulo = musica.Titulo.Trim(),
+            Artista = SemVazio(musica.Artista),
+            Tom = SemVazio(musica.Tom),
+            LinkDoVideo = SemVazio(musica.LinkDoVideo),
+            Ordem = ordem
+        };
+        _musicasDoRepertorio[registro.Id] = registro;
+        return registro;
+    }
+
+    /// Músicas avulsas da setlist com o mesmo nome passam a apontar para o acervo.
+    private void LigarAvulsasDaSetlist(MusicaDoRepertorioRegistro registro)
+    {
+        foreach (var item in _itensDoSetlist.Values.Where(i =>
+                     i.ArtistaId == registro.ArtistaId && i.MusicaDoRepertorioId == null &&
+                     MesmaMusica(i.Titulo, i.Artista, registro.Titulo, registro.Artista)))
+            item.MusicaDoRepertorioId = registro.Id;
+    }
+
+    private static string? SemVazio(string? texto) =>
+        string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
 
     private RepertorioRegistro CriarRegistroDeRepertorio(Guid artistaId, string nome)
     {
@@ -241,5 +272,5 @@ public sealed partial class RepositorioTocaEssa
             .ToArray());
 
     private static MusicaDoRepertorio ParaDominio(MusicaDoRepertorioRegistro m) => new(
-        m.Id, m.RepertorioId, m.Titulo, m.Artista, m.Tom, m.Ordem);
+        m.Id, m.RepertorioId, m.Titulo, m.Artista, m.Tom, m.Ordem, m.LinkDoVideo);
 }

@@ -156,6 +156,8 @@ internal sealed partial class BancoTocaEssa
                 ON "MusicasDoRepertorio" ("RepertorioId");
             ALTER TABLE "MusicasDoRepertorio"
                 ADD COLUMN IF NOT EXISTS "Tom" character varying(10) NULL;
+            ALTER TABLE "MusicasDoRepertorio"
+                ADD COLUMN IF NOT EXISTS "LinkDoVideo" character varying(300) NULL;
             CREATE TABLE IF NOT EXISTS "ItensDoSetlist" (
                 "Id" uuid NOT NULL,
                 "ApresentacaoId" uuid NOT NULL,
