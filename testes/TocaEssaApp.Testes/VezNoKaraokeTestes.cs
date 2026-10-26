@@ -54,11 +54,23 @@ public sealed class VezNoKaraokeTestes
     }
 
     [Fact]
+    public void AntesDoSorteioNinguemComecaACantar()
+    {
+        var cenario = CriarKaraoke();
+        var ana = Entrar(cenario, "Ana");
+        Escolher(cenario, ana, "Evidências");
+
+        Assert.Throws<OrdemAindaNaoSorteadaException>(
+            () => cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token));
+    }
+
+    [Fact]
     public void SoOProximoComecaEPrecisaTerAMusica()
     {
         var cenario = CriarKaraoke();
         var ana = Entrar(cenario, "Ana");
         var bia = Entrar(cenario, "Bia");
+        (ana, bia) = NaOrdemSorteada(cenario, ana, bia);
 
         Assert.Throws<EscolhaAMusicaAntesException>(
             () => cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token));
@@ -73,6 +85,7 @@ public sealed class VezNoKaraokeTestes
         var cenario = CriarKaraoke();
         var ana = Entrar(cenario, "Ana");
         var bia = Entrar(cenario, "Bia");
+        (ana, bia) = NaOrdemSorteada(cenario, ana, bia);
         Escolher(cenario, ana, "Evidências");
 
         var noite = cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token);
@@ -93,6 +106,7 @@ public sealed class VezNoKaraokeTestes
         var cenario = CriarKaraoke();
         var ana = Entrar(cenario, "Ana");
         var bia = Entrar(cenario, "Bia");
+        (ana, bia) = NaOrdemSorteada(cenario, ana, bia);
         Escolher(cenario, ana, "Evidências");
         cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token);
         Escolher(cenario, bia, "Trem-Bala");
@@ -111,7 +125,8 @@ public sealed class VezNoKaraokeTestes
     {
         var cenario = CriarKaraoke();
         var ana = Entrar(cenario, "Ana");
-        Entrar(cenario, "Bia");
+        var bia = Entrar(cenario, "Bia");
+        (ana, _) = NaOrdemSorteada(cenario, ana, bia);
         Escolher(cenario, ana, "Evidências");
         var primeira = cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token);
 
@@ -126,6 +141,7 @@ public sealed class VezNoKaraokeTestes
         var cenario = CriarKaraoke();
         var ana = Entrar(cenario, "Ana");
         var bia = Entrar(cenario, "Bia");
+        (ana, bia) = NaOrdemSorteada(cenario, ana, bia);
         Escolher(cenario, ana, "Evidências");
         cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token);
 
@@ -178,6 +194,7 @@ public sealed class VezNoKaraokeTestes
             var cenario = CriarKaraoke(arquivo);
             var ana = Entrar(cenario, "Ana");
             var bia = Entrar(cenario, "Bia");
+            (ana, bia) = NaOrdemSorteada(cenario, ana, bia);
             Escolher(cenario, ana, "Evidências");
             cenario.Repo.ComecarVezNoKaraoke(cenario.Noite.Codigo, ana.Token);
             Escolher(cenario, bia, "Trem-Bala");
@@ -194,6 +211,15 @@ public sealed class VezNoKaraokeTestes
             Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
             File.Delete(arquivo);
         }
+    }
+
+    /// Sorteia a ordem e devolve as duas pessoas na ordem que saiu: nos testes,
+    /// "ana" passa a ser a 1ª da ordem sorteada.
+    private static (SessaoDoPublico, SessaoDoPublico) NaOrdemSorteada(
+        Cenario cenario, SessaoDoPublico uma, SessaoDoPublico outra)
+    {
+        var ordem = cenario.Repo.SortearOrdemDoKaraoke(cenario.Token, cenario.Noite.Id).Ordem;
+        return ordem[0].PublicoId == uma.Perfil.Id ? (uma, outra) : (outra, uma);
     }
 
     private static void Escolher(Cenario cenario, SessaoDoPublico pessoa, string titulo) =>

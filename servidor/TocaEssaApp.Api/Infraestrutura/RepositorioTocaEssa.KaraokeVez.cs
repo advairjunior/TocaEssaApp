@@ -53,6 +53,7 @@ public sealed partial class RepositorioTocaEssa
         return GravarKaraoke(apresentacao, estado =>
         {
             if (estado.EmAndamento?.PublicoId == publicoId) return estado;
+            if (!estado.Sorteada) throw new OrdemAindaNaoSorteadaException();
             var ordem = OrdemAtual(apresentacao.Id, estado);
             if (RegrasDaVez.Proximo(ordem, estado.Ultima) != publicoId)
                 throw new AindaNaoEhSuaVezException();

@@ -72,3 +72,6 @@ public sealed class MusicaDoKaraokeInvalidaException()
 
 public sealed class PlaylistDoKaraokeAcabouException()
     : ErroDoKaraokeException(409, "Todas as músicas da playlist já foram cantadas nesta noite.");
+
+public sealed class OrdemAindaNaoSorteadaException()
+    : ErroDoKaraokeException(409, "O dono da noite ainda vai sortear a ordem de quem canta.");

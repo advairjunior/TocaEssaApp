@@ -98,9 +98,16 @@ public sealed class NoiteDeKaraokeApiTestes
             using var jsonNoite = JsonDocument.Parse(await criada.Content.ReadAsStringAsync());
             var id = jsonNoite.RootElement.GetProperty("apresentacao").GetProperty("id").GetGuid();
             var codigo = jsonNoite.RootElement.GetProperty("apresentacao").GetProperty("codigo").GetString();
-            using var ana = await EntrarNaGalera(fabrica, codigo!, "ana@teste.com");
-            using var bia = await EntrarNaGalera(fabrica, codigo!, "bia@teste.com");
+            using var uma = await EntrarNaGalera(fabrica, codigo!, "ana@teste.com");
+            using var outra = await EntrarNaGalera(fabrica, codigo!, "bia@teste.com");
             var rota = $"/api/publico/apresentacoes/{codigo}/karaoke";
+            var sorteio = await (await dono.PostAsync($"/api/apresentacoes/{id}/karaoke/sorteio", null))
+                .Content.ReadFromJsonAsync<JsonElement>();
+            var primeiroId = sorteio.GetProperty("ordem")[0].GetProperty("publicoId").GetGuid();
+            var idDaUma = (await uma.GetFromJsonAsync<JsonElement>("/api/publico/perfil"))
+                .GetProperty("id").GetGuid();
+            // "ana" é quem saiu primeiro no sorteio.
+            var (ana, bia) = idDaUma == primeiroId ? (uma, outra) : (outra, uma);
 
             var cedo = await bia.PostAsync($"{rota}/vez", null);
             Assert.Equal(HttpStatusCode.Conflict, cedo.StatusCode);
