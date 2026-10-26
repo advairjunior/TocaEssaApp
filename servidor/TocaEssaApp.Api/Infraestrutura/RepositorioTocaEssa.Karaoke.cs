@@ -115,20 +115,31 @@ public sealed partial class RepositorioTocaEssa
     {
         var estado = EstadoDoKaraoke(apresentacao.Id);
         var naGalera = GaleraPorChegada(apresentacao.Id).ToHashSet();
+        var ordem = OrdemAtual(apresentacao.Id, estado);
+        PessoaDoKaraoke Pessoa(Guid id) => PessoaDoKaraoke(id, estado);
         return new NoiteDeKaraoke(
             RepertorioDoKaraoke(apresentacao.ArtistaId, estado.Configuracao.RepertorioId),
             estado.Configuracao.Modo,
             estado.Sorteada,
             !estado.Comecou,
-            [.. OrdemAtual(apresentacao.Id, estado).Select(PessoaDoKaraoke)],
-            [.. estado.Retirados.Where(naGalera.Contains).Select(PessoaDoKaraoke)]);
+            [.. ordem.Select(Pessoa)],
+            [.. estado.Retirados.Where(naGalera.Contains).Select(Pessoa)],
+            Cantando(estado),
+            RegrasDaVez.Proximo(ordem, estado.Ultima));
     }
 
-    private PessoaDoKaraoke PessoaDoKaraoke(Guid publicoId)
-    {
-        var perfil = _perfisPublicos.GetValueOrDefault(publicoId);
-        return new PessoaDoKaraoke(publicoId, perfil?.Nome ?? "Participante", perfil?.FotoUrl);
-    }
+    private CantandoNoKaraoke? Cantando(EstadoDoKaraoke estado) =>
+        estado.EmAndamento is { } vez
+            ? new CantandoNoKaraoke(vez.PublicoId, NomeNoKaraoke(vez.PublicoId), vez.Musica, vez.ComecouEm)
+            : null;
+
+    private string NomeNoKaraoke(Guid publicoId) =>
+        _perfisPublicos.GetValueOrDefault(publicoId)?.Nome ?? "Participante";
+
+    private PessoaDoKaraoke PessoaDoKaraoke(Guid publicoId, EstadoDoKaraoke estado) =>
+        new(publicoId, NomeNoKaraoke(publicoId),
+            _perfisPublicos.GetValueOrDefault(publicoId)?.FotoUrl,
+            estado.Escolhas.GetValueOrDefault(publicoId));
 
     /// O escolhido, se ainda é do artista; senão o repertório com mais vídeos.
     private Guid? RepertorioDoKaraoke(Guid artistaId, Guid? escolhido)
@@ -154,19 +165,3 @@ public sealed partial class RepositorioTocaEssa
             ? JsonSerializer.Serialize(estado)
             : null;
 }
-
-/// O que fica guardado da noite: os sorteados em ordem (sem quem chegou
-/// depois), quem o dono tirou e se alguém já começou a cantar.
-internal sealed record EstadoDoKaraoke(
-    ConfiguracaoDoKaraoke Configuracao,
-    List<Guid> Sorteados,
-    List<Guid> Retirados,
-    bool Sorteada = false,
-    bool Comecou = false)
-{
-    public EstadoDoKaraoke() : this(new ConfiguracaoDoKaraoke(), [], []) { }
-}
-
-public sealed class RecursoDisponivelSomenteNoKaraokeException : Exception { }
-
-public sealed class KaraokeJaComecouException : Exception { }

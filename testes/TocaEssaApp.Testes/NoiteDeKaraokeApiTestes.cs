@@ -81,6 +81,55 @@ public sealed class NoiteDeKaraokeApiTestes
         }
     }
 
+    [Fact]
+    public async Task AGaleraEscolheComecaETerminaAVezPeloCelular()
+    {
+        var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-vez-{Guid.NewGuid():N}.db");
+        try
+        {
+            await using var fabrica = CriarFabrica(banco);
+            using var dono = await CriarClienteArtista(fabrica, "dono@teste.com");
+            (await dono.PutAsJsonAsync("/api/perfil-artistico",
+                new { nomeArtistico = "Advair" })).EnsureSuccessStatusCode();
+            var criada = await dono.PostAsJsonAsync("/api/apresentacoes", new
+            {
+                nome = "Karaokê", data = "2026-10-30", local = "Casa", tipo = "Karaoke"
+            });
+            using var jsonNoite = JsonDocument.Parse(await criada.Content.ReadAsStringAsync());
+            var id = jsonNoite.RootElement.GetProperty("apresentacao").GetProperty("id").GetGuid();
+            var codigo = jsonNoite.RootElement.GetProperty("apresentacao").GetProperty("codigo").GetString();
+            using var ana = await EntrarNaGalera(fabrica, codigo!, "ana@teste.com");
+            using var bia = await EntrarNaGalera(fabrica, codigo!, "bia@teste.com");
+            var rota = $"/api/publico/apresentacoes/{codigo}/karaoke";
+
+            var cedo = await bia.PostAsync($"{rota}/vez", null);
+            Assert.Equal(HttpStatusCode.Conflict, cedo.StatusCode);
+            Assert.Equal("Ainda não é a sua vez.", (await cedo.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("mensagem").GetString());
+            Assert.Equal(HttpStatusCode.BadRequest, (await ana.PostAsJsonAsync($"{rota}/musica",
+                new { titulo = "Evidências", linkDoVideo = "https://exemplo.com" })).StatusCode);
+
+            (await ana.PostAsJsonAsync($"{rota}/musica", new { titulo = "Evidências" }))
+                .EnsureSuccessStatusCode();
+            var comecou = await ana.PostAsync($"{rota}/vez", null);
+            comecou.EnsureSuccessStatusCode();
+            var cantando = (await comecou.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("cantando");
+            Assert.Equal("Evidências", cantando.GetProperty("musica").GetProperty("titulo").GetString());
+            Assert.Equal(HttpStatusCode.OK, (await bia.GetAsync($"{rota}/playlist")).StatusCode);
+
+            (await ana.PostAsync($"{rota}/vez/fim", null)).EnsureSuccessStatusCode();
+            (await dono.PostAsync($"/api/apresentacoes/{id}/karaoke/vez/fim", null)).EnsureSuccessStatusCode();
+            var noite = await bia.GetFromJsonAsync<JsonElement>(rota);
+            Assert.Equal(JsonValueKind.Null, noite.GetProperty("cantando").ValueKind);
+        }
+        finally
+        {
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            File.Delete(banco);
+            File.Delete($"{banco}.json");
+        }
+    }
+
     private static WebApplicationFactory<Program> CriarFabrica(string banco) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

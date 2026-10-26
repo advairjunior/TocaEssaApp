@@ -70,5 +70,34 @@ public static class RotasDoKaraoke
         app.MapGet("/api/publico/apresentacoes/{codigo}/karaoke", (
             string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
             Results.Ok(repositorio.ObterNoiteDeKaraoke(codigo, ObterToken(http) ?? string.Empty)));
+
+        app.MapPost($"{Rota}/vez/fim", (Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.TerminarVezNoKaraoke(ObterToken(http) ?? string.Empty, id)));
+
+        MapearVezDaGalera(app);
+    }
+
+    // No celular de cada um: a playlist, a música, a roleta e a vez.
+    private static void MapearVezDaGalera(WebApplication app)
+    {
+        const string Rota = "/api/publico/apresentacoes/{codigo}/karaoke";
+
+        app.MapGet($"{Rota}/playlist", (string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ListarPlaylistDoKaraoke(codigo, ObterToken(http) ?? string.Empty)));
+
+        app.MapPost($"{Rota}/musica", (
+            string codigo, EscolherMusicaDoKaraoke requisicao,
+            HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.EscolherMusicaNoKaraoke(
+                codigo, ObterToken(http) ?? string.Empty, requisicao)));
+
+        app.MapPost($"{Rota}/roleta", (string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.GirarRoletaDoKaraoke(codigo, ObterToken(http) ?? string.Empty)));
+
+        app.MapPost($"{Rota}/vez", (string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ComecarVezNoKaraoke(codigo, ObterToken(http) ?? string.Empty)));
+
+        app.MapPost($"{Rota}/vez/fim", (string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.TerminarVezNoKaraoke(codigo, ObterToken(http) ?? string.Empty)));
     }
 }

@@ -12,17 +12,22 @@ public enum ModoDasMusicas
 public sealed record ConfiguracaoDoKaraoke(
     Guid? RepertorioId = null, ModoDasMusicas Modo = ModoDasMusicas.Livre);
 
-public sealed record PessoaDoKaraoke(Guid PublicoId, string Nome, string? FotoUrl);
+/// [Musica] é a escolhida para a próxima vez da pessoa.
+public sealed record PessoaDoKaraoke(
+    Guid PublicoId, string Nome, string? FotoUrl, MusicaDoKaraoke? Musica = null);
 
 /// O que o dono e a galera veem da noite. Antes do sorteio, a ordem é a de
-/// chegada; [ForaDaOrdem] é quem o dono tirou (saiu da festa).
+/// chegada; [ForaDaOrdem] é quem o dono tirou (saiu da festa). [Proximo] é quem
+/// canta depois de quem está cantando (ou o primeiro a cantar).
 public sealed record NoiteDeKaraoke(
     Guid? RepertorioId,
     ModoDasMusicas Modo,
     bool Sorteada,
     bool PodeSortearDeNovo,
     IReadOnlyList<PessoaDoKaraoke> Ordem,
-    IReadOnlyList<PessoaDoKaraoke> ForaDaOrdem);
+    IReadOnlyList<PessoaDoKaraoke> ForaDaOrdem,
+    CantandoNoKaraoke? Cantando = null,
+    Guid? Proximo = null);
 
 /// A ordem de quem canta, sem banco: o servidor guarda só os sorteados e os
 /// tirados; quem chega depois entra no fim, pela ordem de chegada.
