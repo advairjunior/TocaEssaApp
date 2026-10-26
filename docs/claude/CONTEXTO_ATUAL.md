@@ -49,6 +49,19 @@ arquivo.
 - Pix do artista (copia e cola ou chave), contagem de quem abriu o evento.
 - Resenha entre Amigos: conta com foto, histórico em linha do tempo,
   retrospectiva do ano e cartões compartilháveis com foto do encontro.
+- Meus encontros (2026-10-26, antes "Minhas resenhas"): a conta do público
+  guarda os três tipos. `POST .../participacoes` (rota pública, mudança
+  autorizada) vale para todos: na resenha como antes; no show público o
+  app registra a presença de quem abre com conta (falha não atrapalha); no
+  louvor o roteiro manda `{ nome }` ao escolher ou ao abrir com nome
+  guardado, se houver `token_do_publico` no aparelho. Nome fora da escala
+  ou vazio ("Só acompanhar") fica sem nome; sem corpo não mexe no nome.
+  Coluna `ParticipacoesResenha.NomeNoLouvor` (ADD COLUMN só se faltar). O
+  histórico traz `nomeNoLouvor` e `hinosNoLouvor` (hinos com parte no
+  microfone ou solo, contados na hora pela escala); cartão, detalhe e
+  cartão de compartilhar dizem "Como Ana · em 3 hinos". Os encontros
+  contam no resumo ("3 encontros"). Quem só usa o roteiro sem conta segue
+  sem memória: o roteiro não pede login.
 
 **Artista (conta própria, isolado por `ArtistaId`)**
 - Perfil artístico com foto e perfil público; apresentações Pública ou Resenha.
