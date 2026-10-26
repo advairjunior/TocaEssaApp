@@ -116,7 +116,7 @@ class _LinhaDoAcervo extends StatelessWidget {
               _resumo, abrir),
           if (_temMusica)
             _linha(context, Icons.play_arrow_rounded, 'Tocar e ensaiar',
-                'Abra qualquer música, sem criar show', tocar),
+                'Qualquer música, sem criar show', tocar),
         ],
       );
 
