@@ -39,12 +39,7 @@ extension _PerfilAreaDoPublico on _AreaDoPublicoState {
         _senha.clear();
       });
       try {
-        if (_tipoApresentacao == TipoApresentacao.resenhaEntreAmigos) {
-          await _api.registrarParticipacaoNaResenha(
-            _codigoInicial,
-            sessao.token,
-          );
-        }
+        await _registrarPresenca(_tipoApresentacao, sessao.token);
         final pedidos =
             await _api.listarMeusPedidos(_codigoInicial, sessao.token);
         final estatisticas = await _obterEstatisticasPublico(sessao.token);

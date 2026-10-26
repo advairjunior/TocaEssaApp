@@ -46,7 +46,7 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
   Widget _cabecalhoDoPerfil(BuildContext context) => Row(
         children: [
           BotaoVoltarRedondo(
-            dica: 'Voltar às resenhas',
+            dica: 'Voltar aos encontros',
             tocar: () => _alterar(() => _aba = 0),
           ),
           const SizedBox(width: EspacoTocaEssa.medio),
@@ -99,7 +99,7 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
       const SizedBox(height: EspacoTocaEssa.pequeno),
       Text(
         'As músicas que você pediu, quem estava com você e a foto de cada '
-        'resenha — sem precisar guardar códigos.',
+        'encontro — sem precisar guardar códigos.',
         textAlign: TextAlign.center,
         style: texto.bodyMedium?.copyWith(color: CoresTocaEssa.textoSecundario),
       ),
@@ -202,7 +202,7 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
       ),
       const SizedBox(height: EspacoTocaEssa.grande),
       const Text(
-        'Minhas resenhas',
+        'Meus encontros',
         style: TextStyle(
           fontSize: 34,
           fontWeight: FontWeight.w600,
@@ -218,7 +218,7 @@ extension _ConstrucaoContaPublico on _ContaDoPublicoState {
         const SizedBox(height: EspacoTocaEssa.enorme),
         const EstadoVazio(
           icone: Icons.queue_music_rounded,
-          titulo: 'Sua primeira resenha te espera',
+          titulo: 'Seu primeiro encontro te espera',
           descricao: 'Entre com o código do artista e o encontro fica '
               'guardado aqui, com a fila, a galera e sua retrospectiva.',
         ),

@@ -78,9 +78,10 @@ class _CartaoMemoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apresentacao = encontro.apresentacao;
-    final resenha = apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos;
-    final temRodape =
-        encontro.minhasMusicas.isNotEmpty || encontro.companhia.isNotEmpty;
+    final louvor = encontro.resumoDoLouvor;
+    final temRodape = encontro.minhasMusicas.isNotEmpty ||
+        encontro.companhia.isNotEmpty ||
+        louvor != null;
     return Semantics(
       button: true,
       child: Material(
@@ -134,7 +135,7 @@ class _CartaoMemoria extends StatelessWidget {
                         children: [
                           Text(
                             '${formatarDiaEMes(apresentacao.data)} · '
-                            '${resenha ? 'Resenha' : 'Show'}',
+                            '${apresentacao.tipo.naMemoria}',
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -175,6 +176,25 @@ class _CartaoMemoria extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (louvor != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.mic_rounded,
+                                  size: 16, color: CoresTocaEssa.roxoClaro),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  louvor,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       if (encontro.minhasMusicas.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),

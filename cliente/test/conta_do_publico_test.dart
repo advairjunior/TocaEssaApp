@@ -67,7 +67,7 @@ void main() {
       find.image(const AssetImage('assets/fundos/atmosfera.webp')),
       findsOneWidget,
     );
-    expect(find.text('Minhas resenhas'), findsOneWidget);
+    expect(find.text('Meus encontros'), findsOneWidget);
     // Cabeçalho editorial no próprio conteúdo, sem barra de app.
     expect(find.byType(AppBar), findsNothing);
     expect(find.byType(NavigationBar), findsNothing);
@@ -79,8 +79,8 @@ void main() {
     expect(find.text('Encontro de setembro'), findsOneWidget);
     expect(find.text('Duo · Casa'), findsOneWidget);
     expect(find.text('01 de setembro · Resenha'), findsOneWidget);
-    // Resumo pessoal no topo, no singular quando há uma só resenha.
-    expect(find.text('resenha'), findsOneWidget);
+    // Resumo pessoal no topo, no singular quando há um só encontro.
+    expect(find.text('encontro'), findsOneWidget);
     expect(find.text('pedidos'), findsOneWidget);
     expect(find.text('tocadas'), findsOneWidget);
 
@@ -88,9 +88,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ana'), findsOneWidget);
     expect(find.text('Encontro de setembro'), findsNothing);
-    await tester.tap(find.byTooltip('Voltar às resenhas'));
+    await tester.tap(find.byTooltip('Voltar aos encontros'));
     await tester.pumpAndSettle();
-    expect(find.text('Minhas resenhas'), findsOneWidget);
+    expect(find.text('Meus encontros'), findsOneWidget);
   });
 
   testWidgets('sem conta, a tela oferece entrar com campos leves',
@@ -171,6 +171,31 @@ void main() {
             {'publicoId': pessoa, 'nome': pessoa, 'fotoUrl': null}
         ],
       };
+
+  testWidgets('o louvor fica na memória com quem a pessoa foi e os hinos',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+    final api = apiComApresentacoes([
+      {
+        ...apresentacao('Louvor de sábado', '2026-10-24', 'Encerrada',
+            tipo: 'Louvor'),
+        'nomeNoLouvor': 'Ana',
+        'hinosNoLouvor': 3,
+      },
+      {
+        ...apresentacao('Louvor de domingo', '2026-10-25', 'Encerrada',
+            tipo: 'Louvor'),
+        'nomeNoLouvor': 'Ana',
+        'hinosNoLouvor': 1,
+      },
+    ]);
+    await tester.pumpWidget(MaterialApp(home: ContaDoPublico(api: api)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('24 de outubro · Louvor'), findsOneWidget);
+    expect(find.text('Como Ana · em 3 hinos'), findsOneWidget);
+    expect(find.text('Como Ana · em 1 hino'), findsOneWidget);
+  });
 
   testWidgets('cada memória mostra minha música da noite e quem estava comigo',
       (tester) async {
@@ -280,9 +305,9 @@ void main() {
 
     expect(find.text('Ao vivo agora'), findsOneWidget);
     expect(find.text('Agora no bar'), findsOneWidget);
-    expect(find.text('Voltar para a resenha'), findsOneWidget);
+    expect(find.text('Voltar para o show'), findsOneWidget);
     expect(find.text('Próximas'), findsOneWidget);
-    expect(find.text('resenhas'), findsOneWidget);
+    expect(find.text('encontros'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('3'), findsOneWidget);
 
@@ -318,14 +343,14 @@ void main() {
     expect(find.text('Evidências'), findsOneWidget);
   });
 
-  testWidgets('sem nenhuma resenha, convida a entrar com um código',
+  testWidgets('sem nenhum encontro, convida a entrar com um código',
       (tester) async {
     SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
     await tester.pumpWidget(
         MaterialApp(home: ContaDoPublico(api: apiComApresentacoes([]))));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sua primeira resenha te espera'), findsOneWidget);
+    expect(find.text('Seu primeiro encontro te espera'), findsOneWidget);
     expect(find.text('Entrar com um código'), findsOneWidget);
     expect(find.text('Histórico vazio'), findsNothing);
   });

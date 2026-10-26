@@ -148,12 +148,15 @@ mixin _ApiContas on _ApiTocaEssaBase {
         .toList();
   }
 
-  Future<void> registrarParticipacaoNaResenha(
-      String codigo, String token) async {
+  /// Guarda o evento na memória da conta (resenha, show ou louvor). No
+  /// louvor, [nomeNoLouvor] é quem a pessoa escolheu ser no roteiro.
+  Future<void> registrarParticipacao(String codigo, String token,
+      {String? nomeNoLouvor}) async {
     final resposta = await _cliente.post(
       Uri.parse(
           '$_enderecoBase/api/publico/apresentacoes/${codigo.trim().toUpperCase()}/participacoes'),
-      headers: _cabecalhos(token: token),
+      headers: _cabecalhos(token: token, json: nomeNoLouvor != null),
+      body: nomeNoLouvor == null ? null : jsonEncode({'nome': nomeNoLouvor}),
     );
     _validar(resposta);
   }

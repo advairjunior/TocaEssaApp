@@ -149,6 +149,30 @@ void main() {
     expect(find.text('QUEM ESTAVA COM VOCÊ'), findsNothing);
   });
 
+  testWidgets('louvor mostra quem a pessoa foi e os hinos, sem pedidos',
+      (tester) async {
+    final base = _encontro(tipo: TipoApresentacao.louvor);
+    var abriu = false;
+    await _montar(
+        tester,
+        EncontroDoPublico(
+          apresentacao: base.apresentacao,
+          nomeNoLouvor: 'Ana',
+          hinosNoLouvor: 3,
+        ),
+        abrirResenha: () => abriu = true);
+
+    expect(find.text('12 DE SETEMBRO · LOUVOR'), findsOneWidget);
+    expect(find.text('NO LOUVOR'), findsOneWidget);
+    // Na tela e no cartão de compartilhar.
+    expect(find.textContaining('Como Ana · em 3 hinos'), findsNWidgets(2));
+    expect(find.textContaining('pedido'), findsNothing);
+
+    await tester.ensureVisible(find.text('Abrir o roteiro do louvor'));
+    await tester.tap(find.text('Abrir o roteiro do louvor'));
+    expect(abriu, isTrue);
+  });
+
   testWidgets('cartão para compartilhar já pode ser salvo e aceita foto',
       (tester) async {
     var abriu = false;

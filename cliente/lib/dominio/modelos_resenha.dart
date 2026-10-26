@@ -88,6 +88,8 @@ class EncontroDoPublico {
     this.pedidosTocados = 0,
     this.minhasMusicas = const [],
     this.companhia = const [],
+    this.nomeNoLouvor,
+    this.hinosNoLouvor = 0,
   });
 
   final Apresentacao apresentacao;
@@ -97,6 +99,16 @@ class EncontroDoPublico {
 
   /// Quem mais estava na resenha; vazio em apresentação pública.
   final List<PessoaDoEncontro> companhia;
+
+  /// No louvor: quem a pessoa foi no roteiro e em quantos hinos tinha parte.
+  final String? nomeNoLouvor;
+  final int hinosNoLouvor;
+
+  /// "Como Ana · em 3 hinos"; nulo fora do louvor ou sem nome escolhido.
+  String? get resumoDoLouvor => nomeNoLouvor == null
+      ? null
+      : 'Como $nomeNoLouvor · em $hinosNoLouvor '
+          '${hinosNoLouvor == 1 ? 'hino' : 'hinos'}';
 
   factory EncontroDoPublico.deJson(Map<String, dynamic> json) =>
       EncontroDoPublico(
@@ -112,5 +124,7 @@ class EncontroDoPublico {
             .map(
                 (item) => PessoaDoEncontro.deJson(item as Map<String, dynamic>))
             .toList(),
+        nomeNoLouvor: json['nomeNoLouvor'] as String?,
+        hinosNoLouvor: json['hinosNoLouvor'] as int? ?? 0,
       );
 }

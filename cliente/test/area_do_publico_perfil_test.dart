@@ -11,11 +11,13 @@ import 'package:toca_essa_app/telas/instalar_app.dart';
 const _apresentacaoJson =
     '{"id":"22222222-2222-2222-2222-222222222222","nome":"Noite Acústica","data":"2026-09-03","local":"Café Central","codigo":"A1B2C3","perfilArtistico":{"id":"11111111-1111-1111-1111-111111111111","nomeArtistico":"Duo Aurora","bio":null},"pedidosAbertos":true,"status":"EmAndamento","tipo":"Publica"}';
 
-Future<void> _abrirArea(WidgetTester tester, {bool logado = false}) async {
+Future<void> _abrirArea(WidgetTester tester,
+    {bool logado = false, List<http.Request>? requisicoes}) async {
   SharedPreferences.setMockInitialValues(
     logado ? {'token_do_publico': 'TOKEN-DA-ANA'} : {},
   );
   final cliente = MockClient((requisicao) async {
+    requisicoes?.add(requisicao);
     final caminho = requisicao.url.path;
     if (caminho.endsWith('/fila') || caminho.endsWith('/meus-pedidos')) {
       return http.Response('[]', 200);
@@ -81,13 +83,29 @@ void main() {
     expect(find.text('O que você quer ouvir?'), findsOneWidget);
   });
 
+  testWidgets('no show público, quem entra com conta guarda o show na memória',
+      (tester) async {
+    final comConta = <http.Request>[];
+    await _abrirArea(tester, logado: true, requisicoes: comConta);
+    final presenca = comConta.where(
+        (r) => r.method == 'POST' && r.url.path.endsWith('/participacoes'));
+    expect(presenca.single.url.path,
+        '/api/publico/apresentacoes/A1B2C3/participacoes');
+    expect(presenca.single.headers['authorization'], 'Bearer TOKEN-DA-ANA');
+
+    final semConta = <http.Request>[];
+    await _abrirArea(tester, requisicoes: semConta);
+    expect(
+        semConta.where((r) => r.url.path.endsWith('/participacoes')), isEmpty);
+  });
+
   testWidgets('perfil logado reúne conta, resenhas e sair', (tester) async {
     await _abrirArea(tester, logado: true);
     await tester.tap(find.byTooltip('Meu perfil'));
     await tester.pumpAndSettle();
 
     expect(find.text('Ana Souza'), findsOneWidget);
-    expect(find.text('Minhas resenhas'), findsOneWidget);
+    expect(find.text('Meus encontros'), findsOneWidget);
     expect(find.text('ana@example.com'), findsOneWidget);
     expect(find.text('Sair'), findsOneWidget);
     expect(find.byType(LinhaInstalarApp, skipOffstage: false), findsOneWidget);

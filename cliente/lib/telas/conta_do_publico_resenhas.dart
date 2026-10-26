@@ -16,7 +16,7 @@ class _ResumoDasResenhas extends StatelessWidget {
       children: [
         _NumeroDoResumo(
           valor: estatisticas.participacoes,
-          rotulo: plural(estatisticas.participacoes, 'resenha', 'resenhas'),
+          rotulo: plural(estatisticas.participacoes, 'encontro', 'encontros'),
         ),
         _NumeroDoResumo(
           valor: estatisticas.pedidos,
@@ -204,7 +204,7 @@ class _CartaoResenhaAoVivo extends StatelessWidget {
                   ),
                   onPressed: abrir,
                   icon: const Icon(Icons.graphic_eq_rounded, size: 20),
-                  label: const Text('Voltar para a resenha'),
+                  label: Text(apresentacao.tipo.voltarPara),
                 ),
               ],
             ),

@@ -63,12 +63,18 @@ Map<String, Object?> _roteiro({String? atual}) => {
 
 var _noServidor = _roteiro();
 
-Future<void> _abrir(WidgetTester tester, {String? hinoInicial}) async {
+Future<void> _abrir(WidgetTester tester,
+    {String? hinoInicial, List<http.Request>? requisicoes}) async {
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
-    cliente: MockClient((requisicao) async => http.Response(
-        jsonEncode(_noServidor), 200,
-        headers: {'content-type': 'application/json; charset=utf-8'})),
+    cliente: MockClient((requisicao) async {
+      requisicoes?.add(requisicao);
+      if (requisicao.url.path.endsWith('/participacoes')) {
+        return http.Response('', 204);
+      }
+      return http.Response(jsonEncode(_noServidor), 200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    }),
   );
   tester.view.physicalSize = const Size(430, 932);
   tester.view.devicePixelRatio = 1;
@@ -221,6 +227,51 @@ void main() {
     expect(find.textContaining('sua vez:'), findsNothing);
   });
 
+  group('memória de quem tem conta', () {
+    Iterable<http.Request> participacoes(List<http.Request> requisicoes) =>
+        requisicoes.where(
+            (r) => r.method == 'POST' && r.url.path.endsWith('/participacoes'));
+
+    testWidgets('escolher o nome guarda o louvor na conta do aparelho',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+      final requisicoes = <http.Request>[];
+      await _abrir(tester, requisicoes: requisicoes);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Ana'));
+      await tester.pumpAndSettle();
+
+      final enviada = participacoes(requisicoes).single;
+      expect(
+          enviada.url.path, '/api/publico/apresentacoes/ABC123/participacoes');
+      expect(enviada.headers['authorization'], 'Bearer TOKEN');
+      expect(jsonDecode(enviada.body), {'nome': 'Ana'});
+    });
+
+    testWidgets('quem já tinha escolhido fica guardado ao abrir',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'token_do_publico': 'TOKEN',
+        'louvor_quem_sou_ABC123': 'João',
+      });
+      final requisicoes = <http.Request>[];
+      await _abrir(tester, requisicoes: requisicoes);
+
+      expect(
+          jsonDecode(participacoes(requisicoes).single.body), {'nome': 'João'});
+    });
+
+    testWidgets('sem conta no aparelho, nada vai para o servidor',
+        (tester) async {
+      final requisicoes = <http.Request>[];
+      await _abrir(tester, requisicoes: requisicoes);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Ana'));
+      await tester.pumpAndSettle();
+
+      expect(participacoes(requisicoes), isEmpty);
+    });
+  });
+
   testWidgets('quem já escolheu entra direto e pode trocar', (tester) async {
     SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'João'});
     await _abrir(tester);
@@ -282,8 +333,7 @@ void main() {
       expect(naFolha('80 · Por Cristo, resgatado'), findsOneWidget);
       // Cada papel numa linha com o seu ícone; o tom fica à direita.
       final microfone = find.byKey(const ValueKey('microfone-h1'));
-      expect(
-          find.descendant(of: microfone, matching: find.text('Estrofe 2')),
+      expect(find.descendant(of: microfone, matching: find.text('Estrofe 2')),
           findsOneWidget);
       expect(
           find.descendant(

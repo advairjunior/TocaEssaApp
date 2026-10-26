@@ -45,12 +45,7 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
             });
           }
           try {
-            if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) {
-              await _api.registrarParticipacaoNaResenha(
-                _codigoInicial,
-                token,
-              );
-            }
+            await _registrarPresenca(apresentacao.tipo, token);
             final pedidos = await _api.listarMeusPedidos(_codigoInicial, token);
             final estatisticas = await _obterEstatisticasPublico(token);
             final participantes =
@@ -126,6 +121,22 @@ extension _SessaoAreaDoPublico on _AreaDoPublicoState {
     ids.remove(pedido.id);
     ids.insert(0, pedido.id);
     await preferencias.setStringList(_chavePedidos, ids.take(50).toList());
+  }
+
+  /// Quem entra com conta guarda o evento na memória. Na resenha a presença
+  /// abre a galera, então a falha segue para quem chamou; no show público
+  /// ela não atrapalha o resto. O louvor registra pelo roteiro, com o nome.
+  Future<void> _registrarPresenca(TipoApresentacao? tipo, String token) async {
+    if (tipo == TipoApresentacao.louvor) return;
+    if (tipo == TipoApresentacao.resenhaEntreAmigos) {
+      await _api.registrarParticipacao(_codigoInicial, token);
+      return;
+    }
+    try {
+      await _api.registrarParticipacao(_codigoInicial, token);
+    } catch (_) {
+      // Fica para a próxima vez que a pessoa abrir o show.
+    }
   }
 
   Future<EstatisticasDoPublico?> _obterEstatisticasPublico(String token) async {

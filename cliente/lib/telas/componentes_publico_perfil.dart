@@ -129,8 +129,7 @@ class PerfilPublicoAtivo extends StatelessWidget {
                             size: 20, color: CoresTocaEssa.roxoClaro),
                         const SizedBox(width: EspacoTocaEssa.base),
                         Expanded(
-                          child:
-                              Text('Minhas resenhas', style: texto.bodyLarge),
+                          child: Text('Meus encontros', style: texto.bodyLarge),
                         ),
                         const Icon(Icons.chevron_right_rounded,
                             color: CoresTocaEssa.textoSecundario),

@@ -140,7 +140,10 @@ class _MemoriaDaResenhaState extends State<MemoriaDaResenha> {
                       ),
                       const SizedBox(height: EspacoTocaEssa.grande),
                       const Divider(height: 1),
-                      _LinhaAbrirResenha(tocar: widget.abrirResenha),
+                      _LinhaAbrirResenha(
+                        tipo: _apresentacao.tipo,
+                        tocar: widget.abrirResenha,
+                      ),
                     ],
                   ),
                 ),
@@ -162,7 +165,6 @@ class _CapaDaMemoria extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resenha = apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos;
     final altura =
         (MediaQuery.sizeOf(context).height * .52).clamp(340.0, 480.0);
     return SizedBox(
@@ -202,7 +204,7 @@ class _CapaDaMemoria extends StatelessWidget {
                       children: [
                         RotuloVersalete(
                           '${formatarDiaEMes(apresentacao.data).toUpperCase()}'
-                          ' · ${resenha ? 'RESENHA' : 'SHOW'}',
+                          ' · ${apresentacao.tipo.naMemoria.toUpperCase()}',
                         ),
                         const SizedBox(height: EspacoTocaEssa.pequeno),
                         Text(

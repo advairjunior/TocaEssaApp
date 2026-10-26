@@ -223,6 +223,20 @@ enum TipoApresentacao {
         louvor => 'Louvor',
       };
 
+  /// Como o encontro aparece na memória de quem esteve lá.
+  String get naMemoria => switch (this) {
+        publica => 'Show',
+        resenhaEntreAmigos => 'Resenha',
+        louvor => 'Louvor',
+      };
+
+  /// "Voltar para o show", "a resenha" ou "o louvor".
+  String get voltarPara => switch (this) {
+        publica => 'Voltar para o show',
+        resenhaEntreAmigos => 'Voltar para a resenha',
+        louvor => 'Voltar para o louvor',
+      };
+
   String get descricao => switch (this) {
         publica => 'Entrada rápida pelo código, sem cadastro.',
         resenhaEntreAmigos =>

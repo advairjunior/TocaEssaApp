@@ -45,24 +45,39 @@ class _SuaNoite extends StatelessWidget {
           ],
           const SizedBox(height: EspacoTocaEssa.grande + 4),
         ],
-        Row(
-          children: [
-            _NumeroGrande(
-              valor: encontro.pedidos,
-              rotulo: plural(encontro.pedidos, 'pedido', 'pedidos'),
-            ),
-            Container(
-              width: 1,
-              height: 40,
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              color: CoresTocaEssa.borda,
-            ),
-            _NumeroGrande(
-              valor: encontro.pedidosTocados,
-              rotulo: plural(encontro.pedidosTocados, 'tocada', 'tocadas'),
+        // No louvor não há pedidos: fica quem a pessoa foi no roteiro.
+        if (encontro.apresentacao.tipo == TipoApresentacao.louvor) ...[
+          if (encontro.resumoDoLouvor case final louvor?) ...[
+            const RotuloVersalete('NO LOUVOR'),
+            const SizedBox(height: EspacoTocaEssa.pequeno),
+            Text(
+              louvor,
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+              ),
             ),
           ],
-        ),
+        ] else
+          Row(
+            children: [
+              _NumeroGrande(
+                valor: encontro.pedidos,
+                rotulo: plural(encontro.pedidos, 'pedido', 'pedidos'),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                color: CoresTocaEssa.borda,
+              ),
+              _NumeroGrande(
+                valor: encontro.pedidosTocados,
+                rotulo: plural(encontro.pedidosTocados, 'tocada', 'tocadas'),
+              ),
+            ],
+          ),
         if (encontro.companhia.isNotEmpty) ...[
           const SizedBox(height: 36),
           const RotuloVersalete('QUEM ESTAVA COM VOCÊ'),
@@ -236,11 +251,14 @@ class _CartaoDaNoite extends StatelessWidget {
                   ],
                   const SizedBox(height: 18),
                   Text(
-                    '${encontro.pedidos} '
-                    '${encontro.pedidos == 1 ? 'pedido' : 'pedidos'}  ·  '
-                    '${encontro.pedidosTocados} '
-                    '${encontro.pedidosTocados == 1 ? 'tocada' : 'tocadas'}  ·  '
-                    '${apresentacao.perfilArtistico.nomeArtistico}',
+                    apresentacao.tipo == TipoApresentacao.louvor
+                        ? '${encontro.resumoDoLouvor ?? 'Louvor'}  ·  '
+                            '${apresentacao.perfilArtistico.nomeArtistico}'
+                        : '${encontro.pedidos} '
+                            '${encontro.pedidos == 1 ? 'pedido' : 'pedidos'}  ·  '
+                            '${encontro.pedidosTocados} '
+                            '${encontro.pedidosTocados == 1 ? 'tocada' : 'tocadas'}  ·  '
+                            '${apresentacao.perfilArtistico.nomeArtistico}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
@@ -257,7 +275,8 @@ class _CartaoDaNoite extends StatelessWidget {
 }
 
 class _LinhaAbrirResenha extends StatelessWidget {
-  const _LinhaAbrirResenha({required this.tocar});
+  const _LinhaAbrirResenha({required this.tipo, required this.tocar});
+  final TipoApresentacao tipo;
   final VoidCallback tocar;
 
   @override
@@ -276,10 +295,23 @@ class _LinhaAbrirResenha extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Abrir a resenha completa',
+                      Text(
+                          switch (tipo) {
+                            TipoApresentacao.louvor =>
+                              'Abrir o roteiro do louvor',
+                            TipoApresentacao.publica => 'Abrir o show completo',
+                            TipoApresentacao.resenhaEntreAmigos =>
+                              'Abrir a resenha completa',
+                          },
                           style: Theme.of(context).textTheme.titleMedium),
-                      const Text(
-                        'Fila, galera e perfil do artista',
+                      Text(
+                        switch (tipo) {
+                          TipoApresentacao.louvor => 'Hinos e as suas partes',
+                          TipoApresentacao.publica =>
+                            'Fila e perfil do artista',
+                          TipoApresentacao.resenhaEntreAmigos =>
+                            'Fila, galera e perfil do artista',
+                        },
                         style: TextStyle(
                           fontSize: 13,
                           color: CoresTocaEssa.textoSecundario,

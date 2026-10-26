@@ -85,6 +85,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
   Future<void> _restaurarQuemSou() async {
     final preferencias = await SharedPreferences.getInstance();
     final salvo = preferencias.getString(_chaveQuemSou);
+    if (salvo != null) _guardarNaConta(preferencias, salvo);
     if (!mounted) return;
     setState(() {
       _preferencias = preferencias;
@@ -146,6 +147,17 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     });
     final preferencias = await SharedPreferences.getInstance();
     await preferencias.setString(_chaveQuemSou, nome);
+    _guardarNaConta(preferencias, nome);
+  }
+
+  /// Com conta do público neste aparelho, o louvor fica na memória dela com
+  /// quem a pessoa foi. Sem internet ou sem conta, o roteiro segue igual.
+  void _guardarNaConta(SharedPreferences preferencias, String nome) {
+    final token = preferencias.getString('token_do_publico');
+    if (token == null) return;
+    unawaited(widget.api
+        .registrarParticipacao(_codigo, token, nomeNoLouvor: nome)
+        .catchError((_) {}));
   }
 
   Future<void> _carregar() async {
