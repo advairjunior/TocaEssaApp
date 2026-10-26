@@ -149,6 +149,16 @@ arquivo.
   acesso do artista chamam `api.acordar()` (`/api/saude`, sem esperar); o
   `AvisoDeDemora` (`componentes.dart`) repete o aviso quando o QR do
   público, o painel com sessão ou o login passam de 3 s.
+- Tocar e ensaiar sem show (2026-10-26, `tocar_musicas.dart`): linha
+  "Tocar e ensaiar" no Acervo do Início (só com música no acervo) e botão
+  ▶ Tocar em cada repertório (abre já nele). Busca sem acento sempre
+  visível, chips "Todas" + repertórios (Todas não repete a mesma música;
+  a busca procura no acervo inteiro); tocar na música abre o leitor, e as
+  setas andam pela lista que está na tela. `SequenciaDoEnsaio`
+  (`sequencia_do_palco_ensaio.dart`) não grava nada no servidor (sem
+  tocada, relógio, histórico nem ritmo médio) e busca só a cifra da página
+  aberta e da seguinte; o leitor troca o Tocar por "3 de 25" e diz "Fim da
+  lista". Tom, pinça, rolagem, colar cifra e compartilhar continuam.
 - Lógica do show compartilhada: `SequenciaDoPalco` (estado) e o mixin
   `AcoesDoPalco` (tocar, abrir e escolher cifra) servem setlist e leitor.
 - Estatísticas da apresentação e retrospectiva do artista; câmera no app para
