@@ -7,7 +7,8 @@ public sealed partial class RepositorioTocaEssa
     /// Quem tem conta e entrou no evento (resenha, show público ou louvor)
     /// guarda o encontro na memória, mesmo sem pedir música. No louvor vale
     /// também quem a pessoa escolheu ser no roteiro; nome de fora da lista
-    /// ou vazio ("só acompanhar") fica sem nome.
+    /// ou vazio ("só acompanhar") fica sem nome, e sem nome nenhum (nulo) a
+    /// escolha guardada continua.
     public void RegistrarParticipacao(string codigo, string token, string? nomeNoLouvor = null)
     {
         lock (_sincronizacao)
@@ -22,7 +23,7 @@ public sealed partial class RepositorioTocaEssa
             var chave = (apresentacao.Id, publico.Id);
             if (_participacoesResenha.TryGetValue(chave, out var existente))
             {
-                if (apresentacao.Tipo != TipoApresentacao.Louvor ||
+                if (apresentacao.Tipo != TipoApresentacao.Louvor || nomeNoLouvor is null ||
                     existente.NomeNoLouvor == nome) return;
                 existente.NomeNoLouvor = nome;
             }

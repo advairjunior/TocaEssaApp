@@ -79,6 +79,11 @@ public sealed class ParticipacaoEmTodosOsEventosTestes
         Assert.Equal("João", trocado.NomeNoLouvor);
         Assert.Equal(2, trocado.HinosNoLouvor);
 
+        // Entrar de novo sem dizer quem é não apaga a escolha.
+        cenario.Repo.RegistrarParticipacao(cenario.Show.Codigo, ana.Token);
+        Assert.Equal("João",
+            Assert.Single(cenario.Repo.ListarHistoricoDoPublico(ana.Token)).NomeNoLouvor);
+
         cenario.Repo.RegistrarParticipacao(cenario.Show.Codigo, ana.Token, "Zé");
         Assert.Null(Assert.Single(cenario.Repo.ListarHistoricoDoPublico(ana.Token)).NomeNoLouvor);
 
