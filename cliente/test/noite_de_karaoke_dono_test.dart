@@ -6,15 +6,21 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/noite_de_karaoke_dono.dart';
 
 const _json = {'content-type': 'application/json; charset=utf-8'};
 const _rota = '/api/apresentacoes/k1/karaoke';
+const _falta = 'https://www.youtube.com/watch?v=xKPaBwlI16o';
+const _desejo = 'https://www.youtube.com/watch?v=aorrMojEBcw';
+const _link =
+    'https://youtube.com/playlist?list=PLeHLlswxpAUNM5fn1gwmNLloimGhIAfsh';
 
 Map<String, dynamic> _pessoa(String id, String nome) =>
     {'publicoId': id, 'nome': nome, 'fotoUrl': null};
 
 Map<String, dynamic> _noite({
+  String? repertorioId = 'r1',
   bool sorteada = false,
   bool podeSortearDeNovo = true,
   String modo = 'Livre',
@@ -22,7 +28,7 @@ Map<String, dynamic> _noite({
   List<Map<String, dynamic>> foraDaOrdem = const [],
 }) =>
     {
-      'repertorioId': 'r1',
+      'repertorioId': repertorioId,
       'modo': modo,
       'sorteada': sorteada,
       'podeSortearDeNovo': podeSortearDeNovo,
@@ -46,6 +52,20 @@ final _repertorios = [
     ],
   },
   {'id': 'r2', 'artistaId': 'a1', 'nome': 'Sertanejo', 'musicas': []},
+  {
+    'id': 'r3',
+    'artistaId': 'a1',
+    'nome': 'Pagode',
+    'musicas': [
+      {
+        'id': 'm3',
+        'repertorioId': 'r3',
+        'titulo': 'Deixa Acontecer',
+        'ordem': 1,
+        'linkDoVideo': 'https://www.youtube.com/watch?v=ghi'
+      },
+    ],
+  },
 ];
 
 final _noiteDeSexta = Apresentacao.deJson({
@@ -138,17 +158,78 @@ void main() {
     expect(find.textContaining('O app sorteia a música'), findsOneWidget);
   });
 
-  testWidgets('trocar a playlist da noite', (tester) async {
+  testWidgets('trocar a playlist da noite só entre as que têm vídeo',
+      (tester) async {
     final requisicoes = await _abrir(tester);
 
     await tester.tap(find.text('Karaokê · 1 música'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Sertanejo').last);
+    expect(find.text('Sertanejo'), findsNothing);
+    expect(find.text('Colar link da playlist do YouTube'), findsOneWidget);
+    await tester.tap(find.text('Pagode').last);
     await tester.pumpAndSettle();
 
     final envio =
         requisicoes.singleWhere((r) => r.url.path == '$_rota/configuracao');
-    expect(jsonDecode(envio.body), {'repertorioId': 'r2', 'modo': 'Livre'});
+    expect(jsonDecode(envio.body), {'repertorioId': 'r3', 'modo': 'Livre'});
+  });
+
+  testWidgets('sem playlist, colar o link do YouTube traz os vídeos',
+      (tester) async {
+    final requisicoes = await _abrir(tester, respostas: {
+      'GET $_rota': _devolver(_noite(repertorioId: null)),
+      'GET /api/artista/repertorios': (_) =>
+          http.Response(jsonEncode([_repertorios[1]]), 200, headers: _json),
+      'POST /api/artista/repertorios/playlist': (_) => http.Response(
+          jsonEncode({
+            'titulo': 'karaoke',
+            'musicas': [
+              {'titulo': 'Falta Você', 'linkDoVideo': _falta},
+              {'titulo': 'Desejo Imortal', 'linkDoVideo': _desejo},
+            ],
+          }),
+          200,
+          headers: _json),
+      'POST /api/artista/repertorios/musicas': (_) => http.Response(
+          jsonEncode({
+            'repertorio': {
+              'id': 'r9',
+              'artistaId': 'a1',
+              'nome': 'karaoke',
+              'musicas': [],
+            },
+            'adicionadas': 2,
+            'jaEstavam': 0,
+          }),
+          200,
+          headers: _json),
+      'PUT $_rota/configuracao': _devolver(_noite(repertorioId: 'r9')),
+    });
+
+    await tester.tap(find.text('Colar link da playlist do YouTube'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.descendant(
+            of: find.widgetWithText(CampoTexto, 'Link da playlist'),
+            matching: find.byType(TextField)),
+        _link);
+    await tester.tap(find.text('Ler playlist'));
+    await tester.pumpAndSettle();
+
+    final leitura = requisicoes
+        .singleWhere((r) => r.url.path == '/api/artista/repertorios/playlist');
+    expect(jsonDecode(leitura.body), {'link': _link});
+    final envio = jsonDecode(requisicoes
+        .singleWhere((r) => r.url.path == '/api/artista/repertorios/musicas')
+        .body) as Map<String, dynamic>;
+    expect(envio['nomeNovo'], 'karaoke');
+    expect([for (final m in envio['musicas'] as List) m['linkDoVideo']],
+        [_falta, _desejo]);
+    final configuracao =
+        requisicoes.singleWhere((r) => r.url.path == '$_rota/configuracao');
+    expect(
+        jsonDecode(configuracao.body), {'repertorioId': 'r9', 'modo': 'Livre'});
+    expect(find.textContaining('2 músicas'), findsOneWidget);
   });
 
   testWidgets('passar a vez, tirar e devolver quem está na noite',

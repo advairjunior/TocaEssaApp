@@ -60,7 +60,7 @@ class _LinhaDaPlaylist extends StatelessWidget {
         leading: const Icon(Icons.smart_display_outlined,
             color: CoresTocaEssa.roxoClaro),
         title: Text(escolhido == null
-            ? 'Escolher a playlist'
+            ? 'Colar link da playlist do YouTube'
             : '${escolhido.nome} · ${_quantasMusicas(escolhido)}'),
         subtitle: const Text('Playlist da noite'),
         trailing: const Icon(Icons.chevron_right_rounded),

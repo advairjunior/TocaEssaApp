@@ -307,3 +307,7 @@ class _LinhaRepertorio extends StatelessWidget {
     );
   }
 }
+
+/// O mesmo formulário de colar o link, para a noite de karaokê.
+Future<String?> pedirLinkDaPlaylistDoYouTube(BuildContext context) =>
+    _pedirLinkDaPlaylist(context);

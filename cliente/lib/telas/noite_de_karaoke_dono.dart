@@ -6,6 +6,7 @@ import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'gerenciar_repertorios.dart';
 
 part 'noite_de_karaoke_dono_linhas.dart';
 
@@ -79,27 +80,82 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
         modo: modo ?? atual?.modo ?? ModoDasMusicas.livre));
   }
 
+  // Só as playlists vindas do YouTube: as músicas do show não têm vídeo.
+  List<Repertorio> get _comVideos => [
+        for (final repertorio in _repertorios)
+          if (repertorio.musicas.any((musica) => musica.linkDoVideo != null))
+            repertorio,
+      ];
+
   Future<void> _escolherPlaylist() async {
+    const colar = '';
     final escolhido = await showModalBottomSheet<String>(
       context: context,
       builder: (contexto) => SafeArea(
         child: ListView(
           shrinkWrap: true,
           children: [
-            for (final repertorio in _repertorios)
+            for (final repertorio in _comVideos)
               ListTile(
-                leading: const Icon(Icons.queue_music_rounded),
+                leading: const Icon(Icons.smart_display_outlined),
                 title: Text(repertorio.nome),
                 subtitle: Text(_quantasMusicas(repertorio)),
                 selected: repertorio.id == _noite?.repertorioId,
                 onTap: () => Navigator.pop(contexto, repertorio.id),
               ),
+            ListTile(
+              leading: const Icon(Icons.link_rounded),
+              title: const Text('Colar link da playlist do YouTube'),
+              onTap: () => Navigator.pop(contexto, colar),
+            ),
           ],
         ),
       ),
     );
-    if (escolhido != null && mounted) {
-      await _configurar(repertorioId: escolhido);
+    if (escolhido == null || !mounted) return;
+    if (escolhido == colar) return _importarPlaylist();
+    await _configurar(repertorioId: escolhido);
+  }
+
+  /// Lê a playlist do YouTube e guarda os vídeos num repertório com o nome
+  /// dela (o mesmo de antes, se já foi importada: só os novos entram), que
+  /// passa a ser a playlist da noite.
+  Future<void> _importarPlaylist() async {
+    final link = await pedirLinkDaPlaylistDoYouTube(context);
+    if (link == null || !mounted) return;
+    setState(() => _ocupado = true);
+    try {
+      final playlist = await widget.api.lerPlaylistDoYouTube(link);
+      final mesmo = _comVideos
+          .where((r) =>
+              normalizarMusica(r.nome) == normalizarMusica(playlist.titulo))
+          .firstOrNull;
+      final resultado = await widget.api.adicionarMusicasAoRepertorio(
+        repertorioId: mesmo?.id,
+        nomeNovo: mesmo == null ? playlist.titulo : null,
+        musicas: [
+          for (final video in playlist.musicas)
+            (
+              titulo: video.titulo,
+              artista: null,
+              tom: null,
+              linkDoVideo: video.linkDoVideo
+            ),
+        ],
+      );
+      await _carregarRepertorios();
+      if (!mounted) return;
+      setState(() => _ocupado = false);
+      await _configurar(repertorioId: resultado.repertorio.id);
+      if (!mounted) return;
+      final novas = resultado.adicionadas;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('$novas ${novas == 1 ? 'música nova' : 'músicas novas'}'
+              ' da playlist "${playlist.titulo}".')));
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
     }
   }
 
@@ -133,7 +189,11 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
           const SizedBox(height: EspacoTocaEssa.base),
           _LinhaDaPlaylist(
             repertorio: _repertorioDa(noite),
-            escolher: _repertorios.isEmpty ? null : _escolherPlaylist,
+            escolher: _ocupado
+                ? null
+                : _comVideos.isEmpty
+                    ? _importarPlaylist
+                    : _escolherPlaylist,
           ),
           const SizedBox(height: EspacoTocaEssa.grande),
           ..._ordem(noite),
