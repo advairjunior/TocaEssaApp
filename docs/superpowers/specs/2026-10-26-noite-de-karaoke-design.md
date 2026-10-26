@@ -1,22 +1,29 @@
 # Noite de karaokê — desenho
 
-Aprovado pelo proprietário em 2026-10-26, com a importação da playlist. Uso: noites
-de karaokê na casa do proprietário, de 10 a 15 pessoas, com TV, microfone,
-mesa de som e caixa JBL. O vídeo de karaokê sai do YouTube do celular do
-proprietário, espelhado na TV (o controle da TV é trabalhoso demais).
+Aprovado pelo proprietário em 2026-10-26, com a importação da playlist;
+revisto no mesmo dia para o jeito real da noite. Uso: noites de karaokê na
+casa do proprietário, de 10 a 15 pessoas, com TV, microfone, mesa de som e
+caixa JBL. O vídeo de karaokê vai para a TV pelo **Transmitir** do YouTube
+(o controle da TV é trabalhoso demais).
 
 Princípio: o app não toca música nem mostra letra. Ele cuida do que dá
-trabalho e do que deixa a noite divertida: a fila justa, achar o vídeo com
-um toque, avisar a vez de cada um e a nota da galera na hora.
+trabalho e do que deixa a noite divertida: a ordem de quem canta, achar o
+vídeo com um toque, avisar a vez de cada um e a nota da galera na hora.
 
 ## Decisões do proprietário
 
-- Quem controla o YouTube é sempre o proprietário, no celular dele, pela
-  conta de artista que cria o evento.
+- **O celular do proprietário não é o centro da noite.** Antes ele passava
+  de mão em mão; agora cada um usa o próprio celular. Na vez, a pessoa abre
+  o vídeo no YouTube do celular dela e toca em Transmitir (todos no Wi-Fi da
+  casa; fora dele, o "Vincular com código da TV" do YouTube).
+- O proprietário cria a noite pela conta de artista, sorteia a ordem e pode
+  corrigir a fila; não precisa tocar em nada durante as músicas.
 - Para participar é preciso ter **conta do público** (como na Resenha): a
   nota e a memória da noite ficam presas à pessoa.
 - A nota aparece **na hora**, no celular de todo mundo, enquanto a pessoa
   canta.
+- **Primeira versão comum:** sem limite de trocas na roleta e sem surpresa
+  da música só na vez; isso entra depois, nas brincadeiras.
 
 ## Importar a playlist do YouTube (primeira etapa)
 
@@ -46,76 +53,76 @@ não listada; uma de teste tem mais de 100 vídeos).
 
 Novo valor `Karaoke` em `TipoApresentacao`, no fim do enum (os valores
 existentes não mudam). No formulário: Pública, Resenha, Louvor, Karaokê
-(descrição: "Fila de quem canta, vídeo no YouTube e nota da galera").
+(descrição: "Ordem sorteada, vídeo no YouTube e nota da galera").
+
+Ao criar: o **repertório da playlist** (de onde a galera escolhe) e o
+**modo das músicas**:
+
+- **Livre:** cada um escolhe a música no próprio celular.
+- **Roleta:** o app sorteia a música da playlist para a pessoa.
 
 Sem Pix, sem alô, sem horas contratadas. Vocabulário próprio: "música" e
-"cantar"; a setlist não é usada (a noite é feita dos pedidos).
+"cantar"; a setlist não é usada.
 
-## Celular do proprietário (quem controla)
+## Ordem sorteada
 
-```
- Karaokê de sexta                    12 na galera
- ─────────────────────────────────────────────────
- AGORA · Ana                          ★ 4,6 (8)
- Evidências · Chitãozinho & Xororó
- [ ▶ Abrir no YouTube ]   [ Terminou ✓ ]
- ─────────────────────────────────────────────────
- PRÓXIMO · Caio
- Trem-Bala · Ana Vilela
- ─────────────────────────────────────────────────
- Rodada 1 · faltam 4      Rodada 2 · 3 pedidos
- Bia  · Exagerado                         ⋯
- Davi · Tempo Perdido                     ⋯
-```
+- A galera entra pelo QR e aparece na lista "Na galera".
+- **Sortear a ordem** (proprietário): embaralha quem está na galera e a
+  ordem aparece para todos. **Sortear de novo** fica disponível até a
+  primeira pessoa começar a cantar.
+- A mesma ordem vale para todas as rodadas: quando o último canta, a fila
+  volta ao primeiro (rodada 2, 3…).
+- Quem chega depois do sorteio entra no fim da ordem e já canta na rodada
+  que está correndo.
+- Correções do proprietário (⋯ na pessoa): passar a vez (vai para depois
+  do próximo), tirar da ordem (quem saiu da festa).
 
-- **▶ Abrir no YouTube:** abre o vídeo guardado para a música; sem vídeo
-  guardado, abre a busca do YouTube "título cantor karaokê". O proprietário
-  escolhe o vídeo e manda para a TV como já faz hoje.
-- **Guardar o vídeo:** de volta ao app, "Colar link do vídeo" (como o colar
-  da cifra) guarda o link na conta do artista para aquela música. Na próxima
-  noite, é um toque. Fica no acervo da conta, não no evento.
-- **Terminou ✓:** encerra a vez (a música vira tocada, a nota fecha) e o
-  próximo passa a Agora. Desfazer por alguns segundos, como no Tocar.
-- **⋯ em cada pedido:** Pular a vez (vai para depois do próximo), Remover.
-- Abrir no YouTube no iPhone precisa abrir a aba/app no próprio toque, antes
-  de qualquer espera (lição do Safari já registrada).
+## Escolher a música
+
+- **Livre:** a qualquer momento antes da vez, "Escolher minha música" abre a
+  playlist com busca (a mesma busca sem acento do app). Fora da playlist:
+  **Outra música**, com o nome e, se quiser, o link do YouTube; sem link, o
+  "Tocar na TV" abre a busca do YouTube "nome karaokê". Dá para trocar até
+  começar a cantar.
+- **Roleta:** na vez (ou quando a pessoa é a próxima), o app sorteia uma
+  música da playlist: **Conheço, vou cantar!** ou **Não conheço, sortear
+  outra**, sem limite. Não sorteia música já cantada na noite nem uma que já
+  apareceu para a pessoa.
 
 ## Celular de cada participante
 
 Entra pelo código ou QR, com conta (entrar ou criar, como na Resenha).
 
 ```
- Karaokê de sexta
+ Karaokê de sexta                    12 na galera
  ┌─────────────────────────────────────┐
- │ AGORA · Ana                         │
+ │ CANTANDO · Ana                      │
  │ Evidências                          │
  │ Sua nota:  ☆ ☆ ☆ ☆ ☆    ★ 4,6 (8)   │
  └─────────────────────────────────────┘
  Você é o 3º · faltam 2 antes de você
- [ + Quero cantar ]
- Minhas músicas: Trem-Bala (rodada 1) · Anunciação (rodada 2)
- Placar da noite ›
+ Sua música: Trem-Bala            [ Trocar ]
+ Ordem da noite ›     Placar da noite ›
 ```
 
-- **Quero cantar:** título e cantor (busca no acervo do proprietário ajuda
-  a achar a música já com vídeo guardado). Pode pedir mais de uma.
-- **Sua vez:** na vez, a tela inteira diz "Sua vez! Pega o microfone" (e o
-  telefone vibra, onde o navegador deixa). Um antes: "Você é o próximo".
+- **Você é o próximo:** aviso um antes, para escolher a música (ou girar a
+  roleta) e se preparar.
+- **Sua vez!** tela inteira com **Tocar na TV** (abre o vídeo no YouTube do
+  celular, já no próprio toque, por causa do Safari) e a dica "toque em
+  Transmitir". Tocar na TV é o que começa a vez: a nota da galera abre.
 - **Nota na hora:** enquanto alguém canta, os outros dão de 1 a 5 estrelas;
-  dá para mudar até o Terminou. A média e quantos votaram aparecem na hora
-  para todo mundo. Ninguém vota na própria vez.
+  dá para mudar até a vez acabar. A média e quantos votaram aparecem na
+  hora para todo mundo. Ninguém vota na própria vez.
+- **A vez acaba** quando o próximo toca em Tocar na TV (ou quando quem
+  cantou toca em Terminei): a nota fecha e entra no placar.
 - **Placar da noite:** média de cada um (das músicas que cantou), quem
   cantou mais e a melhor nota de uma música.
 
-## Fila por rodadas
+## Celular do proprietário
 
-- Todo pedido entra direto na fila (sem o aceitar do show).
-- A rodada de um pedido é a ordem dele entre os pedidos da mesma pessoa: o
-  primeiro pedido de cada um é da rodada 1, o segundo da rodada 2…
-- A fila anda por rodada; dentro da rodada, por ordem de chegada. Quem chega
-  tarde entra no fim da rodada que está correndo, não espera todo mundo da
-  rodada seguinte.
-- Pular a vez troca o pedido com o seguinte; o proprietário pode remover.
+Participa como qualquer um (canta e vota) e tem, a mais, a tela da noite:
+a galera, Sortear a ordem / Sortear de novo, as correções da ordem e
+Encerrar a noite. Nada disso é preciso durante as músicas.
 
 ## Fim da noite
 
@@ -127,19 +134,24 @@ Entra pelo código ou QR, com conta (entrar ou criar, como na Resenha).
 
 ## O que muda no servidor (resumo para aprovar)
 
-- `TipoApresentacao.Karaoke` (fim do enum).
-- Pedido em Karaokê: exige conta, entra direto na fila, sem tom/recado/alô.
-- Ordem da fila por rodadas (calculada, sem coluna nova).
-- Nota durante a vez: hoje a avaliação só vale para música já tocada; no
-  Karaokê passa a valer também para a música tocando agora, nunca para a
-  própria. A média ao vivo sai no tempo real que já existe.
-- Vídeo da música: o link fica na música do repertório (o acervo é da conta
-  do artista); o pedido acha o vídeo pela mesma música do acervo. Colar o
-  link à mão também grava lá.
-- Rotas públicas novas ou alteradas (precisam de autorização): fila do
-  karaokê com rodada e posição, nota na vez, placar da noite.
+- `TipoApresentacao.Karaoke` (fim do enum), com o repertório da playlist e
+  o modo (Livre/Roleta) na apresentação (colunas novas, criadas só se
+  faltarem).
+- Ordem da noite: posição sorteada de cada participante (coluna nova na
+  participação); sortear de novo só antes da primeira vez.
+- Vez de cantar: participante, música (da playlist ou outra, com o link),
+  rodada, início e fim. Começa no Tocar na TV de quem é a vez.
+- Roleta: sorteio no servidor, sem repetir as cantadas na noite nem as já
+  mostradas à pessoa.
+- Nota durante a vez: vale para a vez em andamento, nunca para a própria.
+  A média ao vivo sai no tempo real que já existe.
+- Rotas públicas novas (precisam de autorização): entrar na galera, ordem e
+  vez atual, escolher ou sortear a música, começar e terminar a vez, nota
+  na vez, placar da noite.
 
-## Fica para depois
+## Fica para depois (brincadeiras)
 
-Duetos ("cantar com a Bia"), roleta de quem canta ou da música, desafios,
-prêmios votados ("Mais corajoso", "Mais animado"), tema por noite.
+Roleta com limite de trocas (a terceira é obrigatória) e com a música
+revelada só na vez; "Me surpreenda" no modo Livre; duetos ("cantar com a
+Bia"); desafios; prêmios votados ("Mais corajoso", "Mais animado"); tema
+por noite.
