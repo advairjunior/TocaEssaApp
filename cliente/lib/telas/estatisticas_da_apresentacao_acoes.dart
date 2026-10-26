@@ -7,6 +7,7 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
   set _apresentacaoAtual(Apresentacao value);
   ApiTocaEssa get api;
   Apresentacao get apresentacao;
+  List<String> get _nomesDoLouvor;
 
   Future<void> _escolherFotoDoEncontro(CartaoComFundo cartao) async {
     final bytes = await escolherFotoDoCartao(context, cartao: cartao);
@@ -63,7 +64,8 @@ mixin _EstatisticasAcoes on State<EstatisticasDaApresentacaoTela> {
     List<ParticipanteDaResenha> participantes,
   ) async {
     await Clipboard.setData(ClipboardData(
-        text: textoDaRetrospectiva(apresentacao, dados, participantes)));
+        text: textoDaRetrospectiva(apresentacao, dados, participantes,
+            nomesDoLouvor: _nomesDoLouvor)));
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

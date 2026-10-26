@@ -7,10 +7,11 @@ const _conviteDoProximoShow = 'Na próxima, peça a sua música';
 String textoDaRetrospectiva(
   Apresentacao apresentacao,
   EstatisticasDaApresentacao dados,
-  List<ParticipanteDaResenha> participantes,
-) {
+  List<ParticipanteDaResenha> participantes, {
+  List<String> nomesDoLouvor = const [],
+}) {
   if (apresentacao.tipo == TipoApresentacao.louvor) {
-    return _textoDoLouvor(apresentacao);
+    return _textoDoLouvor(apresentacao, nomesDoLouvor);
   }
   final perfil = apresentacao.perfilArtistico;
   final instagram = _instagram(perfil);
@@ -96,6 +97,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
     required this.apresentacao,
     required this.dados,
     required this.participantes,
+    required this.nomesDoLouvor,
     required this.enderecoFoto,
     required this.temFotoPropria,
     required this.enviandoFoto,
@@ -109,6 +111,7 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   final Apresentacao apresentacao;
   final EstatisticasDaApresentacao dados;
   final List<ParticipanteDaResenha> participantes;
+  final List<String> nomesDoLouvor;
 
   /// Selfie da retrospectiva; sem ela, o cartão fica com o fundo de palco.
   final String? enderecoFoto;
@@ -131,7 +134,8 @@ class _RetrospectivaDoArtista extends StatelessWidget {
           dados: dados,
           premios: premios,
         ),
-      TipoApresentacao.louvor => _ConteudoDoLouvor(apresentacao: apresentacao),
+      TipoApresentacao.louvor =>
+        _ConteudoDoLouvor(apresentacao: apresentacao, nomes: nomesDoLouvor),
       _ => _ConteudoDoShow(apresentacao: apresentacao, dados: dados),
     };
     void tirarSelfie() => escolherFoto((_, fundo) => _MolduraDoCartao(

@@ -48,6 +48,8 @@ class _EstatisticasDaApresentacaoTelaState
   bool _enviandoFoto = false;
   @override
   late Apresentacao _apresentacaoAtual;
+  @override
+  List<String> _nomesDoLouvor = const [];
   late final Future<(EstatisticasDaApresentacao, List<ParticipanteDaResenha>)>
       _carga = _carregar();
 
@@ -62,6 +64,19 @@ class _EstatisticasDaApresentacaoTelaState
   void initState() {
     super.initState();
     _apresentacaoAtual = widget.apresentacao;
+    if (apresentacao.tipo == TipoApresentacao.louvor) _carregarNomesDoLouvor();
+  }
+
+  // Quem cantou e quem tocou entram no cartão; sem a escala, fica o artista.
+  Future<void> _carregarNomesDoLouvor() async {
+    try {
+      final louvor = await api.obterLouvor(apresentacao.id);
+      if (!mounted) return;
+      setState(() => _nomesDoLouvor =
+          nomesDaRetrospectivaDoLouvor(louvor.cantores, louvor.solistas));
+    } catch (_) {
+      // O cartão segue com o nome de quem criou o louvor.
+    }
   }
 
   // Números e galera chegam juntos: o cartão da resenha usa os dois. Sem a
@@ -118,6 +133,7 @@ class _EstatisticasDaApresentacaoTelaState
               apresentacao: apresentacao,
               dados: dados,
               participantes: participantes,
+              nomesDoLouvor: _nomesDoLouvor,
               enderecoFoto:
                   api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
               temFotoPropria: apresentacao.fotoRetrospectivaUrl != null,
