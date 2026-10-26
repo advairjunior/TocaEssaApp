@@ -60,8 +60,12 @@ arquivo.
   histórico traz `nomeNoLouvor` e `hinosNoLouvor` (hinos com parte no
   microfone ou solo, contados na hora pela escala); cartão, detalhe e
   cartão de compartilhar dizem "Como Ana · em 3 hinos". Os encontros
-  contam no resumo ("3 encontros"). Quem só usa o roteiro sem conta segue
-  sem memória: o roteiro não pede login.
+  contam no resumo ("3 encontros"). Sem conta no aparelho, o "Quem é
+  você?" do roteiro oferece "Guardar este louvor na minha conta"
+  (`entrar_para_guardar.dart`, tela própria por causa do teclado do
+  iPhone): entra ou cria a conta e já guarda o louvor com o nome; quem
+  ainda não escolheu guarda ao escolher. Louvor agendado aparece em
+  Próximas sem o "Como Ana", que vem no histórico.
 
 **Artista (conta própria, isolado por `ArtistaId`)**
 - Perfil artístico com foto e perfil público; apresentações Pública ou Resenha.
