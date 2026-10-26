@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/area_do_publico.dart';
+import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/roteiro_do_louvor.dart';
 import 'package:toca_essa_app/telas/trechos_do_louvor.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
@@ -72,6 +73,21 @@ Future<void> _abrir(WidgetTester tester,
       if (requisicao.url.path.endsWith('/participacoes')) {
         return http.Response('', 204);
       }
+      if (requisicao.url.path == '/api/publico/sessoes' ||
+          requisicao.url.path == '/api/publico/contas') {
+        return http.Response(
+            jsonEncode({
+              'token': 'TOKEN-NOVO',
+              'perfil': {
+                'id': 'ana',
+                'nome': 'Ana',
+                'email': 'ana@teste.com',
+                'criadoEm': '2026-10-01T00:00:00Z',
+              },
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }
       return http.Response(jsonEncode(_noServidor), 200,
           headers: {'content-type': 'application/json; charset=utf-8'});
     }),
@@ -86,6 +102,11 @@ Future<void> _abrir(WidgetTester tester,
   ));
   await tester.pumpAndSettle();
 }
+
+Finder _campo(String rotulo) => find.descendant(
+      of: find.widgetWithText(CampoTexto, rotulo),
+      matching: find.byType(TextField),
+    );
 
 void main() {
   setUp(() {
@@ -259,6 +280,73 @@ void main() {
 
       expect(
           jsonDecode(participacoes(requisicoes).single.body), {'nome': 'João'});
+    });
+
+    testWidgets('sem conta, entrar pelo roteiro guarda o louvor com o nome',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({'louvor_quem_sou_ABC123': 'Ana'});
+      final requisicoes = <http.Request>[];
+      await _abrir(tester, requisicoes: requisicoes);
+
+      await tester.tap(find.byTooltip('Trocar quem sou eu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Guardar este louvor na minha conta'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_campo('E-mail'), 'ana@teste.com');
+      await tester.enterText(_campo('Senha'), 'senha123');
+      await tester.tap(find.widgetWithText(FilledButton, 'Entrar e guardar'));
+      await tester.pumpAndSettle();
+
+      final entrada =
+          requisicoes.singleWhere((r) => r.url.path == '/api/publico/sessoes');
+      expect(jsonDecode(entrada.body),
+          {'email': 'ana@teste.com', 'senha': 'senha123'});
+      final enviada = participacoes(requisicoes).single;
+      expect(enviada.headers['authorization'], 'Bearer TOKEN-NOVO');
+      expect(jsonDecode(enviada.body), {'nome': 'Ana'});
+      expect(find.text('Pronto: este louvor fica em Meus encontros.'),
+          findsOneWidget);
+      // Volta ao roteiro na escolha, sem perder quem a pessoa é.
+      expect(find.text('Quem é você?'), findsOneWidget);
+      expect(find.text('Guardar este louvor na minha conta'), findsNothing);
+      final preferencias = await SharedPreferences.getInstance();
+      expect(preferencias.getString('token_do_publico'), 'TOKEN-NOVO');
+      expect(preferencias.getString('louvor_quem_sou_ABC123'), 'Ana');
+    });
+
+    testWidgets('quem não tem conta cria uma pelo roteiro', (tester) async {
+      final requisicoes = <http.Request>[];
+      await _abrir(tester, requisicoes: requisicoes);
+
+      await tester.tap(find.text('Guardar este louvor na minha conta'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Não tenho conta: criar agora'));
+      await tester.pumpAndSettle();
+      await tester.enterText(_campo('Seu nome'), 'Ana');
+      await tester.enterText(_campo('E-mail'), 'ana@teste.com');
+      await tester.enterText(_campo('Senha'), 'senha123');
+      await tester
+          .tap(find.widgetWithText(FilledButton, 'Criar conta e guardar'));
+      await tester.pumpAndSettle();
+
+      final criacao =
+          requisicoes.singleWhere((r) => r.url.path == '/api/publico/contas');
+      expect(jsonDecode(criacao.body),
+          {'nome': 'Ana', 'email': 'ana@teste.com', 'senha': 'senha123'});
+      // Ainda não escolheu quem é: o nome vai quando escolher.
+      expect(participacoes(requisicoes), isEmpty);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'João'));
+      await tester.pumpAndSettle();
+      expect(
+          jsonDecode(participacoes(requisicoes).single.body), {'nome': 'João'});
+    });
+
+    testWidgets('com conta no aparelho, não oferece entrar', (tester) async {
+      SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN'});
+      await _abrir(tester);
+
+      expect(find.text('Quem é você?'), findsOneWidget);
+      expect(find.text('Guardar este louvor na minha conta'), findsNothing);
     });
 
     testWidgets('sem conta no aparelho, nada vai para o servidor',

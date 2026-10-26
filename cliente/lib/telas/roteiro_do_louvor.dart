@@ -14,6 +14,7 @@ import 'componentes.dart';
 import 'controle_do_tom.dart';
 import 'cifra_do_palco.dart';
 import 'componentes_lista.dart';
+import 'entrar_para_guardar.dart';
 import 'trechos_do_louvor.dart';
 
 part 'roteiro_do_louvor_componentes.dart';
@@ -89,6 +90,7 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
     if (!mounted) return;
     setState(() {
       _preferencias = preferencias;
+      _temConta = preferencias.getString('token_do_publico') != null;
       if (salvo != null) _quemSou = salvo;
       // Quem recebe o link de um hino quer ver a cifra: sem escolha
       // guardada, os acordes já vêm ligados.
@@ -152,6 +154,20 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
 
   /// Com conta do público neste aparelho, o louvor fica na memória dela com
   /// quem a pessoa foi. Sem internet ou sem conta, o roteiro segue igual.
+  bool _temConta = false;
+
+  /// Sem conta no aparelho: entra ou cria a conta e já guarda o louvor
+  /// com quem a pessoa é (se já escolheu; senão, ao escolher).
+  Future<void> _entrarParaGuardar() async {
+    final avisos = ScaffoldMessenger.of(context);
+    if (!await entrarParaGuardar(context, widget.api) || !mounted) return;
+    final preferencias = await SharedPreferences.getInstance();
+    setState(() => _temConta = true);
+    if (_quemSou case final nome?) _guardarNaConta(preferencias, nome);
+    avisos.showSnackBar(const SnackBar(
+        content: Text('Pronto: este louvor fica em Meus encontros.')));
+  }
+
   void _guardarNaConta(SharedPreferences preferencias, String nome) {
     final token = preferencias.getString('token_do_publico');
     if (token == null) return;
@@ -257,7 +273,10 @@ class _RoteiroDoLouvorTelaState extends State<RoteiroDoLouvorTela> {
             _EscolhaDeQuemSou(
                 participantes: roteiro.participantes,
                 cantores: roteiro.cantores,
-                escolher: _escolherQuemSou),
+                escolher: _escolherQuemSou,
+                guardarNaConta: _preferencias == null || _temConta
+                    ? null
+                    : _entrarParaGuardar),
           (final RoteiroDoLouvor roteiro, _) when roteiro.hinos.isEmpty =>
             const EstadoVazio(
               icone: Icons.library_music_outlined,

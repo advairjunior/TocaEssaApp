@@ -7,11 +7,14 @@ class _EscolhaDeQuemSou extends StatelessWidget {
     required this.participantes,
     required this.cantores,
     required this.escolher,
+    this.guardarNaConta,
   });
 
   final List<String> participantes;
   final List<String> cantores;
   final ValueChanged<String> escolher;
+  // Só sem conta no aparelho: entrar para o louvor ficar na memória.
+  final VoidCallback? guardarNaConta;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +53,14 @@ class _EscolhaDeQuemSou extends StatelessWidget {
             onPressed: () => escolher(''),
             child: const Text('Só acompanhar'),
           ),
+          if (guardarNaConta case final guardar?) ...[
+            const SizedBox(height: EspacoTocaEssa.grande),
+            TextButton.icon(
+              onPressed: guardar,
+              icon: const Icon(Icons.bookmark_add_outlined, size: 20),
+              label: const Text('Guardar este louvor na minha conta'),
+            ),
+          ],
         ],
       ),
     );
@@ -115,8 +126,7 @@ class _CabecalhoDoHino extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final texto = Theme.of(context).textTheme;
-    final microfone =
-        quemSou.isEmpty ? null : partesNoMicrofone(hino, quemSou);
+    final microfone = quemSou.isEmpty ? null : partesNoMicrofone(hino, quemSou);
     final toca = quemSou.isEmpty ? null : partesTocadas(hino, quemSou);
     final estilo = texto.bodyMedium?.copyWith(color: CoresTocaEssa.ouro);
     final papeis = [
