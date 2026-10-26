@@ -109,6 +109,8 @@ internal sealed class ParticipacaoResenhaRegistro
     public Guid ApresentacaoId { get; set; }
     public Guid PublicoId { get; set; }
     public DateTimeOffset EntrouEm { get; set; }
+    // No louvor, quem a pessoa escolheu ser no roteiro.
+    public string? NomeNoLouvor { get; set; }
 }
 
 /// Um aparelho que abriu a página pública do evento; conta o público que

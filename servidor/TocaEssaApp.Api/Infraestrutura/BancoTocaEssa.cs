@@ -134,6 +134,7 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.ToTable("ParticipacoesResenha");
             entidade.HasKey(item => new { item.ApresentacaoId, item.PublicoId });
             entidade.HasIndex(item => item.PublicoId);
+            entidade.Property(item => item.NomeNoLouvor).HasMaxLength(80);
         });
 
         modelo.Entity<AcessoAoEventoRegistro>(entidade =>

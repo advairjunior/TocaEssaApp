@@ -16,7 +16,7 @@ public class PerfilGeralNaGaleraTestes
         var outra = repositorio.CriarApresentacao("Show", new DateOnly(2026, 9, 10),
             "Praça", TipoApresentacao.Publica);
         var ana = repositorio.CriarPerfilPublico("Ana", "ana@exemplo.com", "senha123");
-        repositorio.RegistrarParticipacaoNaResenha(atual.Codigo, ana.Token);
+        repositorio.RegistrarParticipacao(atual.Codigo, ana.Token);
         repositorio.CriarPedido(atual.Codigo, "Música daqui", null, null, ana.Token);
         repositorio.CriarPedido(outra.Codigo, "Música de outro show", null, null, ana.Token);
 

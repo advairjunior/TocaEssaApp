@@ -159,4 +159,10 @@ public sealed record EncontroDoPublico(
     int Pedidos,
     int PedidosTocados,
     IReadOnlyCollection<MusicaMaisPedida> MinhasMusicas,
-    IReadOnlyCollection<PessoaDoEncontro> Companhia);
+    IReadOnlyCollection<PessoaDoEncontro> Companhia,
+    // No louvor: quem a pessoa foi no roteiro e em quantos hinos tinha parte.
+    string? NomeNoLouvor = null,
+    int HinosNoLouvor = 0);
+
+/// Corpo opcional de quem entra no evento; o nome só vale no louvor.
+public sealed record RegistrarParticipacaoNoEvento(string? Nome);

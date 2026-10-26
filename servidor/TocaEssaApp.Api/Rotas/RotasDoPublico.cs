@@ -122,11 +122,13 @@ public static class RotasDoPublico
             Results.Ok(repositorio.ListarParticipantesDaResenha(
                 codigo, ObterToken(http) ?? string.Empty)));
 
+        // Sem corpo continua valendo; no louvor, { nome } é quem a pessoa é.
         app.MapPost("/api/publico/apresentacoes/{codigo}/participacoes", (
-            string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            string codigo, RegistrarParticipacaoNoEvento? requisicao, HttpRequest http,
+            RepositorioTocaEssa repositorio) =>
         {
-            repositorio.RegistrarParticipacaoNaResenha(
-                codigo, ObterToken(http) ?? string.Empty);
+            repositorio.RegistrarParticipacao(
+                codigo, ObterToken(http) ?? string.Empty, requisicao?.Nome);
             return Results.NoContent();
         });
 

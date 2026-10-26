@@ -86,7 +86,7 @@ public sealed class AutorizacaoArtistaTestes
             "Bar", TipoApresentacao.ResenhaEntreAmigos);
         var publico = repositorio.CriarPerfilPublico(
             "Clara", "clara@publico.com", "senha123");
-        repositorio.RegistrarParticipacaoNaResenha(
+        repositorio.RegistrarParticipacao(
             resenha.Codigo, publico.Token);
         var pedido = repositorio.CriarPedido(
             resenha.Codigo, "Evidências", "Chitãozinho & Xororó", null,

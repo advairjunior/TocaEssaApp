@@ -4,26 +4,53 @@ namespace TocaEssaApp.Api.Infraestrutura;
 
 public sealed partial class RepositorioTocaEssa
 {
-    public void RegistrarParticipacaoNaResenha(string codigo, string token)
+    /// Quem tem conta e entrou no evento (resenha, show público ou louvor)
+    /// guarda o encontro na memória, mesmo sem pedir música. No louvor vale
+    /// também quem a pessoa escolheu ser no roteiro; nome de fora da lista
+    /// ou vazio ("só acompanhar") fica sem nome.
+    public void RegistrarParticipacao(string codigo, string token, string? nomeNoLouvor = null)
     {
         lock (_sincronizacao)
         {
             var apresentacao = ObterApresentacaoPublica(codigo)
                 ?? throw new ApresentacaoNaoEncontradaException();
-            if (apresentacao.Tipo != TipoApresentacao.ResenhaEntreAmigos)
-                throw new RecursoDisponivelSomenteNaResenhaException();
             var publico = ObterRegistroPublico(token)
                 ?? throw new SessaoPublicaInvalidaException();
+            var nome = apresentacao.Tipo == TipoApresentacao.Louvor
+                ? NomeDoParticipanteDoLouvor(apresentacao.Id, nomeNoLouvor)
+                : null;
             var chave = (apresentacao.Id, publico.Id);
-            if (_participacoesResenha.ContainsKey(chave)) return;
-            _participacoesResenha[chave] = new ParticipacaoResenhaRegistro
+            if (_participacoesResenha.TryGetValue(chave, out var existente))
             {
-                ApresentacaoId = apresentacao.Id,
-                PublicoId = publico.Id,
-                EntrouEm = DateTimeOffset.UtcNow
-            };
+                if (apresentacao.Tipo != TipoApresentacao.Louvor ||
+                    existente.NomeNoLouvor == nome) return;
+                existente.NomeNoLouvor = nome;
+            }
+            else
+            {
+                _participacoesResenha[chave] = new ParticipacaoResenhaRegistro
+                {
+                    ApresentacaoId = apresentacao.Id,
+                    PublicoId = publico.Id,
+                    EntrouEm = DateTimeOffset.UtcNow,
+                    NomeNoLouvor = nome
+                };
+            }
             SalvarEstado();
         }
+    }
+
+    /// O nome como está na escala (cantor ou quem toca), sem diferença de
+    /// maiúscula; nulo se não está lá.
+    private string? NomeDoParticipanteDoLouvor(Guid apresentacaoId, string? nome)
+    {
+        if (string.IsNullOrWhiteSpace(nome)) return null;
+        var procurado = nome.Trim();
+        return (_cantoresDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
+            .Concat((_solistasDoLouvor.GetValueOrDefault(apresentacaoId) ?? [])
+                .Select(solista => solista.Nome))
+            .FirstOrDefault(participante => string.Equals(
+                participante, procurado, StringComparison.CurrentCultureIgnoreCase));
     }
 
     internal IReadOnlyCollection<ParticipanteDaResenha> ListarParticipantesDaResenha(

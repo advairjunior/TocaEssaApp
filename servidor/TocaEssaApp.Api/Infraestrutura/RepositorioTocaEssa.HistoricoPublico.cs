@@ -56,11 +56,22 @@ public sealed partial class RepositorioTocaEssa
                     : new PessoaDoEncontro(id, "Participante", null))
                 .OrderBy(pessoa => pessoa.Nome, StringComparer.CurrentCultureIgnoreCase)
                 .ToArray();
+        var nomeNoLouvor = apresentacao.Tipo == TipoApresentacao.Louvor
+            ? _participacoesResenha.GetValueOrDefault((apresentacao.Id, publicoId))?.NomeNoLouvor
+            : null;
         return new EncontroDoPublico(
             apresentacao,
             meus.Length,
             meus.Count(item => item.Status == StatusPedidoMusical.Finalizado),
             AgruparMusicas(meus),
-            companhia);
+            companhia,
+            nomeNoLouvor,
+            nomeNoLouvor is null ? 0 : ContarHinosDaPessoa(apresentacao, nomeNoLouvor));
     }
+
+    /// Hinos em que a pessoa tem alguma parte no microfone ou um solo.
+    private int ContarHinosDaPessoa(Apresentacao apresentacao, string nome) =>
+        MontarLouvor(apresentacao).Hinos.Count(hino => hino.Partes.Any(parte =>
+            parte.Cantores.Any(cantor => string.Equals(
+                cantor, nome, StringComparison.CurrentCultureIgnoreCase))));
 }

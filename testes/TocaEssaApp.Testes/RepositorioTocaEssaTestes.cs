@@ -527,7 +527,7 @@ public class RepositorioTocaEssaTestes
             "Beto", "beto@example.com", "senha123");
         var carla = repositorio.CriarPerfilPublico(
             "Carla", "carla@example.com", "senha123");
-        repositorio.RegistrarParticipacaoNaResenha(resenha.Codigo, carla.Token);
+        repositorio.RegistrarParticipacao(resenha.Codigo, carla.Token);
         var tocado = repositorio.CriarPedido(
             resenha.Codigo, "Evidências", null, null, ana.Token);
         var recusado = repositorio.CriarPedido(
@@ -574,7 +574,7 @@ public class RepositorioTocaEssaTestes
                 "Ana", "ana@example.com", "senha123");
             var convidada = repositorio.CriarPerfilPublico(
                 "Carla", "carla@example.com", "senha123");
-            repositorio.RegistrarParticipacaoNaResenha(
+            repositorio.RegistrarParticipacao(
                 resenha.Codigo, convidada.Token);
 
             var pedido = repositorio.CriarPedido(

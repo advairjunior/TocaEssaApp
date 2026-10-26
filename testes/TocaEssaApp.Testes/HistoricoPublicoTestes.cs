@@ -25,7 +25,7 @@ public class HistoricoPublicoTestes
         var show = repo.CriarApresentacao("Show", new DateOnly(2026, 9, 2), "Praça");
         var ana = repo.CriarPerfilPublico("Ana", "ana@teste.com", "senha123");
         var bia = repo.CriarPerfilPublico("Bia", "bia@teste.com", "senha123");
-        repo.RegistrarParticipacaoNaResenha(resenha.Codigo, ana.Token);
+        repo.RegistrarParticipacao(resenha.Codigo, ana.Token);
         repo.CriarPedido(show.Codigo, "Evidências", null, null, bia.Token);
         repo.AlterarStatusApresentacao(resenha.Id, StatusApresentacao.Encerrada);
 
@@ -49,8 +49,8 @@ public class HistoricoPublicoTestes
         var bia = repo.CriarPerfilPublico("Bia", "bia@teste.com", "senha123");
         var caio = repo.CriarPerfilPublico("Caio", "caio@teste.com", "senha123");
         var davi = repo.CriarPerfilPublico("Davi", "davi@teste.com", "senha123");
-        repo.RegistrarParticipacaoNaResenha(resenha.Codigo, ana.Token);
-        repo.RegistrarParticipacaoNaResenha(resenha.Codigo, caio.Token);
+        repo.RegistrarParticipacao(resenha.Codigo, ana.Token);
+        repo.RegistrarParticipacao(resenha.Codigo, caio.Token);
         repo.CriarPedido(resenha.Codigo, "Garota", null, null, bia.Token);
         var tocada = repo.CriarPedido(resenha.Codigo, "Evidências", null, null, ana.Token);
         repo.CriarPedido(resenha.Codigo, "evidências", null, null, ana.Token);

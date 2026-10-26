@@ -136,7 +136,7 @@ public sealed class AcessosAoEventoTestes
         {
             var publico = repositorio.CriarPerfilPublico(
                 nome, $"{nome}@publico.com", "senha123");
-            repositorio.RegistrarParticipacaoNaResenha(resenha.Codigo, publico.Token);
+            repositorio.RegistrarParticipacao(resenha.Codigo, publico.Token);
         }
 
         Assert.Equal(2, repositorio.ObterEstatisticasDaApresentacao(

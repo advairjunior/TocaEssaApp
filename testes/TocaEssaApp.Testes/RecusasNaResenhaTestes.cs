@@ -69,7 +69,7 @@ public sealed class RecusasNaResenhaTestes
     {
         var publico = repositorio.CriarPerfilPublico(
             nome, $"{nome}@publico.com", "senha123");
-        repositorio.RegistrarParticipacaoNaResenha(resenha.Codigo, publico.Token);
+        repositorio.RegistrarParticipacao(resenha.Codigo, publico.Token);
         return publico.Token;
     }
 }
