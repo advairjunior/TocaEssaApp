@@ -70,10 +70,12 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
                           ? 'Hinos'
                           : 'Setlist',
                     ),
-                  _AbaPainel.estatisticas => const NavigationDestination(
-                      icon: Icon(Icons.insights_outlined),
-                      selectedIcon: Icon(Icons.insights_rounded),
-                      label: 'Estatísticas',
+                  _AbaPainel.estatisticas => NavigationDestination(
+                      icon: const Icon(Icons.insights_outlined),
+                      selectedIcon: const Icon(Icons.insights_rounded),
+                      label: apresentacao.tipo == TipoApresentacao.louvor
+                          ? 'Retrospectiva'
+                          : 'Estatísticas',
                     ),
                   // Os stories ficam na aba Mais: o selo conta os novos.
                   _ => NavigationDestination(

@@ -856,6 +856,35 @@ void main() {
       expect(find.byType(NavigationBar), findsOneWidget);
     });
 
+    testWidgets('louvor encerrado abre na Retrospectiva', (tester) async {
+      await _abrirPainel(
+        tester,
+        apresentacoes: '[${_apresentacao(
+          id: '1',
+          nome: 'Louvor de sábado',
+          data: '2026-10-24',
+          status: 'Encerrada',
+          tipo: 'Louvor',
+        )}]',
+        outras: (requisicao) async =>
+            requisicao.url.path.endsWith('/estatisticas')
+                ? http.Response(
+                    '{"totalPedidos":0,"aguardando":0,"aceitos":0,'
+                    '"tocados":0,"recusados":0,"avaliados":0,'
+                    '"musicasMaisPedidas":[]}',
+                    200)
+                : servirLouvor(requisicao),
+      );
+      await tester.tap(find.text('Louvor de sábado'));
+      await tester.pumpAndSettle();
+
+      final barra = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(barra.destinations, hasLength(4));
+      expect(find.text('Retrospectiva'), findsWidgets);
+      expect(find.text('Retrospectiva do louvor'), findsOneWidget);
+      expect(barra.selectedIndex, 2);
+    });
+
     testWidgets('louvor ao vivo abre direto nos hinos', (tester) async {
       await _abrirPainel(
         tester,

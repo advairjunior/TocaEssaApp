@@ -9,6 +9,9 @@ String textoDaRetrospectiva(
   EstatisticasDaApresentacao dados,
   List<ParticipanteDaResenha> participantes,
 ) {
+  if (apresentacao.tipo == TipoApresentacao.louvor) {
+    return _textoDoLouvor(apresentacao);
+  }
   final perfil = apresentacao.perfilArtistico;
   final instagram = _instagram(perfil);
   final cabecalho = [
@@ -53,13 +56,14 @@ Widget cartaoDaSelfie(Apresentacao apresentacao, Widget fundo) =>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          _RotuloDoCartao(
-              apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
-                  ? 'Retrospectiva da resenha'
-                  : 'Retrospectiva do show'),
+          _RotuloDoCartao(switch (apresentacao.tipo) {
+            TipoApresentacao.resenhaEntreAmigos => 'Retrospectiva da resenha',
+            TipoApresentacao.louvor => 'Retrospectiva do louvor',
+            _ => 'Retrospectiva do show',
+          }),
           const SizedBox(height: 2),
           Text(
-            apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos
+            apresentacao.tipo != TipoApresentacao.publica
                 ? apresentacao.nome
                 : apresentacao.perfilArtistico.nomeArtistico,
             maxLines: 2,
@@ -121,13 +125,15 @@ class _RetrospectivaDoArtista extends StatelessWidget {
   Widget build(BuildContext context) {
     final premios =
         _resenha ? premiosDaResenha(participantes, dados) : <PremioDaResenha>[];
-    final conteudo = _resenha
-        ? _ConteudoDaResenha(
-            apresentacao: apresentacao,
-            dados: dados,
-            premios: premios,
-          )
-        : _ConteudoDoShow(apresentacao: apresentacao, dados: dados);
+    final Widget conteudo = switch (apresentacao.tipo) {
+      TipoApresentacao.resenhaEntreAmigos => _ConteudoDaResenha(
+          apresentacao: apresentacao,
+          dados: dados,
+          premios: premios,
+        ),
+      TipoApresentacao.louvor => _ConteudoDoLouvor(apresentacao: apresentacao),
+      _ => _ConteudoDoShow(apresentacao: apresentacao, dados: dados),
+    };
     void tirarSelfie() => escolherFoto((_, fundo) => _MolduraDoCartao(
           enderecoFoto: null,
           fundo: fundo,

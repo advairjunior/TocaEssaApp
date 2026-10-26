@@ -297,6 +297,8 @@ class _PainelDoArtistaState extends State<PainelDoArtista> {
         switch ((apresentacao.tipo, apresentacao.status)) {
           (TipoApresentacao.louvor, StatusApresentacao.agendada) =>
             _AbaPainel.escala,
+          (TipoApresentacao.louvor, StatusApresentacao.encerrada) =>
+            _AbaPainel.estatisticas,
           (TipoApresentacao.louvor, _) => _AbaPainel.setlist,
           (TipoApresentacao.karaoke, _) => _AbaPainel.karaoke,
           (_, StatusApresentacao.encerrada) => _AbaPainel.estatisticas,

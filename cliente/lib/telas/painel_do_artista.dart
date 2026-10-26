@@ -77,12 +77,23 @@ const _abasDaApresentacao = [
 // No louvor não há pedidos: a escala de quem canta toma o lugar da fila.
 const _abasDoLouvor = [_AbaPainel.escala, _AbaPainel.setlist, _AbaPainel.mais];
 
+// Encerrado, o louvor ganha a retrospectiva (a aba das estatísticas).
+const _abasDoLouvorEncerrado = [
+  _AbaPainel.escala,
+  _AbaPainel.setlist,
+  _AbaPainel.estatisticas,
+  _AbaPainel.mais,
+];
+
 // No karaokê a noite (galera e ordem) é tudo; o QR fica na aba Mais.
 const _abasDoKaraoke = [_AbaPainel.karaoke, _AbaPainel.mais];
 
 List<_AbaPainel> _abasDe(Apresentacao? apresentacao) =>
     switch (apresentacao?.tipo) {
-      TipoApresentacao.louvor => _abasDoLouvor,
+      TipoApresentacao.louvor =>
+        apresentacao?.status == StatusApresentacao.encerrada
+            ? _abasDoLouvorEncerrado
+            : _abasDoLouvor,
       TipoApresentacao.karaoke => _abasDoKaraoke,
       _ => _abasDaApresentacao,
     };

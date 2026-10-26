@@ -19,6 +19,7 @@ part 'estatisticas_da_apresentacao_acoes.dart';
 part 'estatisticas_da_apresentacao_retrospectiva.dart';
 part 'estatisticas_da_apresentacao_moldura.dart';
 part 'estatisticas_da_apresentacao_conteudo.dart';
+part 'estatisticas_da_apresentacao_louvor.dart';
 
 class EstatisticasDaApresentacaoTela extends StatefulWidget {
   const EstatisticasDaApresentacaoTela({
@@ -130,6 +131,13 @@ class _EstatisticasDaApresentacaoTelaState
           // Depois do show, a retrospectiva é o que importa: vai para o topo.
           // Durante o show, fica no fim sem empurrar os números para baixo.
           final encerrada = apresentacao.status == StatusApresentacao.encerrada;
+          // No louvor não há pedidos nem notas: fica só a retrospectiva.
+          if (apresentacao.tipo == TipoApresentacao.louvor) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: retrospectiva,
+            );
+          }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
