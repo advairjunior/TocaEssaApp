@@ -32,7 +32,8 @@ public enum TipoApresentacao
 {
     Publica,
     ResenhaEntreAmigos,
-    Louvor
+    Louvor,
+    Karaoke
 }
 
 public sealed record Apresentacao(

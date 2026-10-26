@@ -81,6 +81,7 @@ public sealed partial class RepositorioTocaEssa
                 _pedidosASeguir[apresentacao.Id] = aSeguir;
             CarregarRelogio(apresentacao);
             CarregarLouvor(apresentacao);
+            CarregarKaraoke(apresentacao);
         }
 
         foreach (var pedido in banco.Pedidos.AsNoTracking())

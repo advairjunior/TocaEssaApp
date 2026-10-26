@@ -41,6 +41,8 @@ internal sealed class ApresentacaoRegistro
     public string? ConfiguracaoDoLouvor { get; set; }
     // Partes em que o coral canta junto, em JSON
     public string? CoralDoLouvor { get; set; }
+    // Karaokê: modo, playlist e ordem de quem canta, em JSON
+    public string? KaraokeDaNoite { get; set; }
     // Cronômetro do show, visto só pelo artista
     public int? DuracaoContratadaMinutos { get; set; }
     public bool IntervaloPausaRelogio { get; set; }

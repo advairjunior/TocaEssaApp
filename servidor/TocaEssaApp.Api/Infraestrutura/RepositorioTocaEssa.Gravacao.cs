@@ -143,6 +143,7 @@ public sealed partial class RepositorioTocaEssa
             };
             EscreverRelogio(registro);
             EscreverLouvor(registro);
+            EscreverKaraoke(registro);
             return registro;
         });
 

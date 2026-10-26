@@ -201,6 +201,22 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
                 mensagem = "Este recurso está disponível somente na Resenha entre Amigos."
             });
         }
+        catch (RecursoDisponivelSomenteNoKaraokeException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "Este recurso está disponível somente na Noite de Karaokê."
+            });
+        }
+        catch (KaraokeJaComecouException)
+        {
+            contexto.Response.StatusCode = StatusCodes.Status409Conflict;
+            await contexto.Response.WriteAsJsonAsync(new
+            {
+                mensagem = "A noite já começou: a ordem não pode mais ser sorteada de novo."
+            });
+        }
         catch (DestinatarioAloObrigatorioException)
         {
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;

@@ -1,5 +1,6 @@
 using TocaEssaApp.Api.Dominio;
 using TocaEssaApp.Api.Infraestrutura;
+using static TocaEssaApp.Api.Rotas.AuxiliaresDasRotas;
 
 namespace TocaEssaApp.Api.Rotas;
 
@@ -34,5 +35,40 @@ public static class RotasDoKaraoke
                     statusCode: StatusCodes.Status503ServiceUnavailable);
             }
         });
+
+        MapearNoiteDeKaraoke(app);
+    }
+
+    // O dono configura, sorteia e corrige a ordem; a galera vê com a conta.
+    private static void MapearNoiteDeKaraoke(WebApplication app)
+    {
+        const string Rota = "/api/apresentacoes/{id:guid}/karaoke";
+
+        app.MapGet(Rota, (Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ObterNoiteDeKaraoke(ObterToken(http) ?? string.Empty, id)));
+
+        app.MapPut($"{Rota}/configuracao", (
+            Guid id, ConfiguracaoDoKaraoke requisicao,
+            HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ConfigurarKaraoke(ObterToken(http) ?? string.Empty, id, requisicao)));
+
+        app.MapPost($"{Rota}/sorteio", (Guid id, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.SortearOrdemDoKaraoke(ObterToken(http) ?? string.Empty, id)));
+
+        app.MapPost($"{Rota}/ordem/{{publicoId:guid}}/passar", (
+            Guid id, Guid publicoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.PassarAVezNoKaraoke(ObterToken(http) ?? string.Empty, id, publicoId)));
+
+        app.MapDelete($"{Rota}/ordem/{{publicoId:guid}}", (
+            Guid id, Guid publicoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.TirarDaOrdemDoKaraoke(ObterToken(http) ?? string.Empty, id, publicoId)));
+
+        app.MapPost($"{Rota}/ordem/{{publicoId:guid}}", (
+            Guid id, Guid publicoId, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.DevolverAOrdemDoKaraoke(ObterToken(http) ?? string.Empty, id, publicoId)));
+
+        app.MapGet("/api/publico/apresentacoes/{codigo}/karaoke", (
+            string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ObterNoiteDeKaraoke(codigo, ObterToken(http) ?? string.Empty)));
     }
 }
