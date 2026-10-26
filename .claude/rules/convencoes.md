@@ -9,6 +9,8 @@
 
 - Minimal APIs agrupadas por assunto em `Rotas/` (`app.MapearRotasDoX()`, chamadas pelo `Program.cs`) — sem controllers.
 - Teto de 350 linhas por arquivo, no app e no servidor (testes `tamanho_dos_arquivos_test.dart` e `TamanhoDosArquivosTestes.cs`): ao passar, dividir por responsabilidade.
+- Complexidade ciclomática de no máximo 10 por função ou método (1 de base, mais 1 por `if`, `case`, laço, `catch`, `&&`, `||`, ternário, `?.` e `??`): acima disso, extrair funções pequenas e testadas. Regras do vibe-coding-toolkit (github.com/soumatheusgomes/vibe-coding-toolkit), trazidas pelo proprietário.
+- Dividir por responsabilidade, nunca num número de linha qualquer; uma divisão de arquivo por commit, mantendo o que outros arquivos usam.
 - Repositório dividido em arquivos parciais por domínio: `RepositorioTocaEssa.Contas.cs`, `RepositorioTocaEssa.Apresentacoes.cs`, etc.
 - Operações privadas recebem `string token` e resolvem a conta internamente — nunca recebem `ArtistaId` do cliente.
 - Erros de negócio como exceções de domínio; mapeamento para HTTP em `TratamentoDeErros.cs`.
