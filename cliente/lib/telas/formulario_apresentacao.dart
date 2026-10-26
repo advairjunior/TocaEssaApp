@@ -124,6 +124,13 @@ class _FormularioApresentacaoState extends State<_FormularioApresentacao> {
                     descricao: 'Hinos com revezamento de quem canta.',
                     icone: Icons.church_rounded,
                   ),
+                  OpcaoSeletor(
+                    valor: TipoApresentacao.karaoke,
+                    titulo: 'Karaokê',
+                    descricao:
+                        'Ordem sorteada, vídeo no YouTube e nota da galera.',
+                    icone: Icons.mic_external_on_rounded,
+                  ),
                 ],
               ),
               const SizedBox(height: EspacoTocaEssa.grande),

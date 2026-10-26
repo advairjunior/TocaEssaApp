@@ -24,6 +24,7 @@ import 'escala_do_louvor.dart';
 import 'estatisticas_da_apresentacao.dart';
 import 'faixa_do_relogio.dart';
 import 'fila_musical_artista.dart';
+import 'noite_de_karaoke_dono.dart';
 import 'fundo_toca_essa.dart';
 import 'setlist_do_artista.dart';
 import 'gerenciar_repertorios.dart';
@@ -55,7 +56,16 @@ const _chaveAbaAberta = 'painel_aba_aberta';
 
 /// Telas do painel: o início e o perfil ficam fora de uma apresentação;
 /// as demais são as abas de uma apresentação aberta.
-enum _AbaPainel { inicio, perfil, fila, escala, setlist, estatisticas, mais }
+enum _AbaPainel {
+  inicio,
+  perfil,
+  fila,
+  escala,
+  karaoke,
+  setlist,
+  estatisticas,
+  mais
+}
 
 const _abasDaApresentacao = [
   _AbaPainel.fila,
@@ -67,10 +77,15 @@ const _abasDaApresentacao = [
 // No louvor não há pedidos: a escala de quem canta toma o lugar da fila.
 const _abasDoLouvor = [_AbaPainel.escala, _AbaPainel.setlist, _AbaPainel.mais];
 
+// No karaokê a noite (galera e ordem) é tudo; o QR fica na aba Mais.
+const _abasDoKaraoke = [_AbaPainel.karaoke, _AbaPainel.mais];
+
 List<_AbaPainel> _abasDe(Apresentacao? apresentacao) =>
-    apresentacao?.tipo == TipoApresentacao.louvor
-        ? _abasDoLouvor
-        : _abasDaApresentacao;
+    switch (apresentacao?.tipo) {
+      TipoApresentacao.louvor => _abasDoLouvor,
+      TipoApresentacao.karaoke => _abasDoKaraoke,
+      _ => _abasDaApresentacao,
+    };
 
 class PainelDoArtista extends StatefulWidget {
   const PainelDoArtista({

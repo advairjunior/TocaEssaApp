@@ -71,8 +71,9 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
         .obterApresentacaoPublica(widget.codigoInicial)
         .then((apresentacao) {
       _tipoApresentacao = apresentacao?.tipo;
-      // No louvor o roteiro faz tudo: pedidos e fila não existem.
-      if (_tipoApresentacao == TipoApresentacao.louvor && mounted) {
+      // No louvor o roteiro faz tudo, e no karaokê a noite: pedidos e fila
+      // não existem.
+      if (_semPedidos && mounted) {
         _atualizacaoAutomatica?.cancel();
         _tempoReal?.encerrar();
         setState(() {});
@@ -118,13 +119,16 @@ class _AreaDoPublicoState extends State<AreaDoPublico> {
     super.dispose();
   }
 
+  bool get _semPedidos =>
+      _tipoApresentacao == TipoApresentacao.louvor ||
+      _tipoApresentacao == TipoApresentacao.karaoke;
+
   @override
-  Widget build(
-          BuildContext context) =>
-      _tipoApresentacao == TipoApresentacao.louvor
-          ? RoteiroDoLouvorTela(
-              api: _api,
-              codigo: _codigoInicial,
-              hinoInicial: widget.hinoInicial)
-          : _construirArea(context);
+  Widget build(BuildContext context) => switch (_tipoApresentacao) {
+        TipoApresentacao.louvor => RoteiroDoLouvorTela(
+            api: _api, codigo: _codigoInicial, hinoInicial: widget.hinoInicial),
+        TipoApresentacao.karaoke =>
+          NoiteDeKaraokeDaGalera(api: _api, codigo: _codigoInicial),
+        _ => _construirArea(context),
+      };
 }

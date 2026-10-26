@@ -59,6 +59,11 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
                       selectedIcon: Icon(Icons.record_voice_over_rounded),
                       label: 'Escala',
                     ),
+                  _AbaPainel.karaoke => const NavigationDestination(
+                      icon: Icon(Icons.mic_external_on_outlined),
+                      selectedIcon: Icon(Icons.mic_external_on_rounded),
+                      label: 'Noite',
+                    ),
                   _AbaPainel.setlist => NavigationDestination(
                       icon: const Icon(Icons.playlist_play_rounded),
                       label: apresentacao.tipo == TipoApresentacao.louvor
@@ -103,9 +108,10 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
         ),
       );
 
-  // No louvor não há pedidos para receber ou pausar.
+  // No louvor e no karaokê não há pedidos para receber ou pausar.
   bool _semFaixaDePedidos(Apresentacao apresentacao) =>
-      apresentacao.tipo == TipoApresentacao.louvor;
+      apresentacao.tipo == TipoApresentacao.louvor ||
+      apresentacao.tipo == TipoApresentacao.karaoke;
 
   Widget _construirAba(BuildContext context, Apresentacao apresentacao) =>
       TrocaDeAba(
@@ -115,6 +121,8 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
               api: _api, apresentacao: apresentacao, incorporada: true),
           _AbaPainel.escala =>
             EscalaDoLouvor(api: _api, apresentacao: apresentacao),
+          _AbaPainel.karaoke =>
+            NoiteDeKaraokeDoDono(api: _api, apresentacao: apresentacao),
           _AbaPainel.setlist => SetlistDoArtista(
               api: _api,
               apresentacao: apresentacao,

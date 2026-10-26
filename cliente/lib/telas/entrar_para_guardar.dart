@@ -9,15 +9,24 @@ import 'componentes_formulario.dart';
 
 /// Entra (ou cria) a conta do público para o evento ficar em Meus
 /// encontros. Responde verdadeiro quando a conta ficou guardada no aparelho.
-Future<bool> entrarParaGuardar(BuildContext context, ApiTocaEssa api) async =>
+Future<bool> entrarParaGuardar(BuildContext context, ApiTocaEssa api,
+        {String titulo = 'Guardar na conta',
+        String explicacao = _explicacaoDoLouvor}) async =>
     await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => _EntrarParaGuardar(api: api),
+      builder: (_) =>
+          _EntrarParaGuardar(api: api, titulo: titulo, explicacao: explicacao),
     )) ??
     false;
 
+const _explicacaoDoLouvor = 'Com a conta, o louvor fica em Meus encontros, com '
+    'quem você foi e os hinos em que cantou.';
+
 class _EntrarParaGuardar extends StatefulWidget {
-  const _EntrarParaGuardar({required this.api});
+  const _EntrarParaGuardar(
+      {required this.api, required this.titulo, required this.explicacao});
   final ApiTocaEssa api;
+  final String titulo;
+  final String explicacao;
 
   @override
   State<_EntrarParaGuardar> createState() => _EntrarParaGuardarState();
@@ -70,14 +79,13 @@ class _EntrarParaGuardarState extends State<_EntrarParaGuardar> {
     final texto = Theme.of(context).textTheme;
     const entreCampos = SizedBox(height: EspacoTocaEssa.base);
     return Scaffold(
-      appBar: AppBar(title: const Text('Guardar na conta')),
+      appBar: AppBar(title: Text(widget.titulo)),
       body: ConteudoMobile(
         filho: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Com a conta, o louvor fica em Meus encontros, com quem você '
-              'foi e os hinos em que cantou.',
+              widget.explicacao,
               style: texto.bodyMedium
                   ?.copyWith(color: CoresTocaEssa.textoSecundario),
             ),

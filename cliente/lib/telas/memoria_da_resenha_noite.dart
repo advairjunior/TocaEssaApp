@@ -302,6 +302,8 @@ class _LinhaAbrirResenha extends StatelessWidget {
                             TipoApresentacao.publica => 'Abrir o show completo',
                             TipoApresentacao.resenhaEntreAmigos =>
                               'Abrir a resenha completa',
+                            TipoApresentacao.karaoke =>
+                              'Abrir a noite de karaokê',
                           },
                           style: Theme.of(context).textTheme.titleMedium),
                       Text(
@@ -311,6 +313,7 @@ class _LinhaAbrirResenha extends StatelessWidget {
                             'Fila e perfil do artista',
                           TipoApresentacao.resenhaEntreAmigos =>
                             'Fila, galera e perfil do artista',
+                          TipoApresentacao.karaoke => 'A ordem e a galera',
                         },
                         style: TextStyle(
                           fontSize: 13,

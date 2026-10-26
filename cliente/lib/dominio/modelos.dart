@@ -6,6 +6,7 @@ part 'modelos_relogio.dart';
 part 'modelos_louvor.dart';
 part 'vocabulario.dart';
 part 'modelos_pedidos.dart';
+part 'modelos_karaoke.dart';
 
 class PerfilArtistico {
   const PerfilArtistico(
@@ -197,11 +198,13 @@ enum StatusApresentacao {
 enum TipoApresentacao {
   publica,
   resenhaEntreAmigos,
-  louvor;
+  louvor,
+  karaoke;
 
   factory TipoApresentacao.deJson(String valor) => switch (valor) {
         'ResenhaEntreAmigos' => resenhaEntreAmigos,
         'Louvor' => louvor,
+        'Karaoke' => karaoke,
         _ => publica,
       };
 
@@ -209,18 +212,21 @@ enum TipoApresentacao {
         publica => 'Publica',
         resenhaEntreAmigos => 'ResenhaEntreAmigos',
         louvor => 'Louvor',
+        karaoke => 'Karaoke',
       };
 
   String get rotulo => switch (this) {
         publica => 'Apresentação Pública',
         resenhaEntreAmigos => 'Resenha entre Amigos',
         louvor => 'Louvor',
+        karaoke => 'Noite de Karaokê',
       };
 
   String get rotuloCurto => switch (this) {
         publica => 'Pública',
         resenhaEntreAmigos => 'Resenha',
         louvor => 'Louvor',
+        karaoke => 'Karaokê',
       };
 
   /// Como o encontro aparece na memória de quem esteve lá.
@@ -228,6 +234,7 @@ enum TipoApresentacao {
         publica => 'Show',
         resenhaEntreAmigos => 'Resenha',
         louvor => 'Louvor',
+        karaoke => 'Karaokê',
       };
 
   /// "Voltar para o show", "a resenha" ou "o louvor".
@@ -235,6 +242,7 @@ enum TipoApresentacao {
         publica => 'Voltar para o show',
         resenhaEntreAmigos => 'Voltar para a resenha',
         louvor => 'Voltar para o louvor',
+        karaoke => 'Voltar para o karaokê',
       };
 
   String get descricao => switch (this) {
@@ -243,6 +251,7 @@ enum TipoApresentacao {
           'Encontro identificado, preparado para perfis e histórico entre amigos.',
         louvor =>
           'Hinos com revezamento: cada um acompanha a letra e a sua vez.',
+        karaoke => 'Ordem sorteada, vídeo no YouTube e nota da galera.',
       };
 }
 

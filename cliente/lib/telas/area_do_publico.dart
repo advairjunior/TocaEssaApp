@@ -21,6 +21,7 @@ import 'instalar_app.dart';
 import 'componentes_memoria.dart';
 import 'fundo_toca_essa.dart';
 import 'progresso_do_publico.dart';
+import 'noite_de_karaoke_galera.dart';
 import 'roteiro_do_louvor.dart';
 import 'stories_do_show.dart';
 import 'perfil_participante.dart';

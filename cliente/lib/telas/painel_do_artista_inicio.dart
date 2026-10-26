@@ -56,9 +56,11 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
           salvando: _salvando,
           abrir: () => _abrirApresentacao(apresentacao),
           abrirFila: () => _abrirApresentacao(apresentacao,
-              aba: apresentacao.tipo == TipoApresentacao.louvor
-                  ? _AbaPainel.setlist
-                  : _AbaPainel.fila),
+              aba: switch (apresentacao.tipo) {
+                TipoApresentacao.louvor => _AbaPainel.setlist,
+                TipoApresentacao.karaoke => _AbaPainel.karaoke,
+                _ => _AbaPainel.fila,
+              }),
           mostrarCodigo: () => _mostrarCodigo(apresentacao),
           encerrar: () => _alterarStatusApresentacao(
             apresentacao,
