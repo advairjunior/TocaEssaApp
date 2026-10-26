@@ -12,6 +12,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'componentes_memoria.dart';
+import 'foto_do_cartao.dart';
 import 'publico_no_app.dart';
 
 part 'estatisticas_da_apresentacao_componentes.dart';

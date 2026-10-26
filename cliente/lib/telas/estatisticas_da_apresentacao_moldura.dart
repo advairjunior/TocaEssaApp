@@ -79,7 +79,7 @@ class _MolduraDoCartao extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                fundo ?? CapaDaNoite(endereco: enderecoFoto),
+                fundo ?? FotoDoCartao(endereco: enderecoFoto),
                 const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
