@@ -31,6 +31,7 @@ class MusicaDoRepertorio {
     this.artista,
     this.tom,
     required this.ordem,
+    this.linkDoVideo,
   });
 
   final String id;
@@ -39,6 +40,8 @@ class MusicaDoRepertorio {
   final String? artista;
   final String? tom;
   final int ordem;
+  // Vídeo de karaokê no YouTube, vindo da playlist importada.
+  final String? linkDoVideo;
 
   factory MusicaDoRepertorio.deJson(Map<String, dynamic> json) =>
       MusicaDoRepertorio(
@@ -48,11 +51,37 @@ class MusicaDoRepertorio {
         artista: json['artista'] as String?,
         tom: json['tom'] as String?,
         ordem: json['ordem'] as int,
+        linkDoVideo: json['linkDoVideo'] as String?,
       );
 }
 
-/// Música da setlist, hino ou pedido a caminho de um repertório.
-typedef MusicaParaRepertorio = ({String titulo, String? artista, String? tom});
+/// Música da setlist, hino, pedido ou playlist a caminho de um repertório.
+typedef MusicaParaRepertorio = ({
+  String titulo,
+  String? artista,
+  String? tom,
+  String? linkDoVideo,
+});
+
+/// Playlist do YouTube lida pelo servidor: o nome (sugestão para o
+/// repertório) e os vídeos com o título já limpo.
+class PlaylistLida {
+  const PlaylistLida({required this.titulo, required this.musicas});
+
+  final String titulo;
+  final List<({String titulo, String linkDoVideo})> musicas;
+
+  factory PlaylistLida.deJson(Map<String, dynamic> json) => PlaylistLida(
+        titulo: json['titulo'] as String,
+        musicas: [
+          for (final musica in json['musicas'] as List<dynamic>)
+            (
+              titulo: (musica as Map<String, dynamic>)['titulo'] as String,
+              linkDoVideo: musica['linkDoVideo'] as String,
+            ),
+        ],
+      );
+}
 
 class MusicasAdicionadas {
   const MusicasAdicionadas({

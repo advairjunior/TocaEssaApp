@@ -83,8 +83,8 @@ Future<List<http.Request>> _abrir(
 }
 
 const _duas = <MusicaParaRepertorio>[
-  (titulo: 'evidencias', artista: null, tom: 'G'),
-  (titulo: 'Nova', artista: 'Banda', tom: null),
+  (titulo: 'evidencias', artista: null, tom: 'G', linkDoVideo: null),
+  (titulo: 'Nova', artista: 'Banda', tom: null, linkDoVideo: null),
 ];
 
 void main() {
@@ -142,7 +142,9 @@ void main() {
   testWidgets('quando todas já estavam, diz que não mudou nada',
       (tester) async {
     await _abrir(tester,
-        musicas: [(titulo: 'Evidências', artista: null, tom: null)],
+        musicas: [
+          (titulo: 'Evidências', artista: null, tom: null, linkDoVideo: null)
+        ],
         jaEstavam: 1);
 
     expect(find.text('Adicionar "Evidências" a…'), findsOneWidget);

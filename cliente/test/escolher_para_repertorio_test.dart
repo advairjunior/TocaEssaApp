@@ -13,7 +13,7 @@ const _comoJson = {'content-type': 'application/json; charset=utf-8'};
 OpcaoParaRepertorio _opcao(String titulo,
         {String? detalhe, bool marcada = true}) =>
     OpcaoParaRepertorio(
-      musica: (titulo: titulo, artista: null, tom: null),
+      musica: (titulo: titulo, artista: null, tom: null, linkDoVideo: null),
       detalhe: detalhe,
       marcada: marcada,
     );

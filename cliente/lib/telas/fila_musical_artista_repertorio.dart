@@ -18,8 +18,12 @@ extension _RepertorioDaFila on _FilaMusicalArtistaState {
           : () => _adicionarAoRepertorio(pedido);
 
   // O tom do pedido é o de quem pediu, não o da banda.
-  MusicaParaRepertorio _musicaDo(GrupoPedidoMusical pedido) =>
-      (titulo: pedido.musica, artista: pedido.artista, tom: null);
+  MusicaParaRepertorio _musicaDo(GrupoPedidoMusical pedido) => (
+        titulo: pedido.musica,
+        artista: pedido.artista,
+        tom: null,
+        linkDoVideo: null
+      );
 
   Future<void> _adicionarAoRepertorio(GrupoPedidoMusical pedido) async {
     final resultado = await adicionarAoRepertorio(context,

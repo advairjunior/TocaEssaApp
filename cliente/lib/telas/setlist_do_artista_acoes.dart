@@ -144,6 +144,7 @@ extension _AcoesDaSetlist on _SetlistDoArtistaState {
             titulo: item.titulo,
             artista: item.artista,
             tom: item.tom,
+            linkDoVideo: null,
           )),
       ],
     );

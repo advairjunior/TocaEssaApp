@@ -23,6 +23,22 @@ Future<String?> _pedirNome(
   return valores?.first;
 }
 
+Future<String?> _pedirLinkDaPlaylist(BuildContext context) async {
+  final valores = await _abrirFormulario(
+    context,
+    titulo: 'Importar playlist do YouTube',
+    rotuloConfirmar: 'Ler playlist',
+    campos: const [
+      _CampoDoFormulario(
+        rotulo: 'Link da playlist',
+        dica: 'Cole o link do Compartilhar do YouTube',
+        obrigatorio: true,
+      ),
+    ],
+  );
+  return valores?.first;
+}
+
 Future<(String titulo, String? artista, String? tom)?> _pedirMusica(
   BuildContext context, {
   String? tituloInicial,

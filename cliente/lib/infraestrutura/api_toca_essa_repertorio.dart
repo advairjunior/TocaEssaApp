@@ -85,12 +85,25 @@ mixin _ApiRepertorio on _ApiTocaEssaBase {
               'titulo': musica.titulo,
               'artista': musica.artista,
               'tom': musica.tom,
+              if (musica.linkDoVideo != null) 'linkDoVideo': musica.linkDoVideo,
             },
         ],
       }),
     );
     _validar(resposta);
     return MusicasAdicionadas.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
+  /// O servidor lê a playlist do YouTube e devolve os títulos já limpos.
+  Future<PlaylistLida> lerPlaylistDoYouTube(String link) async {
+    final resposta = await _cliente.post(
+      Uri.parse('$_enderecoBase/api/artista/repertorios/playlist'),
+      headers: _cabecalhos(token: _tokenArtista, json: true),
+      body: jsonEncode({'link': link}),
+    );
+    _validar(resposta);
+    return PlaylistLida.deJson(
         jsonDecode(resposta.body) as Map<String, dynamic>);
   }
 

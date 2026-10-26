@@ -37,6 +37,7 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
   // Pedidas pelo público nos shows e ainda fora de todos os repertórios.
   List<PedidaForaDoRepertorio> _pedidas = [];
   bool _carregando = true;
+  bool _lendoPlaylist = false;
 
   @override
   void initState() {
@@ -62,7 +63,12 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
       opcoes: [
         for (final pedida in _pedidas)
           OpcaoParaRepertorio(
-            musica: (titulo: pedida.musica, artista: pedida.artista, tom: null),
+            musica: (
+              titulo: pedida.musica,
+              artista: pedida.artista,
+              tom: null,
+              linkDoVideo: null
+            ),
             detalhe: pedida.resumo,
           ),
       ],
@@ -96,6 +102,41 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
     }
   }
 
+  /// Lê a playlist de karaokê do YouTube e leva os vídeos, já com o título
+  /// limpo, para um repertório: importar de novo só traz os novos.
+  Future<void> _importarPlaylist() async {
+    final link = await _pedirLinkDaPlaylist(context);
+    if (link == null || !mounted) return;
+    setState(() => _lendoPlaylist = true);
+    try {
+      final playlist = await widget.api.lerPlaylistDoYouTube(link);
+      if (!mounted) return;
+      setState(() => _lendoPlaylist = false);
+      await escolherParaRepertorio(
+        context,
+        api: widget.api,
+        titulo: 'Importar "${playlist.titulo}"',
+        nomeSugerido: playlist.titulo,
+        opcoes: [
+          for (final video in playlist.musicas)
+            OpcaoParaRepertorio(
+              musica: (
+                titulo: video.titulo,
+                artista: null,
+                tom: null,
+                linkDoVideo: video.linkDoVideo
+              ),
+            ),
+        ],
+      );
+      if (mounted) await _carregar();
+    } catch (erro) {
+      if (mounted) mostrarErro(context, erro);
+    } finally {
+      if (mounted) setState(() => _lendoPlaylist = false);
+    }
+  }
+
   void _abrirDetalhe(Repertorio rep) {
     Navigator.push<void>(
       context,
@@ -112,7 +153,18 @@ class _GerenciarRepertoriosState extends State<GerenciarRepertorios> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Meus repertórios'),
+          bottom: _lendoPlaylist
+              ? const PreferredSize(
+                  preferredSize: Size.fromHeight(2),
+                  child: LinearProgressIndicator(minHeight: 2),
+                )
+              : null,
           actions: [
+            IconButton(
+              tooltip: 'Importar playlist do YouTube',
+              icon: const Icon(Icons.smart_display_outlined),
+              onPressed: _lendoPlaylist ? null : _importarPlaylist,
+            ),
             IconButton(
               tooltip: 'Novo repertório',
               icon: const Icon(Icons.add_rounded),
