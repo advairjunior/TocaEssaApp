@@ -18,9 +18,9 @@ public sealed partial class RepositorioTocaEssa
     {
         var apresentacao = ObterApresentacaoPublica(codigo)
             ?? throw new ApresentacaoNaoEncontradaException();
-        _ = ObterRegistroPublico(tokenPublico)
+        var publico = ObterRegistroPublico(tokenPublico)
             ?? throw new IdentificacaoPublicaObrigatoriaException();
-        return MontarNoiteDeKaraoke(ExigirKaraoke(apresentacao));
+        return MontarNoiteDeKaraoke(ExigirKaraoke(apresentacao), publico.Id);
     }
 
     public NoiteDeKaraoke ConfigurarKaraoke(
@@ -91,13 +91,14 @@ public sealed partial class RepositorioTocaEssa
         _karaokes.GetValueOrDefault(apresentacaoId) ?? new EstadoDoKaraoke();
 
     private NoiteDeKaraoke GravarKaraoke(
-        Apresentacao apresentacao, Func<EstadoDoKaraoke, EstadoDoKaraoke> mudar)
+        Apresentacao apresentacao, Func<EstadoDoKaraoke, EstadoDoKaraoke> mudar,
+        Guid? quem = null)
     {
         lock (_sincronizacao)
         {
             _karaokes[apresentacao.Id] = mudar(EstadoDoKaraoke(apresentacao.Id));
             SalvarEstado();
-            return MontarNoiteDeKaraoke(apresentacao);
+            return MontarNoiteDeKaraoke(apresentacao, quem);
         }
     }
 
@@ -111,7 +112,8 @@ public sealed partial class RepositorioTocaEssa
     private IReadOnlyList<Guid> OrdemAtual(Guid apresentacaoId, EstadoDoKaraoke estado) =>
         OrdemDoKaraoke.Montar(estado.Sorteados, GaleraPorChegada(apresentacaoId), estado.Retirados);
 
-    private NoiteDeKaraoke MontarNoiteDeKaraoke(Apresentacao apresentacao)
+    /// [quem] é a pessoa da galera que está vendo (a nota dela na vez).
+    private NoiteDeKaraoke MontarNoiteDeKaraoke(Apresentacao apresentacao, Guid? quem = null)
     {
         var estado = EstadoDoKaraoke(apresentacao.Id);
         var naGalera = GaleraPorChegada(apresentacao.Id).ToHashSet();
@@ -124,13 +126,18 @@ public sealed partial class RepositorioTocaEssa
             !estado.Comecou,
             [.. ordem.Select(Pessoa)],
             [.. estado.Retirados.Where(naGalera.Contains).Select(Pessoa)],
-            Cantando(estado),
-            RegrasDaVez.Proximo(ordem, estado.Ultima));
+            Cantando(estado, quem),
+            RegrasDaVez.Proximo(ordem, estado.Ultima),
+            [.. PlacarDoKaraoke.Calcular(estado.Vezes)
+                .Select(linha => linha with { Nome = NomeNoKaraoke(linha.PublicoId) })],
+            PlacarDoKaraoke.VozDaNoite(estado.Vezes));
     }
 
-    private CantandoNoKaraoke? Cantando(EstadoDoKaraoke estado) =>
+    private CantandoNoKaraoke? Cantando(EstadoDoKaraoke estado, Guid? quem) =>
         estado.EmAndamento is { } vez
-            ? new CantandoNoKaraoke(vez.PublicoId, NomeNoKaraoke(vez.PublicoId), vez.Musica, vez.ComecouEm)
+            ? new CantandoNoKaraoke(vez.PublicoId, NomeNoKaraoke(vez.PublicoId), vez.Musica,
+                vez.ComecouEm, PlacarDoKaraoke.Media(vez.Notas.Values), vez.Notas.Count,
+                quem is { } id && vez.Notas.TryGetValue(id, out var nota) ? nota : null)
             : null;
 
     private string NomeNoKaraoke(Guid publicoId) =>

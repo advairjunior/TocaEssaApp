@@ -123,6 +123,12 @@ public sealed class NoiteDeKaraokeApiTestes
             var cantando = (await comecou.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("cantando");
             Assert.Equal("Evidências", cantando.GetProperty("musica").GetProperty("titulo").GetString());
             Assert.Equal(HttpStatusCode.OK, (await bia.GetAsync($"{rota}/playlist")).StatusCode);
+            var nota = await bia.PostAsJsonAsync($"{rota}/nota", new { estrelas = 4 });
+            nota.EnsureSuccessStatusCode();
+            Assert.Equal(4, (await nota.Content.ReadFromJsonAsync<JsonElement>())
+                .GetProperty("cantando").GetProperty("minhaNota").GetInt32());
+            Assert.Equal(HttpStatusCode.Conflict,
+                (await ana.PostAsJsonAsync($"{rota}/nota", new { estrelas = 5 })).StatusCode);
 
             (await ana.PostAsync($"{rota}/vez/fim", null)).EnsureSuccessStatusCode();
             (await dono.PostAsync($"/api/apresentacoes/{id}/karaoke/vez/fim", null)).EnsureSuccessStatusCode();

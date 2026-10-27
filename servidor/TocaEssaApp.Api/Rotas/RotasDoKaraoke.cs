@@ -99,5 +99,10 @@ public static class RotasDoKaraoke
 
         app.MapPost($"{Rota}/vez/fim", (string codigo, HttpRequest http, RepositorioTocaEssa repositorio) =>
             Results.Ok(repositorio.TerminarVezNoKaraoke(codigo, ObterToken(http) ?? string.Empty)));
+
+        app.MapPost($"{Rota}/nota", (
+            string codigo, NotaDaGalera requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.DarNotaNoKaraoke(
+                codigo, ObterToken(http) ?? string.Empty, requisicao.Estrelas)));
     }
 }

@@ -162,7 +162,9 @@ public sealed record EncontroDoPublico(
     IReadOnlyCollection<PessoaDoEncontro> Companhia,
     // No louvor: quem a pessoa foi no roteiro e em quantos hinos tinha parte.
     string? NomeNoLouvor = null,
-    int HinosNoLouvor = 0);
+    int HinosNoLouvor = 0,
+    // No karaokê: quantas músicas cantou, a média e se foi a Voz da noite.
+    KaraokeDoPublico? NoKaraoke = null);
 
 /// Corpo opcional de quem entra no evento; o nome só vale no louvor.
 public sealed record RegistrarParticipacaoNoEvento(string? Nome);

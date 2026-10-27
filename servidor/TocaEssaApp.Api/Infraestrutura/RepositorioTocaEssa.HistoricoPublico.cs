@@ -66,7 +66,8 @@ public sealed partial class RepositorioTocaEssa
             AgruparMusicas(meus),
             companhia,
             nomeNoLouvor,
-            nomeNoLouvor is null ? 0 : ContarHinosDaPessoa(apresentacao, nomeNoLouvor));
+            nomeNoLouvor is null ? 0 : ContarHinosDaPessoa(apresentacao, nomeNoLouvor),
+            KaraokeDoPublico(apresentacao, publicoId));
     }
 
     /// Hinos em que a pessoa tem alguma parte no microfone ou um solo.

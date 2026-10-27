@@ -16,11 +16,17 @@ public sealed record VezDoKaraoke(
     MusicaDoKaraoke Musica,
     int Indice,
     DateTimeOffset ComecouEm,
-    DateTimeOffset? TerminouEm = null);
+    DateTimeOffset? TerminouEm = null)
+{
+    /// A nota de 1 a 5 de cada pessoa da galera que votou.
+    public Dictionary<Guid, int> Notas { get; init; } = [];
+}
 
 /// Quem está cantando agora, como a galera vê.
+/// [MinhaNota] é a de quem está vendo, se já votou.
 public sealed record CantandoNoKaraoke(
-    Guid PublicoId, string Nome, MusicaDoKaraoke Musica, DateTimeOffset ComecouEm);
+    Guid PublicoId, string Nome, MusicaDoKaraoke Musica, DateTimeOffset ComecouEm,
+    double? Media = null, int Votos = 0, int? MinhaNota = null);
 
 /// [MusicaId] é da playlist da noite; sem ele, [Titulo] e o link opcional.
 public sealed record EscolherMusicaDoKaraoke(Guid? MusicaId, string? Titulo, string? LinkDoVideo);
@@ -69,3 +75,5 @@ public static partial class RegrasDaVez
     [GeneratedRegex(@"^https?://((www|m)\.)?(youtube\.com|youtu\.be)/\S+$", RegexOptions.IgnoreCase)]
     private static partial Regex LinkDoYouTube();
 }
+
+public sealed record NotaDaGalera(int Estrelas);

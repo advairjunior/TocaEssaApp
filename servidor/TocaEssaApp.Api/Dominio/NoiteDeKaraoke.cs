@@ -27,7 +27,9 @@ public sealed record NoiteDeKaraoke(
     IReadOnlyList<PessoaDoKaraoke> Ordem,
     IReadOnlyList<PessoaDoKaraoke> ForaDaOrdem,
     CantandoNoKaraoke? Cantando = null,
-    Guid? Proximo = null);
+    Guid? Proximo = null,
+    IReadOnlyList<LinhaDoPlacar>? Placar = null,
+    Guid? VozDaNoite = null);
 
 /// A ordem de quem canta, sem banco: o servidor guarda só os sorteados e os
 /// tirados; quem chega depois entra no fim, pela ordem de chegada.

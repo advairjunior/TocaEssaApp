@@ -75,3 +75,12 @@ public sealed class PlaylistDoKaraokeAcabouException()
 
 public sealed class OrdemAindaNaoSorteadaException()
     : ErroDoKaraokeException(409, "O dono da noite ainda vai sortear a ordem de quem canta.");
+
+public sealed class NotaDoKaraokeInvalidaException()
+    : ErroDoKaraokeException(400, "A nota vai de 1 a 5 estrelas.");
+
+public sealed class NinguemCantandoException()
+    : ErroDoKaraokeException(409, "Ninguém está cantando agora.");
+
+public sealed class NaoVotaNaPropriaVezException()
+    : ErroDoKaraokeException(409, "Na sua vez, a nota é da galera.");

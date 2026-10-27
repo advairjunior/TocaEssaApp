@@ -23,7 +23,7 @@ public sealed partial class RepositorioTocaEssa
         var (apresentacao, publicoId) = ExigirNaGalera(codigo, token);
         ExigirModo(apresentacao, ModoDasMusicas.Livre);
         var musica = MusicaEscolhida(apresentacao, escolha);
-        return GravarKaraoke(apresentacao, estado => estado.ComEscolha(publicoId, musica));
+        return GravarKaraoke(apresentacao, estado => estado.ComEscolha(publicoId, musica), publicoId);
     }
 
     /// Sorteia da playlist; girar de novo é o "não conheço, sortear outra".
@@ -42,7 +42,7 @@ public sealed partial class RepositorioTocaEssa
             {
                 Mostradas = new(estado.Mostradas) { [publicoId] = [.. mostradas, musica.Chave] }
             };
-        });
+        }, publicoId);
     }
 
     /// O Tocar na TV: só o próximo, já com a música. Encerra a vez de quem
@@ -65,7 +65,7 @@ public sealed partial class RepositorioTocaEssa
             {
                 Vezes = [.. estado.VezesEncerradas(agora), vez]
             };
-        });
+        }, publicoId);
     }
 
     /// O "Terminei" de quem está cantando.
@@ -76,7 +76,7 @@ public sealed partial class RepositorioTocaEssa
         {
             if (estado.EmAndamento?.PublicoId != publicoId) throw new AindaNaoEhSuaVezException();
             return estado with { Vezes = estado.VezesEncerradas(DateTimeOffset.UtcNow) };
-        });
+        }, publicoId);
     }
 
     /// O dono destrava uma vez esquecida aberta.
