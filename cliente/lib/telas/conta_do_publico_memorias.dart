@@ -78,7 +78,8 @@ class _CartaoMemoria extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final apresentacao = encontro.apresentacao;
-    final louvor = encontro.resumoDoLouvor;
+    // No louvor, quem a pessoa foi; no karaokê, quanto cantou e a nota.
+    final louvor = encontro.resumoDoLouvor ?? encontro.resumoDoKaraoke;
     final temRodape = encontro.minhasMusicas.isNotEmpty ||
         encontro.companhia.isNotEmpty ||
         louvor != null;

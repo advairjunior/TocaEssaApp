@@ -29,8 +29,12 @@ Map<String, dynamic> _noite({
   String? linkDaAna,
   Map<String, dynamic>? cantando,
   String? proximo = 'p1',
+  List<Map<String, dynamic>> placar = const [],
+  String? vozDaNoite,
 }) =>
     {
+      'placar': placar,
+      'vozDaNoite': vozDaNoite,
       'repertorioId': 'r1',
       'modo': modo,
       'sorteada': true,
@@ -44,11 +48,16 @@ Map<String, dynamic> _noite({
       'proximo': proximo,
     };
 
-Map<String, dynamic> _cantando(String id, String nome, String musica) => {
+Map<String, dynamic> _cantando(String id, String nome, String musica,
+        {double? media, int votos = 0, int? minhaNota}) =>
+    {
       'publicoId': id,
       'nome': nome,
       'musica': {'titulo': musica, 'linkDoVideo': null},
       'comecouEm': '2026-10-30T23:00:00Z',
+      'media': media,
+      'votos': votos,
+      'minhaNota': minhaNota,
     };
 
 typedef _Resposta = Map<String, dynamic> Function(http.Request);
@@ -57,6 +66,7 @@ Future<({List<http.Request> requisicoes, List<Uri> abertas})> _abrir(
   WidgetTester tester, {
   required Map<String, dynamic> noite,
   Map<String, _Resposta> respostas = const {},
+  String status = 'Agendada',
 }) async {
   SharedPreferences.setMockInitialValues({'token_do_publico': 'TOKEN-ANA'});
   final requisicoes = <http.Request>[];
@@ -95,6 +105,7 @@ Future<({List<http.Request> requisicoes, List<Uri> abertas})> _abrir(
             'codigo': 'KARA01',
             'perfilArtistico': {'id': 'pa', 'nomeArtistico': 'Advair'},
             'tipo': 'Karaoke',
+            'status': status,
           }),
           200,
           headers: _json),
@@ -248,4 +259,74 @@ void main() {
     expect(find.text('Não conheço, sortear outra'), findsNothing);
     expect(find.text('Tocar na TV'), findsOneWidget);
   });
+
+  testWidgets('a galera dá a nota de quem está cantando e vê a média',
+      (tester) async {
+    final teste = await _abrir(tester,
+        noite: _noite(
+            cantando: _cantando('p2', 'Bia', 'Trem-Bala', media: 4, votos: 1)),
+        respostas: {
+          'POST $_rota/nota': (_) => _noite(
+              cantando: _cantando('p2', 'Bia', 'Trem-Bala',
+                  media: 4.5, votos: 2, minhaNota: 5)),
+        });
+
+    expect(find.text('★ 4,0 · 1 voto'), findsOneWidget);
+    await tester.tap(find.byTooltip('Dar 5 estrelas'));
+    await tester.pumpAndSettle();
+
+    final envio = _enviadas(teste.requisicoes, '$_rota/nota').single;
+    expect(jsonDecode(envio.body), {'estrelas': 5});
+    expect(find.text('★ 4,5 · 2 votos'), findsOneWidget);
+  });
+
+  testWidgets('quem canta vê a nota da galera na hora', (tester) async {
+    await _abrir(tester,
+        noite: _noite(
+            cantando:
+                _cantando('p1', 'Ana', 'Evidências', media: 4.8, votos: 5),
+            proximo: 'p2'));
+
+    expect(find.text('Nota da galera: ★ 4,8 · 5 votos'), findsOneWidget);
+    expect(find.byTooltip('Dar 5 estrelas'), findsNothing);
+  });
+
+  testWidgets('placar da noite com quem está liderando', (tester) async {
+    await _abrir(tester,
+        noite: _noite(placar: _placar, vozDaNoite: 'p2', proximo: null));
+    await tester.scrollUntilVisible(find.text('Placar da noite'), 300);
+
+    expect(find.text('Liderando'), findsOneWidget);
+    expect(find.text('2 músicas · ★ 4,6'), findsOneWidget);
+    expect(find.text('1 música · sem nota'), findsOneWidget);
+  });
+
+  testWidgets('noite encerrada mostra a Voz da noite', (tester) async {
+    await _abrir(tester,
+        noite: _noite(placar: _placar, vozDaNoite: 'p2', proximo: null),
+        status: 'Encerrada');
+    await tester.scrollUntilVisible(find.text('Placar da noite'), 300);
+
+    expect(find.text('Voz da noite'), findsOneWidget);
+    expect(find.text('Liderando'), findsNothing);
+  });
 }
+
+const _placar = [
+  {
+    'publicoId': 'p2',
+    'nome': 'Bia',
+    'musicas': 2,
+    'media': 4.6,
+    'votos': 9,
+    'melhorMusica': 'Trem-Bala'
+  },
+  {
+    'publicoId': 'p1',
+    'nome': 'Ana',
+    'musicas': 1,
+    'media': null,
+    'votos': 0,
+    'melhorMusica': null
+  },
+];

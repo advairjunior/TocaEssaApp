@@ -7,6 +7,7 @@ import '../tema/tema_toca_essa.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'gerenciar_repertorios.dart';
+import 'noite_de_karaoke_placar.dart';
 
 part 'noite_de_karaoke_dono_linhas.dart';
 
@@ -256,6 +257,10 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
             ),
         ]),
       ],
+      PlacarDaNoite(
+          noite: noite,
+          encerrada:
+              widget.apresentacao.status == StatusApresentacao.encerrada),
     ];
   }
 

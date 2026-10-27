@@ -40,27 +40,6 @@ class _AcoesDaVez {
   final VoidCallback terminar;
 }
 
-class _CantandoAgora extends StatelessWidget {
-  const _CantandoAgora({required this.cantando});
-  final CantandoNoKaraoke cantando;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: EspacoTocaEssa.base),
-        child: Row(
-          children: [
-            const Icon(Icons.mic_rounded, color: CoresTocaEssa.rosa),
-            const SizedBox(width: EspacoTocaEssa.pequeno),
-            Expanded(
-              child: Text(
-                  'Cantando agora: ${cantando.nome} · ${cantando.musica.titulo}',
-                  style: Theme.of(context).textTheme.titleSmall),
-            ),
-          ],
-        ),
-      );
-}
-
 class _CartaoDaVez extends StatelessWidget {
   const _CartaoDaVez({
     required this.noite,
@@ -154,9 +133,20 @@ class _BotoesDeQuemCanta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final musica = noite.cantando?.musica;
+    final nota =
+        mediaComVotos(noite.cantando?.media, noite.cantando?.votos ?? 0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // A nota da galera chega na hora, enquanto a pessoa canta.
+        if (nota != null) ...[
+          const SizedBox(height: EspacoTocaEssa.pequeno),
+          Text('Nota da galera: $nota',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: CoresTocaEssa.ouro)),
+        ],
         const SizedBox(height: EspacoTocaEssa.base),
         FilledButton.icon(
           onPressed: acoes.ocupado ? null : acoes.terminar,

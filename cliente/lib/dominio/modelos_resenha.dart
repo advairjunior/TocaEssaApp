@@ -90,6 +90,7 @@ class EncontroDoPublico {
     this.companhia = const [],
     this.nomeNoLouvor,
     this.hinosNoLouvor = 0,
+    this.noKaraoke,
   });
 
   final Apresentacao apresentacao;
@@ -110,6 +111,20 @@ class EncontroDoPublico {
       : 'Como $nomeNoLouvor · em $hinosNoLouvor '
           '${hinosNoLouvor == 1 ? 'hino' : 'hinos'}';
 
+  /// No karaokê: quantas músicas cantou, a nota e se foi a Voz da noite.
+  final KaraokeDoPublico? noKaraoke;
+
+  /// "Cantei 2 músicas · nota 4,6 · Voz da noite"; nulo sem música cantada.
+  String? get resumoDoKaraoke {
+    final karaoke = noKaraoke;
+    if (karaoke == null || karaoke.musicas == 0) return null;
+    return [
+      'Cantei ${karaoke.musicas} ${karaoke.musicas == 1 ? 'música' : 'músicas'}',
+      if (karaoke.media case final media?) 'nota ${notaDoKaraoke(media)}',
+      if (karaoke.vozDaNoite) 'Voz da noite',
+    ].join(' · ');
+  }
+
   factory EncontroDoPublico.deJson(Map<String, dynamic> json) =>
       EncontroDoPublico(
         apresentacao:
@@ -126,5 +141,6 @@ class EncontroDoPublico {
             .toList(),
         nomeNoLouvor: json['nomeNoLouvor'] as String?,
         hinosNoLouvor: json['hinosNoLouvor'] as int? ?? 0,
+        noKaraoke: KaraokeDoPublico.deJson(json['noKaraoke']),
       );
 }

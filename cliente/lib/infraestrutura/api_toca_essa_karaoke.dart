@@ -102,6 +102,15 @@ mixin _ApiKaraoke on _ApiTocaEssaBase {
           Uri.parse('${_rotaDaGalera(codigo)}/vez/fim'),
           headers: _cabecalhos(token: token)));
 
+  /// A nota de 1 a 5 para quem está cantando; votar de novo troca.
+  Future<NoiteDeKaraoke> darNotaNoKaraoke(
+          String codigo, String token, int estrelas) async =>
+      _lerNoite(await _cliente.post(
+        Uri.parse('${_rotaDaGalera(codigo)}/nota'),
+        headers: _cabecalhos(token: token, json: true),
+        body: jsonEncode({'estrelas': estrelas}),
+      ));
+
   NoiteDeKaraoke _lerNoite(http.Response resposta) {
     _validar(resposta);
     return NoiteDeKaraoke.deJson(

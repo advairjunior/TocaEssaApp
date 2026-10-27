@@ -10,8 +10,10 @@ import 'componentes.dart';
 import 'componentes_lista.dart';
 import 'entrar_para_guardar.dart';
 import 'escolher_musica_do_karaoke.dart';
+import 'noite_de_karaoke_placar.dart';
 
 part 'noite_de_karaoke_galera_vez.dart';
+part 'noite_de_karaoke_galera_nota.dart';
 
 void _abrirNoYouTube(Uri url) => abrirUrlExterna(url);
 
@@ -93,9 +95,16 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
     final token = _token;
     if (token == null) return;
     try {
-      final noite =
-          await widget.api.obterNoiteDeKaraokePublica(widget.codigo, token);
-      if (mounted) setState(() => _noite = noite);
+      // A apresentação junto: encerrada, o placar mostra a Voz da noite.
+      final (noite, apresentacao) = await (
+        widget.api.obterNoiteDeKaraokePublica(widget.codigo, token),
+        widget.api.obterApresentacaoPublica(widget.codigo),
+      ).wait;
+      if (!mounted) return;
+      setState(() {
+        _noite = noite;
+        _apresentacao = apresentacao ?? _apresentacao;
+      });
     } catch (_) {
       // A ordem mostrada fica até a próxima atualização.
     }
@@ -158,6 +167,9 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
         (token) => widget.api.comecarVezNoKaraoke(widget.codigo, token));
   }
 
+  Future<void> _darNota(int estrelas) => _executar(
+      (token) => widget.api.darNotaNoKaraoke(widget.codigo, token, estrelas));
+
   Future<void> _terminar() => _executar(
       (token) => widget.api.terminarVezNoKaraoke(widget.codigo, token));
 
@@ -193,7 +205,8 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
     final momento = MomentoNaNoite.de(noite, _eu);
     return [
       if (noite.cantando case final cantando? when cantando.publicoId != _eu)
-        _CantandoAgora(cantando: cantando),
+        _CantandoAgora(
+            cantando: cantando, darNota: _darNota, ocupado: _ocupado),
       _CartaoDaVez(
         noite: noite,
         momento: momento,
@@ -227,6 +240,9 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
             trailing: pessoa.publicoId == _eu ? const Text('você') : null,
           ),
       ]),
+      PlacarDaNoite(
+          noite: noite,
+          encerrada: _apresentacao?.status == StatusApresentacao.encerrada),
     ];
   }
 }

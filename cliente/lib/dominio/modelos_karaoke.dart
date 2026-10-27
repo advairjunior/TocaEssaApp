@@ -57,20 +57,85 @@ class PessoaDoKaraoke {
       );
 }
 
-/// Quem está cantando agora.
+/// "4,6": a nota com uma casa e vírgula.
+String notaDoKaraoke(double media) =>
+    media.toStringAsFixed(1).replaceAll('.', ',');
+
+/// "★ 4,5 · 2 votos"; sem voto, nulo.
+String? mediaComVotos(double? media, int votos) => media == null
+    ? null
+    : '★ ${notaDoKaraoke(media)} · $votos ${votos == 1 ? 'voto' : 'votos'}';
+
+/// Quem está cantando agora, a média da galera e a nota de quem vê.
 class CantandoNoKaraoke {
-  const CantandoNoKaraoke(
-      {required this.publicoId, required this.nome, required this.musica});
+  const CantandoNoKaraoke({
+    required this.publicoId,
+    required this.nome,
+    required this.musica,
+    this.media,
+    this.votos = 0,
+    this.minhaNota,
+  });
 
   final String publicoId;
   final String nome;
   final MusicaDoKaraoke musica;
+  final double? media;
+  final int votos;
+  final int? minhaNota;
 
   static CantandoNoKaraoke? deJson(Object? json) => json is Map<String, dynamic>
       ? CantandoNoKaraoke(
           publicoId: json['publicoId'] as String,
           nome: json['nome'] as String,
           musica: MusicaDoKaraoke.deJson(json['musica'])!,
+          media: (json['media'] as num?)?.toDouble(),
+          votos: json['votos'] as int? ?? 0,
+          minhaNota: json['minhaNota'] as int?,
+        )
+      : null;
+}
+
+/// Uma linha do placar: quantas músicas e a média delas.
+class LinhaDoPlacar {
+  const LinhaDoPlacar({
+    required this.publicoId,
+    required this.nome,
+    required this.musicas,
+    this.media,
+  });
+
+  final String publicoId;
+  final String nome;
+  final int musicas;
+  final double? media;
+
+  /// "2 músicas · ★ 4,6" ou "1 música · sem nota".
+  String get resumo => '$musicas ${musicas == 1 ? 'música' : 'músicas'} · '
+      '${media == null ? 'sem nota' : '★ ${notaDoKaraoke(media!)}'}';
+
+  factory LinhaDoPlacar.deJson(Map<String, dynamic> json) => LinhaDoPlacar(
+        publicoId: json['publicoId'] as String,
+        nome: json['nome'] as String,
+        musicas: json['musicas'] as int,
+        media: (json['media'] as num?)?.toDouble(),
+      );
+}
+
+/// A noite de karaokê na memória de quem cantou.
+class KaraokeDoPublico {
+  const KaraokeDoPublico(
+      {required this.musicas, this.media, this.vozDaNoite = false});
+
+  final int musicas;
+  final double? media;
+  final bool vozDaNoite;
+
+  static KaraokeDoPublico? deJson(Object? json) => json is Map<String, dynamic>
+      ? KaraokeDoPublico(
+          musicas: json['musicas'] as int? ?? 0,
+          media: (json['media'] as num?)?.toDouble(),
+          vozDaNoite: json['vozDaNoite'] as bool? ?? false,
         )
       : null;
 }
@@ -98,6 +163,8 @@ class NoiteDeKaraoke {
     required this.foraDaOrdem,
     this.cantando,
     this.proximo,
+    this.placar = const [],
+    this.vozDaNoite,
   });
 
   final String? repertorioId;
@@ -111,6 +178,12 @@ class NoiteDeKaraoke {
   /// Quem canta depois de quem está cantando (ou o primeiro da noite).
   final String? proximo;
 
+  /// Quem cantou, da maior média para a menor.
+  final List<LinhaDoPlacar> placar;
+
+  /// Maior média com votos suficientes; vale como Voz no fim da noite.
+  final String? vozDaNoite;
+
   factory NoiteDeKaraoke.deJson(Map<String, dynamic> json) => NoiteDeKaraoke(
         repertorioId: json['repertorioId'] as String?,
         modo: ModoDasMusicas.deJson(json['modo'] as String?),
@@ -120,6 +193,11 @@ class NoiteDeKaraoke {
         foraDaOrdem: _pessoas(json['foraDaOrdem']),
         cantando: CantandoNoKaraoke.deJson(json['cantando']),
         proximo: json['proximo'] as String?,
+        placar: [
+          for (final linha in json['placar'] as List<dynamic>? ?? const [])
+            LinhaDoPlacar.deJson(linha as Map<String, dynamic>),
+        ],
+        vozDaNoite: json['vozDaNoite'] as String?,
       );
 
   static List<PessoaDoKaraoke> _pessoas(Object? lista) => [
