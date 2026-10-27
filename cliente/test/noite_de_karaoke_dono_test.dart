@@ -313,4 +313,21 @@ void main() {
         hasLength(1));
     expect(find.text('Cantando agora: Ana · Evidências'), findsNothing);
   });
+
+  testWidgets('com alguém no placar o dono tem o cartão da noite',
+      (tester) async {
+    await _abrir(tester, respostas: {
+      'GET $_rota': _devolver({
+        ..._noite(sorteada: true, podeSortearDeNovo: false),
+        'vozDaNoite': 'p2',
+        'placar': [
+          {'publicoId': 'p2', 'nome': 'Bia', 'musicas': 2, 'media': 4.6},
+        ],
+      }),
+    });
+    await tester.scrollUntilVisible(find.text('Compartilhar imagem'), 300);
+
+    expect(find.text('Cartão da noite'), findsOneWidget);
+    expect(find.text('Bia · ★ 4,6'), findsOneWidget);
+  });
 }

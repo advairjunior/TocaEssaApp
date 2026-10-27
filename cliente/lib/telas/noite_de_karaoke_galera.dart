@@ -6,8 +6,10 @@ import '../infraestrutura/abrir_url_externa.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
+import 'cartao_do_karaoke.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 import 'entrar_para_guardar.dart';
 import 'escolher_musica_do_karaoke.dart';
 import 'noite_de_karaoke_placar.dart';
@@ -243,6 +245,16 @@ class _NoiteDeKaraokeDaGaleraState extends State<NoiteDeKaraokeDaGalera> {
       PlacarDaNoite(
           noite: noite,
           encerrada: _apresentacao?.status == StatusApresentacao.encerrada),
+      if (_apresentacao case final apresentacao?)
+        if (cartaoDeQuemCantou(apresentacao, noite, _eu) case final conteudo?)
+          CompartilharCartaoDoKaraoke(
+            titulo: 'Meu cartão do karaokê',
+            conteudo: conteudo,
+            enderecoFoto:
+                widget.api.enderecoArquivo(apresentacao.fotoRetrospectivaUrl),
+            nomeDoArquivo:
+                'tocaessa-${nomeDeArquivo(apresentacao.nome)}-meu-karaoke.png',
+          ),
     ];
   }
 }

@@ -14,7 +14,11 @@ const _json = {'content-type': 'application/json; charset=utf-8'};
 Map<String, dynamic> _pessoa(String id, String nome) =>
     {'publicoId': id, 'nome': nome, 'fotoUrl': null};
 
-Map<String, dynamic> _noite({bool sorteada = true}) => {
+Map<String, dynamic> _noite(
+        {bool sorteada = true, List<Map<String, dynamic>> placar = const []}) =>
+    {
+      'placar': placar,
+      'vozDaNoite': placar.isEmpty ? null : placar.first['publicoId'],
       'repertorioId': 'r1',
       'modo': 'Livre',
       'sorteada': sorteada,
@@ -28,7 +32,10 @@ Map<String, dynamic> _noite({bool sorteada = true}) => {
     };
 
 Future<List<http.Request>> _abrir(WidgetTester tester,
-    {String? token = 'TOKEN-ANA', bool sorteada = true}) async {
+    {String? token = 'TOKEN-ANA',
+    bool sorteada = true,
+    List<Map<String, dynamic>> placar = const [],
+    String status = 'Agendada'}) async {
   SharedPreferences.setMockInitialValues(
       {if (token != null) 'token_do_publico': token});
   final requisicoes = <http.Request>[];
@@ -45,7 +52,7 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
           200,
           headers: _json),
       '/api/publico/apresentacoes/KARA01/karaoke' => http.Response(
-          jsonEncode(_noite(sorteada: sorteada)), 200,
+          jsonEncode(_noite(sorteada: sorteada, placar: placar)), 200,
           headers: _json),
       '/api/publico/apresentacoes/KARA01' => http.Response(
           jsonEncode({
@@ -56,6 +63,7 @@ Future<List<http.Request>> _abrir(WidgetTester tester,
             'codigo': 'KARA01',
             'perfilArtistico': {'id': 'pa', 'nomeArtistico': 'Advair'},
             'tipo': 'Karaoke',
+            'status': status,
           }),
           200,
           headers: _json),
@@ -105,4 +113,30 @@ void main() {
     expect(requisicoes.where((r) => r.url.path.endsWith('/participacoes')),
         isEmpty);
   });
+  testWidgets('quem já cantou ganha o cartão para compartilhar',
+      (tester) async {
+    await _abrir(tester, placar: _placar, status: 'Encerrada');
+    await tester.scrollUntilVisible(find.text('Compartilhar imagem'), 300);
+
+    expect(find.text('Meu cartão do karaokê'), findsOneWidget);
+    expect(find.text('VOZ DA NOITE'), findsOneWidget);
+    expect(find.text('Tirar uma selfie'), findsOneWidget);
+  });
+
+  testWidgets('quem ainda não cantou não vê o cartão', (tester) async {
+    await _abrir(tester);
+
+    expect(find.text('Meu cartão do karaokê'), findsNothing);
+  });
 }
+
+const _placar = [
+  {
+    'publicoId': 'p1',
+    'nome': 'Ana',
+    'musicas': 1,
+    'media': 4.8,
+    'votos': 3,
+    'melhorMusica': 'Evidências'
+  },
+];

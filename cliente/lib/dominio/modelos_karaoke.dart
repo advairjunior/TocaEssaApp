@@ -103,12 +103,16 @@ class LinhaDoPlacar {
     required this.nome,
     required this.musicas,
     this.media,
+    this.melhorMusica,
   });
 
   final String publicoId;
   final String nome;
   final int musicas;
   final double? media;
+
+  /// A música com a maior nota da pessoa na noite.
+  final String? melhorMusica;
 
   /// "2 músicas · ★ 4,6" ou "1 música · sem nota".
   String get resumo => '$musicas ${musicas == 1 ? 'música' : 'músicas'} · '
@@ -119,6 +123,7 @@ class LinhaDoPlacar {
         nome: json['nome'] as String,
         musicas: json['musicas'] as int,
         media: (json['media'] as num?)?.toDouble(),
+        melhorMusica: json['melhorMusica'] as String?,
       );
 }
 

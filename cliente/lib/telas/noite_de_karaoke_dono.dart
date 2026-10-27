@@ -4,8 +4,10 @@ import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
 import '../tema/tema_toca_essa.dart';
+import 'cartao_do_karaoke.dart';
 import 'componentes.dart';
 import 'componentes_lista.dart';
+import 'componentes_memoria.dart';
 import 'gerenciar_repertorios.dart';
 import 'noite_de_karaoke_placar.dart';
 
@@ -261,6 +263,16 @@ class _NoiteDeKaraokeDoDonoState extends State<NoiteDeKaraokeDoDono> {
           noite: noite,
           encerrada:
               widget.apresentacao.status == StatusApresentacao.encerrada),
+      if (cartaoDaNoiteDoKaraoke(widget.apresentacao, noite)
+          case final conteudo?)
+        CompartilharCartaoDoKaraoke(
+          titulo: 'Cartão da noite',
+          conteudo: conteudo,
+          enderecoFoto: widget.api
+              .enderecoArquivo(widget.apresentacao.fotoRetrospectivaUrl),
+          nomeDoArquivo:
+              'tocaessa-${nomeDeArquivo(widget.apresentacao.nome)}.png',
+        ),
     ];
   }
 
