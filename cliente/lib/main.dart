@@ -10,6 +10,7 @@ import 'telas/acesso_do_artista.dart';
 import 'telas/componentes.dart';
 import 'telas/inicio.dart';
 import 'telas/conta_do_publico.dart';
+import 'telas/tela_da_tv.dart';
 
 void main() {
   instalarCorrecaoTecladoVirtual();
@@ -56,6 +57,11 @@ class TocaEssaApp extends StatelessWidget {
         if (uri.path == '/artista') {
           return MaterialPageRoute<void>(
               builder: (_) => AcessoDoArtista(api: servico));
+        }
+        // A TV da Letra na TV, aberta no navegador da televisão.
+        if (uri.path == '/tv') {
+          return MaterialPageRoute<void>(
+              builder: (_) => TelaDaTv(api: servico));
         }
         if (uri.path == '/minha-conta') {
           return MaterialPageRoute<void>(

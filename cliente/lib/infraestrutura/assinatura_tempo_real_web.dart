@@ -1,11 +1,17 @@
 import 'dart:async';
+import 'dart:js_interop';
 
 import 'package:web/web.dart';
 
 class AssinaturaTempoReal {
-  AssinaturaTempoReal(String endereco, void Function() aoAlterar) {
+  /// [aoReceber] recebe o dado do evento, como a linha da TV ("linha:3:6").
+  AssinaturaTempoReal(String endereco, void Function() aoAlterar,
+      {void Function(String dado)? aoReceber}) {
     _fonte = EventSource(endereco);
-    _eventos = _fonte.onMessage.listen((_) => aoAlterar());
+    _eventos = _fonte.onMessage.listen((evento) {
+      aoAlterar();
+      aoReceber?.call((evento.data as JSString?)?.toDart ?? '');
+    });
   }
 
   late final EventSource _fonte;
