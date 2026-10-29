@@ -179,6 +179,8 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
         if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos) ...[
           const SizedBox(height: EspacoTocaEssa.grande),
           ..._construirGaleraDaResenha(context),
+          const SizedBox(height: EspacoTocaEssa.grande),
+          LetraNaTvDoArtista(api: _api),
         ],
         const SizedBox(height: EspacoTocaEssa.enorme),
         if (apresentacao.status == StatusApresentacao.emAndamento) ...[

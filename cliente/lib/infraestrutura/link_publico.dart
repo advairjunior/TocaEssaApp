@@ -7,6 +7,11 @@ String linkPublicoDoShow(String codigo, {String? hino}) =>
 /// Link de uma cifra fora do louvor: abre direto nela, sem conta.
 String linkDaCifra(String codigo) => '${_origem()}/#/cifra/$codigo';
 
+/// Endereço para abrir no navegador da TV da Letra na TV, sem o "https://"
+/// que ninguém precisa digitar no controle.
+String enderecoDaTv() =>
+    '${_origem().replaceFirst(RegExp(r'^https?://'), '')}/#/tv';
+
 // Endereço do app no navegador; fora dele (testes), o local.
 String _origem() {
   final base = Uri.base;

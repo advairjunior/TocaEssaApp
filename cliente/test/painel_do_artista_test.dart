@@ -13,6 +13,7 @@ import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
+import 'package:toca_essa_app/telas/letra_na_tv_do_artista.dart';
 import 'package:toca_essa_app/telas/tocar_musicas.dart';
 
 import 'apoio/camera_falsa.dart';
@@ -547,6 +548,33 @@ void main() {
     // parecia um corte no meio da tela.
     expect(tester.widget<FundoTocaEssa>(find.byType(FundoTocaEssa)).intensidade,
         IntensidadeFundoTocaEssa.cabecalho);
+  });
+
+  testWidgets('a Letra na TV fica no Mais da resenha, não no show público',
+      (tester) async {
+    await _abrirPainel(
+      tester,
+      apresentacoes: '[${_apresentacao(
+        id: '1',
+        nome: 'Show de sábado',
+        data: '2026-09-05',
+      )},${_apresentacao(
+        id: '2',
+        nome: 'Resenha de domingo',
+        data: '2026-09-06',
+        tipo: 'ResenhaEntreAmigos',
+      )}]',
+    );
+
+    await tester.tap(find.text('Show de sábado'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LetraNaTvDoArtista), findsNothing);
+
+    await tester.tap(find.byTooltip('Voltar ao início'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Resenha de domingo'));
+    await tester.pumpAndSettle();
+    expect(find.byType(LetraNaTvDoArtista), findsOneWidget);
   });
 
   group('horas contratadas', () {
