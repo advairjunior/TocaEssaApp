@@ -20,6 +20,7 @@ import 'instalar_app.dart';
 import 'convites_do_musico.dart';
 import 'letra_na_tv_do_artista.dart';
 import 'musicos_da_noite_do_dono.dart';
+import 'novidades_do_app.dart';
 import 'stories_do_show.dart';
 import 'componentes_memoria.dart';
 import 'perfil_participante.dart';

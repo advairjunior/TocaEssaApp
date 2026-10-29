@@ -16,6 +16,7 @@ import 'package:toca_essa_app/telas/instalar_app.dart';
 import 'package:toca_essa_app/telas/convites_do_musico.dart';
 import 'package:toca_essa_app/telas/letra_na_tv_do_artista.dart';
 import 'package:toca_essa_app/telas/musicos_da_noite_do_dono.dart';
+import 'package:toca_essa_app/telas/novidades_do_app.dart';
 import 'package:toca_essa_app/telas/tocar_musicas.dart';
 
 import 'apoio/camera_falsa.dart';
@@ -46,10 +47,15 @@ Future<void> _abrirPainel(
   String apresentacoes = '[]',
   Future<http.Response?> Function(http.Request)? outras,
   bool recarregando = false,
+  // O aviso de novidades empurra a lista; só o teste dele o mostra.
+  bool novidadesVistas = true,
 }) async {
   // Recarregar a página mantém o que o aparelho guardou.
   if (!recarregando) {
-    SharedPreferences.setMockInitialValues({'token_do_artista': 'TOKEN'});
+    SharedPreferences.setMockInitialValues({
+      'token_do_artista': 'TOKEN',
+      if (novidadesVistas) 'novidades_vistas_ate': '2999-01-01',
+    });
   }
   final cliente = MockClient((requisicao) async {
     final resposta = await outras?.call(requisicao);
@@ -580,6 +586,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsOneWidget);
     expect(find.byType(MusicosDaNoiteDoDono), findsOneWidget);
+  });
+
+  testWidgets('o painel avisa as novidades do app e o menu abre a lista',
+      (tester) async {
+    await _abrirPainel(tester, novidadesVistas: false);
+
+    expect(find.byType(AvisoDeNovidades), findsOneWidget);
+    expect(find.textContaining('Novidades no app'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Minha conta'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Novidades'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NovidadesDoApp), findsOneWidget);
   });
 
   testWidgets(

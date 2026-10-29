@@ -12,6 +12,7 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
               enderecoFoto: _api.enderecoArquivo(_perfil?.fotoUrl),
               abrirPerfil: () => _selecionarAba(_AbaPainel.perfil),
               abrirRepertorios: _abrirRepertorios,
+              abrirNovidades: () => abrirNovidades(context),
               irParaTelaInicial: () => Navigator.of(context)
                   .pushNamedAndRemoveUntil('/', (_) => false),
               sair: _sair,
@@ -52,6 +53,7 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
       ];
     }
     return [
+      const AvisoDeNovidades(),
       for (final apresentacao in _apresentacoesAoVivo) ...[
         _CartaoAoVivo(
           apresentacao: apresentacao,

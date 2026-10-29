@@ -5,6 +5,7 @@ class _MenuDaConta extends StatelessWidget {
     required this.enderecoFoto,
     required this.abrirPerfil,
     required this.abrirRepertorios,
+    required this.abrirNovidades,
     required this.irParaTelaInicial,
     required this.sair,
   });
@@ -12,6 +13,7 @@ class _MenuDaConta extends StatelessWidget {
   final String? enderecoFoto;
   final VoidCallback abrirPerfil;
   final VoidCallback abrirRepertorios;
+  final VoidCallback abrirNovidades;
   // Tela de entrada do app, por exemplo para entrar num show como público.
   final VoidCallback irParaTelaInicial;
   final VoidCallback sair;
@@ -34,6 +36,10 @@ class _MenuDaConta extends StatelessWidget {
           PopupMenuItem(
             value: abrirRepertorios,
             child: const _ItemMenu(Icons.queue_music_rounded, 'Repertórios'),
+          ),
+          PopupMenuItem(
+            value: abrirNovidades,
+            child: const _ItemMenu(Icons.auto_awesome_rounded, 'Novidades'),
           ),
           PopupMenuItem(
             value: irParaTelaInicial,
