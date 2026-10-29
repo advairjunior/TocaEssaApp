@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../dominio/letra_da_tela.dart';
 import '../dominio/tela_da_tv.dart';
 import '../infraestrutura/api_toca_essa.dart';
+
+part 'controle_da_tv_intervalo.dart';
 
 /// Encerra a assinatura do tempo real da TV.
 typedef AssinaturaDaTv = void Function();
@@ -19,20 +22,26 @@ const _chaveDoId = 'tv_id';
 /// O que a TV faz sozinha, sem ninguém mexer nela: guarda o token, mostra o
 /// código até alguém conectá-la, depois acompanha a música e a linha pelo
 /// tempo real. Se o servidor esquecer a TV, pede um código novo.
-class ControleDaTv extends ChangeNotifier {
+class ControleDaTv extends ChangeNotifier with _IntervaloDaTv {
   ControleDaTv({
     required this.api,
     required this.assinar,
     this.espera = const Duration(seconds: 3),
+    this.esperaDoIntervalo = const Duration(seconds: 20),
   });
 
+  @override
   final ApiTocaEssa api;
   final AssinarTempoRealDaTv assinar;
   // De quanto em quanto tempo a TV pergunta se já foi conectada.
   final Duration espera;
+  // Quanto a última linha fica acesa antes do intervalo.
+  @override
+  final Duration esperaDoIntervalo;
 
   String? codigo;
   bool pareada = false;
+  @override
   ConteudoDaTv? conteudo;
 
   String? _token;
@@ -83,6 +92,7 @@ class ControleDaTv extends ChangeNotifier {
     codigo = estado.codigo;
     conteudo = estado.conteudo;
     pareada ? _ouvir() : _pararTempoReal();
+    _acompanharOFim();
     _avisar();
   }
 
@@ -94,8 +104,10 @@ class ControleDaTv extends ChangeNotifier {
   void _receber(String dado) {
     final evento = EventoDaTv.ler(dado);
     final atual = conteudo;
+    if (evento != null) _sairDoIntervalo();
     if (evento != null && atual != null && evento.versao == atual.versao) {
       conteudo = atual.naLinha(evento.linha);
+      _acompanharOFim();
       _avisar();
     } else if (evento != null || dado == 'conectado') {
       consultar();
@@ -124,6 +136,7 @@ class ControleDaTv extends ChangeNotifier {
     _encerrarTempoReal = null;
   }
 
+  @override
   void _avisar() {
     if (!_descartado) notifyListeners();
   }
@@ -132,6 +145,7 @@ class ControleDaTv extends ChangeNotifier {
   void dispose() {
     _descartado = true;
     _relogio?.cancel();
+    _sairDoIntervalo();
     _pararTempoReal();
     super.dispose();
   }

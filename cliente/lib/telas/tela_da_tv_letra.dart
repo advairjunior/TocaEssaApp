@@ -259,53 +259,60 @@ class _SemLetra extends StatelessWidget {
 }
 
 /// QR do link público, para a galera apontar a câmera e pedir a próxima.
+/// No canto da letra, o texto fica ao lado; no intervalo, embaixo.
 class _QrDaResenha extends StatelessWidget {
   const _QrDaResenha({
     required this.codigo,
     required this.u,
     required this.tamanho,
+    this.emColuna = false,
   });
 
   final String codigo;
   final double u;
   final double tamanho;
+  final bool emColuna;
 
   @override
   Widget build(BuildContext context) {
     final link = linkPublicoDoShow(codigo);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    final textos = Column(
+      crossAxisAlignment:
+          emColuna ? CrossAxisAlignment.start : CrossAxisAlignment.end,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text('Aponte a câmera para pedir',
-                style: TextStyle(
-                    fontSize: 1.05 * u, color: CoresTocaEssa.textoSecundario)),
-            Text(codigo,
-                style: TextStyle(
-                    fontSize: 1.9 * u,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: .1 * u,
-                    color: CoresTocaEssa.texto)),
-          ],
-        ),
-        SizedBox(width: u),
-        // Fundo branco: o leitor de QR do celular precisa do contraste.
-        Container(
-          padding: EdgeInsets.all(.4 * u),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(.6 * u),
-          ),
-          child: QrImageView(
-            data: link,
-            size: tamanho,
-            padding: EdgeInsets.zero,
-            semanticsLabel: link,
-          ),
-        ),
+        Text('Aponte a câmera para pedir',
+            style: TextStyle(
+                fontSize: 1.05 * u, color: CoresTocaEssa.textoSecundario)),
+        Text(codigo,
+            style: TextStyle(
+                fontSize: 1.9 * u,
+                fontWeight: FontWeight.w800,
+                letterSpacing: .1 * u,
+                color: CoresTocaEssa.texto)),
       ],
     );
+    // Fundo branco: o leitor de QR do celular precisa do contraste.
+    final qr = Container(
+      padding: EdgeInsets.all(.4 * u),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(.6 * u),
+      ),
+      child: QrImageView(
+        data: link,
+        size: tamanho,
+        padding: EdgeInsets.zero,
+        semanticsLabel: link,
+      ),
+    );
+    return emColuna
+        ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [qr, SizedBox(height: u), textos],
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [textos, SizedBox(width: u), qr],
+          );
   }
 }

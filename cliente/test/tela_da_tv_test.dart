@@ -23,6 +23,16 @@ const _cifra = '[Primeira Parte]\n'
     'Ninguém fica de fora';
 
 Map<String, Object?> _estado = {};
+const _stories = [
+  {
+    'id': 'f1',
+    'tipo': 'Foto',
+    'nome': 'Carla',
+    'criadoEm': '2026-10-29T20:00:00Z',
+    'tipoDeConteudo': 'image/jpeg',
+    'url': '/api/publico/stories/f1',
+  },
+];
 void Function(String)? _aoReceber;
 var _telaAcesa = 0;
 
@@ -31,8 +41,10 @@ Future<void> _abrir(WidgetTester tester, Map<String, Object?> estado) async {
   _estado = estado;
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
-    cliente: MockClient(
-        (_) async => http.Response(jsonEncode(_estado), 200, headers: _json)),
+    cliente: MockClient((pedido) async => http.Response(
+        jsonEncode(pedido.url.path.endsWith('/stories') ? _stories : _estado),
+        200,
+        headers: _json)),
   );
   tester.view.physicalSize = const Size(1920, 1080);
   tester.view.devicePixelRatio = 1;
@@ -151,6 +163,26 @@ void main() {
     expect(find.text('Ninguém fica de fora'), findsOneWidget);
     expect(_corDe(tester, 'Ninguém fica de fora'), CoresTocaEssa.texto);
     expect(find.textContaining('Fim da música'), findsOneWidget);
+  });
+
+  testWidgets('no intervalo, a TV mostra o A seguir, o QR e as fotos',
+      (tester) async {
+    await _abrir(tester, _tocando());
+
+    _aoReceber!('linha:1:3');
+    await tester.pump(const Duration(seconds: 21));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(find.text('A SEGUIR'), findsOneWidget);
+    expect(find.text('Lua de São Jorge'), findsOneWidget);
+    expect(find.text('Ninguém fica de fora'), findsNothing);
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Foto de Carla'), findsOneWidget);
+
+    _aoReceber!('linha:1:2');
+    await tester.pumpAndSettle();
+    expect(find.text('Canta comigo'), findsOneWidget);
   });
 
   testWidgets('cifra sem letra mostra só o título', (tester) async {

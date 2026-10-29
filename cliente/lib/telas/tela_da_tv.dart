@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -10,6 +12,7 @@ import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'controle_da_tv.dart';
 
+part 'tela_da_tv_intervalo.dart';
 part 'tela_da_tv_letra.dart';
 
 /// Tempo real da TV pelo navegador, com o dado de cada evento.
@@ -67,6 +70,8 @@ class _TelaDaTvState extends State<TelaDaTv> {
           (false, _) => _CodigoParaConectar(codigo: _controle.codigo),
           (true, null) => const _Aviso(
               titulo: 'TV conectada', texto: 'Conectada · esperando a música'),
+          (true, final conteudo?) when _controle.intervalo =>
+            _IntervaloNaTv(conteudo: conteudo, fotos: _controle.fotos),
           (true, final conteudo?) => _LetraNaTv(conteudo: conteudo),
         },
       );
