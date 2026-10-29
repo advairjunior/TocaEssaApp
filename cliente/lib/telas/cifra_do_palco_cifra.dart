@@ -6,15 +6,43 @@ class _Cifra extends StatelessWidget {
     required this.cabecalho,
     required this.escala,
     required this.controlador,
+    required this.registro,
   });
 
   final List<TrechoDaCifra> trechos;
   final Widget? cabecalho;
   final double escala;
   final ScrollController controlador;
+  // Com a Letra na TV, cada linha de letra se registra com o número dela.
+  final _RegistroDasLinhas? registro;
+
+  /// Onde a contagem da letra começa em cada trecho: os trechos seguidos
+  /// formam uma letra só, como a TV recebe.
+  List<int> _inicioDaLetra(List<LetraDaTela> letras) {
+    final inicios = <int>[];
+    var soma = 0;
+    for (final letra in letras) {
+      inicios.add(soma);
+      soma += letra.total;
+    }
+    return inicios;
+  }
+
+  /// A linha desenhada; com a Letra na TV, a de letra leva o número dela.
+  Widget _marcada(Widget linha, String texto, int? numero) {
+    final registro = this.registro;
+    if (registro == null || numero == null || linhaDeAcordes(texto)) {
+      return linha;
+    }
+    return _MarcaDaLinha(numero: numero, registro: registro, child: linha);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final letras = registro == null
+        ? const <LetraDaTela>[]
+        : [for (final trecho in trechos) LetraDaTela.doTexto(trecho.texto)];
+    final inicios = _inicioDaLetra(letras);
     final maiorLinha = trechos
         .expand((trecho) => trecho.texto.split('\n'))
         .fold<int>(
@@ -29,15 +57,26 @@ class _Cifra extends StatelessWidget {
         final colunas = (largura / (tamanho * _larguraDaLetra)).floor();
         // Letra grande pela pinça quebra a linha em vez de sumir pela
         // direita; acordes e letra quebram juntos.
-        Widget linhasDe(String texto) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                for (final linha in quebrarCifra(texto, colunas))
-                  linha.trim().isEmpty
-                      ? SizedBox(height: tamanho * .9)
-                      : _linha(context, linha, tamanho),
-              ],
-            );
+        Widget linhasDe(TrechoDaCifra trecho) {
+          final indice = trechos.indexOf(trecho);
+          final letra = letras.isEmpty ? null : letras[indice];
+          int? numero(int origem) =>
+              switch (letra?.numeroDaLinhaDoTexto(origem)) {
+                final numero? => inicios[indice] + numero,
+                null => null,
+              };
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final pedaco in quebrarCifraComOrigem(trecho.texto, colunas))
+                pedaco.texto.trim().isEmpty
+                    ? SizedBox(height: tamanho * .9)
+                    : _marcada(_linha(context, pedaco.texto, tamanho),
+                        pedaco.texto, numero(pedaco.origem)),
+            ],
+          );
+        }
+
         return CustomScrollView(
           controller: controlador,
           slivers: [
@@ -57,7 +96,7 @@ class _Cifra extends StatelessWidget {
                       opacity: trecho.apagado ? .4 : 1,
                       child: _CorpoDoTrecho(
                         trecho: trecho,
-                        child: linhasDe(trecho.texto),
+                        child: linhasDe(trecho),
                       ),
                     ),
                   ),
@@ -65,7 +104,7 @@ class _Cifra extends StatelessWidget {
               else
                 SliverPadding(
                   padding: const EdgeInsets.fromLTRB(margem, margem, margem, 0),
-                  sliver: SliverToBoxAdapter(child: linhasDe(trecho.texto)),
+                  sliver: SliverToBoxAdapter(child: linhasDe(trecho)),
                 ),
             // Margem de baixo: o fim da cifra rola acima do botão de rolagem.
             const SliverToBoxAdapter(child: SizedBox(height: 80)),

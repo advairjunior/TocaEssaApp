@@ -31,7 +31,8 @@ final _nomeDeParte = RegExp(
 final _informacao =
     RegExp(r'^\s*(tom|capo\w*|afina\w*)\s*:', caseSensitive: false);
 final _tablatura = RegExp(r'^\s*[A-Ga-g]?\|.*[-|]');
-final _repeticao = RegExp(r'^\s*\(?\s*(\d+x|x\d+)\s*\)?\s*$', caseSensitive: false);
+final _repeticao =
+    RegExp(r'^\s*\(?\s*(\d+x|x\d+)\s*\)?\s*$', caseSensitive: false);
 
 /// A letra da cifra colada, separada em partes e com as linhas numeradas.
 /// A mesma conta roda no celular de quem puxa e na TV.
@@ -65,7 +66,9 @@ class LetraDaTela {
 
   ParteDaLetra? parteDepois(ParteDaLetra parte) {
     final indice = partes.indexOf(parte);
-    return indice >= 0 && indice + 1 < partes.length ? partes[indice + 1] : null;
+    return indice >= 0 && indice + 1 < partes.length
+        ? partes[indice + 1]
+        : null;
   }
 }
 

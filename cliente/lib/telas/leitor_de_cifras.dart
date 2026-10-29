@@ -5,9 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/modelos.dart';
+import '../dominio/tela_da_tv.dart';
+import '../dominio/transmissor_da_letra.dart';
 import '../dominio/transpor_cifra.dart';
 import '../infraestrutura/compartilhar_link.dart';
 import '../infraestrutura/link_publico.dart';
+import '../infraestrutura/preferencia_da_letra_na_tv.dart';
+import '../infraestrutura/saida_da_tela_pela_api.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'cifra_do_palco.dart';
@@ -23,6 +27,7 @@ export 'editor_de_cifra.dart' show pedirCifraEmTexto;
 
 part 'leitor_de_cifras_acoes.dart';
 part 'leitor_de_cifras_componentes.dart';
+part 'leitor_de_cifras_tv.dart';
 
 /// Leitor de cifras do show: só a cifra na tela, setas para trocar de
 /// música (sem marcar nada) e Tocar sempre à mão. Pedal Bluetooth de virar
@@ -35,6 +40,7 @@ class LeitorDeCifras extends StatefulWidget {
     required this.abrirUrl,
     this.compartilhar = compartilharNoAparelho,
     this.manterTelaAcesa = manterTelaAcesaNoAparelho,
+    this.saidaDaTela,
   });
 
   final SequenciaDoPalco sequencia;
@@ -43,12 +49,15 @@ class LeitorDeCifras extends StatefulWidget {
   // Janela de compartilhar do aparelho; falso onde não existe.
   final Future<bool> Function(String titulo, String url) compartilhar;
   final LiberarTelaAcesa Function() manterTelaAcesa;
+  // Para onde vai a Letra na TV; sem ela, as rotas das telas.
+  final SaidaDaTela? saidaDaTela;
 
   @override
   State<LeitorDeCifras> createState() => _LeitorDeCifrasState();
 }
 
-class _LeitorDeCifrasState extends State<LeitorDeCifras> {
+class _LeitorDeCifrasState extends State<LeitorDeCifras>
+    with _LetraNaTvNoLeitor {
   late MusicaDoPalco _pagina = widget.musicaInicial;
   int _ultimoIndice = 0;
   late final LiberarTelaAcesa _liberarTela;
@@ -61,6 +70,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
     _liberarTela = widget.manterTelaAcesa();
     _sequencia.addListener(_redesenhar);
     _lerPreferencias();
+    _lerLetraNaTv();
     if (_noLouvor) _carregarLouvor();
   }
 
@@ -158,6 +168,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
 
   @override
   void dispose() {
+    _encerrarLetraNaTv();
     _liberarTela();
     _sequencia.removeListener(_redesenhar);
     super.dispose();
@@ -316,6 +327,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras> {
                       ),
                     ),
                     trechos: _trechos(pagina, texto),
+                    aoLerALinha:
+                        _noLouvor ? null : _setaDaTv(pagina, texto, depois),
                   ),
         bottomNavigationBar: _BarraDoLeitor(
           vocabulario: _sequencia.vocabulario,

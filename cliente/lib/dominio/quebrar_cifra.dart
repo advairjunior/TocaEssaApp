@@ -4,10 +4,20 @@ import 'transpor_cifra.dart';
 /// aumentar a cifra sem esconder o fim das linhas. A linha de acordes e a
 /// letra logo abaixo quebram no mesmo ponto, e cada acorde continua em cima
 /// da mesma sílaba.
-List<String> quebrarCifra(String texto, int colunas) {
+List<String> quebrarCifra(String texto, int colunas) =>
+    [for (final pedaco in quebrarCifraComOrigem(texto, colunas)) pedaco.texto];
+
+/// O mesmo que [quebrarCifra], com a linha do texto de onde cada pedaço
+/// veio: a seta da Letra na TV acha o número da linha de letra por ela.
+List<({String texto, int origem})> quebrarCifraComOrigem(
+    String texto, int colunas) {
   final linhas = texto.split('\n');
-  if (colunas <= 0) return linhas;
-  final saida = <String>[];
+  if (colunas <= 0) {
+    return [
+      for (var i = 0; i < linhas.length; i++) (texto: linhas[i], origem: i)
+    ];
+  }
+  final saida = <({String texto, int origem})>[];
   for (var i = 0; i < linhas.length; i++) {
     final linha = linhas[i];
     final proxima = i + 1 < linhas.length ? linhas[i + 1] : null;
@@ -15,10 +25,14 @@ List<String> quebrarCifra(String texto, int colunas) {
         proxima != null &&
         proxima.trim().isNotEmpty &&
         !linhaDeAcordes(proxima)) {
-      saida.addAll(_quebrarPar(linha, proxima, colunas));
-      i++;
+      final origemDosAcordes = i++;
+      saida.addAll(_quebrarPar(linha, proxima, colunas).map((pedaco) => (
+            texto: pedaco,
+            origem: linhaDeAcordes(pedaco) ? origemDosAcordes : i,
+          )));
     } else {
-      saida.addAll(_quebrarSozinha(linha, colunas));
+      saida.addAll(_quebrarSozinha(linha, colunas)
+          .map((pedaco) => (texto: pedaco, origem: i)));
     }
   }
   return saida;

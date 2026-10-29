@@ -51,4 +51,24 @@ void main() {
   test('linha em branco e linha seguinte de acordes não viram par', () {
     expect(quebrarCifra('C   G\n\nD   A', 20), ['C   G', '', 'D   A']);
   });
+
+  test('cada pedaço quebrado sabe de que linha do texto veio', () {
+    const cifra = '[Refrão]\n'
+        'C              G          Am\n'
+        'Quando eu digo que deixei de te amar\n'
+        'Letra sem acordes que também quebra';
+
+    expect(
+        quebrarCifraComOrigem(cifra, 20)
+            .map((pedaco) => (pedaco.texto, pedaco.origem)),
+        [
+          ('[Refrão]', 0),
+          ('C              G', 1),
+          ('Quando eu digo que', 2),
+          ('       Am', 1),
+          ('deixei de te amar', 2),
+          ('Letra sem acordes', 3),
+          ('que também quebra', 3),
+        ]);
+  });
 }

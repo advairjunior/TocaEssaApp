@@ -5,12 +5,14 @@ import 'package:flutter_guitar_chord/flutter_guitar_chord.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../dominio/desenho_de_acorde.dart';
+import '../dominio/letra_da_tela.dart';
 import '../dominio/quebrar_cifra.dart';
 import '../dominio/transpor_cifra.dart';
 import '../tema/tema_toca_essa.dart';
 
 part 'cifra_do_palco_cifra.dart';
 part 'cifra_do_palco_acorde.dart';
+part 'cifra_do_palco_seta.dart';
 
 const _chaveEscala = 'leitor_escala';
 const _chaveVelocidade = 'leitor_velocidade_vezes';
@@ -83,6 +85,7 @@ class CifraDoPalco extends StatefulWidget {
     required this.trechos,
     required this.pagina,
     this.cabecalho,
+    this.aoLerALinha,
   });
 
   final List<TrechoDaCifra> trechos;
@@ -90,12 +93,15 @@ class CifraDoPalco extends StatefulWidget {
   final Object pagina;
   // Rola junto, antes da cifra: título, tom e avisos.
   final Widget? cabecalho;
+  // Letra na TV ligada: mostra a seta e avisa a linha de letra que passa
+  // nela, contada como em [LetraDaTela].
+  final ValueChanged<int>? aoLerALinha;
 
   @override
   State<CifraDoPalco> createState() => _CifraDoPalcoState();
 }
 
-class _CifraDoPalcoState extends State<CifraDoPalco> {
+class _CifraDoPalcoState extends State<CifraDoPalco> with _LeituraDaSeta {
   double _escala = 1;
   // Dedos na tela, para a pinça sem atrapalhar a rolagem.
   final _dedos = <int, Offset>{};
@@ -108,9 +114,13 @@ class _CifraDoPalcoState extends State<CifraDoPalco> {
   SharedPreferences? _preferencias;
 
   @override
+  ScrollController get _controladorDaSeta => _rolagem;
+
+  @override
   void initState() {
     super.initState();
     _lerPreferencias();
+    _comecarALer();
   }
 
   @override
@@ -118,12 +128,14 @@ class _CifraDoPalcoState extends State<CifraDoPalco> {
     super.didUpdateWidget(anterior);
     if (anterior.pagina != widget.pagina) {
       _pararRolagem();
+      _esquecerALinha();
       if (_rolagem.hasClients) _rolagem.jumpTo(0);
     }
   }
 
   @override
   void dispose() {
+    _pararDeLer();
     _rolando?.cancel();
     _rolagem.dispose();
     super.dispose();
@@ -227,33 +239,39 @@ class _CifraDoPalcoState extends State<CifraDoPalco> {
   }
 
   @override
-  Widget build(BuildContext context) => Stack(
-        children: [
-          Positioned.fill(
-            child: Listener(
-              onPointerDown: _dedoNaTela,
-              onPointerMove: _dedoMoveu,
-              onPointerUp: _dedoSaiu,
-              onPointerCancel: _dedoSaiu,
-              child: _Cifra(
-                trechos: widget.trechos,
-                cabecalho: widget.cabecalho,
-                escala: _escala,
-                controlador: _rolagem,
-              ),
+  Widget build(BuildContext context) {
+    _procurarDepoisDeDesenhar();
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Listener(
+            onPointerDown: _dedoNaTela,
+            onPointerMove: _dedoMoveu,
+            onPointerUp: _dedoSaiu,
+            onPointerCancel: _dedoSaiu,
+            child: _Cifra(
+              trechos: widget.trechos,
+              cabecalho: widget.cabecalho,
+              escala: _escala,
+              controlador: _rolagem,
+              registro: widget.aoLerALinha == null ? null : _registro,
             ),
           ),
-          Positioned(
-            right: EspacoTocaEssa.medio,
-            bottom: EspacoTocaEssa.medio,
-            child: _ControleDaRolagem(
-              rolando: _rolando != null,
-              velocidade: _velocidade,
-              iniciar: _iniciarRolagem,
-              pausar: _pararRolagem,
-              mudarVelocidade: _mudarVelocidade,
-            ),
+        ),
+        if (widget.aoLerALinha != null)
+          Positioned.fill(child: _SetaDaTv(chave: _chaveDaSeta)),
+        Positioned(
+          right: EspacoTocaEssa.medio,
+          bottom: EspacoTocaEssa.medio,
+          child: _ControleDaRolagem(
+            rolando: _rolando != null,
+            velocidade: _velocidade,
+            iniciar: _iniciarRolagem,
+            pausar: _pararRolagem,
+            mudarVelocidade: _mudarVelocidade,
           ),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 }

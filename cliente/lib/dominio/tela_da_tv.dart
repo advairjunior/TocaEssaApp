@@ -47,6 +47,15 @@ class ConteudoParaTv {
   final String? codigo;
   final int linha;
 
+  ConteudoParaTv naLinha(int linha) => ConteudoParaTv(
+        titulo: titulo,
+        subtitulo: subtitulo,
+        texto: texto,
+        aSeguir: aSeguir,
+        codigo: codigo,
+        linha: linha,
+      );
+
   Map<String, dynamic> paraJson() => {
         'titulo': titulo,
         'subtitulo': subtitulo,
