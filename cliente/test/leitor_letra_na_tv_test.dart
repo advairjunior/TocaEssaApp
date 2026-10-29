@@ -33,26 +33,45 @@ class _TvFalsa implements SaidaDaTela {
   Future<void> limpar() async {}
 }
 
-Map<String, Object?> _item(String id, String titulo, int ordem) => {
+Map<String, Object?> _item(String id, String titulo, int ordem,
+        {bool tocada = false}) =>
+    {
       'id': id,
       'apresentacaoId': _id,
       'titulo': titulo,
       'artista': 'Turma',
       'tom': null,
-      'tocada': false,
+      'tocada': tocada,
       'ordem': ordem,
     };
 
-Future<_TvFalsa> _abrir(WidgetTester tester) async {
+// Pedido aceito e marcado para tocar a seguir.
+final _pedidoDaCarla = {
+  'pedidoRepresentativoId': 'p1',
+  'pedidoIds': ['p1'],
+  'apresentacaoId': _id,
+  'musica': 'Trem-Bala',
+  'solicitantes': ['Carla'],
+  'quantidadePedidos': 1,
+  'status': 'Aceito',
+  'criadoEm': '2026-10-29T20:00:00Z',
+  'tipo': 'Musica',
+};
+
+Future<_TvFalsa> _abrir(WidgetTester tester, {bool comPedido = false}) async {
   final tv = _TvFalsa();
   final cliente = MockClient((requisicao) async {
-    final aSeguir = responderPedidosASeguir(requisicao, []);
+    final aSeguir = responderPedidosASeguir(requisicao, [if (comPedido) 'p1']);
     if (aSeguir != null) return aSeguir;
     final caminho = requisicao.url.path;
+    if (caminho.endsWith('/grupos-pedidos') && comPedido) {
+      return http.Response(jsonEncode([_pedidoDaCarla]), 200, headers: _json);
+    }
     if (caminho.endsWith('/setlist')) {
+      // Com o pedido, a primeira já foi tocada: o pedido entra logo depois.
       return http.Response(
           jsonEncode([
-            _item('1', 'Fim de tarde', 1),
+            _item('1', 'Fim de tarde', 1, tocada: comPedido),
             _item('2', 'Lua de São Jorge', 2),
           ]),
           200,
@@ -107,6 +126,14 @@ void main() {
     expect(mostrada.aSeguir, 'Lua de São Jorge');
     expect(mostrada.codigo, 'RSN482');
     expect(mostrada.linha, 0);
+  });
+
+  testWidgets('pedido a seguir vai para a TV com quem pediu', (tester) async {
+    SharedPreferences.setMockInitialValues({'letra_na_tv': true});
+
+    final tv = await _abrir(tester, comPedido: true);
+
+    expect(tv.mostradas.single.aSeguir, 'Trem-Bala · pedida por Carla');
   });
 
   testWidgets('com a Letra na TV desligada, nada de seta nem de TV',

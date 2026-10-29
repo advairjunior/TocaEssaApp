@@ -19,7 +19,7 @@ mixin _LetraNaTvNoLeitor on State<LeitorDeCifras> {
 
   /// A seta da página, se a Letra na TV estiver ligada.
   ValueChanged<int>? _setaDaTv(
-      MusicaDoPalco pagina, String texto, String? depois) {
+      MusicaDoPalco pagina, String texto, MusicaDoPalco? proxima) {
     final transmissor = _transmissor;
     if (transmissor == null) return null;
     final chave = '${pagina.titulo}|${pagina.artista}|${texto.hashCode}';
@@ -29,7 +29,10 @@ mixin _LetraNaTvNoLeitor on State<LeitorDeCifras> {
         titulo: pagina.titulo,
         subtitulo: pagina.artista,
         texto: texto,
-        aSeguir: depois,
+        aSeguir: proxima == null
+            ? null
+            : aSeguirDaTv(
+                proxima.titulo, proxima.pedido?.solicitantes ?? const []),
         codigo: widget.sequencia.codigo,
         linha: 0,
       ));

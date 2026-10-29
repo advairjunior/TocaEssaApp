@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../dominio/a_seguir_da_tv.dart';
 import '../dominio/modelos.dart';
 import '../dominio/tela_da_tv.dart';
 import '../dominio/transmissor_da_letra.dart';
@@ -290,8 +291,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
                       ),
                     ),
                     trechos: _trechos(pagina, texto),
-                    aoLerALinha:
-                        _noLouvor ? null : _setaDaTv(pagina, texto, depois),
+                    aoLerALinha: _noLouvor
+                        ? null
+                        : _setaDaTv(
+                            pagina, texto, paginas.elementAtOrNull(indice + 1)),
                   ),
         bottomNavigationBar: _BarraDoLeitor(
           vocabulario: _sequencia.vocabulario,
