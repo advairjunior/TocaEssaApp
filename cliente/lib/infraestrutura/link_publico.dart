@@ -7,6 +7,9 @@ String linkPublicoDoShow(String codigo, {String? hino}) =>
 /// Link de uma cifra fora do louvor: abre direto nela, sem conta.
 String linkDaCifra(String codigo) => '${_origem()}/#/cifra/$codigo';
 
+/// Link de quem vai cuidar da linha da TV, sem conta (Passar o comando).
+String linkDoComando(String token) => '${_origem()}/#/comando/$token';
+
 /// Link do convite de músico para o evento da noite (precisa de conta de
 /// artista para entrar).
 String linkDoConvite(String codigo) => '${_origem()}/#/convite/$codigo';
