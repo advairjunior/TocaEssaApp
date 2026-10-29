@@ -99,6 +99,32 @@ public sealed partial class RepositorioTocaEssa
         ];
     }
 
+    /// O evento para quem toca nele naquela noite: o dono ou um músico que
+    /// entrou pelo convite. Só as leituras do palco e o marcar o que tocou
+    /// usam esta conferência; todo o resto continua com
+    /// [ObterApresentacaoDoArtista], só do dono.
+    private Apresentacao ObterApresentacaoDaNoite(string token, Guid apresentacaoId)
+    {
+        var conta = ExigirRegistroArtista(token);
+        var evento = ObterApresentacao(apresentacaoId);
+        return evento is not null && TocaNaNoite(conta.Id, evento)
+            ? evento
+            : throw new ApresentacaoNaoEncontradaException();
+    }
+
+    private bool TocaNaNoite(Guid contaId, Apresentacao evento) =>
+        evento.ArtistaId == contaId ||
+        (EventoAbertoParaMusicos(evento) && _musicosDaApresentacao.ContainsKey((evento.Id, contaId)));
+
+    /// O convidado põe o pedido para tocar e encerra; recusar é do dono.
+    private void ExigirStatusDoPalco(string token, Apresentacao evento, StatusPedidoMusical status)
+    {
+        var ehDoPalco = status is StatusPedidoMusical.Aceito or StatusPedidoMusical.TocandoAgora
+            or StatusPedidoMusical.Finalizado;
+        if (!ehDoPalco && evento.ArtistaId != ExigirRegistroArtista(token).Id)
+            throw new ApresentacaoNaoEncontradaException();
+    }
+
     private Apresentacao EventoDoConvite(string codigo)
     {
         var convite = _convitesDaApresentacao.Values.FirstOrDefault(item =>

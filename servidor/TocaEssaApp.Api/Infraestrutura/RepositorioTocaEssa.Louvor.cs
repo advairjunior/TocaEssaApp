@@ -19,7 +19,7 @@ public sealed partial class RepositorioTocaEssa
 
     public LouvorDoArtista ObterLouvor(string token, Guid apresentacaoId)
     {
-        var apresentacao = ObterApresentacaoDoArtista(token, apresentacaoId);
+        var apresentacao = ObterApresentacaoDaNoite(token, apresentacaoId);
         return MontarLouvor(apresentacao);
     }
 

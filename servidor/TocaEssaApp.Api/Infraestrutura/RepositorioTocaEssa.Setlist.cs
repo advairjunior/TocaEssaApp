@@ -7,10 +7,9 @@ public sealed partial class RepositorioTocaEssa
 {
     public IReadOnlyCollection<ItemDoSetlist> ObterSetlist(string token, Guid apresentacaoId)
     {
-        var conta = ExigirRegistroArtista(token);
-        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        var evento = ObterApresentacaoDaNoite(token, apresentacaoId);
         return _itensDoSetlist.Values
-            .Where(i => i.ApresentacaoId == apresentacaoId && i.ArtistaId == conta.Id)
+            .Where(i => i.ApresentacaoId == apresentacaoId && i.ArtistaId == evento.ArtistaId)
             .OrderBy(i => i.Ordem)
             .Select(ParaDominio)
             .ToArray();
@@ -69,11 +68,13 @@ public sealed partial class RepositorioTocaEssa
         string token, Guid apresentacaoId, Guid itemId, bool tocada)
     {
         var conta = ExigirRegistroArtista(token);
+        // O músico convidado também marca: a setlist da noite é uma só.
+        var evento = ObterApresentacao(apresentacaoId);
         lock (_sincronizacao)
         {
             if (!_itensDoSetlist.TryGetValue(itemId, out var item) ||
-                item.ApresentacaoId != apresentacaoId ||
-                item.ArtistaId != conta.Id)
+                item.ApresentacaoId != apresentacaoId || evento is null ||
+                !TocaNaNoite(conta.Id, evento) || item.ArtistaId != evento.ArtistaId)
                 throw new ItemDoSetlistNaoEncontradoException();
             item.Tocada = tocada;
             _itensDoSetlist[itemId] = item;

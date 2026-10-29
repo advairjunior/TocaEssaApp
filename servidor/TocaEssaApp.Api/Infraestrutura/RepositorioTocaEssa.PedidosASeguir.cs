@@ -10,7 +10,7 @@ public sealed partial class RepositorioTocaEssa
 
     public IReadOnlyList<Guid> ListarPedidosASeguir(string token, Guid apresentacaoId)
     {
-        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        _ = ObterApresentacaoDaNoite(token, apresentacaoId);
         return _pedidosASeguir.GetValueOrDefault(apresentacaoId) ?? [];
     }
 

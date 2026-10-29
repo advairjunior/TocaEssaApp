@@ -102,7 +102,7 @@ public sealed partial class RepositorioTocaEssa
     public IReadOnlyCollection<PedidoMusical> ListarPedidosDoArtista(
         string token, Guid apresentacaoId)
     {
-        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        _ = ObterApresentacaoDaNoite(token, apresentacaoId);
         return ListarPedidosDoArtista(apresentacaoId);
     }
 

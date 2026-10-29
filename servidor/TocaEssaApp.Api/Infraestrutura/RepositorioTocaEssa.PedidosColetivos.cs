@@ -29,7 +29,7 @@ public sealed partial class RepositorioTocaEssa
     public IReadOnlyCollection<GrupoPedidoMusical> ListarGruposDePedidosDoArtista(
         string token, Guid apresentacaoId)
     {
-        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        _ = ObterApresentacaoDaNoite(token, apresentacaoId);
         return ListarGruposDePedidosDoArtista(apresentacaoId);
     }
 
@@ -82,7 +82,7 @@ public sealed partial class RepositorioTocaEssa
         Guid representanteId,
         StatusPedidoMusical status)
     {
-        _ = ObterApresentacaoDoArtista(token, apresentacaoId);
+        ExigirStatusDoPalco(token, ObterApresentacaoDaNoite(token, apresentacaoId), status);
         return AlterarStatusDoGrupo(apresentacaoId, representanteId, status);
     }
 
