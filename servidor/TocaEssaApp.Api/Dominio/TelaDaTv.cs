@@ -57,9 +57,21 @@ public static class CanalDaTv
     public static string De(Guid tvId) => $"tela:{tvId:N}";
 
     /// "linha:3:6": versão 3 do conteúdo, linha 6 da letra.
+    /// Canal do celular do ajudante que está com o comando da TV.
+    public static string DoComando(Guid comandoId) => $"comando:{comandoId:N}";
+
     public static string EventoDaLinha(ConteudoDaTv conteudo) =>
         $"linha:{conteudo.Versao}:{conteudo.Linha}";
 }
+
+/// Link do comando da TV para o ajudante: o token fica só no celular dele.
+public sealed record NovoComando(Guid Id, string Token);
+
+/// Se a TV está com um ajudante, para o celular do dono mostrar "Retomar".
+public sealed record EstadoDoComando(bool Ativo);
+
+/// O que o celular do ajudante recebe: a letra da TV e o canal de tempo real.
+public sealed record ComandoDoAjudante(Guid Canal, ConteudoDaTv? Conteudo);
 
 /// Erro da TV com o status e a mensagem que a pessoa vê.
 public abstract class ErroDaTvException(int status, string mensagem) : Exception(mensagem)
@@ -78,3 +90,6 @@ public sealed class TvSemMusicaException()
 
 public sealed class ConteudoDaTvInvalidoException()
     : ErroDaTvException(400, "A letra não pôde ir para a TV.");
+
+public sealed class ComandoNaoEncontradoException()
+    : ErroDaTvException(404, "O comando voltou para quem toca.");

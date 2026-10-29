@@ -84,12 +84,19 @@ public sealed partial class RepositorioTocaEssa
     public void IrParaALinhaNaTv(string token, int linha)
     {
         var conta = ExigirRegistroArtista(token);
+        // Com o comando no ajudante, a seta do dono não mexe na TV.
+        if (TvComAjudante(conta.Id)) return;
+        MudarALinhaDaTv(conta.Id, linha);
+    }
+
+    private void MudarALinhaDaTv(Guid artistaId, int linha)
+    {
         Dominio.MostrarNaTv.ValidarLinha(linha);
-        if (!_conteudosDasTvs.TryGetValue(conta.Id, out var anterior))
+        if (!_conteudosDasTvs.TryGetValue(artistaId, out var anterior))
             throw new TvSemMusicaException();
         var conteudo = anterior with { Linha = linha };
-        _conteudosDasTvs[conta.Id] = conteudo;
-        AvisarTvs(conta.Id, conteudo);
+        _conteudosDasTvs[artistaId] = conteudo;
+        AvisarTvs(artistaId, conteudo);
     }
 
     public void LimparTv(string token)
@@ -104,6 +111,7 @@ public sealed partial class RepositorioTocaEssa
 
     private void AvisarTvs(Guid artistaId, ConteudoDaTv conteudo)
     {
+        AvisarAjudante(artistaId, conteudo);
         foreach (var tv in TvsDaConta(artistaId))
             _notificador?.PublicarEvento(CanalDaTv.De(tv.Id), CanalDaTv.EventoDaLinha(conteudo));
     }

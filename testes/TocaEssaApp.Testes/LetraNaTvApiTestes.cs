@@ -92,6 +92,39 @@ public sealed class LetraNaTvApiTestes
             "/api/artista/telas/conteudo", new { titulo = "X", texto = "Y", linha = 0 })).StatusCode);
     }
 
+    [Fact]
+    public async Task AjudanteSemContaComandaALinhaAteODonoRetomar()
+    {
+        var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-tv-{Guid.NewGuid():N}.db");
+        await using var fabrica = CriarFabrica(banco);
+        using var dono = await CriarClienteArtista(fabrica, "dono@teste.com");
+        using var ajudante = fabrica.CreateClient();
+        (await dono.PutAsJsonAsync("/api/artista/telas/conteudo", new
+        {
+            titulo = "Fim de tarde", texto = "Canta comigo", linha = 0
+        })).EnsureSuccessStatusCode();
+
+        var passado = await dono.PostAsync("/api/artista/telas/comando", null);
+        passado.EnsureSuccessStatusCode();
+        var comando = await passado.Content.ReadFromJsonAsync<JsonElement>();
+        ajudante.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", comando.GetProperty("token").GetString());
+        var estado = await dono.GetFromJsonAsync<JsonElement>("/api/artista/telas/comando");
+        Assert.True(estado.GetProperty("ativo").GetBoolean());
+
+        var visto = await ajudante.GetFromJsonAsync<JsonElement>("/api/publico/comando");
+        Assert.Equal("Fim de tarde", visto.GetProperty("conteudo").GetProperty("titulo").GetString());
+        Assert.Equal(comando.GetProperty("id").GetGuid(), visto.GetProperty("canal").GetGuid());
+        (await ajudante.PutAsJsonAsync("/api/publico/comando/linha", new { linha = 1 }))
+            .EnsureSuccessStatusCode();
+
+        (await dono.DeleteAsync("/api/artista/telas/comando")).EnsureSuccessStatusCode();
+        var depois = await ajudante.GetAsync("/api/publico/comando");
+        Assert.Equal(HttpStatusCode.NotFound, depois.StatusCode);
+        Assert.Contains("comando",
+            (await depois.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("mensagem").GetString());
+    }
+
     private static WebApplicationFactory<Program> CriarFabrica(string banco) =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {

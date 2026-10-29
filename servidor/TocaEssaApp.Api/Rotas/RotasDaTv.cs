@@ -10,6 +10,7 @@ public static class RotasDaTv
     {
         MapearTv(app);
         MapearCelularDoDono(app);
+        MapearComando(app);
     }
 
     // A TV abre sem conta: o token dela vem no cabeçalho, como o de uma sessão.
@@ -25,20 +26,25 @@ public static class RotasDaTv
             Results.Ok(repositorio.ObterEstadoDaTv(ObterToken(http) ?? string.Empty)));
 
         // O EventSource não manda cabeçalho; o canal só leva números de linha.
-        app.MapGet("/api/publico/telas/{id:guid}/tempo-real", async Task (
+        app.MapGet("/api/publico/telas/{id:guid}/tempo-real", (
             Guid id, HttpResponse resposta, NotificadorTempoReal notificador,
             CancellationToken cancelamento) =>
+            TransmitirCanal(CanalDaTv.De(id), resposta, notificador, cancelamento));
+    }
+
+    private static async Task TransmitirCanal(
+        string canal, HttpResponse resposta, NotificadorTempoReal notificador,
+        CancellationToken cancelamento)
+    {
+        resposta.ContentType = "text/event-stream";
+        resposta.Headers.CacheControl = "no-cache";
+        resposta.Headers.Append("X-Accel-Buffering", "no");
+        await foreach (var evento in notificador.Assinar(canal, cancelamento))
         {
-            resposta.ContentType = "text/event-stream";
-            resposta.Headers.CacheControl = "no-cache";
-            resposta.Headers.Append("X-Accel-Buffering", "no");
-            await foreach (var evento in notificador.Assinar(CanalDaTv.De(id), cancelamento))
-            {
-                var mensagem = evento == "pulso" ? ": pulso\n\n" : $"data: {evento}\n\n";
-                await resposta.WriteAsync(mensagem, cancelamento);
-                await resposta.Body.FlushAsync(cancelamento);
-            }
-        });
+            var mensagem = evento == "pulso" ? ": pulso\n\n" : $"data: {evento}\n\n";
+            await resposta.WriteAsync(mensagem, cancelamento);
+            await resposta.Body.FlushAsync(cancelamento);
+        }
     }
 
     private static void MapearCelularDoDono(WebApplication app)
@@ -77,6 +83,37 @@ public static class RotasDaTv
             repositorio.LimparTv(ObterToken(http) ?? string.Empty);
             return Results.NoContent();
         });
+    }
+
+    // O ajudante abre sem conta, com o token do link no cabeçalho.
+    private static void MapearComando(WebApplication app)
+    {
+        app.MapPost("/api/artista/telas/comando", (HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.PassarComando(ObterToken(http) ?? string.Empty)));
+
+        app.MapGet("/api/artista/telas/comando", (HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.EstadoDoComando(ObterToken(http) ?? string.Empty)));
+
+        app.MapDelete("/api/artista/telas/comando", (HttpRequest http, RepositorioTocaEssa repositorio) =>
+        {
+            repositorio.RetomarComando(ObterToken(http) ?? string.Empty);
+            return Results.NoContent();
+        });
+
+        app.MapGet("/api/publico/comando", (HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ObterComando(ObterToken(http) ?? string.Empty)));
+
+        app.MapPut("/api/publico/comando/linha", (
+            IrParaALinha requisicao, HttpRequest http, RepositorioTocaEssa repositorio) =>
+        {
+            repositorio.IrParaALinhaPeloAjudante(ObterToken(http) ?? string.Empty, requisicao.Linha);
+            return Results.NoContent();
+        });
+
+        app.MapGet("/api/publico/comando/{id:guid}/tempo-real", (
+            Guid id, HttpResponse resposta, NotificadorTempoReal notificador,
+            CancellationToken cancelamento) =>
+            TransmitirCanal(CanalDaTv.DoComando(id), resposta, notificador, cancelamento));
     }
 }
 
