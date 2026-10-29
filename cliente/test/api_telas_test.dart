@@ -20,9 +20,9 @@ void main() {
     );
   }
 
-  http.Response json(Object corpo, [int status = 200]) => http.Response(
-      jsonEncode(corpo), status,
-      headers: {'content-type': 'application/json; charset=utf-8'});
+  http.Response json(Object corpo, [int status = 200]) =>
+      http.Response(jsonEncode(corpo), status,
+          headers: {'content-type': 'application/json; charset=utf-8'});
 
   test('a TV nova recebe id, token e código sem conta', () async {
     final api = apiQueResponde(
@@ -59,8 +59,8 @@ void main() {
     final conteudo = estado.conteudo!;
     expect((conteudo.titulo, conteudo.subtitulo, conteudo.aSeguir),
         ('Fim de tarde', 'Turma', 'Lua'));
-    expect((conteudo.codigo, conteudo.linha, conteudo.versao),
-        ('RSN482', 3, 2));
+    expect(
+        (conteudo.codigo, conteudo.linha, conteudo.versao), ('RSN482', 3, 2));
   });
 
   test('TV esquecida pelo servidor vira TvDesconhecida', () async {
@@ -71,9 +71,10 @@ void main() {
   });
 
   test('o celular do dono conecta, manda a letra e a linha', () async {
-    final api = apiQueResponde((pedido) => pedido.url.path.endsWith('pareamento')
-        ? json({'id': 'tv1', 'criadaEm': '2026-10-29T20:00:00Z'})
-        : http.Response('', 204));
+    final api = apiQueResponde((pedido) =>
+        pedido.url.path.endsWith('pareamento')
+            ? json({'id': 'tv1', 'criadaEm': '2026-10-29T20:00:00Z'})
+            : http.Response('', 204));
     api.definirTokenArtista('artista');
 
     await api.parearTv('k7q2');
@@ -132,6 +133,65 @@ void main() {
 
     expect(api.enderecoTempoRealDaTv('tv1'),
         'http://teste/api/publico/telas/tv1/tempo-real');
+  });
+
+  group('comando da TV', () {
+    test('o dono passa, vê e retoma o comando', () async {
+      final api = apiQueResponde((pedido) => switch (pedido.method) {
+            'POST' => json({'id': 'c1', 'token': 'segredo'}),
+            'GET' => json({'ativo': true}),
+            _ => http.Response('', 204),
+          });
+      api.definirTokenArtista('artista');
+
+      final comando = await api.passarComando();
+      final ativo = await api.comandoAtivo();
+      await api.retomarComando();
+
+      expect((comando.id, comando.token), ('c1', 'segredo'));
+      expect(ativo, isTrue);
+      expect(pedidos.map((p) => (p.method, p.url.path)), [
+        ('POST', '/api/artista/telas/comando'),
+        ('GET', '/api/artista/telas/comando'),
+        ('DELETE', '/api/artista/telas/comando'),
+      ]);
+      expect(pedidos.first.headers['Authorization'], 'Bearer artista');
+    });
+
+    test('o ajudante lê a letra e manda a linha com o token do link', () async {
+      final api = apiQueResponde((pedido) => pedido.method == 'GET'
+          ? json({
+              'canal': 'c1',
+              'conteudo': {
+                'titulo': 'Fim de tarde',
+                'texto': 'Canta comigo',
+                'linha': 0,
+                'versao': 2,
+              },
+            })
+          : http.Response('', 204));
+
+      final comando = await api.obterComando('segredo');
+      await api.irParaALinhaPeloAjudante('segredo', 3);
+
+      expect(comando.canal, 'c1');
+      expect(comando.conteudo?.titulo, 'Fim de tarde');
+      expect(pedidos.first.url.path, '/api/publico/comando');
+      expect(pedidos.first.headers['Authorization'], 'Bearer segredo');
+      expect(pedidos.last.url.path, '/api/publico/comando/linha');
+      expect(jsonDecode(pedidos.last.body), {'linha': 3});
+      expect(api.enderecoTempoRealDoComando('c1'),
+          'http://teste/api/publico/comando/c1/tempo-real');
+    });
+
+    test('link retomado avisa que o comando voltou', () async {
+      final api = apiQueResponde(
+          (_) => json({'mensagem': 'O comando voltou para quem toca.'}, 404));
+
+      expect(api.obterComando('velho'), throwsA(isA<ComandoEncerrado>()));
+      expect(api.irParaALinhaPeloAjudante('velho', 1),
+          throwsA(isA<ComandoEncerrado>()));
+    });
   });
 
   test('o evento traz a versão e a linha', () {

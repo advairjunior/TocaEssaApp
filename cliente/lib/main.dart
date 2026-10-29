@@ -9,6 +9,7 @@ import 'telas/aviso_sem_internet.dart';
 import 'telas/acesso_do_artista.dart';
 import 'telas/componentes.dart';
 import 'telas/inicio.dart';
+import 'telas/comando_do_ajudante.dart';
 import 'telas/conta_do_publico.dart';
 import 'telas/convite_do_musico.dart';
 import 'telas/tela_da_tv.dart';
@@ -40,7 +41,7 @@ class TocaEssaApp extends StatelessWidget {
       // pessoa dos hinos e ela tinha que abrir o link de novo.
       onGenerateInitialRoutes: (nome) {
         final rota = _rota(servico, RouteSettings(name: nome));
-        final doLink = const {'publico', 'cifra', 'tv', 'convite'}
+        final doLink = const {'publico', 'cifra', 'tv', 'convite', 'comando'}
             .contains(Uri.parse(nome).pathSegments.firstOrNull);
         return [
           if (!doLink && nome != '/')
@@ -54,42 +55,34 @@ class TocaEssaApp extends StatelessWidget {
 
   static Route<void> _rota(ApiTocaEssa servico, RouteSettings configuracao) {
     final uri = Uri.parse(configuracao.name ?? '/');
-    if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'publico') {
-      return MaterialPageRoute<void>(
-        settings: configuracao,
-        builder: (_) => AreaDoPublico(
-            api: servico,
-            codigoInicial: uri.pathSegments.last,
-            hinoInicial: uri.queryParameters['hino']),
-      );
-    }
-    // Link de uma cifra compartilhada pelo artista, aberto sem conta.
-    if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'cifra') {
-      return MaterialPageRoute<void>(
-        settings: configuracao,
-        builder: (_) =>
-            CifraCompartilhadaTela(api: servico, codigo: uri.pathSegments.last),
-      );
-    }
-    // Convite de músico para o evento da noite.
-    if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'convite') {
-      return MaterialPageRoute<void>(
-          settings: configuracao,
-          builder: (_) =>
-              ConviteDoMusico(api: servico, codigo: uri.pathSegments.last));
-    }
-    if (uri.path == '/artista') {
-      return MaterialPageRoute<void>(
-          builder: (_) => AcessoDoArtista(api: servico));
-    }
-    // A TV da Letra na TV, aberta no navegador da televisão.
-    if (uri.path == '/tv') {
-      return MaterialPageRoute<void>(builder: (_) => TelaDaTv(api: servico));
-    }
-    if (uri.path == '/minha-conta') {
-      return MaterialPageRoute<void>(
-          builder: (_) => ContaDoPublico(api: servico));
-    }
-    return MaterialPageRoute<void>(builder: (_) => Inicio(api: servico));
+    final tela = _telaDoLink(servico, uri) ?? _telaDoCaminho(servico, uri.path);
+    return MaterialPageRoute<void>(
+        settings: configuracao, builder: (_) => tela);
   }
+
+  /// Links com código que alguém manda: "#/publico/ABC", "#/cifra/…",
+  /// "#/convite/…" (músico da noite) e "#/comando/…" (quem cuida da TV).
+  static Widget? _telaDoLink(ApiTocaEssa servico, Uri uri) {
+    if (uri.pathSegments.length != 2) return null;
+    final valor = uri.pathSegments.last;
+    return switch (uri.pathSegments.first) {
+      'publico' => AreaDoPublico(
+          api: servico,
+          codigoInicial: valor,
+          hinoInicial: uri.queryParameters['hino']),
+      'cifra' => CifraCompartilhadaTela(api: servico, codigo: valor),
+      'convite' => ConviteDoMusico(api: servico, codigo: valor),
+      'comando' => ComandoDoAjudante(api: servico, token: valor),
+      _ => null,
+    };
+  }
+
+  static Widget _telaDoCaminho(ApiTocaEssa servico, String caminho) =>
+      switch (caminho) {
+        '/artista' => AcessoDoArtista(api: servico),
+        // A TV da Letra na TV, aberta no navegador da televisão.
+        '/tv' => TelaDaTv(api: servico),
+        '/minha-conta' => ContaDoPublico(api: servico),
+        _ => Inicio(api: servico),
+      };
 }

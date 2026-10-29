@@ -159,3 +159,36 @@ class TvDesconhecida implements Exception {
 class TvAindaSemMusica implements Exception {
   const TvAindaSemMusica();
 }
+
+/// Link do comando da TV para o ajudante; o token vai no endereço.
+class NovoComando {
+  const NovoComando({required this.id, required this.token});
+
+  final String id;
+  final String token;
+
+  factory NovoComando.deJson(Map<String, dynamic> json) =>
+      NovoComando(id: json['id'] as String, token: json['token'] as String);
+}
+
+/// O que o celular do ajudante recebe: a letra da TV e o canal do tempo real.
+class ComandoDoAjudante {
+  const ComandoDoAjudante({required this.canal, this.conteudo});
+
+  final String canal;
+  final ConteudoDaTv? conteudo;
+
+  factory ComandoDoAjudante.deJson(Map<String, dynamic> json) =>
+      ComandoDoAjudante(
+        canal: json['canal'] as String,
+        conteudo: switch (json['conteudo']) {
+          final Map<String, dynamic> conteudo => ConteudoDaTv.deJson(conteudo),
+          _ => null,
+        },
+      );
+}
+
+/// O dono retomou o comando (ou gerou outro link).
+class ComandoEncerrado implements Exception {
+  const ComandoEncerrado();
+}

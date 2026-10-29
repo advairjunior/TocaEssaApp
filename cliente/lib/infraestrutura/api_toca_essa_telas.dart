@@ -43,8 +43,8 @@ mixin _ApiTelas on _ApiTocaEssaBase {
         .toList();
   }
 
-  Future<void> desconectarTv(String tvId) async => _validar(await _cliente
-      .delete(Uri.parse('$_rotaDasTelas/$tvId'),
+  Future<void> desconectarTv(String tvId) async =>
+      _validar(await _cliente.delete(Uri.parse('$_rotaDasTelas/$tvId'),
           headers: _cabecalhos(token: _tokenArtista)));
 
   Future<void> mostrarNaTv(ConteudoParaTv conteudo) async =>
@@ -64,7 +64,59 @@ mixin _ApiTelas on _ApiTocaEssaBase {
     _validar(resposta);
   }
 
-  Future<void> limparTv() async => _validar(await _cliente.delete(
-      Uri.parse('$_rotaDasTelas/conteudo'),
-      headers: _cabecalhos(token: _tokenArtista)));
+  Future<void> limparTv() async =>
+      _validar(await _cliente.delete(Uri.parse('$_rotaDasTelas/conteudo'),
+          headers: _cabecalhos(token: _tokenArtista)));
+}
+
+/// Comando da TV com um ajudante: o dono passa e retoma com o token dele; o
+/// ajudante, sem conta, usa o token do link.
+mixin _ApiComandoDaTv on _ApiTocaEssaBase {
+  String get _rotaDoComando => '$_enderecoBase/api/artista/telas/comando';
+
+  String enderecoTempoRealDoComando(String canal) =>
+      '$_enderecoBase/api/publico/comando/$canal/tempo-real';
+
+  Future<NovoComando> passarComando() async {
+    final resposta = await _cliente.post(Uri.parse(_rotaDoComando),
+        headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+    return NovoComando.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
+  Future<bool> comandoAtivo() async {
+    final resposta = await _cliente.get(Uri.parse(_rotaDoComando),
+        headers: _cabecalhos(token: _tokenArtista));
+    _validar(resposta);
+    return (jsonDecode(resposta.body) as Map<String, dynamic>)['ativo'] == true;
+  }
+
+  Future<void> retomarComando() async =>
+      _validar(await _cliente.delete(Uri.parse(_rotaDoComando),
+          headers: _cabecalhos(token: _tokenArtista)));
+
+  Future<ComandoDoAjudante> obterComando(String tokenDoAjudante) async {
+    final resposta = await _cliente.get(
+        Uri.parse('$_enderecoBase/api/publico/comando'),
+        headers: _cabecalhos(token: tokenDoAjudante));
+    _validarComando(resposta);
+    return ComandoDoAjudante.deJson(
+        jsonDecode(resposta.body) as Map<String, dynamic>);
+  }
+
+  Future<void> irParaALinhaPeloAjudante(
+      String tokenDoAjudante, int linha) async {
+    final resposta = await _cliente.put(
+      Uri.parse('$_enderecoBase/api/publico/comando/linha'),
+      headers: _cabecalhos(token: tokenDoAjudante, json: true),
+      body: jsonEncode({'linha': linha}),
+    );
+    _validarComando(resposta);
+  }
+
+  void _validarComando(http.Response resposta) {
+    if (resposta.statusCode == 404) throw const ComandoEncerrado();
+    _validar(resposta);
+  }
 }

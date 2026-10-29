@@ -110,7 +110,8 @@ class ApiTocaEssa extends _ApiTocaEssaBase
         _ApiLouvor,
         _ApiKaraoke,
         _ApiTelas,
-        _ApiMusicos {
+        _ApiMusicos,
+        _ApiComandoDaTv {
   ApiTocaEssa({super.cliente, super.enderecoBase});
 }
 
