@@ -15,6 +15,8 @@ namespace TocaEssaApp.Testes;
 /// As rotas do convite: todas privadas, a conta vem do token.
 public sealed class MusicosDaNoiteApiTestes
 {
+    private const string Cifra = "A  E\nQuando eu digo";
+
     [Fact]
     public async Task DonoConvidaMusicoEntraESai()
     {
@@ -42,6 +44,28 @@ public sealed class MusicosDaNoiteApiTestes
 
         (await bia.DeleteAsync($"/api/apresentacoes/{resenha}/musicos/{idDaBia}")).EnsureSuccessStatusCode();
         Assert.Equal(0, (await bia.GetFromJsonAsync<JsonElement>("/api/convites")).GetArrayLength());
+    }
+
+    [Fact]
+    public async Task ConvidadoLeACifraDaNoitePelaRotaDoEvento()
+    {
+        var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-musicos-{Guid.NewGuid():N}.db");
+        await using var fabrica = CriarFabrica(banco);
+        using var dono = await CriarClienteArtista(fabrica, "dono@teste.com", "Advair");
+        using var bia = await CriarClienteArtista(fabrica, "bia@teste.com", "Bia");
+        var resenha = await CriarResenha(dono);
+        (await dono.PutAsJsonAsync("/api/artista/cifras/texto",
+            new { musica = "Evidências", texto = Cifra })).EnsureSuccessStatusCode();
+        (await dono.PostAsJsonAsync($"/api/apresentacoes/{resenha}/setlist/avulsa",
+            new { titulo = "Evidências" })).EnsureSuccessStatusCode();
+        var codigo = (await (await dono.PostAsync($"/api/apresentacoes/{resenha}/convite", null))
+            .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("codigo").GetString();
+        (await bia.PostAsync($"/api/convites/{codigo}", null)).EnsureSuccessStatusCode();
+
+        var cifra = await bia.GetFromJsonAsync<JsonElement>(
+            $"/api/apresentacoes/{resenha}/cifras?musica=Evid%C3%AAncias");
+
+        Assert.Equal(Cifra, cifra.GetProperty("texto").GetString());
     }
 
     [Fact]

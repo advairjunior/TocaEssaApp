@@ -112,6 +112,28 @@ public sealed partial class RepositorioTocaEssa
             : throw new ApresentacaoNaoEncontradaException();
     }
 
+    /// A cifra que o dono colou, para o leitor de quem toca na noite. Só das
+    /// músicas da setlist e dos pedidos do evento: o acervo do dono não se
+    /// lê adivinhando títulos.
+    public ResultadoCifraDoArtista ObterCifraDaNoite(
+        string token, Guid apresentacaoId, string musica, string? artista)
+    {
+        var evento = ObterApresentacaoDaNoite(token, apresentacaoId);
+        ValidarIdentificacao(musica, artista);
+        return MusicaDaNoite(evento.Id, musica)
+            ? CifraDaMusica(evento.ArtistaId, musica, artista)
+            : new ResultadoCifraDoArtista(null, null, CriarPesquisa(musica, artista));
+    }
+
+    private bool MusicaDaNoite(Guid apresentacaoId, string musica)
+    {
+        var titulo = Normalizar(musica);
+        return _itensDoSetlist.Values.Any(item =>
+                   item.ApresentacaoId == apresentacaoId && Normalizar(item.Titulo) == titulo) ||
+               _pedidos.Values.Any(pedido =>
+                   pedido.ApresentacaoId == apresentacaoId && Normalizar(pedido.Musica) == titulo);
+    }
+
     private bool TocaNaNoite(Guid contaId, Apresentacao evento) =>
         evento.ArtistaId == contaId ||
         (EventoAbertoParaMusicos(evento) && _musicosDaApresentacao.ContainsKey((evento.Id, contaId)));

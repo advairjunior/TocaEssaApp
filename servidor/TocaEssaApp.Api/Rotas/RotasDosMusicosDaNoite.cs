@@ -24,7 +24,11 @@ public static class RotasDosMusicosDaNoite
             return Results.NoContent();
         });
 
-        app.MapGet("/api/convites", (HttpRequest http, RepositorioTocaEssa repositorio) =>
+        app.MapGet("/api/apresentacoes/{id:guid}/cifras", (
+            Guid id, string musica, string? artista, HttpRequest http, RepositorioTocaEssa repositorio) =>
+            Results.Ok(repositorio.ObterCifraDaNoite(ObterToken(http) ?? string.Empty, id, musica, artista)));
+
+        app.MapGet("/api/convites",(HttpRequest http, RepositorioTocaEssa repositorio) =>
             Results.Ok(repositorio.ListarConvites(ObterToken(http) ?? string.Empty)));
 
         app.MapGet("/api/convites/{codigo}", (

@@ -15,7 +15,12 @@ public sealed partial class RepositorioTocaEssa
         var conta = ObterRegistroArtista(token)
             ?? throw new SessaoArtistaInvalidaException();
         ValidarIdentificacao(musica, artista);
-        var chave = CriarChave(conta.Id, musica, artista);
+        return CifraDaMusica(conta.Id, musica, artista);
+    }
+
+    private ResultadoCifraDoArtista CifraDaMusica(Guid artistaId, string musica, string? artista)
+    {
+        var chave = CriarChave(artistaId, musica, artista);
         var registro = ProcurarMesmaMusica(_cifrasDoArtista, chave);
         return new ResultadoCifraDoArtista(
             registro is null ? null : ParaDominio(registro),
