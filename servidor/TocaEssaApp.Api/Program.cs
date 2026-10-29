@@ -69,6 +69,7 @@ app.MapearRotasDoPublico();
 app.MapearRotasDasApresentacoes();
 app.MapearRotasDosStories();
 app.MapearRotasDoKaraoke();
+app.MapearRotasDaTv();
 
 app.MapFallbackToFile("index.html", CacheDosArquivosDoApp.Opcoes());
 

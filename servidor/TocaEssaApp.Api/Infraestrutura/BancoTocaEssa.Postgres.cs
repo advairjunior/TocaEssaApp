@@ -114,6 +114,14 @@ internal sealed partial class BancoTocaEssa
             );
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_CifrasEmTexto_Chave"
                 ON "CifrasEmTexto" ("ArtistaId", "MusicaNormalizada", "ArtistaNormalizado");
+            CREATE TABLE IF NOT EXISTS "TelasDaTv" (
+                "Id" uuid NOT NULL,
+                "ArtistaId" uuid NOT NULL,
+                "TokenHash" character varying(64) NOT NULL,
+                "CriadaEm" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_TelasDaTv" PRIMARY KEY ("Id")
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_TelasDaTv_TokenHash" ON "TelasDaTv" ("TokenHash");
             CREATE TABLE IF NOT EXISTS "EnviosDoPublico" (
                 "Id" uuid NOT NULL,
                 "ApresentacaoId" uuid NOT NULL,

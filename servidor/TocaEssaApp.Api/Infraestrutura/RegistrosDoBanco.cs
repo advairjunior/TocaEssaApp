@@ -154,6 +154,15 @@ internal sealed class CifraEmTextoRegistro
     public DateTimeOffset AtualizadaEm { get; set; }
 }
 
+// TV que mostra a letra, gravada só depois de presa a uma conta.
+internal sealed class TvDaContaRegistro
+{
+    public Guid Id { get; set; }
+    public Guid ArtistaId { get; set; }
+    public string TokenHash { get; set; } = string.Empty;
+    public DateTimeOffset CriadaEm { get; set; }
+}
+
 internal sealed class CifraDoArtistaRegistro
 {
     public Guid Id { get; set; }

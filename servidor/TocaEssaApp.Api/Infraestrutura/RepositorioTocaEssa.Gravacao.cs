@@ -72,7 +72,8 @@ public sealed partial class RepositorioTocaEssa
                 banco => banco.MusicasDoRepertorio.AsNoTracking()),
             (typeof(ItemDoSetlistRegistro), banco => banco.ItensDoSetlist.AsNoTracking()),
             (typeof(SessaoArtistaRegistro), banco => banco.SessoesArtistas.AsNoTracking()),
-            (typeof(AcessoAoEventoRegistro), banco => banco.AcessosAoEvento.AsNoTracking())
+            (typeof(AcessoAoEventoRegistro), banco => banco.AcessosAoEvento.AsNoTracking()),
+            (typeof(TvDaContaRegistro), banco => banco.TelasDaTv.AsNoTracking())
         ];
 
     private static Dictionary<Type, Dictionary<string, string>> LerRegistrosGravados(
@@ -185,7 +186,8 @@ public sealed partial class RepositorioTocaEssa
             _musicasDoRepertorio.Values,
             _itensDoSetlist.Values,
             _sessoesArtistas.Values.Where(item => item.ExpiraEm > agora),
-            _acessosAoEvento.Values
+            _acessosAoEvento.Values,
+            _telasDaTv.Values
         ];
         return TabelasPersistidas
             .Select((tabela, indice) => (tabela.Tipo, Registros: registrosPorTabela[indice]))

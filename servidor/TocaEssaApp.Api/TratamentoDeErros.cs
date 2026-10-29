@@ -206,6 +206,11 @@ public sealed class TratamentoDeErros(RequestDelegate proximo)
             contexto.Response.StatusCode = excecao.Status;
             await contexto.Response.WriteAsJsonAsync(new { mensagem = excecao.Message });
         }
+        catch (ErroDaTvException excecao)
+        {
+            contexto.Response.StatusCode = excecao.Status;
+            await contexto.Response.WriteAsJsonAsync(new { mensagem = excecao.Message });
+        }
         catch (DestinatarioAloObrigatorioException)
         {
             contexto.Response.StatusCode = StatusCodes.Status400BadRequest;

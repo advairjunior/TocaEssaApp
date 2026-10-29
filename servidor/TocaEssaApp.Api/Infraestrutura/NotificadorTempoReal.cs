@@ -50,12 +50,16 @@ public sealed class NotificadorTempoReal
             Publicar(codigo);
     }
 
-    public void Publicar(string codigo)
+    public void Publicar(string codigo) => PublicarEvento(codigo, "alteracao");
+
+    /// Evento com dado, como a linha da TV ("linha:3:6"). Quem assina o canal
+    /// recebe só o último, se chegarem vários de uma vez.
+    public void PublicarEvento(string canal, string evento)
     {
-        if (!_assinaturas.TryGetValue(Normalizar(codigo), out var assinaturas))
+        if (!_assinaturas.TryGetValue(Normalizar(canal), out var assinaturas))
             return;
-        foreach (var canal in assinaturas.Values)
-            canal.Writer.TryWrite("alteracao");
+        foreach (var assinatura in assinaturas.Values)
+            assinatura.Writer.TryWrite(evento);
     }
 
     private static string Normalizar(string codigo) =>

@@ -23,6 +23,7 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<SessaoArtistaRegistro> SessoesArtistas => Set<SessaoArtistaRegistro>();
     internal DbSet<CifraDoArtistaRegistro> CifrasDoArtista => Set<CifraDoArtistaRegistro>();
     internal DbSet<CifraEmTextoRegistro> CifrasEmTexto => Set<CifraEmTextoRegistro>();
+    internal DbSet<TvDaContaRegistro> TelasDaTv => Set<TvDaContaRegistro>();
     internal DbSet<EnvioDoPublicoRegistro> EnviosDoPublico => Set<EnvioDoPublicoRegistro>();
     internal DbSet<RepertorioRegistro> Repertorios => Set<RepertorioRegistro>();
     internal DbSet<MusicaDoRepertorioRegistro> MusicasDoRepertorio => Set<MusicaDoRepertorioRegistro>();
@@ -160,6 +161,14 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasKey(item => item.TokenHash);
             entidade.Property(item => item.TokenHash).HasMaxLength(64);
             entidade.HasIndex(item => item.ArtistaId);
+        });
+
+        modelo.Entity<TvDaContaRegistro>(entidade =>
+        {
+            entidade.ToTable("TelasDaTv");
+            entidade.HasKey(item => item.Id);
+            entidade.Property(item => item.TokenHash).HasMaxLength(64);
+            entidade.HasIndex(item => item.TokenHash).IsUnique();
         });
 
         modelo.Entity<CifraEmTextoRegistro>(entidade =>
