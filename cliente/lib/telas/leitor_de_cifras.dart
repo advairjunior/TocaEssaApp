@@ -291,6 +291,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
                       ),
                     ),
                     trechos: _trechos(pagina, texto),
+                    chaveDaVelocidade: _chaveDaMusica(pagina),
                     aoLerALinha: _noLouvor
                         ? null
                         : _setaDaTv(

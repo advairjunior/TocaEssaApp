@@ -86,6 +86,7 @@ class CifraDoPalco extends StatefulWidget {
     required this.pagina,
     this.cabecalho,
     this.aoLerALinha,
+    this.chaveDaVelocidade,
   });
 
   final List<TrechoDaCifra> trechos;
@@ -96,6 +97,9 @@ class CifraDoPalco extends StatefulWidget {
   // Letra na TV ligada: mostra a seta e avisa a linha de letra que passa
   // nela, contada como em [LetraDaTela].
   final ValueChanged<int>? aoLerALinha;
+  // A música aberta: a rolagem automática começa na velocidade que ficou
+  // nela. Sem chave (ou música nunca rolada), vale a última usada.
+  final String? chaveDaVelocidade;
 
   @override
   State<CifraDoPalco> createState() => _CifraDoPalcoState();
@@ -131,7 +135,26 @@ class _CifraDoPalcoState extends State<CifraDoPalco> with _LeituraDaSeta {
       _esquecerALinha();
       if (_rolagem.hasClients) _rolagem.jumpTo(0);
     }
+    final preferencias = _preferencias;
+    if (anterior.chaveDaVelocidade != widget.chaveDaVelocidade &&
+        preferencias != null) {
+      _velocidade = _indiceDaVelocidade(
+          _velocidadeGuardada(preferencias) ?? _velocidades[_velocidade].vezes);
+    }
   }
+
+  String? get _chaveDaVelocidadeDaMusica => switch (widget.chaveDaVelocidade) {
+        final musica? => '$_chaveVelocidade|$musica',
+        null => null,
+      };
+
+  num? _velocidadeGuardada(SharedPreferences preferencias) =>
+      switch (_chaveDaVelocidadeDaMusica) {
+        final chave? => preferencias.getDouble(chave),
+        null => null,
+      } ??
+      preferencias.getDouble(_chaveVelocidade) ??
+      preferencias.getInt(_chaveVelocidadeAntiga);
 
   @override
   void dispose() {
@@ -145,8 +168,7 @@ class _CifraDoPalcoState extends State<CifraDoPalco> with _LeituraDaSeta {
     try {
       final preferencias = await SharedPreferences.getInstance();
       final salva = preferencias.getDouble(_chaveEscala);
-      final velocidade = preferencias.getDouble(_chaveVelocidade) ??
-          preferencias.getInt(_chaveVelocidadeAntiga);
+      final velocidade = _velocidadeGuardada(preferencias);
       if (mounted) {
         setState(() {
           _preferencias = preferencias;
@@ -200,9 +222,12 @@ class _CifraDoPalcoState extends State<CifraDoPalco> with _LeituraDaSeta {
   Future<void> _mudarVelocidade(int passo) async {
     setState(() =>
         _velocidade = (_velocidade + passo).clamp(0, _velocidades.length - 1));
+    final vezes = _velocidades[_velocidade].vezes;
     try {
-      await _preferencias?.setDouble(
-          _chaveVelocidade, _velocidades[_velocidade].vezes);
+      await _preferencias?.setDouble(_chaveVelocidade, vezes);
+      if (_chaveDaVelocidadeDaMusica case final chave?) {
+        await _preferencias?.setDouble(chave, vezes);
+      }
     } catch (_) {
       // A velocidade só não fica guardada para a próxima vez.
     }

@@ -401,6 +401,20 @@ void main() {
       expect(find.byTooltip('Rolar automaticamente'), findsOneWidget);
     });
 
+    testWidgets('cada música abre na velocidade que ficou nela',
+        (tester) async {
+      final chave = '${normalizarMusica('Velha Infância')}|'
+          '${normalizarMusica('Banda')}';
+      SharedPreferences.setMockInitialValues(
+          {'leitor_velocidade_vezes|$chave': 3.0});
+      await _abrir(tester, cifraDaVelha: cifraLonga);
+
+      await tester.tap(find.byTooltip('Rolar automaticamente'));
+      await tester.pump();
+
+      expect(find.text('3x'), findsOneWidget);
+    });
+
     testWidgets('mais rápido rola mais e a velocidade fica guardada',
         (tester) async {
       await _abrir(tester, cifraDaVelha: cifraLonga);
