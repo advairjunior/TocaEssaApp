@@ -198,6 +198,33 @@ cada uma começa por uma investigação antes de virar plano.
   Tela de Início.
 - **Registrada em:** 2026-10-21.
 
+### Sugerir "Adicionar à Tela de Início" a quem chega pelo link
+
+- **Problema:** na cantata de 2026-10-24 o público se perdia: o voltar levava
+  ao início e cada um abria o link de novo. O voltar do app foi corrigido em
+  2026-10-29 (`6a4a88b`), mas no iPhone o gesto de voltar é do Safari e leva
+  para onde a pessoa estava antes do link (WhatsApp).
+- **Ideia:** quem abre o roteiro do louvor ou a resenha pelo link recebe, na
+  hora certa (depois de escolher quem é, por exemplo), o convite para pôr o
+  TocaEssa na Tela de Início, com o passo a passo do iPhone. Aberto como app,
+  não há voltar do Safari e o link fica a um toque.
+- **Já existe:** `instalar_app.dart` (tela de instalar do artista).
+- **Investigar antes:** se o app instalado abre direto no evento do link
+  (`start_url` e o hash), e como não incomodar quem já instalou ou dispensou.
+- **Registrada em:** 2026-10-29.
+
+### Conta do público em um passo, pelo QR da resenha
+
+- **Problema:** o proprietário quer que todos na resenha tenham conta, mas
+  criar conta no meio da roda pede nome, e-mail e senha.
+- **Ideia:** o QR da resenha leva a um cadastro de um passo (nome e e-mail;
+  senha depois, quando a pessoa quiser entrar em outro aparelho) e a pessoa
+  fica lembrada no aparelho. Já entra na resenha e em Meus encontros.
+- **Investigar antes:** segurança da conta sem senha (link por e-mail? código?
+  só o aparelho?), como recuperar o acesso, e o que muda nas rotas públicas
+  de conta (exige autorização).
+- **Registrada em:** 2026-10-29.
+
 ### Visual próprio para o Louvor
 
 - **Problema:** o Louvor usa o mesmo visual de show (roxo neon, foto de palco
