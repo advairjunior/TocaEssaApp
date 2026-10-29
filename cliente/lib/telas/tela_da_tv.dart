@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../dominio/letra_da_tela.dart';
@@ -11,6 +12,7 @@ import '../infraestrutura/link_publico.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'controle_da_tv.dart';
+import 'tamanho_da_letra_na_tv.dart';
 
 part 'tela_da_tv_intervalo.dart';
 part 'tela_da_tv_letra.dart';
@@ -43,13 +45,19 @@ class TelaDaTv extends StatefulWidget {
 
 class _TelaDaTvState extends State<TelaDaTv> {
   late final _controle = ControleDaTv(api: widget.api, assinar: widget.assinar);
+  final _tamanho = TamanhoDaLetraNaTv();
   late final LiberarTelaAcesa _liberarTela;
+  // O aviso "Letra 90%" some sozinho.
+  bool _mostrarTamanho = false;
+  Timer? _esconderTamanho;
 
   @override
   void initState() {
     super.initState();
     _liberarTela = widget.manterTelaAcesa();
     _controle.addListener(_redesenhar);
+    _tamanho.addListener(_redesenhar);
+    _tamanho.ler();
     _controle.comecar();
   }
 
@@ -57,23 +65,81 @@ class _TelaDaTvState extends State<TelaDaTv> {
 
   @override
   void dispose() {
+    _esconderTamanho?.cancel();
     _controle.removeListener(_redesenhar);
     _controle.dispose();
+    _tamanho.dispose();
     _liberarTela();
     super.dispose();
   }
 
+  /// As setas do controle da TV mudam o tamanho da letra.
+  KeyEventResult _tecla(FocusNode _, KeyEvent evento) {
+    if (evento is! KeyDownEvent) return KeyEventResult.ignored;
+    if (evento.logicalKey == LogicalKeyboardKey.arrowUp) {
+      _tamanho.aumentar();
+    } else if (evento.logicalKey == LogicalKeyboardKey.arrowDown) {
+      _tamanho.diminuir();
+    } else {
+      return KeyEventResult.ignored;
+    }
+    _avisarTamanho();
+    return KeyEventResult.handled;
+  }
+
+  void _avisarTamanho() {
+    _esconderTamanho?.cancel();
+    setState(() => _mostrarTamanho = true);
+    _esconderTamanho = Timer(const Duration(seconds: 2),
+        () => mounted ? setState(() => _mostrarTamanho = false) : null);
+  }
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: CoresTocaEssa.fundo,
-        body: switch ((_controle.pareada, _controle.conteudo)) {
-          (false, _) => _CodigoParaConectar(codigo: _controle.codigo),
-          (true, null) => const _Aviso(
-              titulo: 'TV conectada', texto: 'Conectada · esperando a música'),
-          (true, final conteudo?) when _controle.intervalo =>
-            _IntervaloNaTv(conteudo: conteudo, fotos: _controle.fotos),
-          (true, final conteudo?) => _LetraNaTv(conteudo: conteudo),
-        },
+  Widget build(BuildContext context) => Focus(
+        autofocus: true,
+        onKeyEvent: _tecla,
+        child: Scaffold(
+          backgroundColor: CoresTocaEssa.fundo,
+          body: Stack(
+            children: [
+              Positioned.fill(child: _conteudoDaTela()),
+              if (_mostrarTamanho)
+                Positioned(
+                  top: 24,
+                  right: 24,
+                  child: _AvisoDoTamanho(rotulo: _tamanho.rotulo),
+                ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _conteudoDaTela() => switch ((_controle.pareada, _controle.conteudo)) {
+        (false, _) => _CodigoParaConectar(codigo: _controle.codigo),
+        (true, null) => const _Aviso(
+            titulo: 'TV conectada', texto: 'Conectada · esperando a música'),
+        (true, final conteudo?) when _controle.intervalo =>
+          _IntervaloNaTv(conteudo: conteudo, fotos: _controle.fotos),
+        (true, final conteudo?) =>
+          _LetraNaTv(conteudo: conteudo, escala: _tamanho.value),
+      };
+}
+
+class _AvisoDoTamanho extends StatelessWidget {
+  const _AvisoDoTamanho({required this.rotulo});
+
+  final String rotulo;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: CoresTocaEssa.superficieElevada,
+          borderRadius: BorderRadius.circular(RaioTocaEssa.pilula),
+          border: Border.all(color: CoresTocaEssa.borda),
+        ),
+        child: Text(rotulo,
+            style: const TextStyle(fontSize: 22, color: CoresTocaEssa.texto)),
       );
 }
 

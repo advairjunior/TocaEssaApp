@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -36,8 +37,10 @@ const _stories = [
 void Function(String)? _aoReceber;
 var _telaAcesa = 0;
 
-Future<void> _abrir(WidgetTester tester, Map<String, Object?> estado) async {
-  SharedPreferences.setMockInitialValues({'tv_token': 't1', 'tv_id': 'tv1'});
+Future<void> _abrir(WidgetTester tester, Map<String, Object?> estado,
+    {Map<String, Object> guardado = const {}}) async {
+  SharedPreferences.setMockInitialValues(
+      {'tv_token': 't1', 'tv_id': 'tv1', ...guardado});
   _estado = estado;
   final api = ApiTocaEssa(
     enderecoBase: 'http://teste',
@@ -84,7 +87,45 @@ Color? _corDe(WidgetTester tester, String texto) =>
     tester.widget<Text>(find.text(texto)).style?.color ??
     DefaultTextStyle.of(tester.element(find.text(texto))).style.color;
 
+double _tamanhoDe(WidgetTester tester, String texto) =>
+    DefaultTextStyle.of(tester.element(find.text(texto))).style.fontSize!;
+
 void main() {
+  setUp(() => _telaAcesa = 0);
+
+  group('tamanho da letra pelo controle da TV', () {
+    testWidgets('seta para baixo diminui, para cima aumenta, e a TV guarda',
+        (tester) async {
+      await _abrir(tester, _tocando());
+      final normal = _tamanhoDe(tester, 'O sol desceu devagar');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_tamanhoDe(tester, 'O sol desceu devagar'), lessThan(normal));
+      expect(find.text('Letra 90%'), findsOneWidget);
+      expect((await SharedPreferences.getInstance()).getDouble('tv_escala'),
+          closeTo(.9, .001));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_tamanhoDe(tester, 'O sol desceu devagar'), greaterThan(normal));
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.textContaining('Letra '), findsNothing);
+    });
+
+    testWidgets('a TV abre no tamanho guardado', (tester) async {
+      await _abrir(tester, _tocando());
+      final normal = _tamanhoDe(tester, 'O sol desceu devagar');
+      await tester.pumpWidget(const SizedBox());
+
+      await _abrir(tester, _tocando(), guardado: {'tv_escala': 1.2});
+
+      expect(_tamanhoDe(tester, 'O sol desceu devagar'),
+          closeTo(normal * 1.2, .5));
+    });
+  });
+
   testWidgets('o endereço #/tv abre a tela da TV', (tester) async {
     SharedPreferences.setMockInitialValues({'tv_token': 't1', 'tv_id': 'tv1'});
     final api = ApiTocaEssa(

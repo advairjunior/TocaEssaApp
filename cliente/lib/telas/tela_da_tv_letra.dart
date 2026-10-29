@@ -8,9 +8,11 @@ final _corPorVir = CoresTocaEssa.textoSecundario.withValues(alpha: .6);
 /// parte atual em letra grande no meio, a próxima parte e a seguinte música
 /// no rodapé. Tudo medido pela largura da TV, para caber em qualquer tela.
 class _LetraNaTv extends StatelessWidget {
-  const _LetraNaTv({required this.conteudo});
+  const _LetraNaTv({required this.conteudo, required this.escala});
 
   final ConteudoDaTv conteudo;
+  // Pelas setas do controle: 1 é o tamanho normal.
+  final double escala;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +36,7 @@ class _LetraNaTv extends StatelessWidget {
                         parte: parte,
                         linha: conteudo.linha,
                         u: u,
+                        escala: escala,
                       ),
                     ),
             ),
@@ -97,11 +100,13 @@ class _Parte extends StatelessWidget {
     required this.parte,
     required this.linha,
     required this.u,
+    required this.escala,
   });
 
   final ParteDaLetra parte;
   final int linha;
   final double u;
+  final double escala;
 
   Color _corDa(LinhaDaLetra linhaDaParte) => switch (linhaDaParte.numero) {
         final numero when numero < linha => _corCantada,
@@ -113,7 +118,8 @@ class _Parte extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
         builder: (context, limites) {
           final cabe = limites.maxHeight / (parte.linhas.length * 1.5 + 2);
-          final tamanho = cabe < 4.6 * u ? cabe : 4.6 * u;
+          final escolhido = 4.6 * u * escala;
+          final tamanho = cabe < escolhido ? cabe : escolhido;
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
