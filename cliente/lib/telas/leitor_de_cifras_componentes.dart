@@ -10,7 +10,8 @@ class _SemCifra extends StatelessWidget {
 
   final Vocabulario vocabulario;
   final String? link;
-  final VoidCallback colar;
+  // Nulo no celular do músico convidado: a cifra é do dono.
+  final VoidCallback? colar;
   final ValueChanged<String> abrirNoSite;
 
   @override
@@ -26,11 +27,12 @@ class _SemCifra extends StatelessWidget {
               Text('Sem ${vocabulario.cifra} no app',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: EspacoTocaEssa.base),
-              FilledButton.icon(
-                onPressed: colar,
-                icon: const Icon(Icons.content_paste_rounded),
-                label: Text('Colar ${vocabulario.cifra}'),
-              ),
+              if (colar != null)
+                FilledButton.icon(
+                  onPressed: colar,
+                  icon: const Icon(Icons.content_paste_rounded),
+                  label: Text('Colar ${vocabulario.cifra}'),
+                ),
               if (link case final endereco?) ...[
                 const SizedBox(height: EspacoTocaEssa.pequeno),
                 OutlinedButton.icon(

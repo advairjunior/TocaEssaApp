@@ -122,7 +122,7 @@ extension CifrasDaSequencia on SequenciaDoPalco {
   Future<ResultadoCifraDoArtista?> _consultarCifraSemErro(
       MusicaDoPalco musica) async {
     try {
-      return await api.consultarCifra(musica.titulo, musica.artista);
+      return await consultarCifra(musica);
     } catch (_) {
       // Sem a busca antecipada, o toque em Tocar busca a cifra na hora.
       return null;

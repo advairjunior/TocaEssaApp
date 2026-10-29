@@ -102,7 +102,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
           ? null
           : linkPublicoDoShow(codigo, hino: item.id);
     }
-    if (texto == null) return null;
+    // O link da cifra é do dono dela: o músico convidado não compartilha.
+    if (texto == null || !_sequencia.colaCifra) return null;
     final chave = _chaveDaMusica(pagina);
     final codigo = _codigosDasCifras[chave];
     if (codigo == null && _codigosPedidos.add(chave)) {
@@ -252,11 +253,12 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
           title:
               Text(pagina.titulo, maxLines: 1, overflow: TextOverflow.ellipsis),
           actions: [
-            IconButton(
-              tooltip: 'Colar ou corrigir ${_sequencia.vocabulario.cifra}',
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => _editarCifra(texto),
-            ),
+            if (_sequencia.colaCifra)
+              IconButton(
+                tooltip: 'Colar ou corrigir ${_sequencia.vocabulario.cifra}',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _editarCifra(texto),
+              ),
             if (_linkParaCompartilhar(pagina, texto) case final link?)
               IconButton(
                 tooltip: 'Compartilhar',
@@ -277,7 +279,8 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
                 ? _SemCifra(
                     vocabulario: _sequencia.vocabulario,
                     link: consulta?.cifra?.url,
-                    colar: () => _editarCifra(null),
+                    colar:
+                        _sequencia.colaCifra ? () => _editarCifra(null) : null,
                     abrirNoSite: _abrirNoSite,
                   )
                 : CifraDoPalco(

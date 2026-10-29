@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../dominio/modelos.dart';
 import '../infraestrutura/api_toca_essa.dart';
 
+part 'sequencia_do_palco_convidado.dart';
 part 'sequencia_do_palco_ensaio.dart';
 part 'sequencia_do_palco_pedidos.dart';
 
@@ -48,6 +49,13 @@ class SequenciaDoPalco extends ChangeNotifier {
   // Muda a cada alteração feita neste aparelho: uma atualização que começou
   // antes dela traz dados velhos e é descartada.
   int _versaoLocal = 0;
+
+  /// A cifra da música; o músico convidado lê a do dono pelo evento.
+  Future<ResultadoCifraDoArtista> consultarCifra(MusicaDoPalco musica) =>
+      api.consultarCifra(musica.titulo, musica.artista);
+
+  /// Este aparelho cola e corrige cifras; o do convidado só lê as do dono.
+  bool get colaCifra => true;
 
   static String _chave(String titulo, String? artista) =>
       '${titulo.trim().toLowerCase()}|${artista?.trim().toLowerCase() ?? ''}';
