@@ -17,6 +17,7 @@ import 'componentes_formulario.dart';
 import 'componentes_lista.dart';
 import 'componentes_movimento.dart';
 import 'instalar_app.dart';
+import 'convites_do_musico.dart';
 import 'letra_na_tv_do_artista.dart';
 import 'musicos_da_noite_do_dono.dart';
 import 'stories_do_show.dart';

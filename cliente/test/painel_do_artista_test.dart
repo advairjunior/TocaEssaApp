@@ -13,6 +13,7 @@ import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
+import 'package:toca_essa_app/telas/convites_do_musico.dart';
 import 'package:toca_essa_app/telas/letra_na_tv_do_artista.dart';
 import 'package:toca_essa_app/telas/musicos_da_noite_do_dono.dart';
 import 'package:toca_essa_app/telas/tocar_musicas.dart';
@@ -579,6 +580,56 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsOneWidget);
     expect(find.byType(MusicosDaNoiteDoDono), findsOneWidget);
+  });
+
+  testWidgets(
+      'os eventos em que o artista toca como convidado ficam em Convites',
+      (tester) async {
+    await _abrirPainel(tester, outras: (requisicao) async {
+      if (requisicao.url.path != '/api/convites') return null;
+      return http.Response(
+          jsonEncode([
+            {
+              'apresentacaoId': 'ev9',
+              'nome': 'Resenha House',
+              'data': '2026-10-30',
+              'local': 'Casa',
+              'tipo': 'ResenhaEntreAmigos',
+              'status': 'Agendada',
+              'codigo': 'RSN482',
+              'dono': 'Advair',
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    });
+
+    expect(find.byType(ConvitesDoMusico), findsOneWidget);
+    expect(find.text('Resenha House'), findsOneWidget);
+  });
+
+  testWidgets('quem criou a conta só para tocar vê os Convites antes do perfil',
+      (tester) async {
+    await _abrirPainel(tester, perfil: null, outras: (requisicao) async {
+      if (requisicao.url.path != '/api/convites') return null;
+      return http.Response(
+          jsonEncode([
+            {
+              'apresentacaoId': 'ev9',
+              'nome': 'Resenha House',
+              'data': '2026-10-30',
+              'local': 'Casa',
+              'tipo': 'ResenhaEntreAmigos',
+              'status': 'Agendada',
+              'codigo': 'RSN482',
+              'dono': 'Advair',
+            }
+          ]),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'});
+    });
+
+    expect(find.text('Resenha House'), findsOneWidget);
   });
 
   group('horas contratadas', () {

@@ -89,7 +89,10 @@ class _ConviteDoMusicoState extends State<ConviteDoMusico> {
 
   void _abrirPainel() {
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+    // Aberto pelo painel (convite guardado antes de entrar), só volta.
+    final navegador = Navigator.of(context);
+    if (navegador.canPop()) return navegador.pop();
+    navegador.pushReplacement(MaterialPageRoute<void>(
         builder: (_) => AcessoDoArtista(api: widget.api)));
   }
 

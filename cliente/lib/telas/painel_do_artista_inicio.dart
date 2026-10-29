@@ -44,6 +44,8 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
     if (_perfil == null) {
       return [
         const SizedBox(height: EspacoTocaEssa.grande),
+        // Amigo que criou a conta só para tocar: o convite vem antes do perfil.
+        ConvitesDoMusico(api: _api, artistaId: widget.conta.id),
         _ConviteCriarPerfil(
           criar: () => _selecionarAba(_AbaPainel.perfil),
         ),
@@ -69,6 +71,8 @@ extension _InicioDoPainelDoArtista on _PainelDoArtistaState {
         ),
         const SizedBox(height: EspacoTocaEssa.grande),
       ],
+      // Eventos de outros artistas em que esta conta toca.
+      ConvitesDoMusico(api: _api, artistaId: widget.conta.id),
       if (_apresentacoes.isEmpty)
         const EstadoVazio(
           icone: Icons.mic_external_on_rounded,
