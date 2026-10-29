@@ -358,6 +358,27 @@ proprietário:
   ficam sem ninguém, inclusive as trocadas à mão; rota
   `DELETE /api/apresentacoes/{id}/louvor/escala`.
 
+### Letra na TV (2026-10-29)
+
+Desenho em `docs/superpowers/specs/2026-10-29-letra-na-tv-design.md` e
+`...-letra-na-tv-extras-design.md`.
+- A TV abre `tocaessaapp.onrender.com/tv` (o servidor redireciona para
+  `/#/tv`, `tela_da_tv.dart`), mostra um código de 4 letras e fica presa à
+  conta pelo "Conectar TV" do Mais da resenha (`letra_na_tv_do_artista.dart`).
+  Tabela `TelasDaTv` (só TVs conectadas); código e conteúdo ficam na memória.
+- O servidor não entende de letra: o celular do dono manda o texto (`PUT
+  /api/artista/telas/conteudo`) e a linha (`.../conteudo/linha`, 409 sem
+  conteúdo: o celular manda tudo de novo). Tempo real próprio da TV
+  (`/api/publico/telas/{id}/tempo-real`, evento `linha:versão:linha`).
+- `LetraDaTela` (`dominio/letra_da_tela.dart`) numera só as linhas de letra;
+  roda igual no celular e na TV. A seta fixa no terço de cima da
+  `CifraDoPalco` (`aoLerALinha`) avisa a linha que passa nela; o
+  `TransmissorDaLetra` segura o ritmo. Chave "Letra na TV" no aparelho.
+- Extras: "A seguir · pedida por Carla", QR da resenha, intervalo 20 s depois
+  da última linha (A seguir, QR e fotos dos stories), velocidade da rolagem
+  por música, louvor com o nome de quem canta no selo (sem o "sua vez").
+  Karaokê na TV ficou de fora (a TV está no YouTube na vez de cada um).
+
 ### Lições do iPhone/Safari
 
 O proprietário testa e usa no iPhone. Testes de widget não pegam:
