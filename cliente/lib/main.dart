@@ -10,6 +10,7 @@ import 'telas/acesso_do_artista.dart';
 import 'telas/componentes.dart';
 import 'telas/inicio.dart';
 import 'telas/conta_do_publico.dart';
+import 'telas/convite_do_musico.dart';
 import 'telas/tela_da_tv.dart';
 
 void main() {
@@ -39,7 +40,7 @@ class TocaEssaApp extends StatelessWidget {
       // pessoa dos hinos e ela tinha que abrir o link de novo.
       onGenerateInitialRoutes: (nome) {
         final rota = _rota(servico, RouteSettings(name: nome));
-        final doLink = const {'publico', 'cifra', 'tv'}
+        final doLink = const {'publico', 'cifra', 'tv', 'convite'}
             .contains(Uri.parse(nome).pathSegments.firstOrNull);
         return [
           if (!doLink && nome != '/')
@@ -69,6 +70,13 @@ class TocaEssaApp extends StatelessWidget {
         builder: (_) =>
             CifraCompartilhadaTela(api: servico, codigo: uri.pathSegments.last),
       );
+    }
+    // Convite de músico para o evento da noite.
+    if (uri.pathSegments.length == 2 && uri.pathSegments.first == 'convite') {
+      return MaterialPageRoute<void>(
+          settings: configuracao,
+          builder: (_) =>
+              ConviteDoMusico(api: servico, codigo: uri.pathSegments.last));
     }
     if (uri.path == '/artista') {
       return MaterialPageRoute<void>(
