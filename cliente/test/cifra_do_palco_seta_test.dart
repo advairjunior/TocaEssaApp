@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toca_essa_app/dominio/letra_da_tela.dart';
 import 'package:toca_essa_app/telas/cifra_do_palco.dart';
 
 // Uma linha de acordes em cima de cada linha de letra: "Linha N" é a linha
@@ -61,6 +62,24 @@ void main() {
 
     expect(lidas.last, greaterThan(lidas.first));
     expect(lidas.last, _linhaNaSeta(tester));
+  });
+
+  test('as partes juntas para a TV têm o nome como marca e a mesma contagem',
+      () {
+    const trechos = [
+      TrechoDaCifra(rotulo: 'ANA + CORAL', texto: 'G   D\nLinha a\nLinha b'),
+      TrechoDaCifra(texto: 'Linha c'),
+      TrechoDaCifra(rotulo: 'TODOS [2X]', texto: 'C\nLinha d'),
+    ];
+    final noCelular = trechos.fold<int>(
+        0, (soma, trecho) => soma + LetraDaTela.doTexto(trecho.texto).total);
+
+    final naTv = LetraDaTela.doTexto(TrechoDaCifra.juntarParaTv(trechos));
+
+    expect(naTv.total, noCelular);
+    expect(naTv.partes.map((parte) => parte.rotulo),
+        ['ANA + CORAL', null, 'TODOS 2X']);
+    expect(naTv.partes.last.linhas.single.texto, 'Linha d');
   });
 
   testWidgets('a mesma linha não é avisada duas vezes', (tester) async {

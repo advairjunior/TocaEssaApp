@@ -151,8 +151,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
 
   String get _quemSou => _preferencias?.getString(_chaveQuemSou) ?? '';
 
-  /// A cifra da página: no louvor, partes com o nome de quem canta.
-  List<TrechoDaCifra> _trechos(MusicaDoPalco pagina, String texto) {
+  /// A cifra da página: no louvor, partes com o nome de quem canta. Para a
+  /// TV, [quemSou] vazio: o "sua vez" é só de quem está com o celular.
+  List<TrechoDaCifra> _trechos(MusicaDoPalco pagina, String texto,
+      {String? quemSou}) {
     final semitons = _semitonsDe(pagina);
     final hino = _louvor?.hinos
         .where(
@@ -163,7 +165,7 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
     }
     return trechosDoHino(hino,
         cantores: _louvor!.cantores,
-        quemSou: _quemSou,
+        quemSou: quemSou ?? _quemSou,
         acordes: true,
         semitons: semitons);
   }
@@ -292,10 +294,10 @@ class _LeitorDeCifrasState extends State<LeitorDeCifras>
                     ),
                     trechos: _trechos(pagina, texto),
                     chaveDaVelocidade: _chaveDaMusica(pagina),
-                    aoLerALinha: _noLouvor
-                        ? null
-                        : _setaDaTv(
-                            pagina, texto, paginas.elementAtOrNull(indice + 1)),
+                    aoLerALinha: _setaDaTv(
+                        pagina,
+                        _trechos(pagina, texto, quemSou: ''),
+                        paginas.elementAtOrNull(indice + 1)),
                   ),
         bottomNavigationBar: _BarraDoLeitor(
           vocabulario: _sequencia.vocabulario,

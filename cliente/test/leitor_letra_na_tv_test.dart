@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:toca_essa_app/dominio/letra_da_tela.dart';
+import 'package:toca_essa_app/dominio/modelos.dart';
 import 'package:toca_essa_app/dominio/tela_da_tv.dart';
 import 'package:toca_essa_app/dominio/transmissor_da_letra.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
@@ -58,12 +60,46 @@ final _pedidoDaCarla = {
   'tipo': 'Musica',
 };
 
-Future<_TvFalsa> _abrir(WidgetTester tester, {bool comPedido = false}) async {
+// Hino "Fim de tarde": a estrofe é do João, o coro de todos.
+final _louvor = {
+  'cantores': ['João', 'Ana'],
+  'solistas': <Object?>[],
+  'placar': <Object?>[],
+  'hinos': [
+    {
+      'itemId': '1',
+      'titulo': 'Fim de tarde',
+      'tom': 'G',
+      'tocado': false,
+      'temLetra': true,
+      'partes': [
+        {
+          'tipo': 'Estrofe',
+          'texto': 'G    D\nO sol desceu devagar',
+          'cantores': ['João'],
+          'definida': true,
+        },
+        {
+          'tipo': 'Refrao',
+          'texto': 'Em   C\nCavaco afinado',
+          'cantores': <String>[],
+          'definida': true,
+        },
+      ],
+    },
+  ],
+};
+
+Future<_TvFalsa> _abrir(WidgetTester tester,
+    {bool comPedido = false, bool noLouvor = false}) async {
   final tv = _TvFalsa();
   final cliente = MockClient((requisicao) async {
     final aSeguir = responderPedidosASeguir(requisicao, [if (comPedido) 'p1']);
     if (aSeguir != null) return aSeguir;
     final caminho = requisicao.url.path;
+    if (caminho.endsWith('/louvor') && noLouvor) {
+      return http.Response(jsonEncode(_louvor), 200, headers: _json);
+    }
     if (caminho.endsWith('/grupos-pedidos') && comPedido) {
       return http.Response(jsonEncode([_pedidoDaCarla]), 200, headers: _json);
     }
@@ -92,8 +128,11 @@ Future<_TvFalsa> _abrir(WidgetTester tester, {bool comPedido = false}) async {
   });
   final api = ApiTocaEssa(cliente: cliente, enderecoBase: 'http://teste')
     ..definirTokenArtista('TOKEN');
-  final sequencia =
-      SequenciaDoPalco(api: api, apresentacaoId: _id, codigo: 'RSN482');
+  final sequencia = SequenciaDoPalco(
+      api: api,
+      apresentacaoId: _id,
+      codigo: 'RSN482',
+      vocabulario: noLouvor ? Vocabulario.louvor : Vocabulario.musical);
   await tester.runAsync(sequencia.carregar);
   await tester.runAsync(() => sequencia.buscarCifras());
   await tester.pumpWidget(MaterialApp(
@@ -126,6 +165,23 @@ void main() {
     expect(mostrada.aSeguir, 'Lua de São Jorge');
     expect(mostrada.codigo, 'RSN482');
     expect(mostrada.linha, 0);
+  });
+
+  testWidgets(
+      'no louvor, a seta aparece e a TV recebe o nome de quem canta '
+      'cada parte, sem o "sua vez" de quem está com o celular', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'letra_na_tv': true,
+      'louvor_quem_sou_artista_$_id': 'João',
+    });
+
+    final tv = await _abrir(tester, noLouvor: true);
+
+    expect(find.byKey(chaveDaSetaDaTv), findsOneWidget);
+    final letra = LetraDaTela.doTexto(tv.mostradas.last.texto);
+    expect(letra.partes.map((parte) => parte.rotulo), ['JOÃO', 'TODOS']);
+    expect(letra.partes.expand((parte) => parte.linhas).map((l) => l.texto),
+        ['O sol desceu devagar', 'Cavaco afinado']);
   });
 
   testWidgets('pedido a seguir vai para a TV com quem pediu', (tester) async {

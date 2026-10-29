@@ -74,6 +74,17 @@ class TrechoDaCifra {
   final String? aviso;
   // Parte em que a pessoa não canta: fica fraca, para ela saber quando parar.
   final bool apagado;
+
+  /// O texto que vai para a TV: cada trecho com o nome como marca
+  /// ("[ANA + CORAL]"), separados por linha em branco. Marcas e linhas em
+  /// branco não são letra, então a TV conta as linhas como a cifra do palco.
+  static String juntarParaTv(List<TrechoDaCifra> trechos) => [
+        for (final trecho in trechos)
+          if (trecho.rotulo case final rotulo?)
+            '[${rotulo.replaceAll(RegExp(r'[\[\]]'), '')}]\n${trecho.texto}'
+          else
+            trecho.texto,
+      ].join('\n\n');
 }
 
 /// Cifra na tela do palco: tamanho automático, pinça para aumentar,
