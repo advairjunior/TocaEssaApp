@@ -150,6 +150,10 @@ public sealed partial class RepositorioTocaEssa
             _musicasDoRepertorio[m.Id] = m;
         foreach (var tv in banco.TelasDaTv.AsNoTracking())
             _telasDaTv[tv.Id] = tv;
+        foreach (var musico in banco.MusicosDaApresentacao.AsNoTracking())
+            _musicosDaApresentacao[(musico.ApresentacaoId, musico.ArtistaId)] = musico;
+        foreach (var convite in banco.ConvitesDaApresentacao.AsNoTracking())
+            _convitesDaApresentacao[convite.ApresentacaoId] = convite;
         foreach (var i in banco.ItensDoSetlist.AsNoTracking())
             _itensDoSetlist[i.Id] = i;
 

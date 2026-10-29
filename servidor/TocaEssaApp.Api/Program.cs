@@ -70,6 +70,7 @@ app.MapearRotasDasApresentacoes();
 app.MapearRotasDosStories();
 app.MapearRotasDoKaraoke();
 app.MapearRotasDaTv();
+app.MapearRotasDosMusicosDaNoite();
 
 app.MapFallbackToFile("index.html", CacheDosArquivosDoApp.Opcoes());
 

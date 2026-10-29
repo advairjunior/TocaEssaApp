@@ -122,6 +122,20 @@ internal sealed partial class BancoTocaEssa
                 CONSTRAINT "PK_TelasDaTv" PRIMARY KEY ("Id")
             );
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_TelasDaTv_TokenHash" ON "TelasDaTv" ("TokenHash");
+            CREATE TABLE IF NOT EXISTS "MusicosDaApresentacao" (
+                "ApresentacaoId" uuid NOT NULL,
+                "ArtistaId" uuid NOT NULL,
+                "EntrouEm" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_MusicosDaApresentacao" PRIMARY KEY ("ApresentacaoId", "ArtistaId")
+            );
+            CREATE TABLE IF NOT EXISTS "ConvitesDaApresentacao" (
+                "ApresentacaoId" uuid NOT NULL,
+                "Codigo" character varying(32) NOT NULL,
+                "CriadoEm" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_ConvitesDaApresentacao" PRIMARY KEY ("ApresentacaoId")
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_ConvitesDaApresentacao_Codigo"
+                ON "ConvitesDaApresentacao" ("Codigo");
             CREATE TABLE IF NOT EXISTS "EnviosDoPublico" (
                 "Id" uuid NOT NULL,
                 "ApresentacaoId" uuid NOT NULL,

@@ -154,6 +154,22 @@ internal sealed class CifraEmTextoRegistro
     public DateTimeOffset AtualizadaEm { get; set; }
 }
 
+// Músico que entrou pelo convite no evento de outro artista.
+internal sealed class MusicoDaApresentacaoRegistro
+{
+    public Guid ApresentacaoId { get; set; }
+    public Guid ArtistaId { get; set; }
+    public DateTimeOffset EntrouEm { get; set; }
+}
+
+// Link de convite em vigor do evento; gerar outro troca o código.
+internal sealed class ConviteDaApresentacaoRegistro
+{
+    public Guid ApresentacaoId { get; set; }
+    public string Codigo { get; set; } = string.Empty;
+    public DateTimeOffset CriadoEm { get; set; }
+}
+
 // TV que mostra a letra, gravada só depois de presa a uma conta.
 internal sealed class TvDaContaRegistro
 {

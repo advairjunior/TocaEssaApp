@@ -24,6 +24,10 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
     internal DbSet<CifraDoArtistaRegistro> CifrasDoArtista => Set<CifraDoArtistaRegistro>();
     internal DbSet<CifraEmTextoRegistro> CifrasEmTexto => Set<CifraEmTextoRegistro>();
     internal DbSet<TvDaContaRegistro> TelasDaTv => Set<TvDaContaRegistro>();
+    internal DbSet<MusicoDaApresentacaoRegistro> MusicosDaApresentacao =>
+        Set<MusicoDaApresentacaoRegistro>();
+    internal DbSet<ConviteDaApresentacaoRegistro> ConvitesDaApresentacao =>
+        Set<ConviteDaApresentacaoRegistro>();
     internal DbSet<EnvioDoPublicoRegistro> EnviosDoPublico => Set<EnvioDoPublicoRegistro>();
     internal DbSet<RepertorioRegistro> Repertorios => Set<RepertorioRegistro>();
     internal DbSet<MusicaDoRepertorioRegistro> MusicasDoRepertorio => Set<MusicaDoRepertorioRegistro>();
@@ -169,6 +173,20 @@ internal sealed partial class BancoTocaEssa(string destinoBanco) : DbContext
             entidade.HasKey(item => item.Id);
             entidade.Property(item => item.TokenHash).HasMaxLength(64);
             entidade.HasIndex(item => item.TokenHash).IsUnique();
+        });
+
+        modelo.Entity<MusicoDaApresentacaoRegistro>(entidade =>
+        {
+            entidade.ToTable("MusicosDaApresentacao");
+            entidade.HasKey(item => new { item.ApresentacaoId, item.ArtistaId });
+        });
+
+        modelo.Entity<ConviteDaApresentacaoRegistro>(entidade =>
+        {
+            entidade.ToTable("ConvitesDaApresentacao");
+            entidade.HasKey(item => item.ApresentacaoId);
+            entidade.Property(item => item.Codigo).HasMaxLength(32);
+            entidade.HasIndex(item => item.Codigo).IsUnique();
         });
 
         modelo.Entity<CifraEmTextoRegistro>(entidade =>
