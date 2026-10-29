@@ -601,5 +601,11 @@ void mainDaEntradaPeloCodigo() {
 
     expect(find.text('234 · O meu ser entrego a Cristo'), findsOneWidget);
     expect(find.text('Primeira do segundo'), findsOneWidget);
+
+    // Na cantata, o voltar levava ao início e cada um tinha que abrir o
+    // link de novo: aberto pelo link, não há tela embaixo para voltar.
+    final navegador = tester.state<NavigatorState>(find.byType(Navigator));
+    expect(navegador.canPop(), isFalse);
+    expect(find.byType(BackButton), findsNothing);
   });
 }
