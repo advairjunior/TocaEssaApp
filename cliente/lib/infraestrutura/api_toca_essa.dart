@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../dominio/modelos.dart';
+import '../dominio/musicos_da_noite.dart';
 import '../dominio/stories.dart';
 import '../dominio/tela_da_tv.dart';
 import 'cliente_http_com_reserva.dart';
@@ -20,6 +21,7 @@ part 'api_toca_essa_stories.dart';
 part 'api_toca_essa_louvor.dart';
 part 'api_toca_essa_karaoke.dart';
 part 'api_toca_essa_telas.dart';
+part 'api_toca_essa_musicos.dart';
 
 abstract class _ApiTocaEssaBase {
   _ApiTocaEssaBase({http.Client? cliente, String? enderecoBase})
@@ -107,7 +109,8 @@ class ApiTocaEssa extends _ApiTocaEssaBase
         _ApiStories,
         _ApiLouvor,
         _ApiKaraoke,
-        _ApiTelas {
+        _ApiTelas,
+        _ApiMusicos {
   ApiTocaEssa({super.cliente, super.enderecoBase});
 }
 

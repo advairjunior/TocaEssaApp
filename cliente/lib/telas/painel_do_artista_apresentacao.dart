@@ -182,6 +182,13 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
           const SizedBox(height: EspacoTocaEssa.grande),
           LetraNaTvDoArtista(api: _api),
         ],
+        // Músicos tocam junto na resenha e no louvor; no karaokê todos são
+        // público.
+        if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos ||
+            apresentacao.tipo == TipoApresentacao.louvor) ...[
+          const SizedBox(height: EspacoTocaEssa.grande),
+          MusicosDaNoiteDoDono(api: _api, apresentacaoId: apresentacao.id),
+        ],
         const SizedBox(height: EspacoTocaEssa.enorme),
         if (apresentacao.status == StatusApresentacao.emAndamento) ...[
           OutlinedButton.icon(

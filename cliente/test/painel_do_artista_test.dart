@@ -14,6 +14,7 @@ import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
 import 'package:toca_essa_app/telas/letra_na_tv_do_artista.dart';
+import 'package:toca_essa_app/telas/musicos_da_noite_do_dono.dart';
 import 'package:toca_essa_app/telas/tocar_musicas.dart';
 
 import 'apoio/camera_falsa.dart';
@@ -550,7 +551,8 @@ void main() {
         IntensidadeFundoTocaEssa.cabecalho);
   });
 
-  testWidgets('a Letra na TV fica no Mais da resenha, não no show público',
+  testWidgets(
+      'a Letra na TV e os Músicos da noite ficam no Mais da resenha, não no show público',
       (tester) async {
     await _abrirPainel(
       tester,
@@ -569,12 +571,14 @@ void main() {
     await tester.tap(find.text('Show de sábado'));
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsNothing);
+    expect(find.byType(MusicosDaNoiteDoDono), findsNothing);
 
     await tester.tap(find.byTooltip('Voltar ao início'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Resenha de domingo'));
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsOneWidget);
+    expect(find.byType(MusicosDaNoiteDoDono), findsOneWidget);
   });
 
   group('horas contratadas', () {

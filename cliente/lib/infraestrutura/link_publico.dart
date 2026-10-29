@@ -7,6 +7,10 @@ String linkPublicoDoShow(String codigo, {String? hino}) =>
 /// Link de uma cifra fora do louvor: abre direto nela, sem conta.
 String linkDaCifra(String codigo) => '${_origem()}/#/cifra/$codigo';
 
+/// Link do convite de músico para o evento da noite (precisa de conta de
+/// artista para entrar).
+String linkDoConvite(String codigo) => '${_origem()}/#/convite/$codigo';
+
 /// Endereço para abrir no navegador da TV da Letra na TV, sem o "https://"
 /// e sem o "#/", para digitar no controle: o servidor leva "/tv" a "/#/tv".
 String enderecoDaTv() =>
