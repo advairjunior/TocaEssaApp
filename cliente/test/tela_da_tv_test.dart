@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:toca_essa_app/infraestrutura/api_toca_essa.dart';
+import 'package:toca_essa_app/infraestrutura/link_publico.dart';
 import 'package:toca_essa_app/main.dart';
 import 'package:toca_essa_app/telas/tela_da_tv.dart';
 import 'package:toca_essa_app/tema/tema_toca_essa.dart';
@@ -55,7 +57,7 @@ Future<void> _abrir(WidgetTester tester, Map<String, Object?> estado) async {
 
 Map<String, Object?> _tocando({int linha = 0}) => {
       'pareada': true,
-      'conteudo': {
+      'conteudo': <String, Object?>{
         'titulo': 'Fim de tarde',
         'subtitulo': 'Turma da Resenha',
         'texto': _cifra,
@@ -118,6 +120,24 @@ void main() {
     expect(find.text('Lua de São Jorge'), findsOneWidget);
     expect(_corDe(tester, 'Cavaco afinado'), CoresTocaEssa.texto);
     expect(_corDe(tester, 'O sol desceu devagar'), isNot(CoresTocaEssa.texto));
+  });
+
+  testWidgets('o QR da resenha fica no canto para a galera pedir',
+      (tester) async {
+    await _abrir(tester, _tocando());
+
+    final qr = tester.widget<QrImageView>(find.byType(QrImageView));
+    expect(qr.semanticsLabel, linkPublicoDoShow('RSN482'));
+    expect(find.text('Aponte a câmera para pedir'), findsOneWidget);
+  });
+
+  testWidgets('sem código, sem QR', (tester) async {
+    final estado = _tocando();
+    (estado['conteudo'] as Map<String, Object?>)['codigo'] = null;
+
+    await _abrir(tester, estado);
+
+    expect(find.byType(QrImageView), findsNothing);
   });
 
   testWidgets('a linha que chega pelo tempo real troca a parte',

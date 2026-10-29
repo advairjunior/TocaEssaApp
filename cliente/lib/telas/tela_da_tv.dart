@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../dominio/letra_da_tela.dart';
 import '../dominio/tela_da_tv.dart';
 import '../infraestrutura/api_toca_essa.dart';
 import '../infraestrutura/assinatura_tempo_real.dart';
+import '../infraestrutura/link_publico.dart';
 import '../infraestrutura/tela_acesa.dart';
 import '../tema/tema_toca_essa.dart';
 import 'controle_da_tv.dart';
