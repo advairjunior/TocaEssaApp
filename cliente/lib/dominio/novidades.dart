@@ -29,6 +29,13 @@ class Novidade {
 final novidadesDoApp = <Novidade>[
   Novidade(
     data: DateTime(2026, 10, 29),
+    tipo: TipoDeNovidade.melhoria,
+    titulo: 'Aviso quando um músico entra',
+    texto: 'Na resenha e no louvor, aparece "Bia entrou na Resenha House" '
+        'assim que alguém aceita o seu convite, em qualquer aba do evento.',
+  ),
+  Novidade(
+    data: DateTime(2026, 10, 29),
     tipo: TipoDeNovidade.novo,
     titulo: 'Passar o comando da TV',
     texto: 'Em Letra na TV, passe a linha da TV para outra pessoa pelo QR: '

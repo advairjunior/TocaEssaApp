@@ -13,6 +13,7 @@ import 'package:toca_essa_app/telas/componentes_formulario.dart';
 import 'package:toca_essa_app/telas/fundo_toca_essa.dart';
 import 'package:toca_essa_app/telas/gerenciar_repertorios.dart';
 import 'package:toca_essa_app/telas/instalar_app.dart';
+import 'package:toca_essa_app/telas/aviso_de_musico_novo.dart';
 import 'package:toca_essa_app/telas/convites_do_musico.dart';
 import 'package:toca_essa_app/telas/letra_na_tv_do_artista.dart';
 import 'package:toca_essa_app/telas/musicos_da_noite_do_dono.dart';
@@ -579,6 +580,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsNothing);
     expect(find.byType(MusicosDaNoiteDoDono), findsNothing);
+    expect(find.byType(AvisoDeMusicoNovo), findsNothing);
 
     await tester.tap(find.byTooltip('Voltar ao início'));
     await tester.pumpAndSettle();
@@ -586,6 +588,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(LetraNaTvDoArtista), findsOneWidget);
     expect(find.byType(MusicosDaNoiteDoDono), findsOneWidget);
+    expect(find.byType(AvisoDeMusicoNovo), findsOneWidget);
   });
 
   testWidgets('o painel avisa as novidades do app e o menu abre a lista',

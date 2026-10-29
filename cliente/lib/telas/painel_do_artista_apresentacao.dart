@@ -104,6 +104,16 @@ extension _ApresentacaoDoPainelDoArtista on _PainelDoArtistaState {
                   apresentacaoId: apresentacao.id,
                   codigo: apresentacao.codigo,
                 ),
+              // Avisa quando um músico entra pelo convite, em qualquer aba.
+              if (apresentacao.tipo == TipoApresentacao.resenhaEntreAmigos ||
+                  apresentacao.tipo == TipoApresentacao.louvor)
+                AvisoDeMusicoNovo(
+                  key: ValueKey('musicos-${apresentacao.id}'),
+                  api: _api,
+                  apresentacaoId: apresentacao.id,
+                  codigo: apresentacao.codigo,
+                  evento: apresentacao.nome,
+                ),
               Expanded(child: _construirAba(context, apresentacao)),
             ],
           ),
