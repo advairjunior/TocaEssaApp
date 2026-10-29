@@ -71,6 +71,19 @@ extension PedidosDaSequencia on SequenciaDoPalco {
 
 /// Cifras das músicas da sequência: consulta, situação e atualização.
 extension CifrasDaSequencia on SequenciaDoPalco {
+  /// Letra e cifra coladas no leitor; já valem para as próximas consultas.
+  Future<void> salvarCifraEmTexto(MusicaDoPalco musica, String texto) async {
+    final resultado =
+        await api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
+    _cifras = {
+      ..._cifras,
+      SequenciaDoPalco._chave(musica.titulo, musica.artista): resultado
+    };
+    _avisar();
+    // O "Tom:" da cifra pode ter mudado o tom da música no servidor.
+    await recarregar();
+  }
+
   /// Sem cifra colada no app (o link do site é só reserva). Só conta depois
   /// de consultada, para não acusar falha de rede.
   bool estaSemCifra(MusicaDoPalco musica) {

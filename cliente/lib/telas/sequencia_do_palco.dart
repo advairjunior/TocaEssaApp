@@ -195,16 +195,6 @@ class SequenciaDoPalco extends ChangeNotifier {
   bool estaTocando(MusicaDoPalco musica) =>
       atual != null && mesmaPagina(atual!, musica);
 
-  /// Letra e cifra coladas no leitor; já valem para as próximas consultas.
-  Future<void> salvarCifraEmTexto(MusicaDoPalco musica, String texto) async {
-    final resultado =
-        await api.salvarCifraEmTexto(musica.titulo, musica.artista, texto);
-    _cifras = {..._cifras, _chave(musica.titulo, musica.artista): resultado};
-    _avisar();
-    // O "Tom:" da cifra pode ter mudado o tom da música no servidor.
-    await recarregar();
-  }
-
   List<MusicaDoPalco> _sequenciaRestante() => [
         ...pedidosASeguir.map(MusicaDoPalco.doPedido),
         ...itens.where((i) => !i.tocada).map(MusicaDoPalco.doSetlist),
