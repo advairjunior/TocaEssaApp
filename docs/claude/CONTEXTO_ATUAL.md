@@ -381,6 +381,19 @@ Desenho em `docs/superpowers/specs/2026-10-29-letra-na-tv-design.md` e
 - Setas do controle da TV mudam o tamanho da letra (60% a 160%, guardado na
   TV, `tamanho_da_letra_na_tv.dart`).
 
+- Comando da TV (`docs/superpowers/specs/2026-10-29-comando-da-tv-design.md`):
+  o dono passa a linha da TV a um ajudante sem conta (link `#/comando/<token>`,
+  `comando_do_ajudante.dart`); com ajudante, a linha do dono é ignorada e a
+  música continua vindo dele; Retomar desfaz o link. Comando só na memória.
+
+### Novidades do app (2026-10-29)
+
+`dominio/novidades.dart` guarda a lista (mais nova primeiro: Novo, Melhoria,
+Correção). Só o artista vê: aviso no topo do início do painel enquanto há
+novidade não vista (`novidades_vistas_ate` no aparelho) e Novidades no menu da
+conta. **A cada push com algo que a pessoa nota, acrescentar a entrada no
+mesmo push**; correção técnica invisível fica de fora.
+
 ### Músicos convidados para o evento da noite (2026-10-29)
 
 Desenho em `docs/superpowers/specs/2026-10-29-evento-compartilhado-design.md`.
