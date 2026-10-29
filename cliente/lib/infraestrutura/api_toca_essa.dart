@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../dominio/modelos.dart';
 import '../dominio/stories.dart';
+import '../dominio/tela_da_tv.dart';
 import 'cliente_http_com_reserva.dart';
 
 export '../dominio/stories.dart';
@@ -18,6 +19,7 @@ part 'api_toca_essa_relogio.dart';
 part 'api_toca_essa_stories.dart';
 part 'api_toca_essa_louvor.dart';
 part 'api_toca_essa_karaoke.dart';
+part 'api_toca_essa_telas.dart';
 
 abstract class _ApiTocaEssaBase {
   _ApiTocaEssaBase({http.Client? cliente, String? enderecoBase})
@@ -104,7 +106,8 @@ class ApiTocaEssa extends _ApiTocaEssaBase
         _ApiRelogio,
         _ApiStories,
         _ApiLouvor,
-        _ApiKaraoke {
+        _ApiKaraoke,
+        _ApiTelas {
   ApiTocaEssa({super.cliente, super.enderecoBase});
 }
 
