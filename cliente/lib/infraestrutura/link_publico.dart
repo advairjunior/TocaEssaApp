@@ -8,9 +8,9 @@ String linkPublicoDoShow(String codigo, {String? hino}) =>
 String linkDaCifra(String codigo) => '${_origem()}/#/cifra/$codigo';
 
 /// Endereço para abrir no navegador da TV da Letra na TV, sem o "https://"
-/// que ninguém precisa digitar no controle.
+/// e sem o "#/", para digitar no controle: o servidor leva "/tv" a "/#/tv".
 String enderecoDaTv() =>
-    '${_origem().replaceFirst(RegExp(r'^https?://'), '')}/#/tv';
+    '${_origem().replaceFirst(RegExp(r'^https?://'), '')}/tv';
 
 // Endereço do app no navegador; fora dele (testes), o local.
 String _origem() {

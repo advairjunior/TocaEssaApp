@@ -74,7 +74,7 @@ void main() {
     expect(
         (await SharedPreferences.getInstance()).getBool('letra_na_tv'), isTrue);
     expect(find.text('Conectar TV'), findsOneWidget);
-    expect(find.textContaining('localhost:5173/#/tv'), findsOneWidget);
+    expect(find.textContaining('abra localhost:5173/tv e'), findsOneWidget);
   });
 
   testWidgets('conectar com o código da TV mostra a TV na lista',

@@ -25,8 +25,8 @@ Prévia visual aprovada: https://claude.ai/artifact/4fyyBXXJ3qShHNnjcU4Z1D
 
 ## Como fica
 
-**Na TV (primeira vez):** abre `tocaessaapp.onrender.com/#/tv` no navegador
-da Samsung e salva nos favoritos. A tela mostra um código curto (ex.: K7Q2).
+**Na TV (primeira vez):** abre `tocaessaapp.onrender.com/tv` no navegador
+da Samsung (o servidor leva a `/#/tv`) e salva nos favoritos. A tela mostra um código curto (ex.: K7Q2).
 **No celular:** Mais → Letra na TV → Conectar TV → digita o código. A TV
 fica presa à conta e lembra disso. Daí em diante, basta abrir o favorito.
 

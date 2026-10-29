@@ -15,6 +15,9 @@ public static class RotasDaTv
     // A TV abre sem conta: o token dela vem no cabeçalho, como o de uma sessão.
     private static void MapearTv(WebApplication app)
     {
+        // Endereço curto para digitar no controle da TV; o app usa "#/".
+        app.MapGet("/tv", () => Results.Redirect("/#/tv"));
+
         app.MapPost("/api/publico/telas", (RepositorioTocaEssa repositorio) =>
             Results.Ok(repositorio.CriarTv()));
 

@@ -56,6 +56,22 @@ public sealed class LetraNaTvApiTestes
     }
 
     [Fact]
+    public async Task EnderecoCurtoDaTvLevaParaATelaDaTv()
+    {
+        var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-tv-{Guid.NewGuid():N}.db");
+        await using var fabrica = CriarFabrica(banco);
+        using var tv = fabrica.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+
+        var resposta = await tv.GetAsync("/tv");
+
+        Assert.Equal(HttpStatusCode.Redirect, resposta.StatusCode);
+        Assert.Equal("/#/tv", resposta.Headers.Location?.OriginalString);
+    }
+
+    [Fact]
     public async Task ErrosDaTvTemStatusEMensagem()
     {
         var banco = Path.Combine(Path.GetTempPath(), $"tocaessa-api-tv-{Guid.NewGuid():N}.db");
