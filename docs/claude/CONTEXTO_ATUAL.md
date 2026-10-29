@@ -378,6 +378,27 @@ Desenho em `docs/superpowers/specs/2026-10-29-letra-na-tv-design.md` e
   da última linha (A seguir, QR e fotos dos stories), velocidade da rolagem
   por música, louvor com o nome de quem canta no selo (sem o "sua vez").
   Karaokê na TV ficou de fora (a TV está no YouTube na vez de cada um).
+- Setas do controle da TV mudam o tamanho da letra (60% a 160%, guardado na
+  TV, `tamanho_da_letra_na_tv.dart`).
+
+### Músicos convidados para o evento da noite (2026-10-29)
+
+Desenho em `docs/superpowers/specs/2026-10-29-evento-compartilhado-design.md`.
+Duas portas: músicos pelo link de convite, público pelo código como sempre.
+- Só resenha e louvor (karaokê: todos são público). Tabelas
+  `MusicosDaApresentacao` e `ConvitesDaApresentacao`; link novo desfaz o
+  anterior; evento encerrado não aceita nem aparece.
+- O acesso é ao evento, não à conta. `ObterApresentacaoDoArtista` continua só
+  do dono; `ObterApresentacaoDaNoite` (dono ou convidado) vale só para ler a
+  setlist, a fila, os pedidos a seguir e o louvor, marcar tocada e mudar o
+  pedido para tocando/finalizado/aceito (recusar é do dono). Cifra do dono
+  por `GET /api/apresentacoes/{id}/cifras`, só de músicas da setlist ou dos
+  pedidos daquele evento.
+- App: Mais → Músicos da noite (`musicos_da_noite_do_dono.dart`), link
+  `#/convite/<código>` (`convite_do_musico.dart`; sem conta guarda
+  `convite_pendente`), Convites no início do painel (`convites_do_musico.dart`,
+  aparece mesmo sem perfil) e a noite do músico (`noite_do_musico.dart`) com
+  `SequenciaDoConvidado` (lê a cifra pelo evento, `colaCifra` falso).
 
 ### Lições do iPhone/Safari
 
